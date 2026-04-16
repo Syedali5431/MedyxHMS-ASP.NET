@@ -1,0 +1,220 @@
+@model MedyxHMS.ViewModels.AppointmentCalendarViewModel
+
+@{
+    ViewData["Title"] = "Appointment Calendar";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Appointment Calendar</h1>
+                    <p class="text-muted">Visual calendar view of all appointments</p>
+                </div>
+                <div>
+                    @if (User.HasPermission("Appointment", "Add"))
+                    {
+                        <a href="@Url.Action("Create", "Appointment")" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Schedule Appointment
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-info ml-2">
+                        <i class="fas fa-list"></i> List View
+                    </a>
+                    <a href="@Url.Action("Dashboard", "Appointment")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-chart-bar"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <form method="get" class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">View Type</label>
+                    <select name="viewType" class="form-control" onchange="this.form.submit()">
+                        <option value="month" selected="@(Model.ViewType == "month")">Month View</option>
+                        <option value="week" selected="@(Model.ViewType == "week")">Week View</option>
+                        <option value="day" selected="@(Model.ViewType == "day")">Day View</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Doctor Filter</label>
+                    <select name="doctorFilter" class="form-control" onchange="this.form.submit()">
+                        <option value="">All Doctors</option>
+                        @foreach (var doctor in Model.AvailableDoctors)
+                        {
+                            <option value="@doctor.Id" selected="@(Model.DoctorFilter == doctor.Id)">@doctor.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Status Filter</label>
+                    <select name="statusFilter" class="form-control" onchange="this.form.submit()">
+                        <option value="">All Statuses</option>
+                        @foreach (var status in Model.StatusOptions)
+                        {
+                            <option value="@status" selected="@(Model.StatusFilter == status)">@status</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-primary w-100" onclick="goToToday()">
+                        <i class="fas fa-calendar-day"></i> Today
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card-body">
+            <!-- Calendar Container -->
+            <div id="calendar"></div>
+        </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Calendar Legend</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <span class="badge badge-light p-2 mr-2" style="background-color: #28a745;"></span>
+                            <strong>Scheduled</strong>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <span class="badge badge-light p-2 mr-2" style="background-color: #17a2b8;"></span>
+                            <strong>Confirmed</strong>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <span class="badge badge-light p-2 mr-2" style="background-color: #ffc107;"></span>
+                            <strong>In Progress</strong>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <span class="badge badge-light p-2 mr-2" style="background-color: #6c757d;"></span>
+                            <strong>Completed</strong>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <span class="badge badge-light p-2 mr-2" style="background-color: #dc3545;"></span>
+                            <strong>Cancelled/No Show</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Appointment Details Modal -->
+<div class="modal fade" id="appointmentModal" tabindex="-1" role="dialog" aria-labelledby="appointmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appointmentModalLabel">Appointment Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="appointmentModalBody">
+                <!-- Appointment details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <div id="appointmentActions">
+                    <!-- Action buttons will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@5.11.3/main.min.css" rel="stylesheet">
+
+    <script>
+        $(document).ready(function() {
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: '@(Model.ViewType == "week" ? "timeGridWeek" : Model.ViewType == "day" ? "timeGridDay" : "dayGridMonth")',
+                headerToolbar: {
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                },
+                events: @Html.Raw(Json.Serialize(Model.CalendarEvents)),
+                eventClick: function(info) {
+                    showAppointmentDetails(info.event.id);
+                },
+                eventDidMount: function(info) {
+                    // Add tooltip with appointment info
+                    $(info.el).tooltip({
+                        title: info.event.title + '<br>' + info.event.extendedProps.patientName + '<br>' + info.event.extendedProps.appointmentType,
+                        html: true,
+                        placement: 'top'
+                    });
+                },
+                height: 'auto',
+                contentHeight: 600,
+                aspectRatio: 1.35
+            });
+
+            calendar.render();
+
+            // Store calendar instance for navigation
+            window.calendar = calendar;
+        });
+
+        function goToToday() {
+            if (window.calendar) {
+                window.calendar.today();
+            }
+        }
+
+        function showAppointmentDetails(appointmentId) {
+            $.get('@Url.Action("Details", "Appointment")/' + appointmentId, function(data) {
+                // Extract appointment details from the returned HTML
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(data, 'text/html');
+
+                // Get appointment info
+                var patientName = $(doc).find('h1').text().split(' with ')[0].replace('Appointment Details', '').trim();
+                var doctorName = $(doc).find('h1').text().split(' with ')[1];
+                var dateTime = $(doc).find('.h5').first().text();
+                var status = $(doc).find('.badge').first().text();
+                var type = $(doc).find('.badge').eq(1).text();
+
+                var modalBody = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Patient: ${patientName}</h6>
+                            <p><strong>Doctor:</strong> ${doctorName}</p>
+                            <p><strong>Date & Time:</strong> ${dateTime}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Type:</strong> ${type}</p>
+                            <p><strong>Status:</strong> <span class="badge badge-secondary">${status}</span></p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="text-center">
+                        <a href="@Url.Action("Details", "Appointment")/${appointmentId}" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-eye"></i> View Full Details
+                        </a>
+                    </div>
+                `;
+
+                $('#appointmentModalBody').html(modalBody);
+                $('#appointmentModal').modal('show');
+            });
+        }
+    </script>
+}

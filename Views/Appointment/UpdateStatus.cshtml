@@ -1,0 +1,321 @@
+@model MedyxHMS.ViewModels.AppointmentUpdateStatusViewModel
+
+@{
+    ViewData["Title"] = "Update Appointment Status";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Update Appointment Status</h1>
+                    <p class="text-muted">@Model.Patient?.FullName with @Model.Doctor?.Name</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Status Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Current Appointment Status</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <i class="fas fa-calendar text-primary mr-2"></i>
+                                <strong>Appointment:</strong><br>
+                                <span class="h5">@Model.Appointment.FormattedDateTime</span>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-stethoscope text-info mr-2"></i>
+                                <strong>Type:</strong><br>
+                                <span class="badge badge-secondary">@Model.Appointment.AppointmentType</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <i class="fas fa-user-md text-success mr-2"></i>
+                                <strong>Current Status:</strong><br>
+                                <span class="badge @Model.Appointment.StatusBadgeClass h5">@Model.Appointment.Status</span>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-clock text-muted mr-2"></i>
+                                <strong>Last Updated:</strong><br>
+                                @if (Model.Appointment.UpdatedDate.HasValue)
+                                {
+                                    @Model.Appointment.UpdatedDate.Value.ToString("MMM dd, yyyy 'at' hh:mm tt")
+                                    @if (!string.IsNullOrEmpty(Model.Appointment.UpdatedBy))
+                                    {
+                                        <br><small class="text-muted">by @Model.Appointment.UpdatedBy</small>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Never updated</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Status Workflow -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Status Workflow</h6>
+                </div>
+                <div class="card-body">
+                    <div class="status-workflow">
+                        @foreach (var status in Model.AvailableStatuses)
+                        {
+                            var isCurrent = status == Model.Appointment.Status;
+                            var isCompleted = Model.StatusOrder.IndexOf(status) < Model.StatusOrder.IndexOf(Model.Appointment.Status);
+                            var isNext = Model.StatusOrder.IndexOf(status) == Model.StatusOrder.IndexOf(Model.Appointment.Status) + 1;
+
+                            <div class="status-step @(isCurrent ? "current" : isCompleted ? "completed" : isNext ? "next" : "pending")">
+                                <div class="status-icon">
+                                    @if (isCompleted)
+                                    {
+                                        <i class="fas fa-check-circle"></i>
+                                    }
+                                    else if (isCurrent)
+                                    {
+                                        <i class="fas fa-dot-circle"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="far fa-circle"></i>
+                                    }
+                                </div>
+                                <div class="status-label">@status</div>
+                            </div>
+                            @if (status != Model.AvailableStatuses.Last())
+                            {
+                                <div class="status-arrow">
+                                    <i class="fas fa-arrow-down"></i>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Update Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">Update Status</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Appointment.Id" />
+
+                        <div class="form-group">
+                            <label asp-for="NewStatus" class="form-label">Select New Status</label>
+                            <select asp-for="NewStatus" class="form-control" onchange="updateStatusDescription()">
+                                <option value="">Select Status</option>
+                                @foreach (var status in Model.AvailableStatuses)
+                                {
+                                    <option value="@status" selected="@(status == Model.Appointment.Status)">@status</option>
+                                }
+                            </select>
+                            <span asp-validation-for="NewStatus" class="text-danger"></span>
+                        </div>
+
+                        <div id="statusDescription" class="alert alert-info" style="display: none;">
+                            <h6><i class="fas fa-info-circle"></i> Status Description</h6>
+                            <p id="statusDescText"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="StatusNotes" class="form-label">Status Update Notes</label>
+                            <textarea asp-for="StatusNotes" class="form-control" rows="3"
+                                      placeholder="Optional notes about this status change (e.g., reason for cancellation, treatment outcome)..."></textarea>
+                            <span asp-validation-for="StatusNotes" class="text-danger"></span>
+                            <small class="form-text text-muted">These notes will be logged in the audit trail.</small>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Status
+                            </button>
+                            <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Status Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Status Meanings</h6>
+                        <ul class="mb-1 small">
+                            <li><strong>Scheduled:</strong> Initial booking</li>
+                            <li><strong>Confirmed:</strong> Patient confirmed attendance</li>
+                            <li><strong>In Progress:</strong> Appointment currently happening</li>
+                            <li><strong>Completed:</strong> Appointment finished successfully</li>
+                            <li><strong>Cancelled:</strong> Appointment cancelled</li>
+                            <li><strong>No Show:</strong> Patient didn't attend</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-1 small">
+                            <li>Status changes are irreversible</li>
+                            <li>All changes are logged for audit</li>
+                            <li>Completed appointments cannot be edited</li>
+                            <li>Cancellation requires reason notes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Edit", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-pencil-alt"></i> Edit Details
+                        </a>
+                        <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-outline-success btn-sm">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            updateStatusDescription();
+        });
+
+        function updateStatusDescription() {
+            var selectedStatus = $('#NewStatus').val();
+            var descriptions = {
+                'Scheduled': 'Appointment has been booked but not yet confirmed by the patient.',
+                'Confirmed': 'Patient has confirmed their attendance for this appointment.',
+                'In Progress': 'The appointment is currently taking place.',
+                'Completed': 'The appointment has been completed successfully.',
+                'Cancelled': 'The appointment has been cancelled.',
+                'No Show': 'The patient did not attend the appointment.'
+            };
+
+            if (selectedStatus && descriptions[selectedStatus]) {
+                $('#statusDescText').text(descriptions[selectedStatus]);
+                $('#statusDescription').show();
+            } else {
+                $('#statusDescription').hide();
+            }
+
+            // Make notes required for cancellation
+            if (selectedStatus === 'Cancelled') {
+                $('#StatusNotes').attr('required', 'required');
+                $('#StatusNotes').closest('.form-group').find('label').append(' <span class="text-danger">*</span>');
+            } else {
+                $('#StatusNotes').removeAttr('required');
+                $('#StatusNotes').closest('.form-group').find('label .text-danger').remove();
+            }
+        }
+    </script>
+}
+
+<style>
+    .status-workflow {
+        position: relative;
+    }
+
+    .status-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 8px;
+        border-radius: 5px;
+    }
+
+    .status-step.current {
+        background-color: #fff3cd;
+        border: 1px solid #ffc107;
+    }
+
+    .status-step.completed {
+        background-color: #d4edda;
+        border: 1px solid #28a745;
+    }
+
+    .status-step.next {
+        background-color: #d1ecf1;
+        border: 1px solid #17a2b8;
+    }
+
+    .status-step.pending {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+
+    .status-icon {
+        margin-right: 10px;
+        color: #6c757d;
+    }
+
+    .status-step.completed .status-icon {
+        color: #28a745;
+    }
+
+    .status-step.current .status-icon {
+        color: #ffc107;
+    }
+
+    .status-step.next .status-icon {
+        color: #17a2b8;
+    }
+
+    .status-label {
+        font-weight: 500;
+    }
+
+    .status-arrow {
+        text-align: center;
+        margin: 5px 0;
+        color: #6c757d;
+    }
+</style>

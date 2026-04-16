@@ -1,0 +1,281 @@
+@model MedyxHMS.ViewModels.AppointmentCreateViewModel
+
+@{
+    ViewData["Title"] = "Schedule Appointment";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Schedule Appointment</h1>
+                    <p class="text-muted">Book a new appointment for a patient</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Search Section -->
+    @if (!string.IsNullOrEmpty(Model.PatientSearchTerm) && Model.PatientSearchResults != null && Model.PatientSearchResults.Any())
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Patient Search Results</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    @foreach (var patient in Model.PatientSearchResults)
+                    {
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-primary">
+                                <div class="card-body">
+                                    <h6 class="card-title">@patient.FullName</h6>
+                                    <p class="card-text">
+                                        <strong>ID:</strong> @patient.PatientId<br>
+                                        <strong>Phone:</strong> @patient.Phone<br>
+                                        <strong>Age:</strong> @patient.Age years
+                                    </p>
+                                    <a href="@Url.Action("Create", "Appointment", new { patientId = patient.Id })"
+                                       class="btn btn-primary btn-sm">Select Patient</a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Appointment Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Appointment Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Patient Selection -->
+                        <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Patient Information</h5>
+                        <div class="form-group">
+                            <label class="form-label">Search Patient</label>
+                            <div class="input-group">
+                                <input type="text" id="patientSearch" class="form-control"
+                                       placeholder="Enter patient name or ID..." autocomplete="off">
+                                <div class="input-group-append">
+                                    <button type="button" id="searchBtn" class="btn btn-outline-primary">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">Search for existing patients or leave blank to add details manually</small>
+                        </div>
+
+                        @if (Model.Appointment.PatientId > 0)
+                        {
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i> Patient selected. You can proceed with scheduling.
+                            </div>
+                        }
+
+                        <input type="hidden" asp-for="Appointment.PatientId" />
+
+                        <!-- Recent Patients -->
+                        @if (Model.RecentPatients != null && Model.RecentPatients.Any())
+                        {
+                            <div class="form-group">
+                                <label class="form-label">Recent Patients</label>
+                                <div class="row">
+                                    @foreach (var patient in Model.RecentPatients)
+                                    {
+                                        <div class="col-md-6 mb-2">
+                                            <div class="border rounded p-2 cursor-pointer patient-select"
+                                                 data-patient-id="@patient.Id"
+                                                 data-patient-name="@patient.FullName">
+                                                <strong>@patient.FullName</strong><br>
+                                                <small class="text-muted">@patient.PatientId | @patient.Phone</small>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Appointment Details -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-calendar"></i> Appointment Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.DoctorId" class="form-label"></label>
+                                    <select asp-for="Appointment.DoctorId" class="form-control">
+                                        <option value="">Select Doctor</option>
+                                        @foreach (var doctor in Model.AvailableDoctors)
+                                        {
+                                            <option value="@doctor.Id">@doctor.Name - @doctor.Specialization</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Appointment.DoctorId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentType" class="form-label"></label>
+                                    <select asp-for="Appointment.AppointmentType" class="form-control">
+                                        <option value="">Select Type</option>
+                                        @foreach (var type in Model.AppointmentTypeOptions)
+                                        {
+                                            <option value="@type">@type</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Appointment.AppointmentType" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentDate" class="form-label"></label>
+                                    <input asp-for="Appointment.AppointmentDate" type="date" class="form-control">
+                                    <span asp-validation-for="Appointment.AppointmentDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentTime" class="form-label"></label>
+                                    <input asp-for="Appointment.AppointmentTime" type="time" class="form-control">
+                                    <span asp-validation-for="Appointment.AppointmentTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Medical Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-heartbeat"></i> Medical Information</h5>
+                        <div class="form-group">
+                            <label asp-for="Appointment.Symptoms" class="form-label"></label>
+                            <textarea asp-for="Appointment.Symptoms" class="form-control" rows="3"
+                                      placeholder="Describe the patient's symptoms or reason for visit..."></textarea>
+                            <span asp-validation-for="Appointment.Symptoms" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Appointment.Notes" class="form-label"></label>
+                            <textarea asp-for="Appointment.Notes" class="form-control" rows="2"
+                                      placeholder="Additional notes or special instructions..."></textarea>
+                            <span asp-validation-for="Appointment.Notes" class="text-danger"></span>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-calendar-check"></i> Schedule Appointment
+                            </button>
+                            <a href="@Url.Action("Index", "Appointment")" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Appointment Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Required Information</h6>
+                        <ul class="mb-1 small">
+                            <li>Patient selection (search or select from recent)</li>
+                            <li>Doctor assignment</li>
+                            <li>Appointment type</li>
+                            <li>Date and time</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-1 small">
+                            <li>System prevents double-booking doctors</li>
+                            <li>Appointments are initially set as "Scheduled"</li>
+                            <li>Use symptoms field for medical complaints</li>
+                            <li>Notes field for special instructions</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Index", "Appointment")" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-list"></i> View All Appointments
+                        </a>
+                        <a href="@Url.Action("Calendar", "Appointment")" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-calendar"></i> Calendar View
+                        </a>
+                        <a href="@Url.Action("Dashboard", "Appointment")" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-chart-bar"></i> Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Patient search functionality
+            $('#searchBtn').click(function() {
+                var searchTerm = $('#patientSearch').val().trim();
+                if (searchTerm) {
+                    window.location.href = '@Url.Action("Create", "Appointment")?patientSearchTerm=' + encodeURIComponent(searchTerm);
+                }
+            });
+
+            $('#patientSearch').keypress(function(e) {
+                if (e.which == 13) { // Enter key
+                    $('#searchBtn').click();
+                }
+            });
+
+            // Patient selection from recent patients
+            $('.patient-select').click(function() {
+                var patientId = $(this).data('patient-id');
+                var patientName = $(this).data('patient-name');
+
+                if (confirm('Select patient: ' + patientName + '?')) {
+                    $('#Appointment_PatientId').val(patientId);
+                    $('.patient-select').removeClass('border-primary bg-light');
+                    $(this).addClass('border-primary bg-light');
+                }
+            });
+
+            // Set minimum date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#Appointment_AppointmentDate').attr('min', today);
+
+            // Auto-select first available time slot (9 AM)
+            if (!$('#Appointment_AppointmentTime').val()) {
+                $('#Appointment_AppointmentTime').val('09:00');
+            }
+        });
+    </script>
+}

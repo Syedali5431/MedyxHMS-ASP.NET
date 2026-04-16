@@ -1,0 +1,244 @@
+@model MedyxHMS.ViewModels.PatientCreateViewModel
+
+@{
+    ViewData["Title"] = "Add New Patient";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Add New Patient</h1>
+                    <p class="text-muted">Create a new patient record</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Patient")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Patient Information</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post">
+                        @Html.AntiForgeryToken()
+
+                        <!-- Basic Information -->
+                        <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Basic Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.FirstName" class="form-label"></label>
+                                    <input asp-for="Patient.FirstName" class="form-control" placeholder="Enter first name">
+                                    <span asp-validation-for="Patient.FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.LastName" class="form-label"></label>
+                                    <input asp-for="Patient.LastName" class="form-control" placeholder="Enter last name">
+                                    <span asp-validation-for="Patient.LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.Email" class="form-label"></label>
+                                    <input asp-for="Patient.Email" type="email" class="form-control" placeholder="patient@example.com">
+                                    <span asp-validation-for="Patient.Email" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.Phone" class="form-label"></label>
+                                    <input asp-for="Patient.Phone" type="tel" class="form-control" placeholder="+1 (555) 123-4567">
+                                    <span asp-validation-for="Patient.Phone" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.DateOfBirth" class="form-label"></label>
+                                    <input asp-for="Patient.DateOfBirth" type="date" class="form-control">
+                                    <span asp-validation-for="Patient.DateOfBirth" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.Gender" class="form-label"></label>
+                                    <select asp-for="Patient.Gender" class="form-control">
+                                        <option value="">Select Gender</option>
+                                        @foreach (var gender in Model.GenderOptions)
+                                        {
+                                            <option value="@gender">@gender</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Patient.Gender" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Address Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-map-marker-alt"></i> Address Information</h5>
+                        <div class="form-group">
+                            <label asp-for="Patient.Address" class="form-label"></label>
+                            <textarea asp-for="Patient.Address" class="form-control" rows="2" placeholder="Street address, apartment, etc."></textarea>
+                            <span asp-validation-for="Patient.Address" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.City" class="form-label"></label>
+                                    <input asp-for="Patient.City" class="form-control" placeholder="City">
+                                    <span asp-validation-for="Patient.City" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.State" class="form-label"></label>
+                                    <input asp-for="Patient.State" class="form-control" placeholder="State/Province">
+                                    <span asp-validation-for="Patient.State" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.Country" class="form-label"></label>
+                                    <select asp-for="Patient.Country" class="form-control">
+                                        <option value="">Select Country</option>
+                                        @foreach (var country in Model.CountryOptions)
+                                        {
+                                            <option value="@country">@country</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Patient.Country" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.PostalCode" class="form-label"></label>
+                                    <input asp-for="Patient.PostalCode" class="form-control" placeholder="12345">
+                                    <span asp-validation-for="Patient.PostalCode" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Medical Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-heartbeat"></i> Medical Information</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.BloodGroup" class="form-label"></label>
+                                    <select asp-for="Patient.BloodGroup" class="form-control">
+                                        <option value="">Select Blood Group</option>
+                                        @foreach (var bloodGroup in Model.BloodGroupOptions)
+                                        {
+                                            <option value="@bloodGroup">@bloodGroup</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Patient.BloodGroup" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Patient.MedicalHistory" class="form-label"></label>
+                            <textarea asp-for="Patient.MedicalHistory" class="form-control" rows="3"
+                                      placeholder="Previous medical conditions, surgeries, etc."></textarea>
+                            <span asp-validation-for="Patient.MedicalHistory" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Patient.Allergies" class="form-label"></label>
+                            <textarea asp-for="Patient.Allergies" class="form-control" rows="2"
+                                      placeholder="Known allergies (medications, foods, etc.)"></textarea>
+                            <span asp-validation-for="Patient.Allergies" class="text-danger"></span>
+                        </div>
+
+                        <!-- Emergency Contact -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-phone"></i> Emergency Contact</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.EmergencyContactName" class="form-label"></label>
+                                    <input asp-for="Patient.EmergencyContactName" class="form-control" placeholder="Full name">
+                                    <span asp-validation-for="Patient.EmergencyContactName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Patient.EmergencyContactPhone" class="form-label"></label>
+                                    <input asp-for="Patient.EmergencyContactPhone" type="tel" class="form-control" placeholder="+1 (555) 123-4567">
+                                    <span asp-validation-for="Patient.EmergencyContactPhone" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Patient
+                            </button>
+                            <a href="@Url.Action("Index", "Patient")" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Required Fields</h6>
+                        <p class="mb-1">First Name, Last Name, Email, Phone, Date of Birth, and Gender are required.</p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-0 small">
+                            <li>Patient ID will be auto-generated</li>
+                            <li>Email must be unique in the system</li>
+                            <li>All medical information is confidential</li>
+                            <li>Emergency contact should be reachable 24/7</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Set default date of birth to 30 years ago
+            var thirtyYearsAgo = new Date();
+            thirtyYearsAgo.setFullYear(thirtyYearsAgo.getFullYear() - 30);
+            $('#Patient_DateOfBirth').val(thirtyYearsAgo.toISOString().split('T')[0]);
+        });
+    </script>
+}

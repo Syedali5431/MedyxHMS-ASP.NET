@@ -1,0 +1,361 @@
+@model MedyxHMS.ViewModels.AppointmentDashboardViewModel
+
+@{
+    ViewData["Title"] = "Appointment Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Appointment Dashboard</h1>
+                    <p class="text-muted">Analytics and insights for appointment management</p>
+                </div>
+                <div>
+                    @if (User.HasPermission("Appointment", "Add"))
+                    {
+                        <a href="@Url.Action("Create", "Appointment")" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Schedule Appointment
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-info ml-2">
+                        <i class="fas fa-list"></i> List View
+                    </a>
+                    <a href="@Url.Action("Calendar", "Appointment")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-calendar"></i> Calendar View
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Appointments
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalAppointments</div>
+                            <div class="text-xs text-muted">
+                                @Model.TotalAppointmentsChange% from last month
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Completion Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CompletionRate%</div>
+                            <div class="text-xs text-muted">
+                                @Model.CompletionRateChange% from last month
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Average Wait Time
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.AverageWaitTime min</div>
+                            <div class="text-xs text-muted">
+                                @Model.WaitTimeChange min from last month
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                No-Show Rate
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.NoShowRate%</div>
+                            <div class="text-xs text-muted">
+                                @Model.NoShowRateChange% from last month
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Status Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Appointment Status Distribution</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="statusChart" width="100%" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments by Type -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Appointments by Type</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="typeChart" width="100%" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Performance -->
+    <div class="row mb-4">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Doctor Performance</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Doctor</th>
+                                    <th>Specialization</th>
+                                    <th>Total Appointments</th>
+                                    <th>Completed</th>
+                                    <th>Completion Rate</th>
+                                    <th>Average Wait Time</th>
+                                    <th>No-Show Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doctor in Model.DoctorPerformance)
+                                {
+                                    <tr>
+                                        <td>@doctor.DoctorName</td>
+                                        <td>@doctor.Specialization</td>
+                                        <td>@doctor.TotalAppointments</td>
+                                        <td>@doctor.CompletedAppointments</td>
+                                        <td>
+                                            <span class="badge badge-success">@doctor.CompletionRate%</span>
+                                        </td>
+                                        <td>@doctor.AverageWaitTime min</td>
+                                        <td>
+                                            <span class="badge @(doctor.NoShowRate > 10 ? "badge-danger" : doctor.NoShowRate > 5 ? "badge-warning" : "badge-success")">
+                                                @doctor.NoShowRate%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trends and Analytics -->
+    <div class="row">
+        <!-- Weekly Trends -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">Weekly Appointment Trends</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="weeklyTrendsChart" width="100%" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Peak Hours -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">Peak Appointment Hours</h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="peakHoursChart" width="100%" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Recent Appointment Activity</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Action</th>
+                                    <th>Patient</th>
+                                    <th>Doctor</th>
+                                    <th>Details</th>
+                                    <th>User</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var activity in Model.RecentActivities)
+                                {
+                                    <tr>
+                                        <td>@activity.Timestamp.ToString("MMM dd, HH:mm")</td>
+                                        <td>
+                                            <span class="badge badge-info">@activity.Action</span>
+                                        </td>
+                                        <td>@activity.PatientName</td>
+                                        <td>@activity.DoctorName</td>
+                                        <td>@activity.Details</td>
+                                        <td>@activity.UserName</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Status Distribution Chart
+            var statusCtx = document.getElementById('statusChart').getContext('2d');
+            new Chart(statusCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.StatusChartLabels)),
+                    datasets: [{
+                        data: @Html.Raw(Json.Serialize(Model.StatusChartData)),
+                        backgroundColor: [
+                            '#28a745', // Scheduled
+                            '#17a2b8', // Confirmed
+                            '#ffc107', // In Progress
+                            '#6c757d', // Completed
+                            '#dc3545', // Cancelled/No Show
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Appointment Type Chart
+            var typeCtx = document.getElementById('typeChart').getContext('2d');
+            new Chart(typeCtx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.TypeChartLabels)),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: @Html.Raw(Json.Serialize(Model.TypeChartData)),
+                        backgroundColor: '#4e73df'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Weekly Trends Chart
+            var weeklyCtx = document.getElementById('weeklyTrendsChart').getContext('2d');
+            new Chart(weeklyCtx, {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.WeeklyTrendsLabels)),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: @Html.Raw(Json.Serialize(Model.WeeklyTrendsData)),
+                        borderColor: '#f6c23e',
+                        backgroundColor: 'rgba(246, 194, 62, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // Peak Hours Chart
+            var peakCtx = document.getElementById('peakHoursChart').getContext('2d');
+            new Chart(peakCtx, {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Json.Serialize(Model.PeakHoursLabels)),
+                    datasets: [{
+                        label: 'Appointments',
+                        data: @Html.Raw(Json.Serialize(Model.PeakHoursData)),
+                        backgroundColor: '#e74a3b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

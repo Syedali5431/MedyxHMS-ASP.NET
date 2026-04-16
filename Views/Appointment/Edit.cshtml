@@ -1,0 +1,247 @@
+@model MedyxHMS.ViewModels.AppointmentEditViewModel
+
+@{
+    ViewData["Title"] = "Edit Appointment";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Edit Appointment</h1>
+                    <p class="text-muted">Update appointment details for @Model.Patient?.FullName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Form -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Appointment Details</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Appointment.Id" />
+
+                        <!-- Patient Information (Read-only) -->
+                        <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Patient Information</h5>
+                        <div class="alert alert-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Patient:</strong> @Model.Patient?.FullName<br>
+                                    <strong>ID:</strong> @Model.Patient?.PatientId
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Phone:</strong> @Model.Patient?.Phone<br>
+                                    <strong>Age:</strong> @Model.Patient?.Age years
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appointment Details -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-calendar"></i> Appointment Details</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.DoctorId" class="form-label"></label>
+                                    <select asp-for="Appointment.DoctorId" class="form-control">
+                                        <option value="">Select Doctor</option>
+                                        @foreach (var doctor in Model.AvailableDoctors)
+                                        {
+                                            <option value="@doctor.Id" selected="@(Model.Appointment.DoctorId == doctor.Id)">
+                                                @doctor.Name - @doctor.Specialization
+                                            </option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Appointment.DoctorId" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentType" class="form-label"></label>
+                                    <select asp-for="Appointment.AppointmentType" class="form-control">
+                                        <option value="">Select Type</option>
+                                        @foreach (var type in Model.AppointmentTypeOptions)
+                                        {
+                                            <option value="@type" selected="@(Model.Appointment.AppointmentType == type)">@type</option>
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Appointment.AppointmentType" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentDate" class="form-label"></label>
+                                    <input asp-for="Appointment.AppointmentDate" type="date" class="form-control">
+                                    <span asp-validation-for="Appointment.AppointmentDate" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Appointment.AppointmentTime" class="form-label"></label>
+                                    <input asp-for="Appointment.AppointmentTime" type="time" class="form-control">
+                                    <span asp-validation-for="Appointment.AppointmentTime" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Conflict Warning -->
+                        @if (Model.HasConflict)
+                        {
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Schedule Conflict Detected!</strong>
+                                <p class="mb-1">The selected doctor has another appointment at this time.</p>
+                                <small>Please choose a different time or doctor.</small>
+                            </div>
+                        }
+
+                        <!-- Medical Information -->
+                        <h5 class="text-primary mb-3 mt-4"><i class="fas fa-heartbeat"></i> Medical Information</h5>
+                        <div class="form-group">
+                            <label asp-for="Appointment.Symptoms" class="form-label"></label>
+                            <textarea asp-for="Appointment.Symptoms" class="form-control" rows="3"
+                                      placeholder="Describe the patient's symptoms or reason for visit...">@Model.Appointment.Symptoms</textarea>
+                            <span asp-validation-for="Appointment.Symptoms" class="text-danger"></span>
+                        </div>
+
+                        <div class="form-group">
+                            <label asp-for="Appointment.Notes" class="form-label"></label>
+                            <textarea asp-for="Appointment.Notes" class="form-control" rows="2"
+                                      placeholder="Additional notes or special instructions...">@Model.Appointment.Notes</textarea>
+                            <span asp-validation-for="Appointment.Notes" class="text-danger"></span>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-primary" @if (Model.HasConflict) { @:disabled="disabled" }>
+                                <i class="fas fa-save"></i> Update Appointment
+                            </button>
+                            <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Edit Guidelines</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> What You Can Edit</h6>
+                        <ul class="mb-1 small">
+                            <li>Doctor assignment</li>
+                            <li>Appointment type</li>
+                            <li>Date and time</li>
+                            <li>Symptoms description</li>
+                            <li>Additional notes</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Important Notes</h6>
+                        <ul class="mb-1 small">
+                            <li>Patient cannot be changed</li>
+                            <li>System prevents double-booking</li>
+                            <li>Status changes require separate action</li>
+                            <li>All changes are logged for audit</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Appointment Info -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Current Appointment</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Status:</strong>
+                        <span class="badge @Model.Appointment.StatusBadgeClass ml-2">@Model.Appointment.Status</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Current Doctor:</strong><br>
+                        <span class="text-primary">@Model.Doctor?.Name</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Scheduled:</strong><br>
+                        <span class="text-primary">@Model.Appointment.FormattedDateTime</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Type:</strong><br>
+                        <span class="text-primary">@Model.Appointment.AppointmentType</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("UpdateStatus", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i> Update Status
+                        </a>
+                        <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-info btn-sm">
+                            <i class="fas fa-eye"></i> View Details
+                        </a>
+                        <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> New Appointment
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Set minimum date to today
+            var today = new Date().toISOString().split('T')[0];
+            $('#Appointment_AppointmentDate').attr('min', today);
+
+            // Check for conflicts when date/time/doctor changes
+            function checkConflict() {
+                var doctorId = $('#Appointment_DoctorId').val();
+                var date = $('#Appointment_AppointmentDate').val();
+                var time = $('#Appointment_AppointmentTime').val();
+
+                if (doctorId && date && time) {
+                    // This would typically make an AJAX call to check for conflicts
+                    // For now, we'll just show a visual indicator
+                    console.log('Checking conflict for doctor:', doctorId, 'date:', date, 'time:', time);
+                }
+            }
+
+            $('#Appointment_DoctorId, #Appointment_AppointmentDate, #Appointment_AppointmentTime').change(checkConflict);
+        });
+    </script>
+}

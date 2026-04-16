@@ -1,0 +1,264 @@
+@model MedyxHMS.ViewModels.AppointmentDeleteViewModel
+
+@{
+    ViewData["Title"] = "Delete Appointment";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Delete Appointment</h1>
+                    <p class="text-muted">Confirm deletion of appointment for @Model.Patient?.FullName</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-info">
+                        <i class="fas fa-eye"></i> View Details
+                    </a>
+                    <a href="@Url.Action("Index", "Appointment")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Back to Appointments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deletion Warning -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-left-danger shadow">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-1 text-center">
+                            <i class="fas fa-exclamation-triangle fa-3x text-danger"></i>
+                        </div>
+                        <div class="col-md-11">
+                            <h4 class="text-danger">Warning: Irreversible Action</h4>
+                            <p class="mb-0">You are about to permanently delete this appointment. This action cannot be undone and will remove all associated data from the system.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Appointment Details -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Appointment Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <i class="fas fa-calendar text-primary mr-2"></i>
+                                <strong>Date & Time:</strong><br>
+                                <span class="h5">@Model.Appointment.FormattedDateTime</span>
+                                @if (Model.Appointment.AppointmentDate.Date == DateTime.Today)
+                                {
+                                    <br><span class="badge badge-success">Today</span>
+                                }
+                                else if (Model.Appointment.AppointmentDate.Date == DateTime.Today.AddDays(1))
+                                {
+                                    <br><span class="badge badge-warning">Tomorrow</span>
+                                }
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-stethoscope text-info mr-2"></i>
+                                <strong>Appointment Type:</strong><br>
+                                <span class="badge badge-secondary">@Model.Appointment.AppointmentType</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <i class="fas fa-user-md text-success mr-2"></i>
+                                <strong>Status:</strong><br>
+                                <span class="badge @Model.Appointment.StatusBadgeClass">@Model.Appointment.Status</span>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-clock text-muted mr-2"></i>
+                                <strong>Created:</strong><br>
+                                @Model.Appointment.CreatedDate.ToString("MMM dd, yyyy 'at' hh:mm tt")
+                                @if (!string.IsNullOrEmpty(Model.Appointment.CreatedBy))
+                                {
+                                    <br><small class="text-muted">by @Model.Appointment.CreatedBy</small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Patient Information -->
+                    <hr>
+                    <h5 class="text-primary mb-3"><i class="fas fa-user"></i> Patient Information</h5>
+                    @if (Model.Patient != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Patient:</strong> @Model.Patient.FullName<br>
+                                <strong>ID:</strong> @Model.Patient.PatientId<br>
+                                <strong>Phone:</strong> @Model.Patient.Phone
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Age:</strong> @Model.Patient.Age years<br>
+                                <strong>Gender:</strong> @Model.Patient.Gender
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Doctor Information -->
+                    <hr>
+                    <h5 class="text-primary mb-3"><i class="fas fa-user-md"></i> Doctor Information</h5>
+                    @if (Model.Doctor != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Doctor:</strong> @Model.Doctor.Name<br>
+                                <strong>Specialization:</strong> @Model.Doctor.Specialization
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Department:</strong> @Model.Doctor.Department<br>
+                                <strong>Status:</strong>
+                                @if (Model.Doctor.IsActive)
+                                {
+                                    <span class="badge badge-success ml-1">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary ml-1">Inactive</span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Medical Information -->
+                    @if (!string.IsNullOrEmpty(Model.Appointment.Symptoms) || !string.IsNullOrEmpty(Model.Appointment.Notes))
+                    {
+                        <hr>
+                        <h5 class="text-primary mb-3"><i class="fas fa-heartbeat"></i> Medical Information</h5>
+                        @if (!string.IsNullOrEmpty(Model.Appointment.Symptoms))
+                        {
+                            <div class="mb-3">
+                                <strong>Symptoms:</strong><br>
+                                <p class="text-muted">@Model.Appointment.Symptoms</p>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Appointment.Notes))
+                        {
+                            <div class="mb-3">
+                                <strong>Notes:</strong><br>
+                                <p class="text-muted">@Model.Appointment.Notes</p>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Deletion Confirmation -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Confirm Deletion</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-trash-alt"></i> Delete Appointment</h6>
+                        <p class="mb-2">This will permanently remove the appointment from the system.</p>
+                        <ul class="small mb-0">
+                            <li>Appointment record will be deleted</li>
+                            <li>All associated data will be removed</li>
+                            <li>This action cannot be undone</li>
+                        </ul>
+                    </div>
+
+                    <form asp-action="Delete" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Appointment.Id" />
+
+                        <div class="form-group">
+                            <label for="DeletionReason" class="form-label">Reason for Deletion <span class="text-danger">*</span></label>
+                            <select id="DeletionReason" name="DeletionReason" class="form-control" required>
+                                <option value="">Select Reason</option>
+                                <option value="Patient Request">Patient Request</option>
+                                <option value="Doctor Unavailable">Doctor Unavailable</option>
+                                <option value="Schedule Conflict">Schedule Conflict</option>
+                                <option value="Administrative Error">Administrative Error</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="DeletionNotes" class="form-label">Additional Notes</label>
+                            <textarea id="DeletionNotes" name="DeletionNotes" class="form-control" rows="3"
+                                      placeholder="Optional: Provide additional details about why this appointment is being deleted..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" id="ConfirmDeletion" name="ConfirmDeletion" class="form-check-input" required>
+                                <label for="ConfirmDeletion" class="form-check-label">
+                                    <strong>I understand this action cannot be undone</strong>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-danger btn-block">
+                                <i class="fas fa-trash-alt"></i> Delete Appointment
+                            </button>
+                            <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-secondary btn-block mt-2">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Impact Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">Potential Impact</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Before Deleting</h6>
+                        <ul class="small mb-0">
+                            <li>Check if patient was notified</li>
+                            <li>Consider rescheduling instead</li>
+                            <li>Review any associated records</li>
+                            <li>Document the reason properly</li>
+                        </ul>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <h6><i class="fas fa-info-circle"></i> Alternatives</h6>
+                        <ul class="small mb-0">
+                            <li><a href="@Url.Action("UpdateStatus", "Appointment", new { id = Model.Appointment.Id })">Update status to Cancelled</a></li>
+                            <li><a href="@Url.Action("Edit", "Appointment", new { id = Model.Appointment.Id })">Reschedule the appointment</a></li>
+                            <li>Contact patient for confirmation</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Enable/disable submit button based on confirmation checkbox
+            $('#ConfirmDeletion').change(function() {
+                var isChecked = $(this).is(':checked');
+                $('button[type="submit"]').prop('disabled', !isChecked);
+            });
+
+            // Initially disable submit button
+            $('button[type="submit"]').prop('disabled', true);
+        });
+    </script>
+}

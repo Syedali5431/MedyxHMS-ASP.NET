@@ -1,0 +1,301 @@
+@model MedyxHMS.ViewModels.PatientDetailsViewModel
+
+@{
+    ViewData["Title"] = "Patient Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Patient Details</h1>
+                    <p class="text-muted">@Model.Patient.FullName (@Model.Patient.PatientId)</p>
+                </div>
+                <div>
+                    @if (User.HasPermission("Patient", "Edit"))
+                    {
+                        <a href="@Url.Action("Edit", "Patient", new { id = Model.Patient.Id })" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> Edit Patient
+                        </a>
+                    }
+                    @if (User.HasPermission("Patient", "Delete"))
+                    {
+                        <a href="@Url.Action("Delete", "Patient", new { id = Model.Patient.Id })" class="btn btn-danger ml-2">
+                            <i class="fas fa-trash"></i> Delete
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "Patient")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Back to Patients
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Overview -->
+    <div class="row mb-4">
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Patient Profile</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px;">
+                        @Model.Patient.FullName.Split(' ').Select(n => n.First()).FirstOrDefault()
+                    </div>
+                    <h4>@Model.Patient.FullName</h4>
+                    <p class="text-muted mb-2">@Model.Patient.PatientId</p>
+
+                    <div class="row text-left">
+                        <div class="col-6">
+                            <strong>Age:</strong><br>
+                            <span class="text-primary">@Model.Patient.Age years</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Gender:</strong><br>
+                            <span class="text-primary">@Model.Patient.Gender</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Blood Group:</strong><br>
+                            <span class="text-danger">@(string.IsNullOrEmpty(Model.Patient.BloodGroup) ? "Not specified" : Model.Patient.BloodGroup)</span>
+                        </div>
+                        <div class="col-6">
+                            <strong>Status:</strong><br>
+                            @if (Model.Patient.IsActive)
+                            {
+                                <span class="badge badge-success">Active</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">Inactive</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Contact Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <i class="fas fa-envelope text-primary mr-2"></i>
+                                <strong>Email:</strong><br>
+                                <a href="mailto:@Model.Patient.Email">@Model.Patient.Email</a>
+                            </div>
+                            <div class="mb-3">
+                                <i class="fas fa-phone text-success mr-2"></i>
+                                <strong>Phone:</strong><br>
+                                <a href="tel:@Model.Patient.Phone">@Model.Patient.Phone</a>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(Model.Patient.EmergencyContactName))
+                            {
+                                <div class="mb-3">
+                                    <i class="fas fa-user-md text-warning mr-2"></i>
+                                    <strong>Emergency Contact:</strong><br>
+                                    @Model.Patient.EmergencyContactName
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Patient.EmergencyContactPhone))
+                            {
+                                <div class="mb-3">
+                                    <i class="fas fa-phone-volume text-danger mr-2"></i>
+                                    <strong>Emergency Phone:</strong><br>
+                                    <a href="tel:@Model.Patient.EmergencyContactPhone">@Model.Patient.EmergencyContactPhone</a>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Patient.Address))
+                    {
+                        <hr>
+                        <div>
+                            <i class="fas fa-map-marker-alt text-info mr-2"></i>
+                            <strong>Address:</strong><br>
+                            @if (!string.IsNullOrEmpty(Model.Patient.Address))
+                            {
+                                <span>@Model.Patient.Address</span><br>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Patient.City))
+                            {
+                                <span>@Model.Patient.City</span>
+                                @if (!string.IsNullOrEmpty(Model.Patient.State)) { <span>, @Model.Patient.State</span> }
+                                @if (!string.IsNullOrEmpty(Model.Patient.PostalCode)) { <span> @Model.Patient.PostalCode</span> }
+                                <br>
+                            }
+                            @if (!string.IsNullOrEmpty(Model.Patient.Country))
+                            {
+                                <span>@Model.Patient.Country</span>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Medical Information -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Medical Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Medical History</h6>
+                            @if (!string.IsNullOrEmpty(Model.Patient.MedicalHistory))
+                            {
+                                <p>@Model.Patient.MedicalHistory</p>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No medical history recorded</p>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-danger">Allergies</h6>
+                            @if (!string.IsNullOrEmpty(Model.Patient.Allergies))
+                            {
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    @Model.Patient.Allergies
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="text-muted">No known allergies</p>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Recent Appointments</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentAppointments.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var appointment in Model.RecentAppointments)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@appointment.AppointmentType</h6>
+                                        <small>@appointment.AppointmentDate.ToString("MMM dd, yyyy")</small>
+                                    </div>
+                                    <p class="mb-1">@appointment.DoctorName</p>
+                                    <small class="text-muted">@appointment.Status</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar-times fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No appointments found</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Recent Bills</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentBills.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var bill in Model.RecentBills)
+                            {
+                                <div class="list-group-item">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">@bill.Description</h6>
+                                        <small class="text-success font-weight-bold">$@bill.Amount.ToString("F2")</small>
+                                    </div>
+                                    <p class="mb-1">@bill.BillDate.ToString("MMM dd, yyyy")</p>
+                                    <small class="text-muted">@bill.Status</small>
+                                </div>
+                            }
+                        </div>
+                        <hr>
+                        <div class="d-flex justify-content-between">
+                            <strong>Total Paid:</strong>
+                            <strong class="text-success">$@Model.TotalAmountPaid.ToString("F2")</strong>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-file-invoice-dollar fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-gray-500">No bills found</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Information -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">System Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Patient ID:</strong><br>
+                            <code>@Model.Patient.PatientId</code>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Created Date:</strong><br>
+                            @Model.Patient.CreatedDate.ToString("MMM dd, yyyy 'at' hh:mm tt")
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Last Visit:</strong><br>
+                            @(Model.Patient.LastVisitDate.HasValue
+                                ? Model.Patient.LastVisitDate.Value.ToString("MMM dd, yyyy 'at' hh:mm tt")
+                                : "No visits recorded")
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Total Appointments:</strong><br>
+                            @Model.TotalAppointments
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Add any client-side functionality here
+        });
+    </script>
+}
