@@ -163,4 +163,63 @@ namespace MedyxHMS.Services.Interfaces
         public DateTime CreatedDate { get; set; }
         public string RelatedEntityId { get; set; }
     }
+
+    public interface IOPDService
+    {
+        Task<IEnumerable<OPDVisit>> GetAllOPDVisitsAsync();
+        Task<OPDVisit> GetOPDVisitByIdAsync(int id);
+        Task<OPDVisit> CreateOPDVisitAsync(OPDVisit visit);
+        Task<OPDVisit> UpdateOPDVisitAsync(OPDVisit visit);
+        Task<bool> DeleteOPDVisitAsync(int id);
+        Task<IEnumerable<OPDVisit>> GetOPDVisitsByPatientAsync(int patientId);
+        Task<IEnumerable<OPDVisit>> GetOPDVisitsByDoctorAsync(int doctorId);
+        Task<IEnumerable<OPDVisit>> GetOPDVisitsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<IEnumerable<OPDVisit>> GetTodayOPDVisitsAsync();
+        Task<int> GetOPDVisitCountAsync(DateTime startDate, DateTime endDate);
+        Task<decimal> GetOPDRevenueAsync(DateTime startDate, DateTime endDate);
+    }
+
+    public interface IIPDService
+    {
+        Task<IEnumerable<IPDAdmission>> GetAllIPDAdmissionsAsync();
+        Task<IPDAdmission> GetIPDAdmissionByIdAsync(int id);
+        Task<IPDAdmission> CreateIPDAdmissionAsync(IPDAdmission admission);
+        Task<IPDAdmission> UpdateIPDAdmissionAsync(IPDAdmission admission);
+        Task<bool> DeleteIPDAdmissionAsync(int id);
+        Task<IEnumerable<IPDAdmission>> GetIPDAdmissionsByPatientAsync(int patientId);
+        Task<IEnumerable<IPDAdmission>> GetIPDAdmissionsByDoctorAsync(int doctorId);
+        Task<IEnumerable<IPDAdmission>> GetIPDAdmissionsByStatusAsync(string status);
+        Task<IEnumerable<IPDAdmission>> GetCurrentIPDAdmissionsAsync();
+        Task<bool> DischargePatientAsync(int admissionId, DateTime dischargeDate);
+        Task<IEnumerable<IPDAdmission>> GetIPDAdmissionsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<int> GetCurrentAdmissionCountAsync();
+        Task<decimal> GetIPDRevenueAsync(DateTime startDate, DateTime endDate);
+    }
+
+    public interface IWardService
+    {
+        Task<IEnumerable<Ward>> GetAllWardsAsync();
+        Task<Ward> GetWardByIdAsync(int id);
+        Task<Ward> CreateWardAsync(Ward ward);
+        Task<Ward> UpdateWardAsync(Ward ward);
+        Task<bool> DeleteWardAsync(int id);
+        Task<IEnumerable<Ward>> GetActiveWardsAsync();
+        Task<int> GetAvailableBedCountAsync(int wardId);
+        Task<int> GetOccupiedBedCountAsync(int wardId);
+        Task<double> GetWardOccupancyRateAsync(int wardId);
+    }
+
+    public interface IBedService
+    {
+        Task<IEnumerable<Bed>> GetAllBedsAsync();
+        Task<Bed> GetBedByIdAsync(int id);
+        Task<Bed> CreateBedAsync(Bed bed);
+        Task<Bed> UpdateBedAsync(Bed bed);
+        Task<bool> DeleteBedAsync(int id);
+        Task<IEnumerable<Bed>> GetBedsByWardAsync(int wardId);
+        Task<IEnumerable<Bed>> GetAvailableBedsAsync();
+        Task<IEnumerable<Bed>> GetBedsByStatusAsync(string status);
+        Task<bool> UpdateBedStatusAsync(int bedId, string status);
+        Task<Bed> GetBedByBedNumberAsync(string bedNumber, int wardId);
+    }
 }
