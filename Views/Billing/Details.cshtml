@@ -1,0 +1,148 @@
+@using MedyxHMS.ViewModels
+@{
+    ViewData["Title"] = "Bill Details";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model BillDetailsViewModel
+
+<div class="bill-details-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-file-invoice text-primary"></i> Bill Details
+            </h1>
+            <p class="text-muted">Review the selected bill and payment status.</p>
+        </div>
+        <div class="col-md-4 text-end">
+            @if (Model.Bill.CanPay)
+            {
+                <a asp-action="Pay" asp-route-id="@Model.Bill.Id" class="btn btn-success">
+                    <i class="fas fa-credit-card"></i> Pay Bill
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <h6>Bill Number</h6>
+                        <p class="mb-0">@Model.Bill.BillNumber</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Status</h6>
+                        <p class="mb-0"><span class="badge @Model.Bill.StatusBadgeClass">@Model.Bill.Status</span></p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Amount Due</h6>
+                        <p class="mb-0">₹@Model.Bill.OutstandingAmount.ToString("N2")</p>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <h6>Patient</h6>
+                        <p class="mb-0">@Model.Patient?.FullName</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Bill Date</h6>
+                        <p class="mb-0">@Model.Bill.BillDate.ToString("MMM dd, yyyy")</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Due Date</h6>
+                        <p class="mb-0">@Model.Bill.DueDate?.ToString("MMM dd, yyyy")</p>
+                    </div>
+                </div>
+
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Description</th>
+                                <th>Quantity</th>
+                                <th>Unit Price</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Bill.Items)
+                            {
+                                <tr>
+                                    <td>@item.Description</td>
+                                    <td>@item.Quantity</td>
+                                    <td>₹@item.UnitPrice.ToString("N2")</td>
+                                    <td>₹@item.Amount.ToString("N2")</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Total</strong></td>
+                                <td><strong>₹@Model.Bill.TotalAmount.ToString("N2")</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Paid</strong></td>
+                                <td><strong>₹@Model.Bill.PaidAmount.ToString("N2")</strong></td>
+                            </tr>
+                            <tr>
+                                <td colspan="3" class="text-end"><strong>Balance</strong></td>
+                                <td><strong>₹@Model.Bill.OutstandingAmount.ToString("N2")</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="mb-3">
+                    <h6>Notes</h6>
+                    <p class="text-muted">@Model.Bill.Notes</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">Payment History</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.PaymentHistory != null && Model.PaymentHistory.Any())
+                {
+                    <ul class="list-group list-group-flush">
+                        @foreach (var payment in Model.PaymentHistory)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>₹@payment.Amount.ToString("N2")</strong>
+                                        <div class="small text-muted">@payment.PaymentDate.ToString("MMM dd, yyyy")</div>
+                                    </div>
+                                    <span class="badge @payment.PaymentMethodBadge">@payment.PaymentMethod</span>
+                                </div>
+                            </li>
+                        }
+                    </ul>
+                }
+                else
+                {
+                    <div class="alert alert-info mb-0">
+                        No payments found for this bill.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .page-title { font-weight: 600; }
+        .bill-details-header { border-bottom: 2px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .table tfoot tr td { border-top: 2px solid #dee2e6; }
+    </style>
+}

@@ -131,7 +131,7 @@
 
                         <!-- Form Actions -->
                         <div class="form-group mt-4">
-                            <button type="submit" class="btn btn-primary" @if (Model.HasConflict) { @:disabled="disabled" }>
+                            <button type="submit" class="btn btn-primary" disabled="@Model.HasConflict">
                                 <i class="fas fa-save"></i> Update Appointment
                             </button>
                             <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-secondary ml-2">

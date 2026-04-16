@@ -23,10 +23,10 @@
             <div class="col-md-4">
                 <label class="form-label">Filter By Status</label>
                 <select name="filter" class="form-select">
-                    <option value="all" @(Model.Filter == "all" ? "selected" : "")>All Bills</option>
-                    <option value="pending" @(Model.Filter == "pending" ? "selected" : "")>Pending</option>
-                    <option value="paid" @(Model.Filter == "paid" ? "selected" : "")>Paid</option>
-                    <option value="overdue" @(Model.Filter == "overdue" ? "selected" : "")>Overdue</option>
+                    <option value="all" selected="@(Model.Filter == "all")">All Bills</option>
+                    <option value="pending" selected="@(Model.Filter == "pending")">Pending</option>
+                    <option value="paid" selected="@(Model.Filter == "paid")">Paid</option>
+                    <option value="overdue" selected="@(Model.Filter == "overdue")">Overdue</option>
                 </select>
             </div>
             <div class="col-md-4">

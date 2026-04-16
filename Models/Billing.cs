@@ -5,6 +5,7 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
         public string BillNumber { get; set; }
         public int PatientId { get; set; }
+        public int? AppointmentId { get; set; }
         public DateTime BillDate { get; set; }
         public DateTime DueDate { get; set; }
         public decimal TotalAmount { get; set; }

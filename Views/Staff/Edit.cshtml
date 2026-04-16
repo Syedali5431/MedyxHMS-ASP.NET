@@ -91,16 +91,16 @@
                                     <select class="form-control @Html.ValidationCssClassFor(m => m.Staff.Department)"
                                             id="Staff_Department" name="Staff.Department" required>
                                         <option value="">Select Department</option>
-                                        <option value="Administration" @(Model.Staff.Department == "Administration" ? "selected" : "")>Administration</option>
-                                        <option value="Medical" @(Model.Staff.Department == "Medical" ? "selected" : "")>Medical</option>
-                                        <option value="Nursing" @(Model.Staff.Department == "Nursing" ? "selected" : "")>Nursing</option>
-                                        <option value="Pharmacy" @(Model.Staff.Department == "Pharmacy" ? "selected" : "")>Pharmacy</option>
-                                        <option value="Laboratory" @(Model.Staff.Department == "Laboratory" ? "selected" : "")>Laboratory</option>
-                                        <option value="Radiology" @(Model.Staff.Department == "Radiology" ? "selected" : "")>Radiology</option>
-                                        <option value="IT" @(Model.Staff.Department == "IT" ? "selected" : "")>IT</option>
-                                        <option value="Finance" @(Model.Staff.Department == "Finance" ? "selected" : "")>Finance</option>
-                                        <option value="HR" @(Model.Staff.Department == "HR" ? "selected" : "")>HR</option>
-                                        <option value="Maintenance" @(Model.Staff.Department == "Maintenance" ? "selected" : "")>Maintenance</option>
+                                        <option value="Administration" selected="@(Model.Staff.Department == "Administration")">Administration</option>
+                                        <option value="Medical" selected="@(Model.Staff.Department == "Medical")">Medical</option>
+                                        <option value="Nursing" selected="@(Model.Staff.Department == "Nursing")">Nursing</option>
+                                        <option value="Pharmacy" selected="@(Model.Staff.Department == "Pharmacy")">Pharmacy</option>
+                                        <option value="Laboratory" selected="@(Model.Staff.Department == "Laboratory")">Laboratory</option>
+                                        <option value="Radiology" selected="@(Model.Staff.Department == "Radiology")">Radiology</option>
+                                        <option value="IT" selected="@(Model.Staff.Department == "IT")">IT</option>
+                                        <option value="Finance" selected="@(Model.Staff.Department == "Finance")">Finance</option>
+                                        <option value="HR" selected="@(Model.Staff.Department == "HR")">HR</option>
+                                        <option value="Maintenance" selected="@(Model.Staff.Department == "Maintenance")">Maintenance</option>
                                     </select>
                                     @Html.ValidationMessageFor(m => m.Staff.Department, "", new { @class = "text-danger" })
                                 </div>

@@ -1,0 +1,147 @@
+@using MedyxHMS.ViewModels
+@{
+    ViewData["Title"] = "Create Bill";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model CreateBillViewModel
+
+<div class="create-bill-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-file-medical text-primary"></i> Create New Bill
+            </h1>
+            <p class="text-muted">Generate a billing record for patient services.</p>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Create" method="post">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="Bill.PatientId" class="form-label"></label>
+                    <input asp-for="Bill.PatientId" class="form-control" />
+                    <span asp-validation-for="Bill.PatientId" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Bill.BillDate" class="form-label"></label>
+                    <input asp-for="Bill.BillDate" type="date" class="form-control" value="@DateTime.Today:yyyy-MM-dd" />
+                    <span asp-validation-for="Bill.BillDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Bill.DueDate" class="form-label"></label>
+                    <input asp-for="Bill.DueDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Bill.AppointmentId" class="form-label">Appointment ID</label>
+                    <input asp-for="Bill.AppointmentId" class="form-control" />
+                </div>
+                <div class="col-md-8">
+                    <label asp-for="Bill.Notes" class="form-label"></label>
+                    <textarea asp-for="Bill.Notes" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="Bill.Notes" class="text-danger"></span>
+                </div>
+            </div>
+
+            <hr />
+
+            <h5 class="mb-3">Bill Items</h5>
+            <div id="bill-items-container">
+                @for (var i = 0; i < Model.LineItems.Count; i++)
+                {
+                    <div class="row g-3 align-items-end mb-3 bill-item-row">
+                        <div class="col-md-4">
+                            <label class="form-label">Description</label>
+                            <input name="LineItems[@i].Description" value="@Model.LineItems[i].Description" class="form-control" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Quantity</label>
+                            <input name="LineItems[@i].Quantity" value="@Model.LineItems[i].Quantity" type="number" min="1" class="form-control" />
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Unit Price</label>
+                            <input name="LineItems[@i].UnitPrice" value="@Model.LineItems[i].UnitPrice" type="number" step="0.01" class="form-control" />
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Item Type</label>
+                            <select name="LineItems[@i].ItemType" class="form-select">
+                                <option value="Service">Service</option>
+                                <option value="Medicine">Medicine</option>
+                                <option value="Lab">Lab</option>
+                                <option value="Radiology">Radiology</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 text-end">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-bill-item">×</button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <button type="button" class="btn btn-outline-primary mb-3" id="addItemButton">
+                <i class="fas fa-plus"></i> Add Item
+            </button>
+
+            <div class="text-end">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Create Bill
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('addItemButton').addEventListener('click', function () {
+            const container = document.getElementById('bill-items-container');
+            const index = container.querySelectorAll('.bill-item-row').length;
+            const row = document.createElement('div');
+            row.className = 'row g-3 align-items-end mb-3 bill-item-row';
+            row.innerHTML = `
+                <div class="col-md-4">
+                    <label class="form-label">Description</label>
+                    <input name="LineItems[${index}].Description" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantity</label>
+                    <input name="LineItems[${index}].Quantity" type="number" min="1" value="1" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Unit Price</label>
+                    <input name="LineItems[${index}].UnitPrice" type="number" step="0.01" value="0.00" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Item Type</label>
+                    <select name="LineItems[${index}].ItemType" class="form-select">
+                        <option value="Service">Service</option>
+                        <option value="Medicine">Medicine</option>
+                        <option value="Lab">Lab</option>
+                        <option value="Radiology">Radiology</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                <div class="col-md-1 text-end">
+                    <button type="button" class="btn btn-outline-danger btn-sm remove-bill-item">×</button>
+                </div>`;
+            container.appendChild(row);
+        });
+
+        document.getElementById('bill-items-container').addEventListener('click', function (event) {
+            if (event.target.classList.contains('remove-bill-item')) {
+                event.target.closest('.bill-item-row').remove();
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .create-bill-header { border-bottom: 2px solid #e9ecef; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .bill-item-row { background-color: #f8f9fa; padding: 15px; border-radius: 8px; }
+    </style>
+}

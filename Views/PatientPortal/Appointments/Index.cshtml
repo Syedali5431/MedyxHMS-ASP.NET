@@ -27,10 +27,10 @@
             <div class="col-md-4">
                 <label class="form-label">Filter By Status</label>
                 <select name="filter" class="form-select">
-                    <option value="all" @(Model.Filter == "all" ? "selected" : "")>All Appointments</option>
-                    <option value="upcoming" @(Model.Filter == "upcoming" ? "selected" : "")>Upcoming</option>
-                    <option value="completed" @(Model.Filter == "completed" ? "selected" : "")>Completed</option>
-                    <option value="cancelled" @(Model.Filter == "cancelled" ? "selected" : "")>Cancelled</option>
+                    <option value="all" selected="@(Model.Filter == "all")">All Appointments</option>
+                    <option value="upcoming" selected="@(Model.Filter == "upcoming")">Upcoming</option>
+                    <option value="completed" selected="@(Model.Filter == "completed")">Completed</option>
+                    <option value="cancelled" selected="@(Model.Filter == "cancelled")">Cancelled</option>
                 </select>
             </div>
             <div class="col-md-4">
