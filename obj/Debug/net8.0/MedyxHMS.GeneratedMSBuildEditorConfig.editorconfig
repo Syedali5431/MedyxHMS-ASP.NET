@@ -154,6 +154,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxNZWRpY2FsUmVjb3Jkc1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/PatientPortal/MedicalRecords/LabResults.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxNZWRpY2FsUmVjb3Jkc1xMYWJSZXN1bHRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/PatientPortal/MedicalRecords/Prescriptions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxNZWRpY2FsUmVjb3Jkc1xQcmVzY3JpcHRpb25zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/PatientPortal/MedicalRecords/RadiologyResults.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxNZWRpY2FsUmVjb3Jkc1xSYWRpb2xvZ3lSZXN1bHRzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/PatientPortal/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxTaGFyZWRcX0xheW91dC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

@@ -1,0 +1,99 @@
+@{
+    ViewData["Title"] = "Radiology Results";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalTestResultsViewModel
+
+<div class="medical-records-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-x-ray text-primary"></i> Radiology Results
+            </h1>
+            <p class="text-muted">View your radiology reports and findings</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="@Url.Action("Index", "MedicalRecords")" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Medical Records
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row align-items-end g-3">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Filter</button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("RadiologyResults")" class="btn btn-outline-secondary w-100"><i class="fas fa-redo"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.TestResults != null && Model.TestResults.Any())
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Test</th>
+                        <th>Findings</th>
+                        <th>Status</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TestResults)
+                    {
+                        <tr>
+                            <td>@item.FormattedTestDate</td>
+                            <td>@item.TestName</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Result) ? "-" : item.Result)</td>
+                            <td><span class="badge @item.StatusBadgeClass">@item.Status</span></td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ReportPath))
+                                {
+                                    <span class="text-success"><i class="fas fa-check-circle"></i> Available</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">Not uploaded</span>
+                                }
+                            </td>
+                        </tr>
+                        @if (!string.IsNullOrWhiteSpace(item.Notes))
+                        {
+                            <tr class="table-light">
+                                <td colspan="5">
+                                    <small><strong>Impression/Notes:</strong> @item.Notes</small>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-x-ray fa-3x mb-3"></i>
+        <h4>No Radiology Results Found</h4>
+        <p>You don't have any radiology results for the selected period.</p>
+    </div>
+}

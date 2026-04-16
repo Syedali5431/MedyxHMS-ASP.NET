@@ -13,6 +13,19 @@
             </h1>
             <p class="text-muted">View your medical history and test results</p>
         </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                <a href="@Url.Action("Prescriptions", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
+                </a>
+                <a href="@Url.Action("LabResults", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-vial"></i> Pathology
+                </a>
+                <a href="@Url.Action("RadiologyResults", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-x-ray"></i> Radiology
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 

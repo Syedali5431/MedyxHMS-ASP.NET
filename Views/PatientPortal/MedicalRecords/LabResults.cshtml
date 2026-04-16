@@ -1,0 +1,90 @@
+@{
+    ViewData["Title"] = "Pathology Results";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalTestResultsViewModel
+
+<div class="medical-records-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-vial text-primary"></i> Pathology Results
+            </h1>
+            <p class="text-muted">View your pathology and lab test results</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="@Url.Action("Index", "MedicalRecords")" class="btn btn-outline-primary">
+                <i class="fas fa-arrow-left"></i> Back to Medical Records
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row align-items-end g-3">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100"><i class="fas fa-search"></i> Filter</button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("LabResults")" class="btn btn-outline-secondary w-100"><i class="fas fa-redo"></i> Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (Model.TestResults != null && Model.TestResults.Any())
+{
+    <div class="card shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Test</th>
+                        <th>Result</th>
+                        <th>Range</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.TestResults)
+                    {
+                        <tr>
+                            <td>@item.FormattedTestDate</td>
+                            <td>@item.TestName</td>
+                            <td>
+                                <span class="fw-semibold">@item.Result</span>
+                                @if (!string.IsNullOrWhiteSpace(item.Units))
+                                {
+                                    <small class="text-muted"> @item.Units</small>
+                                }
+                            </td>
+                            <td>@(string.IsNullOrWhiteSpace(item.ReferenceRange) ? "-" : item.ReferenceRange)</td>
+                            <td><span class="badge @item.StatusBadgeClass">@item.Status</span></td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-vial fa-3x mb-3"></i>
+        <h4>No Pathology Results Found</h4>
+        <p>You don't have any pathology results for the selected period.</p>
+    </div>
+}

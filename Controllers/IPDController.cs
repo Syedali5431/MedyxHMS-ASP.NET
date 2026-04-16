@@ -351,9 +351,8 @@ namespace MedyxHMS.Controllers
             var result = await _ipdService.DischargePatientAsync(id, dischargeDate);
             if (result)
             {
-                // Calculate and create discharge bill
-                var daysAdmitted = (dischargeDate.Date - admission.AdmissionDate.Date).TotalDays;
-                var totalCharges = admission.DailyCharges * (decimal)daysAdmitted;
+                var daysAdmitted = Math.Max(1, (dischargeDate.Date - admission.AdmissionDate.Date).Days);
+                var totalCharges = admission.DailyCharges * daysAdmitted;
 
                 // Log activity
                 await _auditService.LogActivityAsync(
@@ -365,7 +364,7 @@ namespace MedyxHMS.Controllers
                     $"Status: Discharged, Total Charges: {totalCharges}"
                 );
 
-                TempData["Success"] = $"Patient discharged successfully. Total charges: {totalCharges:C}";
+                TempData["Success"] = $"Patient discharged successfully. IPD bill generated/updated. Total daily charges: {totalCharges:C}";
                 return RedirectToAction(nameof(Details), new { id });
             }
 

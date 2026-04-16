@@ -106,6 +106,33 @@ namespace MedyxHMS.ViewModels
         public bool CanDownloadAttachments => MedicalRecord.Attachments.Any();
     }
 
+    public class PatientPortalPrescriptionsViewModel
+    {
+        public List<PatientPortalPrescriptionDto> Prescriptions { get; set; } = new();
+        public int CurrentPage { get; set; } = 1;
+        public int PageSize { get; set; } = 10;
+        public int TotalRecords { get; set; }
+        public int TotalPages => (int)Math.Ceiling(TotalRecords / (double)PageSize);
+        public bool HasPreviousPage => CurrentPage > 1;
+        public bool HasNextPage => CurrentPage < TotalPages;
+    }
+
+    public class PatientPortalPrescriptionDto
+    {
+        public int Id { get; set; }
+        public string MedicineName { get; set; }
+        public string Dosage { get; set; }
+        public string Frequency { get; set; }
+        public int Duration { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice { get; set; }
+        public string Instructions { get; set; }
+        public DateTime PrescribedDate { get; set; }
+        public string PharmacyBillNumber { get; set; }
+        public string BillStatus { get; set; }
+    }
+
     public class PatientPortalTestResultsViewModel
     {
         public List<PatientPortalTestResultDto> TestResults { get; set; } = new();

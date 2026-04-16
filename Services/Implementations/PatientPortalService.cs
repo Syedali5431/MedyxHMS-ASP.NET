@@ -80,7 +80,7 @@ namespace MedyxHMS.Services.Implementations
         {
             return await _context.Patients
                 .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id.ToString() == patientId || p.PatientId == patientId);
+                .FirstOrDefaultAsync(p => p.Id.ToString() == patientId || p.PatientId == patientId || p.UserId == patientId);
         }
 
         public async Task<Patient> UpdatePatientProfileAsync(Patient patient)
