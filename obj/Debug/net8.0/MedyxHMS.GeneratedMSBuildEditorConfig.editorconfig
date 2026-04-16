@@ -78,6 +78,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbGluZ1xQYXkuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/BloodBank/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmxvb2RCYW5rXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/BloodBank/Issue.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmxvb2RCYW5rXElzc3VlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/Dashboard/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -132,6 +140,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/OPD/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT1BEXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/OperationTheatre/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0aW9uVGhlYXRyZVxDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/OperationTheatre/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0aW9uVGhlYXRyZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/PatientPortal/Appointments/Book.cshtml]
@@ -212,6 +228,14 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/Radiology/Results.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmFkaW9sb2d5XFJlc3VsdHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/Referral/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVmZXJyYWxcQ3JlYXRlLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/Referral/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVmZXJyYWxcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/MedyxHMS-ASPNET/Views/Shared/Error.cshtml]

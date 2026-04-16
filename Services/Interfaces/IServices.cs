@@ -316,4 +316,29 @@ namespace MedyxHMS.Services.Interfaces
         Task<int> GetPendingRadiologyTestsCountAsync();
         Task<decimal> GetRadiologyRevenueAsync(DateTime startDate, DateTime endDate);
     }
+
+    public interface IBloodBankService
+    {
+        Task<IEnumerable<BloodInventory>> GetBloodInventoryAsync();
+        Task<BloodInventory> UpsertInventoryAsync(string bloodGroup, int unitsAvailable, int minimumLevel);
+        Task<IEnumerable<BloodIssue>> GetBloodIssuesAsync();
+        Task<BloodIssue> IssueBloodAsync(BloodIssue issue);
+        Task<bool> DeleteBloodIssueAsync(int id);
+    }
+
+    public interface IOperationTheatreService
+    {
+        Task<IEnumerable<OTSchedule>> GetSchedulesAsync();
+        Task<OTSchedule> GetScheduleByIdAsync(int id);
+        Task<OTSchedule> CreateScheduleAsync(OTSchedule schedule);
+        Task<bool> UpdateStatusAsync(int id, string status);
+    }
+
+    public interface IReferralService
+    {
+        Task<IEnumerable<Referral>> GetReferralsAsync();
+        Task<Referral> GetReferralByIdAsync(int id);
+        Task<Referral> CreateReferralAsync(Referral referral);
+        Task<bool> UpdateStatusAsync(int id, string status);
+    }
 }

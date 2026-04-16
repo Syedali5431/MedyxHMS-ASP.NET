@@ -45,18 +45,28 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
   - Development HTTPS warning cleanup
 - Read this for maintainability hardening and warning reduction decisions.
 
+### PH6 - Phase 3 Delivery Completion (Clinical/Diagnostic/Specialized)
+- Document: [PH6.md](PH6.md)
+- Focus:
+  - Step 3.1 finalization (IPD billing automation, portal prescriptions)
+  - Step 3.2 completion (patient portal pathology/radiology result visibility)
+  - Step 3.3 implementation (Blood Bank, OT, Referral/TPA with billing)
+- Read this for the complete implementation snapshot before Phase 4 work.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
 3. [PH3.md](PH3.md)
 4. [PH4.md](PH4.md)
 5. [PH5.md](PH5.md)
+6. [PH6.md](PH6.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
 - EF models, DbContext, relationships, seeding: [PH3.md](PH3.md), [PH5.md](PH5.md)
 - Routing and authorization pipeline: [PH4.md](PH4.md)
 - Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md)
+- Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
 
 ## Maintenance Rule
 When a new implementation phase is completed, create a new file in this folder (for example PH6.md), then append it to this index with:

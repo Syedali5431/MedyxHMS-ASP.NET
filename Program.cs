@@ -78,6 +78,11 @@ builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
 builder.Services.AddScoped<ILabService, LabService>();
 builder.Services.AddScoped<IRadiologyService, RadiologyService>();
 
+// Specialized Module Services (STEP 3.3)
+builder.Services.AddScoped<IBloodBankService, BloodBankService>();
+builder.Services.AddScoped<IOperationTheatreService, OperationTheatreService>();
+builder.Services.AddScoped<IReferralService, ReferralService>();
+
 builder.Services.AddScoped<DatabaseInitializer>();
 
 // Add HttpContext accessor for audit logging

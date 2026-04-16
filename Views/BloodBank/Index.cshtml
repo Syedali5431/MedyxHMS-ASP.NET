@@ -1,0 +1,95 @@
+@model IEnumerable<BloodInventory>
+@{
+    ViewData["Title"] = "Blood Bank";
+    var issues = ViewBag.Issues as IEnumerable<BloodIssue> ?? Enumerable.Empty<BloodIssue>();
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Blood Bank</h2>
+        <a class="btn btn-primary" asp-action="Issue">Issue Blood</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Inventory</strong></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Blood Group</th>
+                            <th>Units Available</th>
+                            <th>Reserved</th>
+                            <th>Minimum Level</th>
+                            <th>Last Updated</th>
+                            <th>Update</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.BloodGroup</td>
+                                <td class="@(item.UnitsAvailable <= item.MinimumLevel ? "text-danger fw-bold" : "")">@item.UnitsAvailable</td>
+                                <td>@item.UnitsReserved</td>
+                                <td>@item.MinimumLevel</td>
+                                <td>@item.LastUpdatedDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>
+                                    <form method="post" asp-action="UpdateInventory" class="d-flex gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="bloodGroup" value="@item.BloodGroup" />
+                                        <input class="form-control form-control-sm" type="number" name="unitsAvailable" value="@item.UnitsAvailable" min="0" />
+                                        <input class="form-control form-control-sm" type="number" name="minimumLevel" value="@item.MinimumLevel" min="0" />
+                                        <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><strong>Recent Blood Issues</strong></div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Patient</th>
+                            <th>Group</th>
+                            <th>Units</th>
+                            <th>Cross Match</th>
+                            <th>Bill</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var issue in issues)
+                        {
+                            <tr>
+                                <td>@issue.IssueDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@issue.Patient?.FirstName @issue.Patient?.LastName</td>
+                                <td>@issue.BloodGroup</td>
+                                <td>@issue.UnitsIssued</td>
+                                <td>@issue.CrossMatchStatus</td>
+                                <td>@(issue.BillId.HasValue ? issue.BillId.Value.ToString() : "-")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

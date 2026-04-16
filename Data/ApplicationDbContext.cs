@@ -41,6 +41,10 @@ namespace MedyxHMS.Data
         public DbSet<LabResult> LabResults { get; set; }
         public DbSet<RadiologyTest> RadiologyTests { get; set; }
         public DbSet<RadiologyResult> RadiologyResults { get; set; }
+        public DbSet<BloodInventory> BloodInventories { get; set; }
+        public DbSet<BloodIssue> BloodIssues { get; set; }
+        public DbSet<OTSchedule> OTSchedules { get; set; }
+        public DbSet<Referral> Referrals { get; set; }
         public DbSet<MedicalRecord> MedicalRecords { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
 
@@ -113,6 +117,25 @@ namespace MedyxHMS.Data
                 .HasForeignKey(t => t.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Step 3.3 relationships
+            modelBuilder.Entity<BloodIssue>()
+                .HasOne(bi => bi.Patient)
+                .WithMany()
+                .HasForeignKey(bi => bi.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<OTSchedule>()
+                .HasOne(ot => ot.Patient)
+                .WithMany()
+                .HasForeignKey(ot => ot.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Referral>()
+                .HasOne(r => r.Patient)
+                .WithMany()
+                .HasForeignKey(r => r.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             // Billing relationships
             modelBuilder.Entity<Bill>()
                 .HasMany(b => b.BillItems)
@@ -172,6 +195,7 @@ namespace MedyxHMS.Data
             modelBuilder.Entity<LabTest>().Property(x => x.Price).HasPrecision(precision, scale);
             modelBuilder.Entity<Medicine>().Property(x => x.UnitPrice).HasPrecision(precision, scale);
             modelBuilder.Entity<OPDVisit>().Property(x => x.ConsultationFee).HasPrecision(precision, scale);
+            modelBuilder.Entity<Referral>().Property(x => x.ApprovedAmount).HasPrecision(precision, scale);
             modelBuilder.Entity<Payment>().Property(x => x.Amount).HasPrecision(precision, scale);
 
             modelBuilder.Entity<PharmacyBill>().Property(x => x.TotalAmount).HasPrecision(precision, scale);
