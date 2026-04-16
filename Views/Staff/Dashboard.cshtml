@@ -1,0 +1,418 @@
+@model MedyxHMS.ViewModels.StaffDashboardViewModel
+
+@{
+    ViewData["Title"] = "Staff Dashboard";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Staff Management Dashboard</h1>
+                    <p class="text-muted">Overview of staff statistics and management</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Staff")" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Manage Staff
+                    </a>
+                    <a href="@Url.Action("Create", "Staff")" class="btn btn-success ml-2">
+                        <i class="fas fa-plus"></i> Add Staff
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Staff
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalStaff</div>
+                            <div class="text-xs text-muted">
+                                @if (Model.TotalStaff > 0)
+                                {
+                                    var activePercent = (Model.ActiveStaff * 100.0 / Model.TotalStaff);
+                                    <span>@activePercent.ToString("F1")% active</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Staff
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveStaff</div>
+                            <div class="text-xs text-muted">
+                                @if (Model.TotalStaff > 0)
+                                {
+                                    var inactiveCount = Model.TotalStaff - Model.ActiveStaff;
+                                    <span>@inactiveCount inactive</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                New This Month
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.NewStaffThisMonth</div>
+                            <div class="text-xs text-muted">
+                                @DateTime.Now.ToString("MMMM yyyy")
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Avg. Staff/Dept
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">
+                                @if (Model.StaffByDepartment.Any())
+                                {
+                                    @Model.StaffByDepartment.Values.Average().ToString("F1")
+                                }
+                                else
+                                {
+                                    <span>0</span>
+                                }
+                            </div>
+                            <div class="text-xs text-muted">
+                                @Model.StaffByDepartment.Count departments
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-building fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <!-- Department Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Staff by Department</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.StaffByDepartment.Any())
+                    {
+                        <canvas id="departmentChart" width="100%" height="300"></canvas>
+                        <div class="mt-3">
+                            <div class="row">
+                                @foreach (var dept in Model.StaffByDepartment.OrderByDescending(d => d.Value))
+                                {
+                                    <div class="col-md-6 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-sm">@dept.Key</span>
+                                            <span class="badge badge-primary">@dept.Value</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-building fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Department Data</h5>
+                            <p class="text-muted">Staff members haven't been assigned to departments yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Role Distribution -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Staff by Role</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.StaffByRole.Any())
+                    {
+                        <canvas id="roleChart" width="100%" height="300"></canvas>
+                        <div class="mt-3">
+                            <div class="row">
+                                @foreach (var role in Model.StaffByRole.OrderByDescending(r => r.Value))
+                                {
+                                    <div class="col-md-6 mb-2">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <span class="text-sm">@role.Key</span>
+                                            <span class="badge badge-info">@role.Value</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-tag fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Role Data</h5>
+                            <p class="text-muted">Staff members haven't been assigned roles yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Staff and Activity -->
+    <div class="row">
+        <!-- Recent Staff -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recently Added Staff</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentStaff.Any())
+                    {
+                        @foreach (var staff in Model.RecentStaff)
+                        {
+                            <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
+                                <div class="avatar-circle bg-primary text-white mr-3"
+                                     style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                                    @staff.FirstName.FirstOrDefault()@staff.LastName.FirstOrDefault()
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>@staff.FullName</strong>
+                                            <br><small class="text-muted">@staff.EmployeeId</small>
+                                            <br><small class="text-muted">@staff.Department</small>
+                                        </div>
+                                        <div class="text-right">
+                                            <span class="badge @staff.StatusBadgeClass">@staff.StatusText</span>
+                                            <br><small class="text-muted">@staff.FormattedCreatedDate</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="ml-3">
+                                    <a href="@Url.Action("Details", "Staff", new { id = staff.Id })"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        <div class="text-center mt-3">
+                            <a href="@Url.Action("Index", "Staff")" class="btn btn-primary">
+                                <i class="fas fa-users"></i> View All Staff
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-plus fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Recent Staff</h5>
+                            <p class="text-muted">No staff members have been added recently.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Active Users -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Most Active Staff (Last 7 Days)</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopActiveUsers.Any())
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var userId in Model.TopActiveUsers)
+                            {
+                                // Note: In a real implementation, you'd fetch the staff details here
+                                // For now, showing placeholder data
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Staff Member</strong>
+                                        <br><small class="text-muted">User ID: @userId</small>
+                                    </div>
+                                    <span class="badge badge-success">Active</span>
+                                </div>
+                            }
+                        </div>
+                        <small class="text-muted mt-2 d-block">
+                            * Activity based on system interactions and logins
+                        </small>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Activity Data</h5>
+                            <p class="text-muted">No staff activity recorded in the last 7 days.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("Create", "Staff")" class="btn btn-success btn-block btn-lg">
+                                <i class="fas fa-plus fa-2x mb-2"></i>
+                                <br>Add New Staff
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="@Url.Action("Index", "Staff")" class="btn btn-primary btn-block btn-lg">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <br>Manage Staff
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="#" class="btn btn-info btn-block btn-lg" onclick="exportStaffReport()">
+                                <i class="fas fa-file-export fa-2x mb-2"></i>
+                                <br>Export Report
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <a href="#" class="btn btn-warning btn-block btn-lg" onclick="showBulkActions()">
+                                <i class="fas fa-tasks fa-2x mb-2"></i>
+                                <br>Bulk Actions
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Department Chart
+            @if (Model.StaffByDepartment.Any())
+            {
+                <text>var deptCtx = document.getElementById('departmentChart').getContext('2d');
+                var departmentChart = new Chart(deptCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.StaffByDepartment.Keys)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.StaffByDepartment.Values)),
+                            backgroundColor: [
+                                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b',
+                                '#6f42c1', '#fd7e14', '#20c997', '#6c757d', '#007bff'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                });</text>
+            }
+
+            // Role Chart
+            @if (Model.StaffByRole.Any())
+            {
+                <text>var roleCtx = document.getElementById('roleChart').getContext('2d');
+                var roleChart = new Chart(roleCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.StaffByRole.Keys)),
+                        datasets: [{
+                            label: 'Staff Count',
+                            data: @Html.Raw(Json.Serialize(Model.StaffByRole.Values)),
+                            backgroundColor: '#36b9cc',
+                            borderColor: '#2c9faf',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: {
+                                    beginAtZero: true,
+                                    precision: 0
+                                }
+                            }]
+                        },
+                        legend: {
+                            display: false
+                        }
+                    }
+                });</text>
+            }
+        });
+
+        function exportStaffReport() {
+            alert('Export functionality would be implemented here. This could generate a PDF or Excel report of staff data.');
+        }
+
+        function showBulkActions() {
+            alert('Bulk actions functionality would be implemented here. This could include bulk role assignments, status changes, etc.');
+        }
+    </script>
+}

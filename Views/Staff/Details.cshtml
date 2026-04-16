@@ -1,0 +1,423 @@
+@model MedyxHMS.ViewModels.StaffDetailsViewModel
+
+@{
+    ViewData["Title"] = "Staff Details";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Staff Details</h1>
+                    <p class="text-muted">@Model.Staff.FullName - @Model.Staff.EmployeeId</p>
+                </div>
+                <div>
+                    @if (User.HasPermission("ManageUsers", "Edit"))
+                    {
+                        <a href="@Url.Action("Edit", "Staff", new { id = Model.Staff.Id })" class="btn btn-primary">
+                            <i class="fas fa-edit"></i> Edit Staff
+                        </a>
+                    }
+                    @if (User.HasPermission("ManageUsers", "Edit"))
+                    {
+                        <a href="@Url.Action("ChangePassword", "Staff", new { id = Model.Staff.Id })" class="btn btn-warning ml-2">
+                            <i class="fas fa-key"></i> Change Password
+                        </a>
+                    }
+                    <a href="@Url.Action("Index", "Staff")" class="btn btn-secondary ml-2">
+                        <i class="fas fa-arrow-left"></i> Back to Staff List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Staff Information Cards -->
+    <div class="row">
+        <!-- Basic Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Basic Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Employee ID</label>
+                                <p class="h5">@Model.Staff.EmployeeId</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Status</label>
+                                <p>
+                                    <span class="badge @Model.Staff.StatusBadgeClass">@Model.Staff.StatusText</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Full Name</label>
+                                <p class="h5">@Model.Staff.FullName</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Email</label>
+                                <p class="h5">
+                                    <a href="mailto:@Model.Staff.Email">@Model.Staff.Email</a>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Phone</label>
+                                <p class="h5">@(string.IsNullOrEmpty(Model.Staff.Phone) ? "Not provided" : Model.Staff.Phone)</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Department</label>
+                                <p class="h5">
+                                    <span class="badge badge-secondary">@Model.Staff.Department</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Designation</label>
+                                <p class="h5">@Model.Staff.Designation</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label text-muted">Date of Joining</label>
+                                <p class="h5">@Model.Staff.DateOfJoining?.ToString("MMMM dd, yyyy")</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (Model.Staff.Salary.HasValue)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label text-muted">Salary</label>
+                                    <p class="h5 text-success">$@Model.Staff.Salary?.ToString("N2")</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label text-muted">Last Login</label>
+                                    <p class="h5">
+                                        @if (Model.Staff.LastLoginDate.HasValue)
+                                        {
+                                            <span>@Model.Staff.FormattedLastLogin</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Never logged in</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.Staff.Address))
+                    {
+                        <div class="form-group">
+                            <label class="form-label text-muted">Address</label>
+                            <p class="h6">@Model.Staff.Address</p>
+                        </div>
+                    }
+
+                    <div class="form-group">
+                        <label class="form-label text-muted">Created Date</label>
+                        <p class="h6">@Model.Staff.CreatedDate?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Roles and Permissions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Roles & Permissions</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Roles.Any())
+                    {
+                        <div class="row">
+                            @foreach (var role in Model.Roles)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="card border-primary">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="card-title text-primary">@role.RoleName</h6>
+                                                    @if (!string.IsNullOrEmpty(role.RoleDescription))
+                                                    {
+                                                        <p class="card-text small text-muted">@role.RoleDescription</p>
+                                                    }
+                                                    <small class="text-muted">
+                                                        Assigned: @role.AssignedDate?.ToString("MMM dd, yyyy")
+                                                        @if (!string.IsNullOrEmpty(role.AssignedBy))
+                                                        {
+                                                            <span>by @role.AssignedBy</span>
+                                                        }
+                                                    </small>
+                                                </div>
+                                                <i class="fas fa-check-circle text-success fa-lg"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-tag fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No roles assigned</h5>
+                            <p class="text-muted">This staff member has no roles assigned.</p>
+                        </div>
+                    }
+
+                    @if (Model.Staff.Permissions.Any())
+                    {
+                        <div class="mt-4">
+                            <h6>Permissions</h6>
+                            <div class="row">
+                                @foreach (var permission in Model.Staff.Permissions)
+                                {
+                                    <div class="col-md-4 mb-2">
+                                        <span class="badge badge-info">@permission</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            @if (Model.RecentActivity.Any())
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Recent Activity</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            @foreach (var activity in Model.RecentActivity.OrderByDescending(a => a.Timestamp))
+                            {
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">@activity.Action</h6>
+                                        <p class="timeline-text">@activity.Details</p>
+                                        <small class="text-muted">@activity.Timestamp?.ToString("MMM dd, yyyy 'at' hh:mm tt")</small>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Quick Actions</h6>
+                </div>
+                <div class="card-body">
+                    @if (User.HasPermission("ManageUsers", "Edit"))
+                    {
+                        <div class="d-grid gap-2">
+                            @if (Model.Staff.IsActive)
+                            {
+                                <form method="post" action="@Url.Action("Deactivate", "Staff")" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Staff.Id" />
+                                    <button type="submit" class="btn btn-warning btn-block"
+                                            onclick="return confirm('Are you sure you want to deactivate this staff member? They will not be able to log in.')">
+                                        <i class="fas fa-user-times"></i> Deactivate Staff
+                                    </button>
+                                </form>
+                            }
+                            else
+                            {
+                                <form method="post" action="@Url.Action("Activate", "Staff")" style="display: inline;">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@Model.Staff.Id" />
+                                    <button type="submit" class="btn btn-success btn-block"
+                                            onclick="return confirm('Are you sure you want to activate this staff member? They will be able to log in again.')">
+                                        <i class="fas fa-user-check"></i> Activate Staff
+                                    </button>
+                                </form>
+                            }
+
+                            <a href="@Url.Action("ChangePassword", "Staff", new { id = Model.Staff.Id })"
+                               class="btn btn-info btn-block">
+                                <i class="fas fa-key"></i> Change Password
+                            </a>
+                        </div>
+                    }
+
+                    @if (User.HasPermission("ManageUsers", "Delete"))
+                    {
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <button type="button" class="btn btn-danger btn-block" onclick="confirmDelete()">
+                                <i class="fas fa-trash"></i> Delete Staff Member
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Statistics</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <div class="h4 mb-0 text-primary">@Model.TotalPatients</div>
+                                <small class="text-muted">Patients</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="border rounded p-3">
+                                <div class="h4 mb-0 text-info">@Model.TotalAppointments</div>
+                                <small class="text-muted">Appointments</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row text-center mt-2">
+                        <div class="col-12">
+                            <div class="border rounded p-3">
+                                <div class="h4 mb-0 text-success">@Model.TotalBills</div>
+                                <small class="text-muted">Bills Created</small>
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted mt-2 d-block text-center">
+                        * Statistics are placeholders and will be implemented based on staff role
+                    </small>
+                </div>
+            </div>
+
+            <!-- Employment Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Employment Info</h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Employee Since</label>
+                        <p class="mb-0">
+                            @if (Model.Staff.DateOfJoining.HasValue)
+                            {
+                                var daysEmployed = (DateTime.Now - Model.Staff.DateOfJoining.Value).Days;
+                                <strong>@daysEmployed days</strong>
+                                <br><small class="text-muted">@Model.Staff.DateOfJoining.Value.ToString("MMMM dd, yyyy")</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not specified</span>
+                            }
+                        </p>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Account Status</label>
+                        <p class="mb-0">
+                            <span class="badge @Model.Staff.StatusBadgeClass">@Model.Staff.StatusText</span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label class="form-label text-muted">Last Activity</label>
+                        <p class="mb-0">
+                            @if (Model.Staff.LastLoginDate.HasValue)
+                            {
+                                <strong>@Model.Staff.FormattedLastLogin</strong>
+                            }
+                            else
+                            {
+                                <span class="text-muted">No activity recorded</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+@if (User.HasPermission("ManageUsers", "Delete"))
+{
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Warning: This action cannot be undone!</h6>
+                        <p>Deleting this staff member will permanently remove all associated data including:</p>
+                        <ul class="mb-0">
+                            <li>Login credentials</li>
+                            <li>Role assignments</li>
+                            <li>Audit logs</li>
+                            <li>Any associated records</li>
+                        </ul>
+                    </div>
+                    <p><strong>Staff Member:</strong> @Model.Staff.FullName (@Model.Staff.EmployeeId)</p>
+                    <p><strong>Email:</strong> @Model.Staff.Email</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <form method="post" action="@Url.Action("Delete", "Staff")" style="display: inline;">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Staff.Id" />
+                        <button type="submit" class="btn btn-danger">Delete Staff Member</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function confirmDelete() {
+            $('#deleteModal').modal('show');
+        }
+    </script>
+}

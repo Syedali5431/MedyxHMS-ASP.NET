@@ -1,0 +1,311 @@
+@{
+    ViewData["Title"] = "Patient Dashboard";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalDashboardViewModel
+
+<div class="dashboard-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-home text-primary"></i> Dashboard
+            </h1>
+            <p class="text-muted">@Model.WelcomeMessage</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <small class="text-muted">Last login: <strong>@Model.Dashboard?.Patient?.LastLoginDate?.ToString("MMM dd, yyyy HH:mm")</strong></small>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card border-left-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-1">Upcoming Appointments</h6>
+                        <h3 class="text-primary">@Model.Dashboard?.UpcomingAppointments ?? 0</h3>
+                    </div>
+                    <i class="fas fa-calendar-check fa-3x text-primary opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="@Url.Action("Index", "Appointments")" class="text-primary text-decoration-none">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card border-left-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-1">Pending Bills</h6>
+                        <h3 class="text-warning">@Model.Dashboard?.PendingBills ?? 0</h3>
+                    </div>
+                    <i class="fas fa-receipt fa-3x text-warning opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="@Url.Action("Index", "Bills")" class="text-warning text-decoration-none">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card border-left-danger">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-1">Outstanding Balance</h6>
+                        <h3 class="text-danger">₹@Model.Dashboard?.TotalOutstandingAmount?.ToString("N2") ?? "0.00"</h3>
+                    </div>
+                    <i class="fas fa-money-bill-wave fa-3x text-danger opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="@Url.Action("Index", "Bills")" class="text-danger text-decoration-none">Pay Now <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card stat-card border-left-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted text-uppercase mb-1">Test Results</h6>
+                        <h3 class="text-success">@Model.Dashboard?.RecentTestResults ?? 0</h3>
+                    </div>
+                    <i class="fas fa-flask-vial fa-3x text-success opacity-50"></i>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="@Url.Action("Index", "MedicalRecords")" class="text-success text-decoration-none">View All <i class="fas fa-arrow-right"></i></a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Appointments -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-alt"></i> Upcoming Appointments
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Dashboard?.RecentAppointments != null && Model.Dashboard.RecentAppointments.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>Doctor</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var apt in Model.Dashboard.RecentAppointments.Take(5))
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong>@apt.AppointmentDate?.ToString("MMM dd, yyyy")</strong><br>
+                                            <small class="text-muted">@apt.AppointmentDate?.ToString("HH:mm")</small>
+                                        </td>
+                                        <td>@apt.DoctorName</td>
+                                        <td>
+                                            @if (apt.Status == "Confirmed")
+                                            {
+                                                <span class="badge bg-success">Confirmed</span>
+                                            }
+                                            else if (apt.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning">Pending</span>
+                                            }
+                                            else if (apt.Status == "Cancelled")
+                                            {
+                                                <span class="badge bg-danger">Cancelled</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="@Url.Action("Details", "Appointments", new { id = apt.Id })" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info m-3">
+                        <i class="fas fa-info-circle"></i> No upcoming appointments. <a href="@Url.Action("Book", "Appointments")">Book one now!</a>
+                    </div>
+                }
+            </div>
+            <div class="card-footer bg-light">
+                <a href="@Url.Action("Index", "Appointments")" class="btn btn-sm btn-primary">
+                    <i class="fas fa-arrow-right"></i> View All Appointments
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Bills -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-receipt"></i> Recent Bills
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Dashboard?.RecentBills != null && Model.Dashboard.RecentBills.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bill #</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var bill in Model.Dashboard.RecentBills.Take(5))
+                                {
+                                    <tr>
+                                        <td><strong>@bill.BillNumber</strong></td>
+                                        <td>@bill.BillDate?.ToString("MMM dd, yyyy")</td>
+                                        <td>₹@bill.TotalAmount?.ToString("N2")</td>
+                                        <td>
+                                            @if (bill.Status == "Paid")
+                                            {
+                                                <span class="badge bg-success">Paid</span>
+                                            }
+                                            else if (bill.Status == "Pending")
+                                            {
+                                                <span class="badge bg-warning">Pending</span>
+                                            }
+                                            else if (bill.Status == "Overdue")
+                                            {
+                                                <span class="badge bg-danger">Overdue</span>
+                                            }
+                                        </td>
+                                        <td class="text-end">
+                                            <a href="@Url.Action("Details", "Bills", new { id = bill.Id })" class="btn btn-sm btn-outline-warning">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info m-3">
+                        <i class="fas fa-info-circle"></i> No bills found.
+                    </div>
+                }
+            </div>
+            <div class="card-footer bg-light">
+                <a href="@Url.Action("Index", "Bills")" class="btn btn-sm btn-warning">
+                    <i class="fas fa-arrow-right"></i> View All Bills
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="@Url.Action("Book", "Appointments")" class="btn btn-primary w-100">
+                            <i class="fas fa-plus-circle"></i> Book Appointment
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="@Url.Action("Index", "MedicalRecords")" class="btn btn-info w-100">
+                            <i class="fas fa-file-medical"></i> View Medical Records
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="@Url.Action("Index", "Bills")" class="btn btn-warning w-100">
+                            <i class="fas fa-file-invoice-dollar"></i> Pay Bills
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <a href="@Url.Action("Profile", "Dashboard")" class="btn btn-secondary w-100">
+                            <i class="fas fa-user-edit"></i> Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stat-card {
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .border-left-primary {
+            border-left: 4px solid #007bff;
+        }
+
+        .border-left-warning {
+            border-left: 4px solid #ffc107;
+        }
+
+        .border-left-danger {
+            border-left: 4px solid #dc3545;
+        }
+
+        .border-left-success {
+            border-left: 4px solid #28a745;
+        }
+
+        .card-footer {
+            padding: 0.75rem 1.25rem;
+        }
+
+        .page-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .dashboard-header {
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+    </style>
+}

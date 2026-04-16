@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Patient Portal | Medyx HMS</title>
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/font-awesome/css/all.min.css" rel="stylesheet" />
+    <link href="~/css/patient-portal.css" rel="stylesheet" />
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+<body class="patient-portal-body">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" asp-controller="Dashboard" asp-action="Index">
+                <i class="fas fa-hospital-user"></i> Medyx Patient Portal
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Dashboard" asp-action="Index">
+                            <i class="fas fa-home"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Appointments" asp-action="Index">
+                            <i class="fas fa-calendar-check"></i> Appointments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="MedicalRecords" asp-action="Index">
+                            <i class="fas fa-file-medical"></i> Medical Records
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Bills" asp-action="Index">
+                            <i class="fas fa-receipt"></i> Bills
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-user-circle"></i> My Account
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="Profile">
+                                <i class="fas fa-user"></i> Profile
+                            </a></li>
+                            <li><a class="dropdown-item" asp-controller="Dashboard" asp-action="ChangePassword">
+                                <i class="fas fa-key"></i> Change Password
+                            </a></li>
+                            <li><a class="dropdown-item" asp-controller="Settings" asp-action="Index">
+                                <i class="fas fa-cog"></i> Settings
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <form method="post" asp-controller="Account" asp-action="Logout" class="d-inline">
+                                    <button type="submit" class="dropdown-item" style="border: none; background: none; cursor: pointer;">
+                                        <i class="fas fa-sign-out-alt"></i> Logout
+                                    </button>
+                                </form>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid patient-portal-container">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar sticky-top">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")" 
+                               asp-controller="Dashboard" asp-action="Index">
+                                <i class="fas fa-chart-line"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Appointments" ? "active" : "")" 
+                               asp-controller="Appointments" asp-action="Index">
+                                <i class="fas fa-calendar-alt"></i> My Appointments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "MedicalRecords" ? "active" : "")" 
+                               asp-controller="MedicalRecords" asp-action="Index">
+                                <i class="fas fa-stethoscope"></i> Medical Records
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Bills" ? "active" : "")" 
+                               asp-controller="Bills" asp-action="Index">
+                                <i class="fas fa-file-invoice-dollar"></i> Billing
+                            </a>
+                        </li>
+                        <hr>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Dashboard" && ViewContext.RouteData.Values["action"]?.ToString() == "Profile" ? "active" : "")" 
+                               asp-controller="Dashboard" asp-action="Profile">
+                                <i class="fas fa-user"></i> My Profile
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Settings" ? "active" : "")" 
+                               asp-controller="Settings" asp-action="Index">
+                                <i class="fas fa-sliders-h"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Alerts -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show mt-3" role="alert">
+                        <i class="fas fa-check-circle"></i> @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["WarningMessage"] != null)
+                {
+                    <div class="alert alert-warning alert-dismissible fade show mt-3" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i> @TempData["WarningMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                <!-- Page Content -->
+                <div class="patient-portal-content">
+                    @RenderBody()
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-light text-center py-4 mt-5 border-top">
+        <div class="container">
+            <p class="text-muted mb-0">&copy; 2024 Medyx Healthcare Management System. All rights reserved.</p>
+            <p class="text-muted small">
+                <a href="#" class="text-decoration-none">Privacy Policy</a> | 
+                <a href="#" class="text-decoration-none">Terms of Service</a> | 
+                <a href="#" class="text-decoration-none">Contact Support</a>
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

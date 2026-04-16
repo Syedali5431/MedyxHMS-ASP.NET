@@ -1,0 +1,248 @@
+@{
+    ViewData["Title"] = "My Appointments";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalAppointmentsViewModel
+
+<div class="appointment-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-check text-primary"></i> My Appointments
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="@Url.Action("Book", "Appointments")" class="btn btn-primary">
+                <i class="fas fa-plus-circle"></i> Book New Appointment
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Options -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Filter By Status</label>
+                <select name="filter" class="form-select">
+                    <option value="all" @(Model.Filter == "all" ? "selected" : "")>All Appointments</option>
+                    <option value="upcoming" @(Model.Filter == "upcoming" ? "selected" : "")>Upcoming</option>
+                    <option value="completed" @(Model.Filter == "completed" ? "selected" : "")>Completed</option>
+                    <option value="cancelled" @(Model.Filter == "cancelled" ? "selected" : "")>Cancelled</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Appointments List -->
+@if (Model.Appointments != null && Model.Appointments.Any())
+{
+    <div class="row">
+        @foreach (var appointment in Model.Appointments)
+        {
+            <div class="col-lg-6 mb-4">
+                <div class="card appointment-card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-auto">
+                                <div class="appointment-date-badge">
+                                    <div class="date-number">@appointment.AppointmentDate?.ToString("dd")</div>
+                                    <div class="date-month">@appointment.AppointmentDate?.ToString("MMM")</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <h5 class="card-title mb-1">Dr. @appointment.DoctorName</h5>
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-stethoscope"></i> @appointment.Department
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Time:</strong> @appointment.AppointmentDate?.ToString("HH:mm")
+                                </p>
+                                @if (!string.IsNullOrEmpty(appointment.Symptoms))
+                                {
+                                    <p class="mb-0">
+                                        <strong>Symptoms:</strong> @appointment.Symptoms
+                                    </p>
+                                }
+                            </div>
+                            <div class="col-auto text-end">
+                                @if (appointment.Status == "Confirmed")
+                                {
+                                    <span class="badge bg-success fs-6">Confirmed</span>
+                                }
+                                else if (appointment.Status == "Pending")
+                                {
+                                    <span class="badge bg-warning fs-6">Pending</span>
+                                }
+                                else if (appointment.Status == "Cancelled")
+                                {
+                                    <span class="badge bg-danger fs-6">Cancelled</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-light">
+                        <div class="btn-group w-100" role="group">
+                            <a href="@Url.Action("Details", "Appointments", new { id = appointment.Id })" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
+                            @if (appointment.Status != "Cancelled")
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#rescheduleModal" onclick="setAppointmentId('@appointment.Id')">
+                                    <i class="fas fa-sync"></i> Reschedule
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal" onclick="setAppointmentId('@appointment.Id')">
+                                    <i class="fas fa-times"></i> Cancel
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1, filter = Model.Filter })">Previous</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.CurrentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i, filter = Model.Filter })">@i</a>
+                        </li>
+                    }
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1, filter = Model.Filter })">Next</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+        <h4>No Appointments Found</h4>
+        <p>You don't have any @Model.Filter appointments yet.</p>
+        <a href="@Url.Action("Book", "Appointments")" class="btn btn-primary mt-3">
+            <i class="fas fa-plus-circle"></i> Book Your First Appointment
+        </a>
+    </div>
+}
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">Cancel Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-action="Cancel">
+                <div class="modal-body">
+                    <input type="hidden" id="appointmentId" name="id" />
+                    <div class="mb-3">
+                        <label for="reason" class="form-label">Reason for Cancellation (Optional)</label>
+                        <textarea class="form-control" id="reason" name="reason" rows="3" placeholder="Please tell us why you're cancelling..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-times"></i> Cancel Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function setAppointmentId(id) {
+            document.getElementById('appointmentId').value = id;
+        }
+    </script>
+}
+
+@section Styles {
+    <style>
+        .appointment-date-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .date-number {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .date-month {
+            font-size: 12px;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+
+        .appointment-card {
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+
+        .appointment-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .page-title {
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+}

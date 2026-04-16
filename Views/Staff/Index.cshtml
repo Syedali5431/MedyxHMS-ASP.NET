@@ -1,0 +1,410 @@
+@model MedyxHMS.ViewModels.StaffIndexViewModel
+
+@{
+    ViewData["Title"] = "Staff Management";
+}
+
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">Staff Management</h1>
+                    <p class="text-muted">Manage hospital staff members and their roles</p>
+                </div>
+                <div>
+                    @if (User.HasPermission("ManageUsers", "Add"))
+                    {
+                        <a href="@Url.Action("Create", "Staff")" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> Add Staff Member
+                        </a>
+                    }
+                    <a href="@Url.Action("Dashboard", "Staff")" class="btn btn-info ml-2">
+                        <i class="fas fa-chart-bar"></i> Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Staff
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalStaff</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-users fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Active Staff
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveStaff</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                New This Month
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.StaffThisMonth</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Inactive Staff
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@(Model.TotalStaff - Model.ActiveStaff)</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Search -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <form method="get" class="row align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="searchTerm" value="@Model.SearchTerm"
+                           class="form-control" placeholder="Name, Employee ID, or Email...">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Department</label>
+                    <select name="departmentFilter" class="form-control">
+                        <option value="">All Departments</option>
+                        @foreach (var dept in Model.DepartmentOptions)
+                        {
+                            <option value="@dept" selected="@(Model.DepartmentFilter == dept)">@dept</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Role</label>
+                    <select name="roleFilter" class="form-control">
+                        <option value="">All Roles</option>
+                        @foreach (var role in Model.RoleOptions)
+                        {
+                            <option value="@role" selected="@(Model.RoleFilter == role)">@role</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select name="isActiveFilter" class="form-control">
+                        <option value="">All Status</option>
+                        <option value="true" selected="@(Model.IsActiveFilter == true)">Active</option>
+                        <option value="false" selected="@(Model.IsActiveFilter == false)">Inactive</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.DepartmentFilter) ||
+                         !string.IsNullOrEmpty(Model.RoleFilter) || Model.IsActiveFilter.HasValue)
+                    {
+                        <a href="@Url.Action("Index", "Staff")" class="btn btn-outline-secondary w-100 mt-1">
+                            <i class="fas fa-times"></i> Clear
+                        </a>
+                    }
+                </div>
+            </form>
+        </div>
+
+        <div class="card-body">
+            @if (!Model.Staff.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-users fa-3x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-500">No staff members found</h5>
+                    @if (!string.IsNullOrEmpty(Model.SearchTerm) || !string.IsNullOrEmpty(Model.DepartmentFilter) ||
+                         !string.IsNullOrEmpty(Model.RoleFilter) || Model.IsActiveFilter.HasValue)
+                    {
+                        <p class="text-muted">Try adjusting your search criteria or <a href="@Url.Action("Index", "Staff")">clear all filters</a>.</p>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Start by <a href="@Url.Action("Create", "Staff")">adding your first staff member</a>.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Department</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Last Login</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var staff in Model.Staff)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary text-white mr-3"
+                                                 style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">
+                                                @staff.FirstName.FirstOrDefault()@staff.LastName.FirstOrDefault()
+                                            </div>
+                                            <div>
+                                                <strong>@staff.FullName</strong>
+                                                <br><small class="text-muted">@staff.EmployeeId</small>
+                                                <br><small class="text-muted">@staff.Email</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-secondary">@staff.Department</span>
+                                        @if (!string.IsNullOrEmpty(staff.Designation))
+                                        {
+                                            <br><small class="text-muted">@staff.Designation</small>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (staff.Roles.Any())
+                                        {
+                                            @foreach (var role in staff.Roles)
+                                            {
+                                                <span class="badge badge-info mr-1">@role</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No roles assigned</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @staff.StatusBadgeClass">@staff.StatusText</span>
+                                    </td>
+                                    <td>
+                                        @if (staff.LastLoginDate.HasValue)
+                                        {
+                                            <span class="text-muted">@staff.FormattedLastLogin</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Never</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            @if (User.HasPermission("ManageUsers", "View"))
+                                            {
+                                                <a href="@Url.Action("Details", "Staff", new { id = staff.Id })"
+                                                   class="btn btn-sm btn-info" title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            }
+                                            @if (User.HasPermission("ManageUsers", "Edit"))
+                                            {
+                                                <a href="@Url.Action("Edit", "Staff", new { id = staff.Id })"
+                                                   class="btn btn-sm btn-secondary" title="Edit Staff">
+                                                    <i class="fas fa-pencil-alt"></i>
+                                                </a>
+                                            }
+                                            @if (User.HasPermission("ManageUsers", "Edit"))
+                                            {
+                                                <form method="post" action="@Url.Action("ChangePassword", "Staff", new { id = staff.Id })"
+                                                      style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="Change Password">
+                                                        <i class="fas fa-key"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            @if (User.HasPermission("ManageUsers", "Edit") && !staff.IsActive)
+                                            {
+                                                <form method="post" action="@Url.Action("Activate", "Staff")"
+                                                      style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@staff.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-success" title="Activate Staff"
+                                                            onclick="return confirm('Are you sure you want to activate this staff member?')">
+                                                        <i class="fas fa-user-check"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            @if (User.HasPermission("ManageUsers", "Edit") && staff.IsActive)
+                                            {
+                                                <form method="post" action="@Url.Action("Deactivate", "Staff")"
+                                                      style="display: inline;">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@staff.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-warning" title="Deactivate Staff"
+                                                            onclick="return confirm('Are you sure you want to deactivate this staff member?')">
+                                                        <i class="fas fa-user-times"></i>
+                                                    </button>
+                                                </form>
+                                            }
+                                            @if (User.HasPermission("ManageUsers", "Delete"))
+                                            {
+                                                <button type="button" class="btn btn-sm btn-danger" title="Delete Staff"
+                                                        onclick="confirmDelete('@staff.Id', '@staff.FullName')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="d-flex justify-content-center mt-4">
+                        <nav aria-label="Staff pagination">
+                            <ul class="pagination">
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "Staff", new {
+                                            searchTerm = Model.SearchTerm,
+                                            departmentFilter = Model.DepartmentFilter,
+                                            roleFilter = Model.RoleFilter,
+                                            isActiveFilter = Model.IsActiveFilter,
+                                            page = Model.CurrentPage - 1,
+                                            pageSize = Model.PageSize
+                                        })">Previous</a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", "Staff", new {
+                                            searchTerm = Model.SearchTerm,
+                                            departmentFilter = Model.DepartmentFilter,
+                                            roleFilter = Model.RoleFilter,
+                                            isActiveFilter = Model.IsActiveFilter,
+                                            page = i,
+                                            pageSize = Model.PageSize
+                                        })">@i</a>
+                                    </li>
+                                }
+
+                                @if (Model.HasNextPage)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", "Staff", new {
+                                            searchTerm = Model.SearchTerm,
+                                            departmentFilter = Model.DepartmentFilter,
+                                            roleFilter = Model.RoleFilter,
+                                            isActiveFilter = Model.IsActiveFilter,
+                                            page = Model.CurrentPage + 1,
+                                            pageSize = Model.PageSize
+                                        })">Next</a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this staff member?</p>
+                <div id="staffDetails"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <form id="deleteForm" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">Delete Staff Member</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#dataTable').DataTable({
+                "pageLength": 25,
+                "order": [[ 0, "asc" ]], // Sort by employee name ascending
+                "columnDefs": [
+                    { "orderable": false, "targets": 5 } // Disable sorting on actions column
+                ]
+            });
+        });
+
+        function confirmDelete(staffId, staffName) {
+            $('#staffDetails').html(`
+                <div class="alert alert-warning">
+                    <strong>Staff Member:</strong> ${staffName}<br>
+                    <strong>ID:</strong> ${staffId}
+                </div>
+                <p class="text-danger"><strong>Warning:</strong> This will permanently delete the staff member and remove all associated data. This action cannot be undone!</p>
+            `);
+            $('#deleteForm').attr('action', '@Url.Action("Delete", "Staff")/' + staffId);
+            $('#deleteModal').modal('show');
+        }
+    </script>
+}

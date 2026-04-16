@@ -62,6 +62,8 @@ builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<IStaffService, StaffService>();
+builder.Services.AddScoped<IPatientPortalService, PatientPortalService>();
 builder.Services.AddScoped<DatabaseInitializer>();
 
 // Add HttpContext accessor for audit logging
