@@ -64,6 +64,18 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IPatientPortalService, PatientPortalService>();
+
+// Clinical Module Services (STEP 3.1)
+builder.Services.AddScoped<IOPDService, OPDService>();
+builder.Services.AddScoped<IIPDService, IPDService>();
+builder.Services.AddScoped<IWardService, WardService>();
+builder.Services.AddScoped<IBedService, BedService>();
+builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
+
+// Diagnostic Module Services (STEP 3.2)
+builder.Services.AddScoped<ILabService, LabService>();
+builder.Services.AddScoped<IRadiologyService, RadiologyService>();
+
 builder.Services.AddScoped<DatabaseInitializer>();
 
 // Add HttpContext accessor for audit logging

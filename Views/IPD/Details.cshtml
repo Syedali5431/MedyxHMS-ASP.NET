@@ -1,0 +1,129 @@
+@model IPDAdmissionDetailsViewModel
+
+@{
+    ViewData["Title"] = "IPD Admission Details";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h3>IPD Admission Details</h3>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="@Url.Action("Index")" class="btn btn-secondary">Back to List</a>
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+            {
+                <a href="@Url.Action("Edit", new { id = Model.Admission.Id })" class="btn btn-warning">Edit</a>
+                @if (Model.Admission.Status == "Admitted")
+                {
+                    <form method="post" action="@Url.Action("Discharge", new { id = Model.Admission.Id })" 
+                          style="display:inline;" onsubmit="return confirm('Discharge this patient?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="dischargeDate" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                        <button type="submit" class="btn btn-success">Discharge</button>
+                    </form>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Patient Information</div>
+                <div class="card-body">
+                    <p><strong>Name:</strong> @Model.Patient?.FirstName @Model.Patient?.LastName</p>
+                    <p><strong>Phone:</strong> @Model.Patient?.Phone</p>
+                    <p><strong>Email:</strong> @Model.Patient?.Email</p>
+                    <p><strong>Gender:</strong> @Model.Patient?.Gender</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card mb-3">
+                <div class="card-header">Doctor Information</div>
+                <div class="card-body">
+                    <p><strong>Doctor:</strong> Dr. @Model.Doctor?.FirstName @Model.Doctor?.LastName</p>
+                    <p><strong>Department:</strong> @Model.Doctor?.Department</p>
+                    <p><strong>Phone:</strong> @Model.Doctor?.Phone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-header">Admission Details</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Admission Date:</strong> @Model.Admission.FormattedAdmissionDate</p>
+                            <p><strong>Admission Type:</strong> <span class="badge @Model.Admission.AdmissionTypeBadgeClass">@Model.Admission.AdmissionType</span></p>
+                            <p><strong>Status:</strong> <span class="badge @Model.Admission.StatusBadgeClass">@Model.Admission.Status</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            @if (Model.Admission.DischargeDate.HasValue)
+                            {
+                                <p><strong>Discharge Date:</strong> @Model.Admission.FormattedDischargeDate</p>
+                                <p><strong>Days Admitted:</strong> @Model.Admission.DaysAdmitted</p>
+                            }
+                            <p><strong>Bed/Ward:</strong> @(Model.Bed != null ? $"{Model.Bed.BedNumber} / {Model.Ward?.Name}" : "Not Assigned")</p>
+                            <p><strong>Daily Charges:</strong> @Model.Admission.DailyCharges.ToString("C")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-3">
+                <div class="card-header">Clinical Information</div>
+                <div class="card-body">
+                    <p><strong>Diagnosis:</strong></p>
+                    <p class="bg-light p-2 rounded">@Model.Admission.Diagnosis</p>
+                    <p><strong>Treatment:</strong></p>
+                    <p class="bg-light p-2 rounded">@(Model.Admission.Treatment ?? "N/A")</p>
+                    <p><strong>Notes:</strong></p>
+                    <p class="bg-light p-2 rounded">@(Model.Admission.Notes ?? "N/A")</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.RelatedBills.Any())
+    {
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">Related Bills</div>
+                    <div class="table-responsive">
+                        <table class="table mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Bill Number</th>
+                                    <th>Date</th>
+                                    <th>Amount</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var bill in Model.RelatedBills)
+                                {
+                                    <tr>
+                                        <td>@bill.BillNumber</td>
+                                        <td>@bill.BillDate.ToString("MMM dd, yyyy")</td>
+                                        <td>@bill.TotalAmount.ToString("C")</td>
+                                        <td><span class="badge @(bill.Status == "Paid" ? "bg-success" : "bg-warning")">@bill.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

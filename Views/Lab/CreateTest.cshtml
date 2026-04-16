@@ -1,0 +1,130 @@
+@model LabTest
+
+@{
+    ViewData["Title"] = "Create Lab Test";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-flask-plus"></i> Create New Lab Test</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="@Url.Action("Index", "Lab")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Tests
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Test Information</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="TestName" class="form-label">Test Name *</label>
+                            <input asp-for="TestName" class="form-control" placeholder="e.g., Complete Blood Count">
+                            <span asp-validation-for="TestName" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="TestCode" class="form-label">Test Code *</label>
+                            <input asp-for="TestCode" class="form-control" placeholder="e.g., CBC">
+                            <span asp-validation-for="TestCode" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Category" class="form-label">Category *</label>
+                                    <select asp-for="Category" class="form-control">
+                                        <option value="">Select Category</option>
+                                        <option value="Hematology">Hematology</option>
+                                        <option value="Biochemistry">Biochemistry</option>
+                                        <option value="Microbiology">Microbiology</option>
+                                        <option value="Immunology">Immunology</option>
+                                        <option value="Serology">Serology</option>
+                                        <option value="Virology">Virology</option>
+                                    </select>
+                                    <span asp-validation-for="Category" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Price" class="form-label">Price (Rs.) *</label>
+                                    <input asp-for="Price" type="number" step="0.01" class="form-control" placeholder="0.00">
+                                    <span asp-validation-for="Price" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Unit" class="form-label">Unit</label>
+                                    <input asp-for="Unit" class="form-control" placeholder="e.g., mg/dL">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PreparationTimeHours" class="form-label">Preparation Time (Hours) *</label>
+                                    <input asp-for="PreparationTimeHours" type="number" class="form-control" value="0">
+                                    <span asp-validation-for="PreparationTimeHours" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="NormalRange" class="form-label">Normal Range</label>
+                            <input asp-for="NormalRange" class="form-control" placeholder="e.g., 4.5-11.0">
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Description" class="form-label">Description</label>
+                            <textarea asp-for="Description" class="form-control" rows="3" placeholder="Enter test description..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input asp-for="IsActive" type="checkbox" class="form-check-input" id="isActive">
+                                <label class="form-check-label" for="isActive">
+                                    Active
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Create Test
+                            </button>
+                            <a href="@Url.Action("Index", "Lab")" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Tips</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success"></i> Use clear, standardized test names</li>
+                        <li><i class="fas fa-check text-success"></i> Enter accurate pricing information</li>
+                        <li><i class="fas fa-check text-success"></i> Specify normal ranges for reference</li>
+                        <li><i class="fas fa-check text-success"></i> Set appropriate preparation times</li>
+                        <li><i class="fas fa-check text-success"></i> Mark as active for patient ordering</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,244 @@
+@model OPDVisitViewModel
+
+@{
+    ViewData["Title"] = "OPD - Outpatient Department";
+    var totalPages = Model.TotalPages;
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-clinic-medical"></i> Outpatient Department (OPD)
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor") || User.IsInRole("Staff"))
+            {
+                <a href="@Url.Action("Create", "OPD")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New OPD Visit
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i> @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle"></i> @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="filter" class="form-label">Payment Status</label>
+                    <select name="filter" id="filter" class="form-select">
+                        <option value="all" selected>All</option>
+                        <option value="Paid" @(Model.Filter == "Paid" ? "selected" : "")>Paid</option>
+                        <option value="Pending" @(Model.Filter == "Pending" ? "selected" : "")>Pending</option>
+                        <option value="Waived" @(Model.Filter == "Waived" ? "selected" : "")>Waived</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="startDate" class="form-label">Start Date</label>
+                    <input type="date" name="startDate" id="startDate" class="form-control" value="@Model.StartDate?.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-2">
+                    <label for="endDate" class="form-label">End Date</label>
+                    <input type="date" name="endDate" id="endDate" class="form-control" value="@Model.EndDate?.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <a href="@Url.Action("Index", "OPD")" class="btn btn-secondary w-100">
+                        <i class="fas fa-redo"></i> Reset
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="text-primary font-weight-bold text-uppercase mb-1">Total Visits</div>
+                    <div class="h3 mb-0">@Model.TotalRecords</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="text-success font-weight-bold text-uppercase mb-1">Paid</div>
+                    <div class="h3 mb-0">@Model.Visits.Count(v => v.PaymentStatus == "Paid")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-warning">
+                <div class="card-body">
+                    <div class="text-warning font-weight-bold text-uppercase mb-1">Pending</div>
+                    <div class="h3 mb-0">@Model.Visits.Count(v => v.PaymentStatus == "Pending")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="text-info font-weight-bold text-uppercase mb-1">Waived</div>
+                    <div class="h3 mb-0">@Model.Visits.Count(v => v.PaymentStatus == "Waived")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OPD Visits Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">OPD Visits List</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Visit Date</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Diagnosis</th>
+                        <th>Consultation Fee</th>
+                        <th>Payment Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Visits.Any())
+                    {
+                        @foreach (var visit in Model.Visits)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        @visit.FormattedVisitDate
+                                    </span>
+                                </td>
+                                <td>@visit.PatientName</td>
+                                <td>@visit.DoctorName</td>
+                                <td>
+                                    <small>@(visit.Diagnosis?.Length > 50 ? visit.Diagnosis.Substring(0, 50) + "..." : visit.Diagnosis)</small>
+                                </td>
+                                <td>
+                                    <span class="fw-bold">@visit.ConsultationFee.ToString("C")</span>
+                                </td>
+                                <td>
+                                    <span class="badge @visit.PaymentStatusBadgeClass">@visit.PaymentStatus</span>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", "OPD", new { id = visit.Id })" class="btn btn-sm btn-info" title="View Details">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+                                    {
+                                        <a href="@Url.Action("Edit", "OPD", new { id = visit.Id })" class="btn btn-sm btn-warning" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form method="post" action="@Url.Action("Delete", "OPD", new { id = visit.Id })" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')" title="Delete">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox"></i> No OPD visits found
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if (Model.TotalPages > 1)
+        {
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        @if (Model.HasPreviousPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", "OPD", new { page = Model.CurrentPage - 1, filter = Model.Filter })">
+                                    Previous
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">Previous</span>
+                            </li>
+                        }
+
+                        @for (int i = 1; i <= Model.TotalPages; i++)
+                        {
+                            @if (i == Model.CurrentPage)
+                            {
+                                <li class="page-item active">
+                                    <span class="page-link">@i</span>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", "OPD", new { page = i, filter = Model.Filter })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+                        }
+
+                        @if (Model.HasNextPage)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", "OPD", new { page = Model.CurrentPage + 1, filter = Model.Filter })">
+                                    Next
+                                </a>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">Next</span>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>

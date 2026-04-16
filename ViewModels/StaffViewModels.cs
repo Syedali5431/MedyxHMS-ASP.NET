@@ -154,7 +154,7 @@ namespace MedyxHMS.ViewModels
         public int TotalStaff { get; set; }
         public int ActiveStaff { get; set; }
         public int NewStaffThisMonth { get; set; }
-        public int StaffByDepartment { get; set; }
+        public int TotalDepartments { get; set; }
 
         // Department breakdown
         public Dictionary<string, int> StaffByDepartment { get; set; } = new Dictionary<string, int>();

@@ -1,0 +1,70 @@
+@model EditOPDVisitViewModel
+
+@{
+    ViewData["Title"] = "Edit OPD Visit";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit"></i> Edit OPD Visit
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="@Url.Action("Edit")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="VisitId" value="@Model.VisitId" />
+
+                        <!-- Read-only Visit Info -->
+                        <div class="alert alert-info" role="alert">
+                            <strong>Patient:</strong> @Model.CurrentVisit.PatientName | 
+                            <strong>Doctor:</strong> @Model.CurrentVisit.DoctorName | 
+                            <strong>Visit Date:</strong> @Model.CurrentVisit.FormattedVisitDate
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Visit_Diagnosis" class="form-label">Diagnosis</label>
+                            <textarea name="Visit.Diagnosis" id="Visit_Diagnosis" class="form-control" rows="3">@Model.Visit.Diagnosis</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Visit_Treatment" class="form-label">Treatment</label>
+                            <textarea name="Visit.Treatment" id="Visit_Treatment" class="form-control" rows="3">@Model.Visit.Treatment</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Visit_Prescription" class="form-label">Prescription</label>
+                            <textarea name="Visit.Prescription" id="Visit_Prescription" class="form-control" rows="3">@Model.Visit.Prescription</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Visit_Notes" class="form-label">Notes</label>
+                            <textarea name="Visit.Notes" id="Visit_Notes" class="form-control" rows="2">@Model.Visit.Notes</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="Visit_PaymentStatus" class="form-label">Payment Status</label>
+                            <select name="Visit.PaymentStatus" id="Visit_PaymentStatus" class="form-select">
+                                <option value="Pending" @(Model.Visit.PaymentStatus == "Pending" ? "selected" : "")>Pending</option>
+                                <option value="Paid" @(Model.Visit.PaymentStatus == "Paid" ? "selected" : "")>Paid</option>
+                                <option value="Waived" @(Model.Visit.PaymentStatus == "Waived" ? "selected" : "")>Waived</option>
+                            </select>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="@Url.Action("Details", new { id = Model.VisitId })" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Update Visit
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

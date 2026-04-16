@@ -1,0 +1,105 @@
+@model CreatePrescriptionViewModel
+
+@{
+    ViewData["Title"] = "Create Prescription";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">New Prescription</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-3">
+                            <label class="form-label">Medicine <span class="text-danger">*</span></label>
+                            <select name="Prescription.MedicineId" class="form-select" required onchange="updateMedicinePrice()">
+                                <option value="">-- Select Medicine --</option>
+                                @foreach (var medicine in Model.Medicines)
+                                {
+                                    <option value="@medicine.Id" data-price="@medicine.UnitPrice">
+                                        @medicine.Name - @medicine.DosageForm (@medicine.Strength)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Dosage <span class="text-danger">*</span></label>
+                                <input type="text" name="Prescription.Dosage" class="form-control" placeholder="e.g., 500mg" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Frequency <span class="text-danger">*</span></label>
+                                <select name="Prescription.Frequency" class="form-select" required>
+                                    <option value="">-- Select Frequency --</option>
+                                    <option value="Once daily">Once daily</option>
+                                    <option value="Twice daily">Twice daily</option>
+                                    <option value="Three times daily">Three times daily</option>
+                                    <option value="Four times daily">Four times daily</option>
+                                    <option value="Every 6 hours">Every 6 hours</option>
+                                    <option value="Every 8 hours">Every 8 hours</option>
+                                    <option value="Every 12 hours">Every 12 hours</option>
+                                    <option value="As needed">As needed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Duration (days) <span class="text-danger">*</span></label>
+                                <input type="number" name="Prescription.Duration" class="form-control" min="1" value="7" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Quantity <span class="text-danger">*</span></label>
+                                <input type="number" name="Prescription.Quantity" class="form-control" min="1" required onchange="calculateTotal()">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Unit Price <span class="text-danger">*</span></label>
+                            <input type="number" name="Prescription.UnitPrice" id="unitPrice" class="form-control" 
+                                   step="0.01" required onchange="calculateTotal()">
+                        </div>
+
+                        <div class="alert alert-info">
+                            <strong>Total Price:</strong> <span id="totalPrice">0.00</span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Instructions</label>
+                            <textarea name="Prescription.Instructions" class="form-control" rows="3" 
+                                      placeholder="Special instructions for patient..."></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Prescription</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function updateMedicinePrice() {
+    var select = document.querySelector('select[name="Prescription.MedicineId"]');
+    var option = select.options[select.selectedIndex];
+    var price = option.getAttribute('data-price');
+    document.getElementById('unitPrice').value = price;
+    calculateTotal();
+}
+
+function calculateTotal() {
+    var quantity = parseFloat(document.querySelector('input[name="Prescription.Quantity"]').value) || 0;
+    var unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+    var total = (quantity * unitPrice).toFixed(2);
+    document.getElementById('totalPrice').textContent = total;
+}
+</script>

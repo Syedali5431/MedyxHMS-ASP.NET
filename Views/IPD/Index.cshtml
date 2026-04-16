@@ -1,0 +1,161 @@
+@model IPDAdmissionViewModel
+
+@{
+    ViewData["Title"] = "IPD - Inpatient Department";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-hospital-user"></i> Inpatient Department (IPD)
+            </h1>
+        </div>
+        <div class="col-md-4 text-end">
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+            {
+                <a href="@Url.Action("Create", "IPD")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Admission
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-2">
+                    <label for="status" class="form-label">Status</label>
+                    <select name="status" id="status" class="form-select">
+                        <option value="all" selected>All</option>
+                        <option value="Admitted" @(Model.Status == "Admitted" ? "selected" : "")>Admitted</option>
+                        <option value="Discharged" @(Model.Status == "Discharged" ? "selected" : "")>Discharged</option>
+                        <option value="Transferred" @(Model.Status == "Transferred" ? "selected" : "")>Transferred</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i> Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-left-primary">
+                <div class="card-body">
+                    <div class="text-primary text-uppercase mb-1">Total Admissions</div>
+                    <div class="h3 mb-0">@Model.TotalRecords</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-success">
+                <div class="card-body">
+                    <div class="text-success text-uppercase mb-1">Currently Admitted</div>
+                    <div class="h3 mb-0">@Model.Admissions.Count(a => a.Status == "Admitted")</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-left-info">
+                <div class="card-body">
+                    <div class="text-info text-uppercase mb-1">Discharged</div>
+                    <div class="h3 mb-0">@Model.Admissions.Count(a => a.Status == "Discharged")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admissions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">IPD Admissions</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Admission Date</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Bed/Ward</th>
+                        <th>Status</th>
+                        <th>Days</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Admissions.Any())
+                    {
+                        @foreach (var admission in Model.Admissions)
+                        {
+                            <tr>
+                                <td>@admission.FormattedAdmissionDate</td>
+                                <td>@admission.PatientName</td>
+                                <td>@admission.DoctorName</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(admission.BedNumber))
+                                    {
+                                        <span>@admission.BedNumber / @admission.WardName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">Not Assigned</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @admission.StatusBadgeClass">@admission.Status</span>
+                                </td>
+                                <td>@(admission.DaysAdmitted?.ToString() ?? "-")</td>
+                                <td>
+                                    <a href="@Url.Action("Details", "IPD", new { id = admission.Id })" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+                                    {
+                                        <a href="@Url.Action("Edit", "IPD", new { id = admission.Id })" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        @if (admission.Status == "Admitted")
+                                        {
+                                            <form method="post" action="@Url.Action("Discharge", "IPD", new { id = admission.Id })" 
+                                                  style="display:inline;" onsubmit="return confirm('Discharge this patient?');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="dischargeDate" value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                                <button type="submit" class="btn btn-sm btn-success">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No IPD admissions found
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

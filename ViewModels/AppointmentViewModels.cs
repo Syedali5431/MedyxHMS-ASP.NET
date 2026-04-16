@@ -153,4 +153,56 @@ namespace MedyxHMS.ViewModels
         public DateTime DateOfBirth { get; set; }
         public int Age { get; set; }
     }
+
+    public class AppointmentViewModel
+    {
+        public AppointmentDto Appointment { get; set; }
+        public PatientDto Patient { get; set; }
+        public DoctorDto Doctor { get; set; }
+        public string StatusBadgeClass => Appointment?.Status?.ToLower() switch
+        {
+            "scheduled" => "badge-warning",
+            "confirmed" => "badge-info",
+            "completed" => "badge-success",
+            "cancelled" => "badge-danger",
+            "no-show" => "badge-dark",
+            _ => "badge-secondary"
+        };
+        public string FormattedAppointmentDate => Appointment?.AppointmentDate.ToString("MMM dd, yyyy") ?? "";
+        public string FormattedAppointmentTime => Appointment?.AppointmentTime.ToString(@"hh\:mm tt") ?? "";
+    }
+
+    public class AppointmentDeleteViewModel
+    {
+        public AppointmentDto Appointment { get; set; }
+        public PatientDto Patient { get; set; }
+        public DoctorDto Doctor { get; set; }
+        public bool HasFutureAppointments { get; set; }
+        public string WarningMessage { get; set; }
+    }
+
+    public class AppointmentUpdateStatusViewModel
+    {
+        public AppointmentDto Appointment { get; set; }
+        public AppointmentStatusUpdateDto StatusUpdate { get; set; }
+
+        public List<string> AvailableStatuses => new List<string>
+        {
+            "Scheduled", "Confirmed", "Completed", "Cancelled", "No-Show"
+        };
+
+        // Status transition rules
+        public List<string> GetValidStatuses(string currentStatus)
+        {
+            return currentStatus?.ToLower() switch
+            {
+                "scheduled" => new List<string> { "Confirmed", "Cancelled" },
+                "confirmed" => new List<string> { "Completed", "Cancelled", "No-Show" },
+                "completed" => new List<string> { "Completed" }, // Final state
+                "cancelled" => new List<string> { "Cancelled" }, // Final state
+                "no-show" => new List<string> { "No-Show" }, // Final state
+                _ => AvailableStatuses
+            };
+        }
+    }
 }

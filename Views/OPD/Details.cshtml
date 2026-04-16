@@ -1,0 +1,127 @@
+@model OPDVisitDetailsViewModel
+
+@{
+    ViewData["Title"] = "OPD Visit Details";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-stethoscope"></i> OPD Visit Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted mb-3">Patient Information</h6>
+                            @if (Model.Patient != null)
+                            {
+                                <div class="mb-2">
+                                    <strong>Name:</strong> @Model.Patient.FirstName @Model.Patient.LastName
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Phone:</strong> @Model.Patient.Phone
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Email:</strong> @Model.Patient.Email
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Gender:</strong> @Model.Patient.Gender
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted mb-3">Doctor Information</h6>
+                            @if (Model.Doctor != null)
+                            {
+                                <div class="mb-2">
+                                    <strong>Name:</strong> Dr. @Model.Doctor.FirstName @Model.Doctor.LastName
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Department:</strong> @Model.Doctor.Department
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Phone:</strong> @Model.Doctor.Phone
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Email:</strong> @Model.Doctor.Email
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted mb-3">Visit Details</h6>
+                            <div class="mb-2">
+                                <strong>Visit Date:</strong> @Model.Visit.FormattedVisitDate
+                            </div>
+                            <div class="mb-2">
+                                <strong>Consultation Fee:</strong> <span class="text-success fw-bold">@Model.Visit.ConsultationFee.ToString("C")</span>
+                            </div>
+                            <div class="mb-2">
+                                <strong>Payment Status:</strong> <span class="badge @Model.Visit.PaymentStatusBadgeClass">@Model.Visit.PaymentStatus</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <h6 class="fw-bold text-muted mb-3">Clinical Notes</h6>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Symptoms:</strong>
+                            <p class="bg-light p-2 rounded">@Model.Visit.Symptoms</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Diagnosis:</strong>
+                            <p class="bg-light p-2 rounded">@(Model.Visit.Diagnosis ?? "N/A")</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong>Treatment:</strong>
+                            <p class="bg-light p-2 rounded">@(Model.Visit.Treatment ?? "N/A")</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>Prescription:</strong>
+                            <p class="bg-light p-2 rounded">@(Model.Visit.Prescription ?? "N/A")</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <strong>Notes:</strong>
+                            <p class="bg-light p-2 rounded">@(Model.Visit.Notes ?? "N/A")</p>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                        @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+                        {
+                            <a href="@Url.Action("Edit", new { id = Model.Visit.Id })" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> Edit
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

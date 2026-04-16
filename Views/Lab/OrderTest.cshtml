@@ -1,0 +1,110 @@
+@model LabResult
+
+@{
+    ViewData["Title"] = "Order Lab Test";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-microscope"></i> Order Lab Test</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="@Url.Action("Results", "Lab")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Results
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Test Order Details</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="PatientId" class="form-label">Patient *</label>
+                            <select asp-for="PatientId" class="form-control" required>
+                                <option value="">Select Patient</option>
+                                @foreach (var patient in (IEnumerable<Patient>)ViewBag.Patients)
+                                {
+                                    <option value="@patient.Id">@patient.FirstName @patient.LastName - @patient.PatientId</option>
+                                }
+                            </select>
+                            <span asp-validation-for="PatientId" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="LabTestId" class="form-label">Lab Test *</label>
+                            <select asp-for="LabTestId" class="form-control" required onchange="updateTestInfo()">
+                                <option value="">Select Test</option>
+                                @foreach (var test in (IEnumerable<LabTest>)ViewBag.Tests)
+                                {
+                                    <option value="@test.Id" data-price="@test.Price" data-preptime="@test.PreparationTimeHours" data-range="@test.NormalRange">
+                                        @test.TestName (Rs. @test.Price)
+                                    </option>
+                                }
+                            </select>
+                            <span asp-validation-for="LabTestId" class="text-danger"></span>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="prepTime" class="form-label">Preparation Time</label>
+                                    <input type="text" id="prepTime" class="form-control" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="normalRange" class="form-label">Normal Range</label>
+                                    <input type="text" id="normalRange" class="form-control" readonly>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="OrderNumber" class="form-label">Order Number (Optional)</label>
+                            <input asp-for="OrderNumber" class="form-control" placeholder="Auto-generated if left blank">
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Place Order
+                            </button>
+                            <a href="@Url.Action("Results", "Lab")" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card bg-light">
+                <div class="card-header">
+                    <h5 class="mb-0">Order Information</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Status:</strong> <span class="badge bg-primary">Ordered</span></p>
+                    <p><strong>Ordered On:</strong> <span id="orderDate">@DateTime.Now.ToString("MMM dd, yyyy")</span></p>
+                    <hr>
+                    <p class="text-muted small">Once the test is ordered, the laboratory will process it based on preparation time and provide results.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function updateTestInfo() {
+        const select = document.querySelector('[name="LabTestId"]');
+        const option = select.options[select.selectedIndex];
+        
+        document.getElementById('prepTime').value = option.dataset.preptime ? option.dataset.preptime + ' hours' : '-';
+        document.getElementById('normalRange').value = option.dataset.range || '-';
+    }
+</script>

@@ -1,0 +1,120 @@
+@model CreateIPDAdmissionViewModel
+
+@{
+    ViewData["Title"] = "Create IPD Admission";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-plus-circle"></i> New IPD Admission
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        @Html.AntiForgeryToken()
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Patient <span class="text-danger">*</span></label>
+                                <select name="Admission.PatientId" class="form-select" required>
+                                    <option value="">-- Select Patient --</option>
+                                    @foreach (var patient in Model.Patients)
+                                    {
+                                        <option value="@patient.Id">@patient.FirstName @patient.LastName</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Doctor <span class="text-danger">*</span></label>
+                                <select name="Admission.DoctorId" class="form-select" required>
+                                    <option value="">-- Select Doctor --</option>
+                                    @foreach (var doctor in Model.Doctors)
+                                    {
+                                        <option value="@doctor.Id">Dr. @doctor.FirstName @doctor.LastName</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Admission Type <span class="text-danger">*</span></label>
+                                <select name="Admission.AdmissionType" class="form-select" required>
+                                    <option value="Planned">Planned</option>
+                                    <option value="Emergency">Emergency</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Ward <span class="text-danger">*</span></label>
+                                <select id="wardSelect" class="form-select" onchange="loadAvailableBeds()">
+                                    <option value="">-- Select Ward --</option>
+                                    @foreach (var ward in Model.Wards)
+                                    {
+                                        <option value="@ward.Id">@ward.Name (Available: @ward.AvailableBeds)</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Bed <span class="text-danger">*</span></label>
+                                <select name="Admission.BedId" id="bedSelect" class="form-select">
+                                    <option value="">-- Select Bed --</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Daily Charges <span class="text-danger">*</span></label>
+                                <input type="number" name="Admission.DailyCharges" class="form-control" step="0.01" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Diagnosis <span class="text-danger">*</span></label>
+                            <textarea name="Admission.Diagnosis" class="form-control" rows="2" required></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Treatment</label>
+                            <textarea name="Admission.Treatment" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea name="Admission.Notes" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary">Create Admission</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadAvailableBeds() {
+    var wardId = document.getElementById('wardSelect').value;
+    if (!wardId) return;
+    
+    fetch(`/IPD/GetAvailableBedsForWard?wardId=${wardId}`)
+        .then(r => r.json())
+        .then(data => {
+            var bedSelect = document.getElementById('bedSelect');
+            bedSelect.innerHTML = '<option value="">-- Select Bed --</option>';
+            data.beds.forEach(bed => {
+                var option = document.createElement('option');
+                option.value = bed.id;
+                option.text = `${bed.bedNumber} (${bed.bedType}) - ${bed.dailyCharges}`;
+                bedSelect.appendChild(option);
+            });
+        });
+}
+</script>

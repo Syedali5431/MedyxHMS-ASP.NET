@@ -1,0 +1,98 @@
+@model MedicineListViewModel
+
+@{
+    ViewData["Title"] = "Medicines";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h3>Medicine Inventory</h3>
+        </div>
+        <div class="col-md-4 text-end">
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+            {
+                <a href="@Url.Action("CreateMedicine")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Add Medicine
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Search -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="d-flex gap-2">
+                <input type="text" name="search" class="form-control" placeholder="Search medicines..." value="@Model.SearchTerm">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="@Url.Action("Medicines")" class="btn btn-secondary">Reset</a>
+            </form>
+        </div>
+    </div>
+
+    <!-- Medicines Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicine Name</th>
+                        <th>Generic Name</th>
+                        <th>Dosage Form</th>
+                        <th>Unit Price</th>
+                        <th>Stock</th>
+                        <th>Min Level</th>
+                        <th>Status</th>
+                        <th>Expiry</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Medicines.Any())
+                    {
+                        @foreach (var medicine in Model.Medicines)
+                        {
+                            <tr>
+                                <td>@medicine.Name</td>
+                                <td>@(medicine.GenericName ?? "-")</td>
+                                <td>@(medicine.DosageForm ?? "-")</td>
+                                <td>@medicine.UnitPrice.ToString("C")</td>
+                                <td>@medicine.StockQuantity</td>
+                                <td>@medicine.MinStockLevel</td>
+                                <td>
+                                    <span class="badge @medicine.StockStatusBadgeClass">@medicine.StockStatus</span>
+                                </td>
+                                <td>@medicine.ExpiryDate.ToString("MMM dd, yyyy")</td>
+                                <td>
+                                    <a href="@Url.Action("MedicineDetails", new { id = medicine.Id })" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                                    {
+                                        <a href="@Url.Action("EditMedicine", new { id = medicine.Id })" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">No medicines found</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -222,4 +222,98 @@ namespace MedyxHMS.Services.Interfaces
         Task<bool> UpdateBedStatusAsync(int bedId, string status);
         Task<Bed> GetBedByBedNumberAsync(string bedNumber, int wardId);
     }
+
+    public interface IPrescriptionService
+    {
+        // Prescription methods
+        Task<IEnumerable<Prescription>> GetAllPrescriptionsAsync();
+        Task<Prescription> GetPrescriptionByIdAsync(int id);
+        Task<Prescription> CreatePrescriptionAsync(Prescription prescription);
+        Task<Prescription> UpdatePrescriptionAsync(Prescription prescription);
+        Task<bool> DeletePrescriptionAsync(int id);
+        Task<IEnumerable<Prescription>> GetPrescriptionsByPharmacyBillAsync(int pharmacyBillId);
+        Task<IEnumerable<Prescription>> GetPrescriptionsByPatientAsync(int patientId);
+        Task<IEnumerable<Prescription>> GetPrescriptionsByMedicineAsync(int medicineId);
+        Task<IEnumerable<Prescription>> GetPrescriptionsByDateRangeAsync(DateTime startDate, DateTime endDate);
+
+        // Medicine methods
+        Task<IEnumerable<Medicine>> GetAllMedicinesAsync();
+        Task<Medicine> GetMedicineByIdAsync(int id);
+        Task<Medicine> CreateMedicineAsync(Medicine medicine);
+        Task<Medicine> UpdateMedicineAsync(Medicine medicine);
+        Task<bool> DeleteMedicineAsync(int id);
+        Task<IEnumerable<Medicine>> GetLowStockMedicinesAsync();
+        Task<IEnumerable<Medicine>> GetExpiringMedicinesAsync(int daysAhead = 30);
+        Task<IEnumerable<Medicine>> SearchMedicinesAsync(string searchTerm);
+        Task<bool> UpdateMedicineStockAsync(int medicineId, int quantityUsed);
+        Task<int> GetTotalMedicineStockAsync();
+
+        // Pharmacy Bill methods
+        Task<IEnumerable<PharmacyBill>> GetAllPharmacyBillsAsync();
+        Task<PharmacyBill> GetPharmacyBillByIdAsync(int id);
+        Task<PharmacyBill> CreatePharmacyBillAsync(PharmacyBill bill);
+        Task<PharmacyBill> UpdatePharmacyBillAsync(PharmacyBill bill);
+        Task<bool> DeletePharmacyBillAsync(int id);
+        Task<IEnumerable<PharmacyBill>> GetPharmacyBillsByPatientAsync(int patientId);
+        Task<IEnumerable<PharmacyBill>> GetPharmacyBillsByStatusAsync(string status);
+        Task<IEnumerable<PharmacyBill>> GetPharmacyBillsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<decimal> GetPharmacyRevenueAsync(DateTime startDate, DateTime endDate);
+        Task<int> GetTotalPrescriptionsCountAsync(DateTime startDate, DateTime endDate);
+    }
+
+    public interface ILabService
+    {
+        // Lab Test Catalog methods
+        Task<IEnumerable<LabTest>> GetAllLabTestsAsync();
+        Task<LabTest> GetLabTestByIdAsync(int id);
+        Task<LabTest> CreateLabTestAsync(LabTest labTest);
+        Task<LabTest> UpdateLabTestAsync(LabTest labTest);
+        Task<bool> DeleteLabTestAsync(int id);
+        Task<IEnumerable<LabTest>> GetActiveLabTestsAsync();
+        Task<IEnumerable<LabTest>> SearchLabTestsByCategoryAsync(string category);
+        Task<IEnumerable<LabTest>> SearchLabTestsByNameAsync(string testName);
+
+        // Lab Result methods
+        Task<IEnumerable<LabResult>> GetAllLabResultsAsync();
+        Task<LabResult> GetLabResultByIdAsync(int id);
+        Task<LabResult> CreateLabResultAsync(LabResult labResult);
+        Task<LabResult> UpdateLabResultAsync(LabResult labResult);
+        Task<bool> DeleteLabResultAsync(int id);
+        Task<IEnumerable<LabResult>> GetLabResultsByPatientAsync(int patientId);
+        Task<IEnumerable<LabResult>> GetLabResultsByStatusAsync(string status);
+        Task<IEnumerable<LabResult>> GetPendingLabResultsAsync();
+        Task<IEnumerable<LabResult>> GetLabResultsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<IEnumerable<LabResult>> GetPatientLabResultsByTestAsync(int patientId, int testId);
+        Task<bool> UpdateLabResultStatusAsync(int labResultId, string status);
+        Task<int> GetPendingLabTestsCountAsync();
+        Task<decimal> GetLabRevenueAsync(DateTime startDate, DateTime endDate);
+    }
+
+    public interface IRadiologyService
+    {
+        // Radiology Test Catalog methods
+        Task<IEnumerable<RadiologyTest>> GetAllRadiologyTestsAsync();
+        Task<RadiologyTest> GetRadiologyTestByIdAsync(int id);
+        Task<RadiologyTest> CreateRadiologyTestAsync(RadiologyTest radiologyTest);
+        Task<RadiologyTest> UpdateRadiologyTestAsync(RadiologyTest radiologyTest);
+        Task<bool> DeleteRadiologyTestAsync(int id);
+        Task<IEnumerable<RadiologyTest>> GetActiveRadiologyTestsAsync();
+        Task<IEnumerable<RadiologyTest>> SearchRadiologyTestsByCategoryAsync(string category);
+        Task<IEnumerable<RadiologyTest>> SearchRadiologyTestsByNameAsync(string testName);
+
+        // Radiology Result methods
+        Task<IEnumerable<RadiologyResult>> GetAllRadiologyResultsAsync();
+        Task<RadiologyResult> GetRadiologyResultByIdAsync(int id);
+        Task<RadiologyResult> CreateRadiologyResultAsync(RadiologyResult radiologyResult);
+        Task<RadiologyResult> UpdateRadiologyResultAsync(RadiologyResult radiologyResult);
+        Task<bool> DeleteRadiologyResultAsync(int id);
+        Task<IEnumerable<RadiologyResult>> GetRadiologyResultsByPatientAsync(int patientId);
+        Task<IEnumerable<RadiologyResult>> GetRadiologyResultsByStatusAsync(string status);
+        Task<IEnumerable<RadiologyResult>> GetPendingRadiologyResultsAsync();
+        Task<IEnumerable<RadiologyResult>> GetRadiologyResultsByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<IEnumerable<RadiologyResult>> GetPatientRadiologyResultsByTestAsync(int patientId, int testId);
+        Task<bool> UpdateRadiologyResultStatusAsync(int radiologyResultId, string status);
+        Task<int> GetPendingRadiologyTestsCountAsync();
+        Task<decimal> GetRadiologyRevenueAsync(DateTime startDate, DateTime endDate);
+    }
 }

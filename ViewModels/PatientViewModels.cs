@@ -1,4 +1,5 @@
 using MedyxHMS.DTOs;
+using MedyxHMS.Models;
 using System.ComponentModel.DataAnnotations;
 
 namespace MedyxHMS.ViewModels
@@ -81,5 +82,19 @@ namespace MedyxHMS.ViewModels
         public decimal Amount { get; set; }
         public string Status { get; set; }
         public string Description { get; set; }
+    }
+
+    public class PatientDashboardViewModel
+    {
+        public PatientDto Patient { get; set; }
+        public IEnumerable<AppointmentSummaryDto> UpcomingAppointments { get; set; }
+        public IEnumerable<BillSummaryDto> PendingBills { get; set; }
+        public IEnumerable<MedicalRecord> RecentMedicalRecords { get; set; }
+        public IEnumerable<TestResult> RecentTestResults { get; set; }
+        public int TotalAppointments { get; set; }
+        public int TotalBills { get; set; }
+        public decimal TotalAmountDue { get; set; }
+        public string WelcomeMessage { get; set; }
+        public DateTime CurrentDate { get; set; } = DateTime.Now;
     }
 }

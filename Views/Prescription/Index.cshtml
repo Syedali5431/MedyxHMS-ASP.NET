@@ -1,0 +1,88 @@
+@model PrescriptionListViewModel
+
+@{
+    ViewData["Title"] = "Prescriptions";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h3>Prescriptions</h3>
+        </div>
+        <div class="col-md-4 text-end">
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
+            {
+                <a href="@Url.Action("Create")" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> New Prescription
+                </a>
+                <a href="@Url.Action("Medicines")" class="btn btn-info">
+                    <i class="fas fa-pills"></i> Manage Medicines
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Medicine</th>
+                        <th>Dosage</th>
+                        <th>Frequency</th>
+                        <th>Duration (days)</th>
+                        <th>Quantity</th>
+                        <th>Total Price</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Prescriptions.Any())
+                    {
+                        @foreach (var prescription in Model.Prescriptions)
+                        {
+                            <tr>
+                                <td>@prescription.MedicineName</td>
+                                <td>@prescription.Dosage</td>
+                                <td>@prescription.Frequency</td>
+                                <td>@prescription.Duration</td>
+                                <td>@prescription.Quantity</td>
+                                <td>@prescription.TotalPrice.ToString("C")</td>
+                                <td>@prescription.FormattedCreatedDate</td>
+                                <td>
+                                    <a href="@Url.Action("Details", new { id = prescription.Id })" class="btn btn-sm btn-info">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                                    {
+                                        <form method="post" action="@Url.Action("Delete", new { id = prescription.Id })" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No prescriptions found</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

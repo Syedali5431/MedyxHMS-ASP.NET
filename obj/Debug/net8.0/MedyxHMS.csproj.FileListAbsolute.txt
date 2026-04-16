@@ -160,3 +160,16 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\obj\Debug\net8.0\refint\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.pdb
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.csproj.AssemblyReference.cache
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\rpswa.dswa.cache.json
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.GeneratedMSBuildEditorConfig.editorconfig
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.AssemblyInfoInputs.cache
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.AssemblyInfo.cs
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.csproj.CoreCompileInputs.cache
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.MvcApplicationPartsAssemblyInfo.cache
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.RazorAssemblyInfo.cache
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.RazorAssemblyInfo.cs
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.sourcelink.json
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.dll
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\refint\MedyxHMS.dll
+e:\HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.pdb
