@@ -1,0 +1,67 @@
+# MedyxHMS Technical Documentation Index
+
+## Purpose
+This index provides a phase-by-phase navigation map for the remediation, stabilization, and hardening work completed in the ASP.NET application.
+
+## Phase Map
+
+### PH1 - Baseline Audit and Build Recovery Plan
+- Document: [PH1.md](PH1.md)
+- Focus:
+  - Baseline build diagnostics
+  - Error categorization strategy
+  - Recovery sequencing approach
+- Read this first to understand initial system state and triage method.
+
+### PH2 - Compile Stabilization Across Layers
+- Document: [PH2.md](PH2.md)
+- Focus:
+  - Controllers, Views, DTOs, ViewModels alignment
+  - Startup/DI/extension wiring corrections
+  - Compile blocker elimination
+- Read this to understand how compile stability was restored.
+
+### PH3 - Runtime Startup Blocker Resolution
+- Document: [PH3.md](PH3.md)
+- Focus:
+  - EF model mismatch fixes
+  - Seed data requirement fixes
+  - Relationship mapping corrections for startup success
+- Read this for database/model initialization troubleshooting patterns.
+
+### PH4 - Route, Authorization, and Login Runtime Fixes
+- Document: [PH4.md](PH4.md)
+- Focus:
+  - Route ambiguity resolution
+  - Dynamic Permission:* authorization policy handling
+  - Login flow model/view compatibility fixes
+- Read this for auth pipeline and routing runtime behavior changes.
+
+### PH5 - EF Warning Hardening and Startup Log Cleanup
+- Document: [PH5.md](PH5.md)
+- Focus:
+  - Shadow FK warning elimination
+  - Decimal precision mapping standardization
+  - Development HTTPS warning cleanup
+- Read this for maintainability hardening and warning reduction decisions.
+
+## Suggested Reading Order
+1. [PH1.md](PH1.md)
+2. [PH2.md](PH2.md)
+3. [PH3.md](PH3.md)
+4. [PH4.md](PH4.md)
+5. [PH5.md](PH5.md)
+
+## Module-to-Phase Cross Reference
+- Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
+- EF models, DbContext, relationships, seeding: [PH3.md](PH3.md), [PH5.md](PH5.md)
+- Routing and authorization pipeline: [PH4.md](PH4.md)
+- Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md)
+
+## Maintenance Rule
+When a new implementation phase is completed, create a new file in this folder (for example PH6.md), then append it to this index with:
+- phase objective
+- technical scope
+- key changes
+- validation summary
+- dependencies/risks

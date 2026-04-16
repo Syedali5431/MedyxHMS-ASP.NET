@@ -10,7 +10,7 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
 
         [Required]
-        public string PatientId { get; set; }
+        public int PatientId { get; set; }
 
         [ForeignKey("PatientId")]
         public virtual Patient Patient { get; set; }
@@ -39,6 +39,12 @@ namespace MedyxHMS.Models
         [ForeignKey("DoctorId")]
         public virtual ApplicationUser Doctor { get; set; }
 
+        [NotMapped]
+        public virtual Staff Staff { get; set; }
+
+        [NotMapped]
+        public virtual Prescription Prescription { get; set; }
+
         public DateTime RecordDate { get; set; }
 
         public DateTime CreatedDate { get; set; }
@@ -62,7 +68,7 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
 
         [Required]
-        public string PatientId { get; set; }
+        public int PatientId { get; set; }
 
         [ForeignKey("PatientId")]
         public virtual Patient Patient { get; set; }

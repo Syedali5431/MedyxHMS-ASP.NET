@@ -4,9 +4,12 @@ using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Linq;
 using System.Threading.Tasks;
 using AuthService = MedyxHMS.Services.Interfaces.IAuthorizationService;
+using PatientDto = MedyxHMS.DTOs.PatientDto;
+using AppointmentSummaryDto = MedyxHMS.ViewModels.AppointmentSummaryDto;
 
 namespace MedyxHMS.Controllers
 {
@@ -32,7 +35,7 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Index(string searchTerm)
         {
             // Check permissions
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "View"))
+            if (!await HasPermissionAsync("Patient", "View"))
             {
                 return Forbid();
             }
@@ -59,7 +62,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "View"))
+            if (!await HasPermissionAsync("Patient", "View"))
             {
                 return Forbid();
             }
@@ -91,7 +94,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Create()
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Add"))
+            if (!await HasPermissionAsync("Patient", "Add"))
             {
                 return Forbid();
             }
@@ -109,7 +112,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PatientCreateViewModel model)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Add"))
+            if (!await HasPermissionAsync("Patient", "Add"))
             {
                 return Forbid();
             }
@@ -176,7 +179,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Edit"))
+            if (!await HasPermissionAsync("Patient", "Edit"))
             {
                 return Forbid();
             }
@@ -224,7 +227,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PatientEditViewModel model)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Edit"))
+            if (!await HasPermissionAsync("Patient", "Edit"))
             {
                 return Forbid();
             }
@@ -319,7 +322,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Delete"))
+            if (!await HasPermissionAsync("Patient", "Delete"))
             {
                 return Forbid();
             }
@@ -367,7 +370,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Patient", "Delete"))
+            if (!await HasPermissionAsync("Patient", "Delete"))
             {
                 return Forbid();
             }
@@ -453,6 +456,17 @@ namespace MedyxHMS.Controllers
             var age = today.Year - dateOfBirth.Year;
             if (dateOfBirth.Date > today.AddYears(-age)) age--;
             return age;
+        }
+
+        private async Task<bool> HasPermissionAsync(string module, string action)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return false;
+            }
+
+            return await _authorizationService.HasPermissionAsync(userId, $"{module}.{action}");
         }
     }
 }

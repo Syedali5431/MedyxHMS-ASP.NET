@@ -1,9 +1,11 @@
 using MedyxHMS.Data;
+using MedyxHMS.Extensions;
 using MedyxHMS.Models;
 using MedyxHMS.Services;
 using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -127,9 +129,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();

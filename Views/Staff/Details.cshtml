@@ -146,7 +146,7 @@
 
                     <div class="form-group">
                         <label class="form-label text-muted">Created Date</label>
-                        <p class="h6">@Model.Staff.CreatedDate?.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
+                        <p class="h6">@Model.Staff.CreatedDate.ToString("MMMM dd, yyyy 'at' hh:mm tt")</p>
                     </div>
                 </div>
             </div>
@@ -230,7 +230,7 @@
                                     <div class="timeline-content">
                                         <h6 class="timeline-title">@activity.Action</h6>
                                         <p class="timeline-text">@activity.Details</p>
-                                        <small class="text-muted">@activity.Timestamp?.ToString("MMM dd, yyyy 'at' hh:mm tt")</small>
+                                        <small class="text-muted">@activity.Timestamp.ToString("MMM dd, yyyy 'at' hh:mm tt")</small>
                                     </div>
                                 </div>
                             }

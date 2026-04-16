@@ -15,7 +15,9 @@ namespace MedyxHMS.Models
         public string BillType { get; set; } // OPD, IPD, Pharmacy, Lab, Radiology
         public string Notes { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedDate { get; set; }
         public string CreatedBy { get; set; }
+        public bool CanPay => Status != "Paid" && Status != "Cancelled";
 
         // Navigation properties
         public Patient Patient { get; set; }
@@ -32,6 +34,11 @@ namespace MedyxHMS.Models
         public decimal Quantity { get; set; }
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
+        public decimal Amount
+        {
+            get => TotalPrice;
+            set => TotalPrice = value;
+        }
         public string Description { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 

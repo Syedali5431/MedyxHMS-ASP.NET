@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
+using AuthService = MedyxHMS.Services.Interfaces.IAuthorizationService;
+using AppointmentSummaryDto = MedyxHMS.ViewModels.AppointmentSummaryDto;
+using PatientDto = MedyxHMS.ViewModels.PatientDto;
 
 namespace MedyxHMS.Controllers
 {
@@ -16,14 +20,14 @@ namespace MedyxHMS.Controllers
     {
         private readonly IAppointmentService _appointmentService;
         private readonly IPatientService _patientService;
-        private readonly IAuthorizationService _authorizationService;
+        private readonly AuthService _authorizationService;
         private readonly IAuditService _auditService;
         private readonly ApplicationDbContext _context;
 
         public AppointmentController(
             IAppointmentService appointmentService,
             IPatientService patientService,
-            IAuthorizationService authorizationService,
+            AuthService authorizationService,
             IAuditService auditService,
             ApplicationDbContext context)
         {
@@ -38,7 +42,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string searchTerm, string statusFilter, DateTime? dateFilter, int? doctorFilter)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "View"))
+            if (!await HasPermissionAsync("Appointment", "View"))
             {
                 return Forbid();
             }
@@ -94,7 +98,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Calendar(DateTime? date, int? doctorId)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "View"))
+            if (!await HasPermissionAsync("Appointment", "View"))
             {
                 return Forbid();
             }
@@ -133,7 +137,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "View"))
+            if (!await HasPermissionAsync("Appointment", "View"))
             {
                 return Forbid();
             }
@@ -177,7 +181,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "View"))
+            if (!await HasPermissionAsync("Appointment", "View"))
             {
                 return Forbid();
             }
@@ -225,7 +229,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(int? patientId, string patientSearchTerm)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Add"))
+            if (!await HasPermissionAsync("Appointment", "Add"))
             {
                 return Forbid();
             }
@@ -260,7 +264,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AppointmentCreateViewModel model)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Add"))
+            if (!await HasPermissionAsync("Appointment", "Add"))
             {
                 return Forbid();
             }
@@ -333,7 +337,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Edit(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Edit"))
+            if (!await HasPermissionAsync("Appointment", "Edit"))
             {
                 return Forbid();
             }
@@ -370,7 +374,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, AppointmentEditViewModel model)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Edit"))
+            if (!await HasPermissionAsync("Appointment", "Edit"))
             {
                 return Forbid();
             }
@@ -462,7 +466,7 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> UpdateStatus(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Edit"))
+            if (!await HasPermissionAsync("Appointment", "Edit"))
             {
                 return Forbid();
             }
@@ -488,7 +492,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStatus(int id, AppointmentStatusUpdateViewModel model)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Edit"))
+            if (!await HasPermissionAsync("Appointment", "Edit"))
             {
                 return Forbid();
             }
@@ -547,7 +551,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            if (!await _authorizationService.HasPermissionAsync(User, "Appointment", "Delete"))
+            if (!await HasPermissionAsync("Appointment", "Delete"))
             {
                 return Forbid();
             }
@@ -641,6 +645,7 @@ namespace MedyxHMS.Controllers
                 PatientId = patient.PatientId,
                 FullName = $"{patient.FirstName} {patient.LastName}",
                 Phone = patient.Phone,
+                Gender = patient.Gender,
                 DateOfBirth = patient.DateOfBirth,
                 Age = (int)((DateTime.Now - patient.DateOfBirth).TotalDays / 365.25)
             };
@@ -679,6 +684,17 @@ namespace MedyxHMS.Controllers
                 a.AppointmentTime == time &&
                 a.Status != "Cancelled" &&
                 (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value));
+        }
+
+        private async Task<bool> HasPermissionAsync(string module, string action)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return false;
+            }
+
+            return await _authorizationService.HasPermissionAsync(userId, $"{module}.{action}");
         }
     }
 }

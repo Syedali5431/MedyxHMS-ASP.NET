@@ -32,7 +32,7 @@ namespace MedyxHMS.ViewModels
     public class CreateOPDVisitViewModel
     {
         public OPDVisitCreateDto Visit { get; set; } = new();
-        public List<PatientDto> Patients { get; set; } = new();
+        public List<MedyxHMS.DTOs.PatientDto> Patients { get; set; } = new();
         public List<StaffDto> Doctors { get; set; } = new();
         public int? SelectedPatientId { get; set; }
         public int? SelectedDoctorId { get; set; }
@@ -79,7 +79,7 @@ namespace MedyxHMS.ViewModels
     public class CreateIPDAdmissionViewModel
     {
         public IPDAdmissionCreateDto Admission { get; set; } = new();
-        public List<PatientDto> Patients { get; set; } = new();
+        public List<MedyxHMS.DTOs.PatientDto> Patients { get; set; } = new();
         public List<StaffDto> Doctors { get; set; } = new();
         public List<BedDto> AvailableBeds { get; set; } = new();
         public List<WardDto> Wards { get; set; } = new();

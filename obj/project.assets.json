@@ -4785,23 +4785,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\malin\\.nuget\\packages\\": {},
+    "C:\\Users\\alin\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+      "projectUniqueName": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
       "projectName": "MedyxHMS",
-      "projectPath": "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
-      "packagesPath": "C:\\Users\\malin\\.nuget\\packages\\",
-      "outputPath": "e:\\HMS\\MedyxHMS-ASPNET\\obj\\",
+      "projectPath": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+      "packagesPath": "C:\\Users\\alin\\.nuget\\packages\\",
+      "outputPath": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS-ASPNET\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\malin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\alin\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4829,7 +4829,7 @@
         "auditLevel": "low",
         "auditMode": "direct"
       },
-      "SdkAnalysisLevel": "9.0.300"
+      "SdkAnalysisLevel": "10.0.200"
     },
     "frameworks": {
       "net8.0": {
@@ -4873,7 +4873,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.312/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

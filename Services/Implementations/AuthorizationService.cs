@@ -114,7 +114,7 @@ namespace MedyxHMS.Services.Implementations
                 StaffId = userId,
                 RoleId = roleId,
                 AssignedDate = DateTime.UtcNow,
-                AssignedBy = User.FindFirstValue(ClaimTypes.NameIdentifier) // Current user
+                AssignedBy = "System"
             };
 
             _context.StaffRoles.Add(staffRole);

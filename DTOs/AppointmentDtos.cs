@@ -18,6 +18,8 @@ namespace MedyxHMS.DTOs
         public string Notes { get; set; }
         public DateTime CreatedDate { get; set; }
         public string CreatedBy { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+        public string UpdatedBy { get; set; }
         public string StatusBadgeClass => GetStatusBadgeClass();
         public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {AppointmentTime:hh\\:mm tt}";
 
@@ -66,6 +68,10 @@ namespace MedyxHMS.DTOs
 
     public class AppointmentUpdateDto
     {
+        public int Id { get; set; }
+        public int PatientId { get; set; }
+        public int DoctorId { get; set; }
+        public string Status { get; set; }
         [Required(ErrorMessage = "Appointment date is required")]
         [DataType(DataType.Date)]
         [Display(Name = "Appointment Date")]
@@ -85,6 +91,18 @@ namespace MedyxHMS.DTOs
 
         [StringLength(1000, ErrorMessage = "Notes cannot exceed 1000 characters")]
         public string Notes { get; set; }
+
+        public string StatusBadgeClass => Status?.ToLower() switch
+        {
+            "scheduled" => "badge-warning",
+            "confirmed" => "badge-success",
+            "completed" => "badge-primary",
+            "cancelled" => "badge-danger",
+            "no-show" => "badge-secondary",
+            _ => "badge-light"
+        };
+
+        public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {AppointmentTime:hh\\:mm tt}";
     }
 
     public class AppointmentStatusUpdateDto

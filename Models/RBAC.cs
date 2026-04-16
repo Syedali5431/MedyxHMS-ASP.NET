@@ -49,7 +49,7 @@ namespace MedyxHMS.Models
         public string AssignedBy { get; set; }
 
         // Navigation properties
-        public ApplicationUser Staff { get; set; }
+        public Staff Staff { get; set; }
         public Role Role { get; set; }
     }
 
@@ -65,6 +65,18 @@ namespace MedyxHMS.Models
         public decimal Salary { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
+        public string Email
+        {
+            get => User?.Email;
+            set
+            {
+                if (User != null)
+                {
+                    User.Email = value;
+                }
+            }
+        }
+        public string About { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 

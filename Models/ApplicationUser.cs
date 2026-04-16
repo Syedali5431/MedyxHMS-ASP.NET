@@ -9,10 +9,9 @@ namespace MedyxHMS.Models
         public string LastName { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime? FirstLoginDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
         public string? ProfileImage { get; set; }
 
-        // Navigation properties
-        public ICollection<StaffRole> StaffRoles { get; set; }
     }
 }

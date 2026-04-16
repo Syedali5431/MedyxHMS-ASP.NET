@@ -35,6 +35,11 @@ namespace MedyxHMS.Models
         public string EntityId { get; set; }
         public string OldValues { get; set; } // JSON of old values
         public string NewValues { get; set; } // JSON of new values
+        public string Details
+        {
+            get => NewValues;
+            set => NewValues = value;
+        }
         public string IpAddress { get; set; }
         public string UserAgent { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;

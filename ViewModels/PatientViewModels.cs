@@ -6,7 +6,7 @@ namespace MedyxHMS.ViewModels
 {
     public class PatientIndexViewModel
     {
-        public IEnumerable<PatientDto> Patients { get; set; }
+        public IEnumerable<MedyxHMS.DTOs.PatientDto> Patients { get; set; }
         public string SearchTerm { get; set; }
         public int TotalPatients { get; set; }
         public int ActivePatients { get; set; }
@@ -31,7 +31,7 @@ namespace MedyxHMS.ViewModels
 
     public class PatientEditViewModel
     {
-        public PatientDto CurrentPatient { get; set; }
+        public MedyxHMS.DTOs.PatientDto CurrentPatient { get; set; }
         public PatientUpdateDto Patient { get; set; }
 
         // Dropdown options
@@ -48,7 +48,7 @@ namespace MedyxHMS.ViewModels
 
     public class PatientDetailsViewModel
     {
-        public PatientDto Patient { get; set; }
+        public MedyxHMS.DTOs.PatientDto Patient { get; set; }
         public IEnumerable<AppointmentSummaryDto> RecentAppointments { get; set; }
         public IEnumerable<BillSummaryDto> RecentBills { get; set; }
         public int TotalAppointments { get; set; }
@@ -58,7 +58,7 @@ namespace MedyxHMS.ViewModels
 
     public class PatientDeleteViewModel
     {
-        public PatientDto Patient { get; set; }
+        public MedyxHMS.DTOs.PatientDto Patient { get; set; }
         public bool HasActiveAppointments { get; set; }
         public bool HasUnpaidBills { get; set; }
         public string WarningMessage { get; set; }
@@ -72,6 +72,7 @@ namespace MedyxHMS.ViewModels
         public TimeSpan AppointmentTime { get; set; }
         public string Status { get; set; }
         public string AppointmentType { get; set; }
+        public string PatientName { get; set; }
         public string DoctorName { get; set; }
     }
 
@@ -86,7 +87,7 @@ namespace MedyxHMS.ViewModels
 
     public class PatientDashboardViewModel
     {
-        public PatientDto Patient { get; set; }
+        public MedyxHMS.DTOs.PatientDto Patient { get; set; }
         public IEnumerable<AppointmentSummaryDto> UpcomingAppointments { get; set; }
         public IEnumerable<BillSummaryDto> PendingBills { get; set; }
         public IEnumerable<MedicalRecord> RecentMedicalRecords { get; set; }

@@ -34,6 +34,7 @@ namespace MedyxHMS.ViewModels
 
     public class PatientPortalPasswordChangeViewModel
     {
+        public string PatientId { get; set; }
         public PatientPortalPasswordChangeDto PasswordChange { get; set; } = new();
         public string PatientName { get; set; }
         public string PatientEmail { get; set; }
@@ -135,7 +136,7 @@ namespace MedyxHMS.ViewModels
         public int TotalPages => (int)Math.Ceiling(TotalRecords / (double)PageSize);
         public bool HasPreviousPage => CurrentPage > 1;
         public bool HasNextPage => CurrentPage < TotalPages;
-        public decimal TotalOutstandingAmount => Bills.Where(b => b.Status == "Pending").Sum(b => b.PendingAmount);
+        public decimal TotalOutstandingAmount => Bills.Where(b => b.Status == "Pending").Sum(b => b.PendingAmount ?? 0);
         public int OverdueBills => Bills.Count(b => b.Status == "Overdue");
     }
 
@@ -242,6 +243,7 @@ namespace MedyxHMS.ViewModels
     public class PatientPortalSettingsViewModel
     {
         public PatientPortalDto Patient { get; set; } = new();
+        public NotificationPreferences NotificationPreferences { get; set; } = new();
         public bool EmailNotifications { get; set; } = true;
         public bool SMSNotifications { get; set; } = true;
         public bool AppointmentReminders { get; set; } = true;
@@ -249,6 +251,16 @@ namespace MedyxHMS.ViewModels
         public bool BillNotifications { get; set; } = true;
         public string LanguagePreference { get; set; } = "en";
         public string TimeZone { get; set; } = "UTC";
+        public string PreferredLanguage
+        {
+            get => LanguagePreference;
+            set => LanguagePreference = value;
+        }
+        public string PreferredTimezone
+        {
+            get => TimeZone;
+            set => TimeZone = value;
+        }
         public List<string> AvailableLanguages => new() { "en", "es", "fr", "de", "hi", "ar" };
         public List<string> AvailableTimeZones => new()
         {

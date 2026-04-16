@@ -15,8 +15,8 @@ namespace MedyxHMS.DTOs
         public string Phone { get; set; }
         public string Department { get; set; }
         public string Designation { get; set; }
-        public DateTime DateOfJoining { get; set; }
-        public decimal Salary { get; set; }
+        public DateTime? DateOfJoining { get; set; }
+        public decimal? Salary { get; set; }
         public string Address { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedDate { get; set; }
@@ -24,8 +24,9 @@ namespace MedyxHMS.DTOs
         public string StatusText => IsActive ? "Active" : "Inactive";
         public string StatusBadgeClass => IsActive ? "badge-success" : "badge-danger";
         public string FormattedLastLogin => LastLoginDate?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "Never";
-        public List<StaffRoleDto> Roles { get; set; } = new();
+        public List<string> Roles { get; set; } = new();
         public List<string> Permissions { get; set; } = new();
+        public string FormattedCreatedDate => CreatedDate.ToString("MMM dd, yyyy");
     }
 
     public class StaffCreateDto
@@ -57,7 +58,7 @@ namespace MedyxHMS.DTOs
         public string Designation { get; set; }
 
         [Required(ErrorMessage = "Date of joining is required")]
-        public DateTime DateOfJoining { get; set; }
+        public DateTime? DateOfJoining { get; set; }
 
         [Required(ErrorMessage = "Salary is required")]
         [Range(0, 999999.99, ErrorMessage = "Salary must be between 0 and 999999.99")]
@@ -77,6 +78,11 @@ namespace MedyxHMS.DTOs
         public string ConfirmPassword { get; set; }
 
         public List<int> RoleIds { get; set; } = new();
+        public List<int> SelectedRoleIds
+        {
+            get => RoleIds;
+            set => RoleIds = value ?? new List<int>();
+        }
         public bool IsActive { get; set; } = true;
     }
 
@@ -121,7 +127,12 @@ namespace MedyxHMS.DTOs
         public string Address { get; set; }
 
         public List<int> RoleIds { get; set; } = new();
-        public bool? IsActive { get; set; }
+        public List<int> SelectedRoleIds
+        {
+            get => RoleIds;
+            set => RoleIds = value ?? new List<int>();
+        }
+        public bool IsActive { get; set; }
     }
 
     public class StaffPasswordChangeDto
@@ -170,8 +181,9 @@ namespace MedyxHMS.DTOs
         public int RoleId { get; set; }
         public string RoleName { get; set; }
         public string RoleDescription { get; set; }
-        public DateTime AssignedDate { get; set; }
+        public DateTime? AssignedDate { get; set; }
         public string AssignedBy { get; set; }
+        public bool IsAssigned { get; set; }
         public bool CanView { get; set; }
         public bool CanAdd { get; set; }
         public bool CanEdit { get; set; }

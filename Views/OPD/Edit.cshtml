@@ -48,9 +48,9 @@
                         <div class="mb-3">
                             <label for="Visit_PaymentStatus" class="form-label">Payment Status</label>
                             <select name="Visit.PaymentStatus" id="Visit_PaymentStatus" class="form-select">
-                                <option value="Pending" @(Model.Visit.PaymentStatus == "Pending" ? "selected" : "")>Pending</option>
-                                <option value="Paid" @(Model.Visit.PaymentStatus == "Paid" ? "selected" : "")>Paid</option>
-                                <option value="Waived" @(Model.Visit.PaymentStatus == "Waived" ? "selected" : "")>Waived</option>
+                                <option value="Pending" selected="@(Model.Visit.PaymentStatus == "Pending")">Pending</option>
+                                <option value="Paid" selected="@(Model.Visit.PaymentStatus == "Paid")">Paid</option>
+                                <option value="Waived" selected="@(Model.Visit.PaymentStatus == "Waived")">Waived</option>
                             </select>
                         </div>
 

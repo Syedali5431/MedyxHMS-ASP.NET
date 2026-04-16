@@ -40,7 +40,7 @@
                                     <option value="">-- Select Patient --</option>
                                     @foreach (var patient in Model.Patients)
                                     {
-                                        <option value="@patient.Id" @(Model.Visit.PatientId == patient.Id ? "selected" : "")>
+                                        <option value="@patient.Id" selected="@(Model.Visit.PatientId == patient.Id)">
                                             @patient.FirstName @patient.LastName
                                         </option>
                                     }
@@ -54,7 +54,7 @@
                                     <option value="">-- Select Doctor --</option>
                                     @foreach (var doctor in Model.Doctors)
                                     {
-                                        <option value="@doctor.Id" @(Model.Visit.DoctorId == doctor.Id ? "selected" : "")>
+                                        <option value="@doctor.Id" selected="@(Model.Visit.DoctorId.ToString() == doctor.Id)">
                                             Dr. @doctor.FirstName @doctor.LastName
                                         </option>
                                     }
@@ -113,9 +113,9 @@
                             <div class="col-md-6">
                                 <label for="Visit_PaymentStatus" class="form-label">Payment Status <span class="text-danger">*</span></label>
                                 <select name="Visit.PaymentStatus" id="Visit_PaymentStatus" class="form-select" required>
-                                    <option value="Pending" @(Model.Visit.PaymentStatus == "Pending" ? "selected" : "")>Pending</option>
-                                    <option value="Paid" @(Model.Visit.PaymentStatus == "Paid" ? "selected" : "")>Paid</option>
-                                    <option value="Waived" @(Model.Visit.PaymentStatus == "Waived" ? "selected" : "")>Waived</option>
+                                    <option value="Pending" selected="@(Model.Visit.PaymentStatus == "Pending")">Pending</option>
+                                    <option value="Paid" selected="@(Model.Visit.PaymentStatus == "Paid")">Paid</option>
+                                    <option value="Waived" selected="@(Model.Visit.PaymentStatus == "Waived")">Waived</option>
                                 </select>
                                 <span class="text-danger">@Html.ValidationMessageFor(m => m.Visit.PaymentStatus)</span>
                             </div>

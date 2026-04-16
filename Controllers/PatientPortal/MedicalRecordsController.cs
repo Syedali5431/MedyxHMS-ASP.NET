@@ -48,7 +48,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                             Department = r.Staff?.Department,
                             Diagnosis = r.Diagnosis,
                             Treatment = r.Treatment,
-                            Prescription = r.Prescription,
+                            Prescription = r.Prescription?.ToString(),
                             Notes = r.Notes
                         })
                         .ToList()
@@ -94,7 +94,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     Department = record.Staff?.Department,
                     Diagnosis = record.Diagnosis,
                     Treatment = record.Treatment,
-                    Prescription = record.Prescription,
+                    Prescription = record.Prescription?.ToString(),
                     Notes = record.Notes
                 },
                 Doctor = new PatientPortalDoctorDto

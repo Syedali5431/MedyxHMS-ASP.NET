@@ -41,6 +41,8 @@ namespace MedyxHMS.Data
         public DbSet<LabResult> LabResults { get; set; }
         public DbSet<RadiologyTest> RadiologyTests { get; set; }
         public DbSet<RadiologyResult> RadiologyResults { get; set; }
+        public DbSet<MedicalRecord> MedicalRecords { get; set; }
+        public DbSet<TestResult> TestResults { get; set; }
 
         // Settings & Configuration
         public DbSet<Setting> Settings { get; set; }
@@ -59,6 +61,9 @@ namespace MedyxHMS.Data
 
             // Configure relationships and constraints
             ConfigureRelationships(modelBuilder);
+
+            // Configure decimal precision/scale to avoid SQL Server truncation defaults
+            ConfigureDecimalPrecision(modelBuilder);
 
             // Seed initial data
             SeedInitialData(modelBuilder);
@@ -81,12 +86,12 @@ namespace MedyxHMS.Data
             // OPD/IPD relationships
             modelBuilder.Entity<OPDVisit>()
                 .HasOne(o => o.Patient)
-                .WithMany()
+                .WithMany(p => p.OPDVisits)
                 .HasForeignKey(o => o.PatientId);
 
             modelBuilder.Entity<IPDAdmission>()
                 .HasOne(i => i.Patient)
-                .WithMany()
+                .WithMany(p => p.IPDAdmissions)
                 .HasForeignKey(i => i.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
@@ -94,6 +99,19 @@ namespace MedyxHMS.Data
                 .HasOne(i => i.Bed)
                 .WithMany()
                 .HasForeignKey(i => i.BedId);
+
+            // Medical Record relationships
+            modelBuilder.Entity<MedicalRecord>()
+                .HasOne(m => m.Patient)
+                .WithMany()
+                .HasForeignKey(m => m.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<TestResult>()
+                .HasOne(t => t.Patient)
+                .WithMany()
+                .HasForeignKey(t => t.PatientId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             // Billing relationships
             modelBuilder.Entity<Bill>()
@@ -134,6 +152,39 @@ namespace MedyxHMS.Data
                 .HasForeignKey(sr => sr.RoleId);
         }
 
+        private static void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
+        {
+            const int precision = 18;
+            const int scale = 2;
+
+            modelBuilder.Entity<Bed>().Property(x => x.DailyCharges).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<Bill>().Property(x => x.TotalAmount).HasPrecision(precision, scale);
+            modelBuilder.Entity<Bill>().Property(x => x.PaidAmount).HasPrecision(precision, scale);
+            modelBuilder.Entity<Bill>().Property(x => x.PendingAmount).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<BillItem>().Property(x => x.Amount).HasPrecision(precision, scale);
+            modelBuilder.Entity<BillItem>().Property(x => x.Quantity).HasPrecision(precision, scale);
+            modelBuilder.Entity<BillItem>().Property(x => x.UnitPrice).HasPrecision(precision, scale);
+            modelBuilder.Entity<BillItem>().Property(x => x.TotalPrice).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<IPDAdmission>().Property(x => x.DailyCharges).HasPrecision(precision, scale);
+            modelBuilder.Entity<LabTest>().Property(x => x.Price).HasPrecision(precision, scale);
+            modelBuilder.Entity<Medicine>().Property(x => x.UnitPrice).HasPrecision(precision, scale);
+            modelBuilder.Entity<OPDVisit>().Property(x => x.ConsultationFee).HasPrecision(precision, scale);
+            modelBuilder.Entity<Payment>().Property(x => x.Amount).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<PharmacyBill>().Property(x => x.TotalAmount).HasPrecision(precision, scale);
+            modelBuilder.Entity<PharmacyBill>().Property(x => x.PaidAmount).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<Prescription>().Property(x => x.UnitPrice).HasPrecision(precision, scale);
+            modelBuilder.Entity<Prescription>().Property(x => x.TotalPrice).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<RadiologyTest>().Property(x => x.Price).HasPrecision(precision, scale);
+            modelBuilder.Entity<Staff>().Property(x => x.Salary).HasPrecision(precision, scale);
+            modelBuilder.Entity<Transaction>().Property(x => x.Amount).HasPrecision(precision, scale);
+        }
+
         private void SeedInitialData(ModelBuilder modelBuilder)
         {
             // Seed SuperAdmin user (from migration analysis)
@@ -146,6 +197,8 @@ namespace MedyxHMS.Data
                     Email = "superadmin@hospital.com",
                     EmailConfirmed = true,
                     EmployeeId = "SUPER001",
+                    FirstName = "Super",
+                    LastName = "Admin",
                     IsActive = true
                 }
             );

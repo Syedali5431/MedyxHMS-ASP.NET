@@ -121,7 +121,7 @@
                                     <label for="Staff_DateOfJoining" class="form-label">Date of Joining <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control @Html.ValidationCssClassFor(m => m.Staff.DateOfJoining)"
                                            id="Staff_DateOfJoining" name="Staff.DateOfJoining"
-                                           value="@(Model.Staff.DateOfJoining?.ToString("yyyy-MM-dd"))" required>
+                                         value="@(Model.Staff.DateOfJoining.ToString("yyyy-MM-dd"))" required>
                                     @Html.ValidationMessageFor(m => m.Staff.DateOfJoining, "", new { @class = "text-danger" })
                                 </div>
                             </div>

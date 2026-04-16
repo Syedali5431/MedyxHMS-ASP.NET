@@ -11,6 +11,7 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers.PatientPortal
 {
+    [Route("PatientPortal/[controller]/[action]")]
     public class AccountController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
@@ -35,34 +36,36 @@ namespace MedyxHMS.Controllers.PatientPortal
         [AllowAnonymous]
         public IActionResult Login(string returnUrl = null)
         {
-            var viewModel = new PatientPortalLoginViewModel
-            {
-                ReturnUrl = returnUrl ?? Url.Content("~/PatientPortal/Dashboard")
-            };
-            return View(viewModel);
+            ViewData["ReturnUrl"] = returnUrl ?? Url.Content("~/PatientPortal/Dashboard");
+            return View("~/Views/Account/Login.cshtml", new LoginViewModel());
         }
 
         // POST: /PatientPortal/Account/Login
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(PatientPortalLoginViewModel viewModel)
+        public async Task<IActionResult> Login(LoginViewModel viewModel, string returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl ?? Url.Content("~/PatientPortal/Dashboard");
+
             if (ModelState.IsValid)
             {
                 var result = await _signInManager.PasswordSignInAsync(
-                    viewModel.Login.Email,
-                    viewModel.Login.Password,
-                    viewModel.Login.RememberMe,
+                    viewModel.Email,
+                    viewModel.Password,
+                    viewModel.RememberMe,
                     lockoutOnFailure: true);
 
                 if (result.Succeeded)
                 {
-                    var user = await _userManager.FindByEmailAsync(viewModel.Login.Email);
-                    user.LastLoginDate = DateTime.UtcNow;
-                    await _userManager.UpdateAsync(user);
+                    var user = await _userManager.FindByEmailAsync(viewModel.Email);
+                    if (user != null)
+                    {
+                        user.LastLoginDate = DateTime.UtcNow;
+                        await _userManager.UpdateAsync(user);
+                    }
 
-                    return LocalRedirect(viewModel.ReturnUrl ?? Url.Content("~/PatientPortal/Dashboard"));
+                    return LocalRedirect(returnUrl ?? Url.Content("~/PatientPortal/Dashboard"));
                 }
 
                 if (result.IsLockedOut)
@@ -74,7 +77,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 ModelState.AddModelError(string.Empty, "Invalid email or password");
             }
 
-            return View(viewModel);
+            return View("~/Views/Account/Login.cshtml", viewModel);
         }
 
         // GET: /PatientPortal/Account/Register

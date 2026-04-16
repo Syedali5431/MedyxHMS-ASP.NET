@@ -267,7 +267,7 @@ namespace MedyxHMS.Controllers
                         LastName = viewModel.Staff.LastName,
                         Department = viewModel.Staff.Department,
                         Designation = viewModel.Staff.Designation,
-                        DateOfJoining = viewModel.Staff.DateOfJoining,
+                        DateOfJoining = viewModel.Staff.DateOfJoining ?? DateTime.UtcNow,
                         Salary = viewModel.Staff.Salary,
                         Phone = viewModel.Staff.Phone,
                         Address = viewModel.Staff.Address,

@@ -46,9 +46,9 @@
                     <label for="filter" class="form-label">Payment Status</label>
                     <select name="filter" id="filter" class="form-select">
                         <option value="all" selected>All</option>
-                        <option value="Paid" @(Model.Filter == "Paid" ? "selected" : "")>Paid</option>
-                        <option value="Pending" @(Model.Filter == "Pending" ? "selected" : "")>Pending</option>
-                        <option value="Waived" @(Model.Filter == "Waived" ? "selected" : "")>Waived</option>
+                        <option value="Paid" selected="@(Model.Filter == "Paid")">Paid</option>
+                        <option value="Pending" selected="@(Model.Filter == "Pending")">Pending</option>
+                        <option value="Waived" selected="@(Model.Filter == "Waived")">Waived</option>
                     </select>
                 </div>
                 <div class="col-md-2">

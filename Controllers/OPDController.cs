@@ -5,6 +5,7 @@ using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using PatientDto = MedyxHMS.DTOs.PatientDto;
 
 namespace MedyxHMS.Controllers
 {
@@ -14,12 +15,14 @@ namespace MedyxHMS.Controllers
         private readonly IOPDService _opdService;
         private readonly IPatientService _patientService;
         private readonly IStaffService _staffService;
+        private readonly IBillingService _billingService;
 
-        public OPDController(IOPDService opdService, IPatientService patientService, IStaffService staffService)
+        public OPDController(IOPDService opdService, IPatientService patientService, IStaffService staffService, IBillingService billingService)
         {
             _opdService = opdService;
             _patientService = patientService;
             _staffService = staffService;
+            _billingService = billingService;
         }
 
         public async Task<IActionResult> Index(string filter = "all", int page = 1, int pageSize = 10,
@@ -206,8 +209,49 @@ namespace MedyxHMS.Controllers
                     CreatedBy = User.Identity.Name
                 };
 
-                await _opdService.CreateOPDVisitAsync(visit);
-                TempData["Success"] = "OPD visit created successfully.";
+                var createdVisit = await _opdService.CreateOPDVisitAsync(visit);
+
+                // Link OPD visit to billing by creating a consultation bill.
+                if (createdVisit.ConsultationFee > 0 && !string.Equals(createdVisit.PaymentStatus, "Waived", StringComparison.OrdinalIgnoreCase))
+                {
+                    var isPaid = string.Equals(createdVisit.PaymentStatus, "Paid", StringComparison.OrdinalIgnoreCase);
+                    var bill = new Bill
+                    {
+                        PatientId = createdVisit.PatientId,
+                        BillDate = createdVisit.VisitDate,
+                        DueDate = createdVisit.VisitDate.Date,
+                        TotalAmount = createdVisit.ConsultationFee,
+                        PaidAmount = isPaid ? createdVisit.ConsultationFee : 0,
+                        PendingAmount = isPaid ? 0 : createdVisit.ConsultationFee,
+                        Status = isPaid ? "Paid" : "Unpaid",
+                        BillType = "OPD",
+                        Notes = $"OPD consultation bill for OPD Visit ID: {createdVisit.Id}",
+                        CreatedBy = User.Identity?.Name ?? "System",
+                        BillItems = new List<BillItem>
+                        {
+                            new BillItem
+                            {
+                                ItemName = "OPD Consultation",
+                                ItemType = "Service",
+                                Quantity = 1,
+                                UnitPrice = createdVisit.ConsultationFee,
+                                TotalPrice = createdVisit.ConsultationFee,
+                                Description = $"Consultation charge for OPD Visit #{createdVisit.Id}",
+                                CreatedDate = DateTime.UtcNow
+                            }
+                        }
+                    };
+
+                    var createdBill = await _billingService.CreateBillAsync(bill);
+                    TempData["Success"] = createdBill != null
+                        ? $"OPD visit created successfully. Bill {createdBill.BillNumber} generated."
+                        : "OPD visit created successfully.";
+                }
+                else
+                {
+                    TempData["Success"] = "OPD visit created successfully.";
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -414,7 +458,7 @@ namespace MedyxHMS.Controllers
                     name = $"{patient.FirstName} {patient.LastName}",
                     phone = patient.Phone,
                     email = patient.Email,
-                    dateOfBirth = patient.DateOfBirth?.ToString("yyyy-MM-dd"),
+                    dateOfBirth = patient.DateOfBirth.ToString("yyyy-MM-dd"),
                     gender = patient.Gender
                 }
             });

@@ -15,6 +15,12 @@ namespace MedyxHMS.DTOs
         public DateTime? DueDate { get; set; }
         public decimal TotalAmount { get; set; }
         public decimal PaidAmount { get; set; }
+        public decimal PendingAmount
+        {
+            get => OutstandingAmount;
+            set { }
+        }
+        public string BillType { get; set; }
         public decimal OutstandingAmount => TotalAmount - PaidAmount;
         public string Status { get; set; } // Pending, Paid, Overdue, Cancelled
         public string Notes { get; set; }

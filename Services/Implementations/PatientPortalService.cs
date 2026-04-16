@@ -418,7 +418,7 @@ namespace MedyxHMS.Services.Implementations
         // Doctor Information
         public async Task<IEnumerable<Staff>> GetAvailableDoctorsForBookingAsync(string departmentFilter = null)
         {
-            var query = _context.Staff
+            IQueryable<Staff> query = _context.Staff
                 .Where(s => s.IsActive && s.StaffRoles.Any(sr => sr.Role.Name == "Doctor"))
                 .Include(s => s.User);
 

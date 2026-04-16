@@ -199,9 +199,9 @@ namespace MedyxHMS.DTOs
     public class PatientPortalAppointmentDto
     {
         public string Id { get; set; }
-        public string AppointmentId { get; set; }
-        public DateTime AppointmentDate { get; set; }
-        public string FormattedAppointmentDate => AppointmentDate.ToString("MMM dd, yyyy 'at' hh:mm tt");
+        public int AppointmentId { get; set; }
+        public DateTime? AppointmentDate { get; set; }
+        public string FormattedAppointmentDate => AppointmentDate?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "N/A";
         public string DoctorName { get; set; }
         public string Department { get; set; }
         public string Status { get; set; }
@@ -241,8 +241,8 @@ namespace MedyxHMS.DTOs
     public class PatientPortalMedicalRecordDto
     {
         public string Id { get; set; }
-        public DateTime RecordDate { get; set; }
-        public string FormattedRecordDate => RecordDate.ToString("MMM dd, yyyy");
+        public DateTime? RecordDate { get; set; }
+        public string FormattedRecordDate => RecordDate?.ToString("MMM dd, yyyy") ?? "N/A";
         public string DoctorName { get; set; }
         public string Department { get; set; }
         public string Diagnosis { get; set; }
@@ -258,8 +258,8 @@ namespace MedyxHMS.DTOs
         public string Id { get; set; }
         public string TestName { get; set; }
         public string TestType { get; set; }
-        public DateTime TestDate { get; set; }
-        public string FormattedTestDate => TestDate.ToString("MMM dd, yyyy");
+        public DateTime? TestDate { get; set; }
+        public string FormattedTestDate => TestDate?.ToString("MMM dd, yyyy") ?? "N/A";
         public string Result { get; set; }
         public string Units { get; set; }
         public string ReferenceRange { get; set; }
@@ -280,11 +280,11 @@ namespace MedyxHMS.DTOs
     {
         public string Id { get; set; }
         public string BillNumber { get; set; }
-        public DateTime BillDate { get; set; }
-        public string FormattedBillDate => BillDate.ToString("MMM dd, yyyy");
-        public decimal TotalAmount { get; set; }
-        public decimal PaidAmount { get; set; }
-        public decimal PendingAmount => TotalAmount - PaidAmount;
+        public DateTime? BillDate { get; set; }
+        public string FormattedBillDate => BillDate?.ToString("MMM dd, yyyy") ?? "N/A";
+        public decimal? TotalAmount { get; set; }
+        public decimal? PaidAmount { get; set; }
+        public decimal? PendingAmount => (TotalAmount ?? 0) - (PaidAmount ?? 0);
         public string Status { get; set; }
         public string StatusBadgeClass => Status switch
         {
@@ -298,7 +298,7 @@ namespace MedyxHMS.DTOs
         public string FormattedDueDate => DueDate?.ToString("MMM dd, yyyy") ?? "N/A";
         public List<PatientPortalBillItemDto> Items { get; set; } = new();
         public List<PatientPortalPaymentDto> Payments { get; set; } = new();
-        public bool CanPay => Status == "Pending" && PendingAmount > 0;
+        public bool CanPay => Status == "Pending" && (PendingAmount ?? 0) > 0;
     }
 
     public class PatientPortalBillItemDto
@@ -306,15 +306,15 @@ namespace MedyxHMS.DTOs
         public string Description { get; set; }
         public decimal Amount { get; set; }
         public string Category { get; set; }
-        public DateTime ItemDate { get; set; }
-        public string FormattedItemDate => ItemDate.ToString("MMM dd, yyyy");
+        public DateTime? ItemDate { get; set; }
+        public string FormattedItemDate => ItemDate?.ToString("MMM dd, yyyy") ?? "N/A";
     }
 
     public class PatientPortalPaymentDto
     {
         public string Id { get; set; }
-        public DateTime PaymentDate { get; set; }
-        public string FormattedPaymentDate => PaymentDate.ToString("MMM dd, yyyy");
+        public DateTime? PaymentDate { get; set; }
+        public string FormattedPaymentDate => PaymentDate?.ToString("MMM dd, yyyy") ?? "N/A";
         public decimal Amount { get; set; }
         public string PaymentMethod { get; set; }
         public string TransactionId { get; set; }
@@ -333,7 +333,7 @@ namespace MedyxHMS.DTOs
         public PatientPortalDto Patient { get; set; }
         public int UpcomingAppointments { get; set; }
         public int PendingBills { get; set; }
-        public decimal TotalOutstandingAmount { get; set; }
+        public decimal? TotalOutstandingAmount { get; set; }
         public int RecentTestResults { get; set; }
         public List<PatientPortalAppointmentDto> RecentAppointments { get; set; } = new();
         public List<PatientPortalBillDto> RecentBills { get; set; } = new();

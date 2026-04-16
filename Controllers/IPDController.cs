@@ -5,6 +5,7 @@ using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using PatientDto = MedyxHMS.DTOs.PatientDto;
 
 namespace MedyxHMS.Controllers
 {
@@ -107,7 +108,7 @@ namespace MedyxHMS.Controllers
             var relatedBills = await _billingService.GetBillsByPatientAsync(admission.PatientId);
             var ipdBills = relatedBills.Where(b => b.BillType == "IPD").ToList();
 
-            var totalCharges = admission.DailyCharges * ((admission.DischargeDate ?? DateTime.UtcNow) - admission.AdmissionDate).TotalDays;
+            var totalCharges = admission.DailyCharges * (decimal)((admission.DischargeDate ?? DateTime.UtcNow) - admission.AdmissionDate).TotalDays;
 
             var viewModel = new IPDAdmissionDetailsViewModel
             {
@@ -507,7 +508,7 @@ namespace MedyxHMS.Controllers
             if (bill == null) return null;
             return new BillDto
             {
-                Id = bill.Id,
+                Id = bill.Id.ToString(),
                 BillNumber = bill.BillNumber,
                 PatientId = bill.PatientId,
                 BillDate = bill.BillDate,

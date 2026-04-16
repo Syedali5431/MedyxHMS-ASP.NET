@@ -165,7 +165,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     var appointment = new Appointment
                     {
                         PatientId = int.Parse(userId),
-                        StaffId = int.Parse(viewModel.Appointment.DoctorId),
+                        StaffId = viewModel.Appointment.DoctorId,
                         AppointmentDate = viewModel.SelectedDate.Add(new TimeSpan(9, 0, 0)), // Default time
                         Symptoms = viewModel.Appointment.Symptoms,
                         Notes = viewModel.Appointment.Notes,
@@ -240,8 +240,8 @@ namespace MedyxHMS.Controllers.PatientPortal
             {
                 var result = await _patientPortalService.RescheduleAppointmentAsync(
                     id,
-                    viewModel.Appointment.AppointmentDate.Date,
-                    viewModel.Appointment.AppointmentDate.TimeOfDay);
+                    (viewModel.Appointment.AppointmentDate ?? DateTime.Now).Date,
+                    (viewModel.Appointment.AppointmentDate ?? DateTime.Now).TimeOfDay);
 
                 if (result)
                 {

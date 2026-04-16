@@ -2,7 +2,9 @@ using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using System.Security.Claims;
+using PermissionService = MedyxHMS.Services.Interfaces.IAuthorizationService;
 
 namespace MedyxHMS.Extensions
 {
@@ -41,7 +43,7 @@ namespace MedyxHMS.Extensions
             }
 
             using var scope = _serviceProvider.CreateScope();
-            var authorizationService = scope.ServiceProvider.GetRequiredService<IAuthorizationService>();
+            var authorizationService = scope.ServiceProvider.GetRequiredService<PermissionService>();
 
             if (await authorizationService.HasPermissionAsync(userId, requirement.Permission))
             {
@@ -55,6 +57,7 @@ namespace MedyxHMS.Extensions
         public static IServiceCollection AddPermissionAuthorization(this IServiceCollection services)
         {
             services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
+            services.AddSingleton<IAuthorizationPolicyProvider, PermissionAuthorizationPolicyProvider>();
             return services;
         }
 
@@ -64,6 +67,29 @@ namespace MedyxHMS.Extensions
         {
             builder.AddRequirements(new PermissionRequirement(permission));
             return builder;
+        }
+    }
+
+    public class PermissionAuthorizationPolicyProvider : DefaultAuthorizationPolicyProvider
+    {
+        public PermissionAuthorizationPolicyProvider(IOptions<AuthorizationOptions> options)
+            : base(options)
+        {
+        }
+
+        public override Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
+        {
+            const string prefix = "Permission:";
+            if (policyName.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            {
+                var permission = policyName[prefix.Length..];
+                var policy = new AuthorizationPolicyBuilder()
+                    .AddRequirements(new PermissionRequirement(permission))
+                    .Build();
+                return Task.FromResult<AuthorizationPolicy?>(policy);
+            }
+
+            return base.GetPolicyAsync(policyName);
         }
     }
 
@@ -103,7 +129,7 @@ namespace MedyxHMS.Extensions
             }
 
             using var scope = _serviceProvider.CreateScope();
-            var authorizationService = scope.ServiceProvider.GetRequiredService<IAuthorizationService>();
+            var authorizationService = scope.ServiceProvider.GetRequiredService<PermissionService>();
 
             if (!await authorizationService.HasPermissionAsync(userId, _permission))
             {
