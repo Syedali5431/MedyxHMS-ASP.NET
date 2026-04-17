@@ -1,0 +1,49 @@
+@model AuditLogDetailsViewModel
+@{
+    ViewData["Title"] = "Audit Log Details";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Audit Log Details</h2>
+            <p class="text-muted mb-0">Inspect before/after values and metadata</p>
+        </div>
+        <a class="btn btn-outline-secondary" asp-action="Index">Back to Audit Logs</a>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Metadata</strong></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4"><strong>Id:</strong> @Model.AuditLog.Id</div>
+                <div class="col-md-4"><strong>User Id:</strong> @(string.IsNullOrWhiteSpace(Model.AuditLog.UserId) ? "System" : Model.AuditLog.UserId)</div>
+                <div class="col-md-4"><strong>Time (UTC):</strong> @Model.AuditLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                <div class="col-md-4"><strong>Action:</strong> @Model.AuditLog.Action</div>
+                <div class="col-md-4"><strong>Entity:</strong> @Model.AuditLog.EntityName</div>
+                <div class="col-md-4"><strong>Entity Id:</strong> @Model.AuditLog.EntityId</div>
+                <div class="col-md-4"><strong>IP Address:</strong> @Model.AuditLog.IpAddress</div>
+                <div class="col-md-8"><strong>User Agent:</strong> @Model.AuditLog.UserAgent</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-light"><strong>Old Values</strong></div>
+                <div class="card-body">
+                    <pre class="mb-0"><code>@Model.OldValuesFormatted</code></pre>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card h-100">
+                <div class="card-header bg-light"><strong>New Values</strong></div>
+                <div class="card-body">
+                    <pre class="mb-0"><code>@Model.NewValuesFormatted</code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

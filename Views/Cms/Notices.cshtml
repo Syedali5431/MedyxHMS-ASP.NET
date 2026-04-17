@@ -1,0 +1,121 @@
+@model MedyxHMS.ViewModels.CmsNoticeIndexViewModel
+@{
+    ViewData["Title"] = "CMS Notices";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Notices / News / Events</h2>
+        <a asp-action="CreateNotice" class="btn btn-primary">+ New Notice</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <select name="type" class="form-select form-select-sm">
+                <option value="">All Types</option>
+                @foreach (var t in new[] { "Notice", "News", "Event", "Program" })
+                {
+                    <option value="@t" selected="@(Model.TypeFilter == t)">@t</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" name="search" value="@Model.SearchTerm" class="form-control form-control-sm" placeholder="Search title..." />
+        </div>
+        <input type="hidden" name="pageSize" value="@Model.PageSize" />
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+            <a asp-action="Notices" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+    </form>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Slug</th>
+                        <th>Type</th>
+                        <th>Active</th>
+                        <th>Published</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Notices.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">No notices found.</td>
+                        </tr>
+                    }
+                    @foreach (var n in Model.Notices)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@n.Title</td>
+                            <td><code>@n.Slug</code></td>
+                            <td>
+                                <span class="badge"
+                                      style="background:@(n.Type == "News" ? "#27ae60" : n.Type == "Event" ? "#e67e22" : n.Type == "Program" ? "#8e44ad" : "#2980b9")">
+                                    @n.Type
+                                </span>
+                            </td>
+                            <td>@(n.IsActive ? "✅" : "—")</td>
+                            <td>@((n.PublishedAt ?? n.CreatedAt).ToString("dd MMM yyyy"))</td>
+                            <td>
+                                <a asp-action="EditNotice" asp-route-id="@n.Id"
+                                   class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                @if (n.IsActive)
+                                {
+                                    <a href="/site/notice/@n.Slug" target="_blank"
+                                       class="btn btn-sm btn-outline-success me-1">View</a>
+                                }
+                                <form asp-action="DeleteNotice" asp-route-id="@n.Id"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this notice?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-3" aria-label="CMS notices pagination">
+            <ul class="pagination pagination-sm">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-action="Notices" asp-route-type="@Model.TypeFilter" asp-route-search="@Model.SearchTerm" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">Previous</a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link" asp-action="Notices" asp-route-type="@Model.TypeFilter" asp-route-search="@Model.SearchTerm" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-action="Notices" asp-route-type="@Model.TypeFilter" asp-route-search="@Model.SearchTerm" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    <div class="mt-4 d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Manage Pages</a>
+        <a asp-action="Menu" class="btn btn-outline-secondary btn-sm">Manage Menu</a>
+        <a asp-action="AppointmentRequests" class="btn btn-outline-secondary btn-sm">Appointment Requests</a>
+    </div>
+</div>

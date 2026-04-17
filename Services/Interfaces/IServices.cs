@@ -341,4 +341,89 @@ namespace MedyxHMS.Services.Interfaces
         Task<Referral> CreateReferralAsync(Referral referral);
         Task<bool> UpdateStatusAsync(int id, string status);
     }
+
+    public interface IAttendanceService
+    {
+        Task<IEnumerable<StaffAttendance>> GetAttendanceAsync(DateTime date, string staffId = null);
+        Task<StaffAttendance> GetAttendanceByIdAsync(int id);
+        Task<StaffAttendance> MarkAttendanceAsync(StaffAttendance attendance);
+        Task<StaffAttendance> CheckInAsync(string staffId, DateTime checkInTime, string notes = null);
+        Task<StaffAttendance> CheckOutAsync(string staffId, DateTime checkOutTime, string notes = null);
+        Task<Dictionary<string, int>> GetAttendanceSummaryAsync(DateTime startDate, DateTime endDate);
+    }
+
+    public interface ILeaveService
+    {
+        Task<IEnumerable<LeaveType>> GetLeaveTypesAsync(bool activeOnly = false);
+        Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType);
+        Task<LeaveType> UpdateLeaveTypeAsync(LeaveType leaveType);
+
+        Task<IEnumerable<LeaveRequest>> GetLeaveRequestsAsync(string staffId = null, string status = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<LeaveRequest> GetLeaveRequestByIdAsync(int id);
+        Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest leaveRequest);
+        Task<bool> UpdateLeaveRequestStatusAsync(int requestId, string status, string approverId, string remarks = null);
+
+        Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string staffId = null, int? year = null);
+    }
+
+    public interface IPayrollService
+    {
+        Task<IEnumerable<PayrollRecord>> GetPayrollRecordsAsync(DateTime? month = null, string staffId = null);
+        Task<PayrollRecord> GetPayrollRecordByIdAsync(int id);
+        Task<PayrollRecord> GeneratePayrollAsync(string staffId, DateTime payrollMonth, decimal allowances = 0, decimal deductions = 0, string notes = null);
+        Task<bool> MarkPayrollAsPaidAsync(int payrollRecordId, DateTime paymentDate, string notes = null);
+    }
+
+    public interface IFrontOfficeService
+    {
+        Task<IEnumerable<VisitorLog>> GetVisitorsAsync(DateTime? date = null);
+        Task<VisitorLog> AddVisitorAsync(VisitorLog visitor);
+        Task<bool> CheckOutVisitorAsync(int visitorId, DateTime checkOutTime, string notes = null);
+
+        Task<IEnumerable<ComplaintRecord>> GetComplaintsAsync(string status = null);
+        Task<ComplaintRecord> AddComplaintAsync(ComplaintRecord complaint);
+        Task<bool> UpdateComplaintStatusAsync(int complaintId, string status, string resolutionNotes = null);
+
+        Task<IEnumerable<DispatchReceiveRecord>> GetDispatchReceiveRecordsAsync(string recordType = null, DateTime? date = null);
+        Task<DispatchReceiveRecord> AddDispatchReceiveRecordAsync(DispatchReceiveRecord record);
+    }
+
+    public interface ICertificateService
+    {
+        Task<IEnumerable<CertificateRecord>> GetCertificatesAsync(string staffId = null);
+        Task<CertificateRecord> GenerateCertificateAsync(CertificateRecord certificate);
+
+        Task<IEnumerable<IdCardRecord>> GetIdCardsAsync(string staffId = null);
+        Task<IdCardRecord> GenerateIdCardAsync(IdCardRecord idCard);
+    }
+
+    public interface IReportService
+    {
+        // Department Reports
+        Task<List<dynamic>> GenerateDepartmentReportAsync(int? departmentId, DateTime startDate, DateTime endDate);
+
+        // Financial Reports
+        Task<Dictionary<string, decimal>> GenerateFinancialReportAsync(DateTime startDate, DateTime endDate);
+        Task<decimal> GetTotalRevenueByDepartmentAsync(int departmentId, DateTime startDate, DateTime endDate);
+
+        // Occupancy Reports
+        Task<Dictionary<string, int>> GenerateOccupancyReportAsync(DateTime date);
+        Task<double> GetAverageOccupancyRateAsync(DateTime startDate, DateTime endDate);
+
+        // Staff Reports
+        Task<List<dynamic>> GenerateStaffAttendanceReportAsync(string staffId, DateTime startDate, DateTime endDate);
+        Task<List<dynamic>> GeneratePayrollReportAsync(DateTime month);
+        Task<Dictionary<string, int>> GetStaffDepartmentDistributionAsync();
+
+        // General Report Management
+        Task<GeneratedReport> SaveReportAsync(GeneratedReport report);
+        Task<IEnumerable<GeneratedReport>> GetGeneratedReportsAsync(string reportType = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<bool> DeleteGeneratedReportAsync(int reportId);
+
+        // Report Scheduling
+        Task<ReportSchedule> CreateReportScheduleAsync(ReportSchedule schedule);
+        Task<IEnumerable<ReportSchedule>> GetReportSchedulesAsync(bool activeOnly = true);
+        Task<bool> UpdateReportScheduleAsync(ReportSchedule schedule);
+        Task<bool> DeleteReportScheduleAsync(int scheduleId);
+    }
 }

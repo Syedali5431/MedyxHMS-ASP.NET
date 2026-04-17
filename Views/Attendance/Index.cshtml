@@ -1,0 +1,192 @@
+@model AttendanceIndexViewModel
+@{
+    ViewData["Title"] = "Staff Attendance";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Staff Attendance</h2>
+            <p class="text-muted mb-0">Track daily check-in/out and attendance status</p>
+        </div>
+        <div class="d-flex gap-2">
+            <form method="post" asp-action="CheckIn" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                <button type="submit" class="btn btn-success">Self Check-In</button>
+            </form>
+            <form method="post" asp-action="CheckOut" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                <button type="submit" class="btn btn-warning">Self Check-Out</button>
+            </form>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <h6 class="text-muted">Present</h6>
+                    <h4 class="mb-0">@(Model.Summary.ContainsKey("Present") ? Model.Summary["Present"] : 0)</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <h6 class="text-muted">Absent</h6>
+                    <h4 class="mb-0">@(Model.Summary.ContainsKey("Absent") ? Model.Summary["Absent"] : 0)</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <h6 class="text-muted">Half Day</h6>
+                    <h4 class="mb-0">@(Model.Summary.ContainsKey("HalfDay") ? Model.Summary["HalfDay"] : 0)</h4>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <h6 class="text-muted">On Leave</h6>
+                    <h4 class="mb-0">@(Model.Summary.ContainsKey("OnLeave") ? Model.Summary["OnLeave"] : 0)</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Filters</strong>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-control" name="date" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label">Staff</label>
+                    <select class="form-select" name="staffId">
+                        <option value="">All staff</option>
+                        @foreach (var staff in Model.StaffOptions)
+                        {
+                            <option value="@staff.Id" selected="@(Model.StaffIdFilter == staff.Id)">@staff.FirstName @staff.LastName (@staff.EmployeeId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Apply</button>
+                </div>
+                <div class="col-md-2">
+                    <a class="btn btn-outline-secondary w-100" asp-action="Index">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <strong>Manual Attendance Entry</strong>
+        </div>
+        <div class="card-body">
+            <form method="post" asp-action="MarkAttendance" class="row g-3 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SelectedDate" />
+                <input type="hidden" asp-for="StaffIdFilter" />
+                <div class="col-md-3">
+                    <label class="form-label">Staff</label>
+                    <select asp-for="ManualAttendance.StaffId" class="form-select" required>
+                        <option value="">Select staff</option>
+                        @foreach (var staff in Model.StaffOptions)
+                        {
+                            <option value="@staff.Id">@staff.FirstName @staff.LastName (@staff.EmployeeId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Date</label>
+                    <input asp-for="ManualAttendance.AttendanceDate" type="date" class="form-control" value="@Model.SelectedDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select asp-for="ManualAttendance.Status" class="form-select">
+                        <option>Present</option>
+                        <option>Absent</option>
+                        <option>HalfDay</option>
+                        <option>OnLeave</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Check-In</label>
+                    <input asp-for="ManualAttendance.CheckInTime" type="datetime-local" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Check-Out</label>
+                    <input asp-for="ManualAttendance.CheckOutTime" type="datetime-local" class="form-control" />
+                </div>
+                <div class="col-md-9">
+                    <label class="form-label">Notes</label>
+                    <input asp-for="ManualAttendance.Notes" class="form-control" placeholder="Optional notes" />
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">Save Attendance</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <strong>Attendance Records</strong>
+        </div>
+        <div class="card-body table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.AttendanceRecords.Any())
+                    {
+                        @foreach (var item in Model.AttendanceRecords)
+                        {
+                            <tr>
+                                <td>@item.Staff?.FirstName @item.Staff?.LastName (@item.Staff?.EmployeeId)</td>
+                                <td>@item.AttendanceDate.ToString("yyyy-MM-dd")</td>
+                                <td>@item.Status</td>
+                                <td>@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("HH:mm") : "-")</td>
+                                <td>@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("HH:mm") : "-")</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">No attendance records found for selected criteria.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

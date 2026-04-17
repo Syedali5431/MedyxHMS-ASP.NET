@@ -1,0 +1,180 @@
+@model MedyxHMS.ViewModels.PublicBookingViewModel
+@{
+    ViewData["Title"] = "Book an Appointment";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Site" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item active">Book Appointment</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">📅 Book an Appointment</h4>
+                    <p class="mb-0 small opacity-75">Fill in your details and we will confirm your booking shortly.</p>
+                </div>
+                <div class="card-body p-4">
+
+                    <form asp-action="BookAppointment" method="post" id="bookingForm">
+                        @Html.AntiForgeryToken()
+
+                        @* Honeypot — hidden from real users, bots fill it *@
+                        <div style="display:none" aria-hidden="true">
+                            <label for="website">Leave this blank</label>
+                            <input asp-for="Website" id="website" autocomplete="off" tabindex="-1" />
+                        </div>
+
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row g-3">
+
+                            <div class="col-md-6">
+                                <label asp-for="PatientName" class="form-label"></label>
+                                <input asp-for="PatientName" class="form-control" placeholder="Full Name" />
+                                <span asp-validation-for="PatientName" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Phone" class="form-label"></label>
+                                <input asp-for="Phone" class="form-control" placeholder="Phone Number" />
+                                <span asp-validation-for="Phone" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="Email" class="form-label">Email <span class="text-muted">(optional)</span></label>
+                                <input asp-for="Email" class="form-control" placeholder="your@email.com" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label asp-for="Gender" class="form-label"></label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">-- Select --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label asp-for="Age" class="form-label"></label>
+                                <input asp-for="Age" class="form-control" placeholder="e.g. 35" />
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="DoctorId" class="form-label"></label>
+                                <select asp-for="DoctorId" class="form-select" id="doctorSelect">
+                                    <option value="0">-- Select Doctor --</option>
+                                    @foreach (var doc in Model.AvailableDoctors)
+                                    {
+                                        <option value="@doc.Id">
+                                            Dr. @doc.FirstName @doc.LastName
+                                            @(!string.IsNullOrEmpty(doc.Specialization) ? $"({doc.Specialization})" : "")
+                                        </option>
+                                    }
+                                </select>
+                                <span asp-validation-for="DoctorId" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="PreferredDate" class="form-label"></label>
+                                <input asp-for="PreferredDate" type="date" class="form-control"
+                                       min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                                       id="preferredDate" />
+                                <span asp-validation-for="PreferredDate" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label asp-for="PreferredTimeStr" class="form-label"></label>
+                                <select asp-for="PreferredTimeStr" class="form-select" id="preferredTimeSelect">
+                                    <option value="">-- Select Date &amp; Doctor First --</option>
+                                </select>
+                                <div id="slotsLoading" class="text-muted small mt-1" style="display:none">
+                                    Loading available slots...
+                                </div>
+                                <span asp-validation-for="PreferredTimeStr" class="text-danger small"></span>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Symptoms" class="form-label"></label>
+                                <textarea asp-for="Symptoms" class="form-control" rows="2"
+                                          placeholder="Briefly describe your symptoms or reason for visit"></textarea>
+                            </div>
+
+                            <div class="col-12">
+                                <label asp-for="Notes" class="form-label">Additional Notes <span class="text-muted">(optional)</span></label>
+                                <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                            </div>
+
+                        </div>
+
+                        <div class="mt-4 d-flex gap-3">
+                            <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                                Confirm Booking
+                            </button>
+                            <a asp-controller="Site" asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        (function () {
+            const doctorSelect = document.getElementById('doctorSelect');
+            const dateInput = document.getElementById('preferredDate');
+            const timeSelect = document.getElementById('preferredTimeSelect');
+            const loading = document.getElementById('slotsLoading');
+
+            async function loadSlots() {
+                const doctorId = doctorSelect.value;
+                const date = dateInput.value;
+                if (!doctorId || doctorId === '0' || !date) {
+                    timeSelect.innerHTML = '<option value="">-- Select Date &amp; Doctor First --</option>';
+                    return;
+                }
+                loading.style.display = 'block';
+                timeSelect.innerHTML = '';
+                try {
+                    const resp = await fetch(`/Site/GetAvailableSlots?doctorId=${encodeURIComponent(doctorId)}&date=${encodeURIComponent(date)}`);
+                    const slots = await resp.json();
+                    if (slots.length === 0) {
+                        timeSelect.innerHTML = '<option value="">No slots available for this day</option>';
+                    } else {
+                        timeSelect.innerHTML = '<option value="">-- Choose a Time Slot --</option>';
+                        slots.forEach(s => {
+                            const opt = document.createElement('option');
+                            opt.value = s.time;
+                            opt.textContent = s.display;
+                            timeSelect.appendChild(opt);
+                        });
+                    }
+                } catch (e) {
+                    timeSelect.innerHTML = '<option value="">Unable to load slots</option>';
+                } finally {
+                    loading.style.display = 'none';
+                }
+            }
+
+            doctorSelect.addEventListener('change', loadSlots);
+            dateInput.addEventListener('change', loadSlots);
+
+            // Auto-load if doctor pre-selected
+            if (doctorSelect.value && doctorSelect.value !== '0') loadSlots();
+        })();
+    </script>
+}

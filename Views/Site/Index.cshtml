@@ -1,0 +1,137 @@
+@model MedyxHMS.ViewModels.SiteHomeViewModel
+@{
+    ViewData["Title"] = "Welcome";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<!-- Hero -->
+<section class="site-hero text-center">
+    <div class="container">
+        <h1 class="display-5 fw-bold">@Model.HospitalName</h1>
+        <p class="lead">@Model.HospitalTagline</p>
+        <div class="d-flex gap-3 justify-content-center mt-4">
+            <a asp-controller="Site" asp-action="BookAppointment" class="btn btn-warning btn-lg fw-bold">
+                📅 Book Appointment
+            </a>
+            <a asp-controller="Site" asp-action="Doctors" class="btn btn-outline-light btn-lg">
+                👨‍⚕️ Our Doctors
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Content -->
+<div class="container my-5">
+    <div class="row g-4">
+
+        <!-- Notices -->
+        <div class="col-lg-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">📋 Notices</h5>
+                <a asp-controller="Site" asp-action="Notices" asp-route-type="Notice"
+                   class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            @if (Model.RecentNotices.Any())
+            {
+                @foreach (var notice in Model.RecentNotices)
+                {
+                    <div class="card mb-2 notice-card shadow-sm">
+                        <div class="card-body py-2 px-3">
+                            <p class="mb-1 fw-semibold">
+                                <a asp-controller="Site" asp-action="NoticeDetail"
+                                   asp-route-slug="@notice.Slug" class="text-decoration-none text-dark">
+                                    @notice.Title
+                                </a>
+                            </p>
+                            <small class="text-muted">
+                                @((notice.PublishedAt ?? notice.CreatedAt).ToString("dd MMM yyyy"))
+                            </small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted small">No recent notices.</p>
+            }
+        </div>
+
+        <!-- News -->
+        <div class="col-lg-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">📰 Latest News</h5>
+                <a asp-controller="Site" asp-action="Notices" asp-route-type="News"
+                   class="btn btn-sm btn-outline-success">View All</a>
+            </div>
+            @if (Model.RecentNews.Any())
+            {
+                @foreach (var news in Model.RecentNews)
+                {
+                    <div class="card mb-3 shadow-sm">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <a asp-controller="Site" asp-action="NoticeDetail"
+                                   asp-route-slug="@news.Slug" class="text-decoration-none text-dark">
+                                    @news.Title
+                                </a>
+                            </h6>
+                            @if (!string.IsNullOrWhiteSpace(news.Summary))
+                            {
+                                <p class="card-text small text-muted">@news.Summary</p>
+                            }
+                            <small class="text-muted">
+                                @((news.PublishedAt ?? news.CreatedAt).ToString("dd MMM yyyy"))
+                            </small>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted small">No recent news.</p>
+            }
+        </div>
+
+        <!-- Events -->
+        <div class="col-lg-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold mb-0">📅 Upcoming Events</h5>
+                <a asp-controller="Site" asp-action="Notices" asp-route-type="Event"
+                   class="btn btn-sm btn-outline-warning">View All</a>
+            </div>
+            @if (Model.UpcomingEvents.Any())
+            {
+                @foreach (var evt in Model.UpcomingEvents)
+                {
+                    <div class="card mb-2 border-warning shadow-sm">
+                        <div class="card-body py-2 px-3">
+                            <p class="mb-1 fw-semibold text-warning-emphasis">@evt.Title</p>
+                            @if (evt.PublishedAt.HasValue)
+                            {
+                                <small class="text-muted">@evt.PublishedAt.Value.ToString("dd MMM yyyy")</small>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <p class="text-muted small">No upcoming events.</p>
+            }
+        </div>
+    </div>
+
+    <!-- Call to action -->
+    <div class="row mt-5">
+        <div class="col text-center">
+            <div class="card bg-light border-0 p-4">
+                <h4 class="fw-bold">Need an Appointment?</h4>
+                <p class="text-muted">Book online in minutes — no registration required.</p>
+                <a asp-controller="Site" asp-action="BookAppointment" class="btn btn-primary btn-lg">
+                    Book Online Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

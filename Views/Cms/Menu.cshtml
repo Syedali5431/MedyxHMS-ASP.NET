@@ -1,0 +1,71 @@
+@model MedyxHMS.ViewModels.CmsMenuIndexViewModel
+@{
+    ViewData["Title"] = "Public Navigation Menu";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Public Navigation Menu</h2>
+        <a asp-action="CreateMenuItem" class="btn btn-primary">+ Add Menu Item</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Order</th>
+                        <th>Label</th>
+                        <th>URL</th>
+                        <th>Linked Page</th>
+                        <th>New Tab</th>
+                        <th>Active</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.MenuItems.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">
+                                No menu items yet. Add items to display in the public site navigation.
+                            </td>
+                        </tr>
+                    }
+                    @foreach (var item in Model.MenuItems)
+                    {
+                        <tr>
+                            <td>@item.SortOrder</td>
+                            <td class="fw-semibold">@item.Label</td>
+                            <td><a href="@item.Url" target="_blank" class="text-decoration-none text-truncate" style="max-width:200px;display:inline-block;">@item.Url</a></td>
+                            <td>@(item.CmsPage?.Title ?? "—")</td>
+                            <td>@(item.OpenInNewTab ? "✅" : "—")</td>
+                            <td>@(item.IsActive ? "✅" : "—")</td>
+                            <td>
+                                <form asp-action="DeleteMenuItem" asp-route-id="@item.Id"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Remove this menu item?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4 d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Manage Pages</a>
+        <a asp-action="Notices" class="btn btn-outline-secondary btn-sm">Manage Notices</a>
+    </div>
+</div>

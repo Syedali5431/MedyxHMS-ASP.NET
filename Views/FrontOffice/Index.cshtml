@@ -1,0 +1,45 @@
+@model FrontOfficeDashboardViewModel
+@{
+    ViewData["Title"] = "Front Office";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Front Office Dashboard</h2>
+            <p class="text-muted mb-0">Daily operations overview</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" asp-action="Visitors">Visitors</a>
+            <a class="btn btn-outline-primary" asp-action="Complaints">Complaints</a>
+            <a class="btn btn-outline-secondary" asp-action="DispatchReceive">Dispatch/Receive</a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="text-muted">Visitors Today</h6>
+                    <h3>@Model.Visitors.Count</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="text-muted">Open Complaints</h6>
+                    <h3>@Model.Complaints.Count(c => c.Status == "Open" || c.Status == "InProgress")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h6 class="text-muted">Dispatch/Receive Today</h6>
+                    <h3>@Model.DispatchReceiveRecords.Count</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

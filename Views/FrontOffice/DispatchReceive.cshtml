@@ -1,0 +1,65 @@
+@model DispatchReceivePageViewModel
+@{
+    ViewData["Title"] = "Dispatch and Receive";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Dispatch / Receive</h2>
+        <a class="btn btn-secondary" asp-action="Index">Back</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>New Dispatch/Receive Entry</strong></div>
+        <div class="card-body">
+            <form method="post" asp-action="AddDispatchReceive" class="row g-3 align-items-end">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="RecordTypeFilter" />
+                <input type="hidden" asp-for="DateFilter" />
+                <div class="col-md-2"><label class="form-label">Type</label><select asp-for="NewRecord.RecordType" class="form-select"><option>Dispatch</option><option>Receive</option></select></div>
+                <div class="col-md-2"><label class="form-label">Ref No</label><input asp-for="NewRecord.ReferenceNumber" class="form-control" /></div>
+                <div class="col-md-2"><label class="form-label">Party</label><input asp-for="NewRecord.PartyName" class="form-control" /></div>
+                <div class="col-md-2"><label class="form-label">Contact</label><input asp-for="NewRecord.ContactNumber" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">Summary</label><input asp-for="NewRecord.ContentSummary" class="form-control" /></div>
+                <div class="col-md-1"><button class="btn btn-primary w-100" type="submit">Add</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Party</th><th>Contact</th><th>Summary</th></tr></thead>
+                <tbody>
+                    @if (Model.Records.Any())
+                    {
+                        @foreach (var r in Model.Records)
+                        {
+                            <tr>
+                                <td>@r.RecordDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@r.RecordType</td>
+                                <td>@r.ReferenceNumber</td>
+                                <td>@r.PartyName</td>
+                                <td>@r.ContactNumber</td>
+                                <td>@r.ContentSummary</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="6" class="text-center text-muted">No records found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

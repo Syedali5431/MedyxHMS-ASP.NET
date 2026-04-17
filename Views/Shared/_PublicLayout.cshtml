@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Medyx Hospital</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        .site-header { background: #1a5276; color: #fff; }
+        .site-header a { color: #aed6f1; }
+        .site-header a:hover { color: #fff; }
+        .site-hero { background: linear-gradient(135deg,#1a5276,#2980b9); color:#fff; padding:60px 0; }
+        .notice-card { border-left: 4px solid #2980b9; }
+        .badge-Notice { background:#2980b9; }
+        .badge-News { background:#27ae60; }
+        .badge-Event { background:#e67e22; }
+        .badge-Program { background:#8e44ad; }
+        footer.site-footer { background:#1a2533; color:#adb5bd; padding:30px 0; }
+    </style>
+</head>
+<body>
+    <header class="site-header py-3">
+        <div class="container d-flex justify-content-between align-items-center">
+            <a class="fs-4 fw-bold text-decoration-none text-white" asp-controller="Site" asp-action="Index">
+                🏥 Medyx Hospital
+            </a>
+            <nav class="d-flex gap-3 align-items-center flex-wrap">
+                @if (ViewBag.MenuItems is List<MedyxHMS.Models.CmsMenuItem> menuItems && menuItems.Any())
+                {
+                    foreach (var item in menuItems)
+                    {
+                        <a href="@item.Url" class="text-decoration-none"
+                           @(item.OpenInNewTab ? Html.Raw("target=\"_blank\" rel=\"noopener\"") : Html.Raw(""))>
+                            @item.Label
+                        </a>
+                    }
+                }
+                else
+                {
+                    <a asp-controller="Site" asp-action="Notices" asp-route-type="Notice" class="text-decoration-none">Notices</a>
+                    <a asp-controller="Site" asp-action="Notices" asp-route-type="News" class="text-decoration-none">News</a>
+                    <a asp-controller="Site" asp-action="Doctors" class="text-decoration-none">Doctors</a>
+                    <a asp-controller="Site" asp-action="BookAppointment" class="text-decoration-none">Book Appointment</a>
+                }
+                <a asp-controller="Account" asp-action="Login" class="btn btn-outline-light btn-sm ms-2">Staff Login</a>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer mt-5">
+        <div class="container text-center">
+            <p class="mb-1">&copy; @DateTime.Now.Year Medyx Hospital Management System. All rights reserved.</p>
+            <p class="small mb-0">
+                <a asp-controller="Site" asp-action="BookAppointment" class="text-decoration-none text-secondary me-3">Book Appointment</a>
+                <a asp-controller="Site" asp-action="Notices" class="text-decoration-none text-secondary me-3">Notices</a>
+                <a asp-controller="Account" asp-action="Login" class="text-decoration-none text-secondary">Staff Portal</a>
+            </p>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

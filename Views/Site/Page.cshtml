@@ -1,0 +1,21 @@
+@model MedyxHMS.ViewModels.SitePageViewModel
+@{
+    ViewData["Title"] = Model.Page.Title;
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Site" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item active">@Model.Page.Title</li>
+        </ol>
+    </nav>
+
+    <h1 class="mb-4">@Model.Page.Title</h1>
+
+    <div class="card border-0 shadow-sm p-4">
+        @Html.Raw(Model.Page.Content)
+    </div>
+</div>

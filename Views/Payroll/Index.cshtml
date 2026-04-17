@@ -1,0 +1,114 @@
+@model PayrollIndexViewModel
+@{
+    ViewData["Title"] = "Payroll";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Payroll Processing</h2>
+            <p class="text-muted mb-0">Generate and process monthly payroll</p>
+        </div>
+        @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+        {
+            <a class="btn btn-primary" asp-action="Generate">Generate Payroll</a>
+        }
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Filters</strong></div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Month</label>
+                    <input type="month" name="month" value="@Model.SelectedMonth.ToString("yyyy-MM")" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Staff</label>
+                    <select name="staffId" class="form-select">
+                        <option value="">All staff</option>
+                        @foreach (var s in Model.StaffOptions)
+                        {
+                            <option value="@s.Id" selected="@(Model.StaffIdFilter == s.Id)">@s.FirstName @s.LastName (@s.EmployeeId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary w-100" type="submit">Apply</button>
+                    <a class="btn btn-outline-secondary w-100" asp-action="Index">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Month</th>
+                        <th>Basic</th>
+                        <th>Allowances</th>
+                        <th>Deductions</th>
+                        <th>Net</th>
+                        <th>Status</th>
+                        <th>Payment Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PayrollRecords.Any())
+                    {
+                        @foreach (var item in Model.PayrollRecords)
+                        {
+                            <tr>
+                                <td>@item.Staff?.FirstName @item.Staff?.LastName</td>
+                                <td>@item.PayrollMonth.ToString("yyyy-MM")</td>
+                                <td>@item.BasicSalary.ToString("N2")</td>
+                                <td>@item.Allowances.ToString("N2")</td>
+                                <td>@item.Deductions.ToString("N2")</td>
+                                <td class="fw-bold">@item.NetSalary.ToString("N2")</td>
+                                <td>
+                                    <span class="badge @(item.Status == "Paid" ? "bg-success" : item.Status == "Processed" ? "bg-info" : "bg-secondary")">@item.Status</span>
+                                </td>
+                                <td>@(item.PaymentDate.HasValue ? item.PaymentDate.Value.ToLocalTime().ToString("yyyy-MM-dd") : "-")</td>
+                                <td>
+                                    @if ((User.IsInRole("Admin") || User.IsInRole("SuperAdmin")) && item.Status != "Paid")
+                                    {
+                                        <form method="post" asp-action="MarkPaid" class="d-grid gap-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="date" name="paymentDate" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                                            <input type="text" name="notes" class="form-control form-control-sm" placeholder="Notes" />
+                                            <button class="btn btn-sm btn-success" type="submit">Mark Paid</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center text-muted">No payroll records found for selected filters.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

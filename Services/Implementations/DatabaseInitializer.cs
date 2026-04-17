@@ -2,6 +2,7 @@ using MedyxHMS.Data;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace MedyxHMS.Services.Implementations
 {
@@ -26,11 +27,247 @@ namespace MedyxHMS.Services.Implementations
             // Ensure database is created
             await _context.Database.EnsureCreatedAsync();
 
+            // Ensure newly introduced module tables exist for existing databases
+            await EnsureStep42TablesAsync();
+
+            // Seed initial public website and booking data for Step 4.2
+            await SeedStep42DefaultsAsync();
+
             // Seed roles and features
             await SeedRolesAndFeaturesAsync();
 
             // Seed SuperAdmin user
             await SeedSuperAdminUserAsync();
+        }
+
+        private async Task SeedStep42DefaultsAsync()
+        {
+            var now = DateTime.UtcNow;
+
+            if (!await _context.CmsPages.AnyAsync())
+            {
+                _context.CmsPages.AddRange(
+                    new CmsPage
+                    {
+                        Title = "About Us",
+                        Slug = "about-us",
+                        Content = "<h2>About Medyx Hospital</h2><p>Medyx Hospital provides patient-centered care with modern facilities and experienced clinicians.</p>",
+                        MetaDescription = "About Medyx Hospital",
+                        Status = "Published",
+                        ShowInMenu = true,
+                        SortOrder = 1,
+                        CreatedAt = now,
+                        CreatedBy = "System"
+                    },
+                    new CmsPage
+                    {
+                        Title = "Services",
+                        Slug = "services",
+                        Content = "<h2>Our Services</h2><ul><li>Outpatient care</li><li>Inpatient care</li><li>Diagnostics</li><li>Emergency support</li></ul>",
+                        MetaDescription = "Hospital services",
+                        Status = "Published",
+                        ShowInMenu = true,
+                        SortOrder = 2,
+                        CreatedAt = now,
+                        CreatedBy = "System"
+                    },
+                    new CmsPage
+                    {
+                        Title = "Contact",
+                        Slug = "contact",
+                        Content = "<h2>Contact Us</h2><p>Phone: +000-000-0000</p><p>Email: info@medyxhospital.com</p>",
+                        MetaDescription = "Contact Medyx Hospital",
+                        Status = "Published",
+                        ShowInMenu = true,
+                        SortOrder = 3,
+                        CreatedAt = now,
+                        CreatedBy = "System"
+                    }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            if (!await _context.CmsMenuItems.AnyAsync())
+            {
+                var pages = await _context.CmsPages.Where(p => p.Status == "Published").ToListAsync();
+                var about = pages.FirstOrDefault(p => p.Slug == "about-us");
+                var services = pages.FirstOrDefault(p => p.Slug == "services");
+                var contact = pages.FirstOrDefault(p => p.Slug == "contact");
+
+                _context.CmsMenuItems.AddRange(
+                    new CmsMenuItem { Label = "Home", Url = "/Site", SortOrder = 0, IsActive = true },
+                    new CmsMenuItem { Label = "About", Url = "/site/page/about-us", CmsPageId = about?.Id, SortOrder = 1, IsActive = true },
+                    new CmsMenuItem { Label = "Services", Url = "/site/page/services", CmsPageId = services?.Id, SortOrder = 2, IsActive = true },
+                    new CmsMenuItem { Label = "Notices", Url = "/Site/Notices?type=Notice", SortOrder = 3, IsActive = true },
+                    new CmsMenuItem { Label = "Doctors", Url = "/Site/Doctors", SortOrder = 4, IsActive = true },
+                    new CmsMenuItem { Label = "Book Appointment", Url = "/Site/BookAppointment", SortOrder = 5, IsActive = true },
+                    new CmsMenuItem { Label = "Contact", Url = "/site/page/contact", CmsPageId = contact?.Id, SortOrder = 6, IsActive = true }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            if (!await _context.CmsNotices.AnyAsync())
+            {
+                _context.CmsNotices.AddRange(
+                    new CmsNotice
+                    {
+                        Title = "Outpatient Registration Hours Updated",
+                        Slug = "opd-registration-hours-updated",
+                        Summary = "Registration desk now opens earlier on weekdays.",
+                        Content = "<p>From next week, OPD registration opens at 7:00 AM Monday through Friday.</p>",
+                        Type = "Notice",
+                        IsActive = true,
+                        PublishedAt = now.AddDays(-2),
+                        CreatedAt = now.AddDays(-2),
+                        CreatedBy = "System"
+                    },
+                    new CmsNotice
+                    {
+                        Title = "New Radiology Suite Now Operational",
+                        Slug = "new-radiology-suite-operational",
+                        Summary = "Advanced imaging services are now available.",
+                        Content = "<p>Our new radiology suite with improved turnaround time is now open for patient services.</p>",
+                        Type = "News",
+                        IsActive = true,
+                        PublishedAt = now.AddDays(-1),
+                        CreatedAt = now.AddDays(-1),
+                        CreatedBy = "System"
+                    }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            if (!await _context.DoctorShifts.AnyAsync())
+            {
+                var activeDoctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.Id).Take(3).ToListAsync();
+                if (activeDoctors.Count > 0)
+                {
+                    foreach (var doctor in activeDoctors)
+                    {
+                        for (var day = 1; day <= 5; day++)
+                        {
+                            _context.DoctorShifts.Add(new DoctorShift
+                            {
+                                DoctorId = doctor.Id,
+                                DayOfWeek = day,
+                                StartTime = new TimeSpan(9, 0, 0),
+                                EndTime = new TimeSpan(13, 0, 0),
+                                SlotDurationMinutes = 20,
+                                MaxPatientsPerSlot = 1,
+                                IsActive = true
+                            });
+                        }
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
+        private async Task EnsureStep42TablesAsync()
+        {
+            // CmsPages
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[CmsPages]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[CmsPages] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Title] NVARCHAR(200) NOT NULL,
+        [Slug] NVARCHAR(200) NOT NULL,
+        [Content] NVARCHAR(MAX) NULL,
+        [MetaDescription] NVARCHAR(300) NULL,
+        [Status] NVARCHAR(20) NOT NULL,
+        [ShowInMenu] BIT NOT NULL DEFAULT(0),
+        [SortOrder] INT NOT NULL DEFAULT(0),
+        [CreatedAt] DATETIME2 NOT NULL,
+        [UpdatedAt] DATETIME2 NULL,
+        [CreatedBy] NVARCHAR(100) NULL,
+        [UpdatedBy] NVARCHAR(100) NULL
+    );
+    CREATE UNIQUE INDEX [IX_CmsPages_Slug] ON [dbo].[CmsPages]([Slug]);
+END");
+
+            // CmsNotices
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[CmsNotices]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[CmsNotices] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Title] NVARCHAR(200) NOT NULL,
+        [Slug] NVARCHAR(200) NOT NULL,
+        [Summary] NVARCHAR(MAX) NULL,
+        [Content] NVARCHAR(MAX) NULL,
+        [Type] NVARCHAR(20) NOT NULL,
+        [FeaturedImage] NVARCHAR(300) NULL,
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [PublishedAt] DATETIME2 NULL,
+        [CreatedAt] DATETIME2 NOT NULL,
+        [UpdatedAt] DATETIME2 NULL,
+        [CreatedBy] NVARCHAR(100) NULL
+    );
+    CREATE UNIQUE INDEX [IX_CmsNotices_Slug] ON [dbo].[CmsNotices]([Slug]);
+END");
+
+            // DoctorShifts
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[DoctorShifts]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[DoctorShifts] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [DoctorId] INT NOT NULL,
+        [DayOfWeek] INT NOT NULL,
+        [StartTime] TIME NOT NULL,
+        [EndTime] TIME NOT NULL,
+        [SlotDurationMinutes] INT NOT NULL DEFAULT(15),
+        [MaxPatientsPerSlot] INT NOT NULL DEFAULT(1),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        CONSTRAINT [FK_DoctorShifts_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [dbo].[Doctors]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_DoctorShifts_DoctorId] ON [dbo].[DoctorShifts]([DoctorId]);
+END");
+
+            // PublicAppointmentRequests
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PublicAppointmentRequests] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [PatientName] NVARCHAR(150) NOT NULL,
+        [Phone] NVARCHAR(20) NOT NULL,
+        [Email] NVARCHAR(200) NULL,
+        [Gender] NVARCHAR(10) NULL,
+        [Age] NVARCHAR(10) NULL,
+        [DoctorId] INT NOT NULL,
+        [PreferredDate] DATETIME2 NOT NULL,
+        [PreferredTime] TIME NOT NULL,
+        [Symptoms] NVARCHAR(500) NULL,
+        [Notes] NVARCHAR(500) NULL,
+        [Status] NVARCHAR(20) NOT NULL,
+        [AdminNotes] NVARCHAR(300) NULL,
+        [CreatedAt] DATETIME2 NOT NULL,
+        [UpdatedAt] DATETIME2 NULL,
+        [IpAddress] NVARCHAR(45) NULL,
+        CONSTRAINT [FK_PublicAppointmentRequests_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [dbo].[Doctors]([Id]) ON DELETE NO ACTION
+    );
+    CREATE INDEX [IX_PublicAppointmentRequests_DoctorId] ON [dbo].[PublicAppointmentRequests]([DoctorId]);
+END");
+
+            // CmsMenuItems (depends on CmsPages)
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[CmsMenuItems]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[CmsMenuItems] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Label] NVARCHAR(100) NOT NULL,
+        [Url] NVARCHAR(300) NULL,
+        [CmsPageId] INT NULL,
+        [SortOrder] INT NOT NULL DEFAULT(0),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [OpenInNewTab] BIT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_CmsMenuItems_CmsPages_CmsPageId] FOREIGN KEY ([CmsPageId]) REFERENCES [dbo].[CmsPages]([Id]) ON DELETE SET NULL
+    );
+    CREATE INDEX [IX_CmsMenuItems_CmsPageId] ON [dbo].[CmsMenuItems]([CmsPageId]);
+END");
         }
 
         private async Task SeedRolesAndFeaturesAsync()

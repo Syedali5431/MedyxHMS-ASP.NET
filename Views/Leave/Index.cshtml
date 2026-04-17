@@ -1,0 +1,130 @@
+@model LeaveIndexViewModel
+@{
+    ViewData["Title"] = "Leave Management";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Leave Management</h2>
+            <p class="text-muted mb-0">Review and approve leave requests</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-primary" asp-action="Request">New Leave Request</a>
+            <a class="btn btn-outline-primary" asp-action="Balances">Leave Balances</a>
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+            {
+                <a class="btn btn-outline-secondary" asp-action="Types">Leave Types</a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-header"><strong>Filters</strong></div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="startDate" value="@(Model.StartDate.HasValue ? Model.StartDate.Value.ToString("yyyy-MM-dd") : string.Empty)" class="form-control" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="endDate" value="@(Model.EndDate.HasValue ? Model.EndDate.Value.ToString("yyyy-MM-dd") : string.Empty)" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Staff</label>
+                    <select name="staffId" class="form-select">
+                        <option value="">All staff</option>
+                        @foreach (var s in Model.StaffOptions)
+                        {
+                            <option value="@s.Id" selected="@(Model.StaffIdFilter == s.Id)">@s.FirstName @s.LastName (@s.EmployeeId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Status</label>
+                    <select name="status" class="form-select">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(Model.StatusFilter))">All</option>
+                        <option value="Pending" selected="@(Model.StatusFilter == "Pending")">Pending</option>
+                        <option value="Approved" selected="@(Model.StatusFilter == "Approved")">Approved</option>
+                        <option value="Rejected" selected="@(Model.StatusFilter == "Rejected")">Rejected</option>
+                        <option value="Cancelled" selected="@(Model.StatusFilter == "Cancelled")">Cancelled</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary w-100" type="submit">Apply</button>
+                    <a class="btn btn-outline-secondary w-100" asp-action="Index">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>Staff</th>
+                        <th>Type</th>
+                        <th>Dates</th>
+                        <th>Days</th>
+                        <th>Status</th>
+                        <th>Reason</th>
+                        <th>Remarks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.LeaveRequests.Any())
+                    {
+                        @foreach (var item in Model.LeaveRequests)
+                        {
+                            <tr>
+                                <td>@item.Staff?.FirstName @item.Staff?.LastName</td>
+                                <td>@item.LeaveType?.Name</td>
+                                <td>@item.StartDate.ToString("yyyy-MM-dd") to @item.EndDate.ToString("yyyy-MM-dd")</td>
+                                <td>@item.TotalDays</td>
+                                <td>
+                                    <span class="badge @(item.Status == "Approved" ? "bg-success" : item.Status == "Rejected" ? "bg-danger" : item.Status == "Cancelled" ? "bg-secondary" : "bg-warning text-dark")">@item.Status</span>
+                                </td>
+                                <td>@item.Reason</td>
+                                <td>@(string.IsNullOrWhiteSpace(item.ApproverRemarks) ? "-" : item.ApproverRemarks)</td>
+                                <td>
+                                    @if ((User.IsInRole("Admin") || User.IsInRole("SuperAdmin")) && item.Status == "Pending")
+                                    {
+                                        <form method="post" asp-action="UpdateStatus" class="d-grid gap-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="text" name="remarks" class="form-control form-control-sm" placeholder="Remarks" />
+                                            <button class="btn btn-sm btn-success" type="submit" name="status" value="Approved">Approve</button>
+                                            <button class="btn btn-sm btn-danger" type="submit" name="status" value="Rejected">Reject</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No leave requests found.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

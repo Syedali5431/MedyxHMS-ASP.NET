@@ -1,0 +1,157 @@
+@using MedyxHMS.ViewModels
+@model Dictionary<string, decimal>
+
+@{
+    ViewData["Title"] = "Financial Report";
+    var startDate = ViewData["StartDate"] as DateTime?;
+    var endDate = ViewData["EndDate"] as DateTime?;
+    
+    decimal totalPayroll = 0;
+    decimal totalBills = 0;
+    decimal totalPayments = 0;
+    decimal netRevenue = 0;
+    
+    if (Model != null)
+    {
+        Model.TryGetValue("TotalPayroll", out totalPayroll);
+        Model.TryGetValue("TotalBills", out totalBills);
+        Model.TryGetValue("TotalPayments", out totalPayments);
+        Model.TryGetValue("NetRevenue", out netRevenue);
+    }
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar"></i> Financial Report
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <!-- Filter Form -->
+                    <form method="get" class="mb-4 p-3 bg-light rounded">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label for="startDate" class="form-label">Start Date</label>
+                                <input type="date" id="startDate" name="startDate" class="form-control" value="@startDate?.ToString("yyyy-MM-dd")">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label for="endDate" class="form-label">End Date</label>
+                                <input type="date" id="endDate" name="endDate" class="form-control" value="@endDate?.ToString("yyyy-MM-dd")">
+                            </div>
+
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-success w-100">
+                                    <i class="fas fa-search"></i> Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- Summary Cards -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body">
+                                    <p class="card-title">Total Bills</p>
+                                    <h3>@totalBills.ToString("C")</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body">
+                                    <p class="card-title">Total Payroll</p>
+                                    <h3>@totalPayroll.ToString("C")</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-secondary text-white">
+                                <div class="card-body">
+                                    <p class="card-title">Total Payments</p>
+                                    <h3>@totalPayments.ToString("C")</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card @(netRevenue >= 0 ? "bg-success" : "bg-danger") text-white">
+                                <div class="card-body">
+                                    <p class="card-title">Net Revenue</p>
+                                    <h3>@netRevenue.ToString("C")</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Detailed Report -->
+                    @if (Model != null && Model.Count > 0)
+                    {
+                        <div class="alert alert-info">
+                            <strong>Report Period:</strong> @startDate?.ToString("yyyy-MM-dd") to @endDate?.ToString("yyyy-MM-dd")
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Financial Metric</th>
+                                        <th>Amount</th>
+                                        <th>Percentage of Revenue</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Total Bills Generated</strong></td>
+                                        <td><strong>@totalBills.ToString("C")</strong></td>
+                                        <td>100%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Payroll Expenses</td>
+                                        <td>@totalPayroll.ToString("C")</td>
+                                        <td>@(totalBills > 0 ? ((totalPayroll / totalBills) * 100).ToString("F2") : "0")%</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Total Payments Received</td>
+                                        <td>@totalPayments.ToString("C")</td>
+                                        <td>@(totalBills > 0 ? ((totalPayments / totalBills) * 100).ToString("F2") : "0")%</td>
+                                    </tr>
+                                    <tr class="@(netRevenue >= 0 ? "table-success" : "table-danger")">
+                                        <td><strong>Net Revenue (After Payroll)</strong></td>
+                                        <td><strong>@netRevenue.ToString("C")</strong></td>
+                                        <td><strong>@(totalBills > 0 ? ((netRevenue / totalBills) * 100).ToString("F2") : "0")%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle"></i>
+                                This report shows financial summary for the selected period.
+                                Payroll and payments are calculated based on recorded transactions.
+                            </small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            No financial data available for the selected period.
+                        </div>
+                    }
+
+                    <!-- Action Buttons -->
+                    <div class="mt-4">
+                        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left"></i> Back to Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

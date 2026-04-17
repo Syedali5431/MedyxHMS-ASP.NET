@@ -1,0 +1,138 @@
+@{
+    ViewData["Title"] = "Reports";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-line"></i> Reports Dashboard
+                    </h4>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Department Report -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-primary">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-building text-primary"></i> Department Report
+                                    </h5>
+                                    <p class="card-text">View staff attendance and performance by department.</p>
+                                    <a href="@Url.Action("DepartmentReport")" class="btn btn-primary btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Financial Report -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-success">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-dollar-sign text-success"></i> Financial Report
+                                    </h5>
+                                    <p class="card-text">View revenue, payroll, and financial summary.</p>
+                                    <a href="@Url.Action("FinancialReport")" class="btn btn-success btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Occupancy Report -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-warning">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-hospital-bed text-warning"></i> Occupancy Report
+                                    </h5>
+                                    <p class="card-text">View bed occupancy and capacity status.</p>
+                                    <a href="@Url.Action("OccupancyReport")" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Staff Report -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-info">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users text-info"></i> Staff Report
+                                    </h5>
+                                    <p class="card-text">View individual staff attendance and performance.</p>
+                                    <a href="@Url.Action("StaffReport")" class="btn btn-info btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Payroll Report -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-danger">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-money-bill text-danger"></i> Payroll Report
+                                    </h5>
+                                    <p class="card-text">View monthly payroll details and salaries.</p>
+                                    <a href="@Url.Action("PayrollReport")" class="btn btn-danger btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Report
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Generated Reports -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card border-left-secondary">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-file text-secondary"></i> Generated Reports
+                                    </h5>
+                                    <p class="card-text">View and manage previously generated reports.</p>
+                                    <a href="@Url.Action("GeneratedReports")" class="btn btn-secondary btn-sm">
+                                        <i class="fas fa-arrow-right"></i> View Reports
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <a href="@Url.Action("ScheduleReport")" class="btn btn-outline-primary">
+                            <i class="fas fa-calendar"></i> Schedule Automatic Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .border-left-primary {
+        border-left: 4px solid #007bff !important;
+    }
+    .border-left-success {
+        border-left: 4px solid #28a745 !important;
+    }
+    .border-left-warning {
+        border-left: 4px solid #ffc107 !important;
+    }
+    .border-left-info {
+        border-left: 4px solid #17a2b8 !important;
+    }
+    .border-left-danger {
+        border-left: 4px solid #dc3545 !important;
+    }
+    .border-left-secondary {
+        border-left: 4px solid #6c757d !important;
+    }
+</style>

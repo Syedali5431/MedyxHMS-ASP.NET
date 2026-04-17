@@ -1,0 +1,101 @@
+@model MedyxHMS.ViewModels.CmsPageIndexViewModel
+@{
+    ViewData["Title"] = "CMS Pages";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">CMS Pages</h2>
+        <a asp-action="CreatePage" class="btn btn-primary">+ New Page</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Filters -->
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="Published" selected="@(Model.StatusFilter == "Published")">Published</option>
+                <option value="Draft" selected="@(Model.StatusFilter == "Draft")">Draft</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <input type="text" name="search" value="@Model.SearchTerm" class="form-control form-control-sm" placeholder="Search title or slug..." />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+    </form>
+
+    <!-- Table -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Title</th>
+                        <th>Slug</th>
+                        <th>Status</th>
+                        <th>In Menu</th>
+                        <th>Order</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Pages.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center text-muted py-4">No pages found.</td>
+                        </tr>
+                    }
+                    @foreach (var p in Model.Pages)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@p.Title</td>
+                            <td><code>@p.Slug</code></td>
+                            <td>
+                                <span class="badge @(p.Status == "Published" ? "bg-success" : "bg-secondary")">
+                                    @p.Status
+                                </span>
+                            </td>
+                            <td>@(p.ShowInMenu ? "✅" : "—")</td>
+                            <td>@p.SortOrder</td>
+                            <td>@p.CreatedAt.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <a asp-action="EditPage" asp-route-id="@p.Id"
+                                   class="btn btn-sm btn-outline-primary me-1">Edit</a>
+                                @if (p.Status == "Published")
+                                {
+                                    <a href="/site/page/@p.Slug" target="_blank"
+                                       class="btn btn-sm btn-outline-success me-1">View</a>
+                                }
+                                <form asp-action="DeletePage" asp-route-id="@p.Id"
+                                      method="post" class="d-inline"
+                                      onsubmit="return confirm('Delete this page?')">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Nav to other CMS sections -->
+    <div class="mt-4 d-flex gap-2">
+        <a asp-action="Notices" class="btn btn-outline-secondary btn-sm">Manage Notices</a>
+        <a asp-action="Menu" class="btn btn-outline-secondary btn-sm">Manage Menu</a>
+        <a asp-action="AppointmentRequests" class="btn btn-outline-secondary btn-sm">Appointment Requests</a>
+    </div>
+</div>

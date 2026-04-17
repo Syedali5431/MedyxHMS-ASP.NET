@@ -1,0 +1,45 @@
+@model MedyxHMS.Models.CmsNotice
+@{
+    ViewData["Title"] = Model.Title;
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+}
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Site" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item">
+                <a asp-controller="Site" asp-action="Notices" asp-route-type="@Model.Type">@Model.Type</a>
+            </li>
+            <li class="breadcrumb-item active">@Model.Title</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <span class="badge mb-3 bg-primary">@Model.Type</span>
+            <h1 class="mb-2">@Model.Title</h1>
+            <p class="text-muted small mb-4">
+                Published: @((Model.PublishedAt ?? Model.CreatedAt).ToString("dd MMMM yyyy"))
+            </p>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Summary))
+            {
+                <div class="alert alert-light border-start border-primary border-3 mb-4">
+                    <strong>@Model.Summary</strong>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm p-4">
+                @Html.Raw(Model.Content ?? "<p class=\"text-muted\">No content available.</p>")
+            </div>
+
+            <div class="mt-4">
+                <a asp-controller="Site" asp-action="Notices" asp-route-type="@Model.Type"
+                   class="btn btn-outline-secondary">
+                    &larr; Back to @Model.Type
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -53,11 +53,25 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
   - Step 3.3 implementation (Blood Bank, OT, Referral/TPA with billing)
 - Read this for the complete implementation snapshot before Phase 4 work.
 
+### PH7 - Phase 4 Step 4.1 Delivery (HR & Administrative Functions)
+- Document: [PH7.md](PH7.md)
+- Focus:
+  - Staff Attendance Management (check-in/out, daily reporting)
+  - Leave Management (leave types, requests, balance tracking, approvals)
+  - Payroll Processing (salary calculation, payment status tracking)
+  - Front Office Operations (visitor tracking, complaints, dispatch/receive)
+  - Certificates & ID Card Generation (auto-numbered, staff tracking)
+- **Status:** Step 4.1 complete and validated (report routes verified; basic audit viewer routes implemented)
+- Read this for comprehensive HR workflow implementation patterns.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
 3. [PH3.md](PH3.md)
 4. [PH4.md](PH4.md)
+5. [PH5.md](PH5.md)
+6. [PH6.md](PH6.md)
+7. [PH7.md](PH7.md)
 5. [PH5.md](PH5.md)
 6. [PH6.md](PH6.md)
 

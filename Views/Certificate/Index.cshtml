@@ -1,0 +1,109 @@
+@model CertificateIndexViewModel
+@{
+    ViewData["Title"] = "Certificates and ID Cards";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2>Certificates and ID Cards</h2>
+            <p class="text-muted mb-0">Generate and track employee certificates and ID cards</p>
+        </div>
+        @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+        {
+            <div class="d-flex gap-2">
+                <a class="btn btn-primary" asp-action="GenerateCertificate">Generate Certificate</a>
+                <a class="btn btn-outline-primary" asp-action="GenerateIdCard">Generate ID Card</a>
+            </div>
+        }
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3 align-items-end">
+                <div class="col-md-9">
+                    <label class="form-label">Staff</label>
+                    <select name="staffId" class="form-select">
+                        <option value="">All staff</option>
+                        @foreach (var s in Model.StaffOptions)
+                        {
+                            <option value="@s.Id" selected="@(Model.StaffIdFilter == s.Id)">@s.FirstName @s.LastName (@s.EmployeeId)</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button class="btn btn-primary w-100" type="submit">Apply</button>
+                    <a class="btn btn-outline-secondary w-100" asp-action="Index">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>Certificates</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead><tr><th>Staff</th><th>Type</th><th>Title</th><th>Issue Date</th></tr></thead>
+                        <tbody>
+                            @if (Model.Certificates.Any())
+                            {
+                                @foreach (var c in Model.Certificates)
+                                {
+                                    <tr>
+                                        <td>@c.Staff?.FirstName @c.Staff?.LastName</td>
+                                        <td>@c.CertificateType</td>
+                                        <td>@c.Title</td>
+                                        <td>@c.IssueDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">No certificates generated.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header"><strong>ID Cards</strong></div>
+                <div class="card-body table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead><tr><th>Staff</th><th>Card Number</th><th>Issue Date</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @if (Model.IdCards.Any())
+                            {
+                                @foreach (var c in Model.IdCards)
+                                {
+                                    <tr>
+                                        <td>@c.Staff?.FirstName @c.Staff?.LastName</td>
+                                        <td>@c.CardNumber</td>
+                                        <td>@c.IssueDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                        <td>@c.Status</td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr><td colspan="4" class="text-center text-muted">No ID cards generated.</td></tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

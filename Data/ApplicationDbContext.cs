@@ -47,11 +47,33 @@ namespace MedyxHMS.Data
         public DbSet<Referral> Referrals { get; set; }
         public DbSet<MedicalRecord> MedicalRecords { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
+        public DbSet<StaffAttendance> StaffAttendances { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<LeaveBalance> LeaveBalances { get; set; }
+        public DbSet<PayrollRecord> PayrollRecords { get; set; }
+        public DbSet<VisitorLog> VisitorLogs { get; set; }
+        public DbSet<ComplaintRecord> ComplaintRecords { get; set; }
+        public DbSet<DispatchReceiveRecord> DispatchReceiveRecords { get; set; }
+        public DbSet<CertificateRecord> CertificateRecords { get; set; }
+        public DbSet<IdCardRecord> IdCardRecords { get; set; }
+
+        // Audit & Reporting
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<UserActionLog> UserActionLogs { get; set; }
+        public DbSet<GeneratedReport> GeneratedReports { get; set; }
+        public DbSet<ReportSchedule> ReportSchedules { get; set; }
 
         // Settings & Configuration
         public DbSet<Setting> Settings { get; set; }
         public DbSet<Language> Languages { get; set; }
-        public DbSet<AuditLog> AuditLogs { get; set; }
+
+        // CMS & Public Website
+        public DbSet<CmsPage> CmsPages { get; set; }
+        public DbSet<CmsMenuItem> CmsMenuItems { get; set; }
+        public DbSet<CmsNotice> CmsNotices { get; set; }
+        public DbSet<DoctorShift> DoctorShifts { get; set; }
+        public DbSet<PublicAppointmentRequest> PublicAppointmentRequests { get; set; }
 
         // RBAC Entities (from migration analysis)
         public new DbSet<Role> Roles { get; set; }
@@ -136,6 +158,90 @@ namespace MedyxHMS.Data
                 .HasForeignKey(r => r.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            modelBuilder.Entity<StaffAttendance>()
+                .HasOne(sa => sa.Staff)
+                .WithMany()
+                .HasForeignKey(sa => sa.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<StaffAttendance>()
+                .HasIndex(sa => new { sa.StaffId, sa.AttendanceDate })
+                .IsUnique();
+
+            modelBuilder.Entity<LeaveRequest>()
+                .HasOne(lr => lr.Staff)
+                .WithMany()
+                .HasForeignKey(lr => lr.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LeaveRequest>()
+                .HasOne(lr => lr.LeaveType)
+                .WithMany()
+                .HasForeignKey(lr => lr.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LeaveBalance>()
+                .HasOne(lb => lb.Staff)
+                .WithMany()
+                .HasForeignKey(lb => lb.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LeaveBalance>()
+                .HasOne(lb => lb.LeaveType)
+                .WithMany()
+                .HasForeignKey(lb => lb.LeaveTypeId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<LeaveBalance>()
+                .HasIndex(lb => new { lb.StaffId, lb.LeaveTypeId, lb.Year })
+                .IsUnique();
+
+            modelBuilder.Entity<PayrollRecord>()
+                .HasOne(pr => pr.Staff)
+                .WithMany()
+                .HasForeignKey(pr => pr.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PayrollRecord>()
+                .HasIndex(pr => new { pr.StaffId, pr.PayrollMonth })
+                .IsUnique();
+
+            modelBuilder.Entity<CertificateRecord>()
+                .HasOne(cr => cr.Staff)
+                .WithMany()
+                .HasForeignKey(cr => cr.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<IdCardRecord>()
+                .HasOne(ic => ic.Staff)
+                .WithMany()
+                .HasForeignKey(ic => ic.StaffId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<IdCardRecord>()
+                .HasIndex(ic => ic.CardNumber)
+                .IsUnique();
+
+            // Generated Report relationships
+            modelBuilder.Entity<GeneratedReport>()
+                .HasOne(gr => gr.StaffGenerated)
+                .WithMany()
+                .HasForeignKey(gr => gr.GeneratedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<GeneratedReport>()
+                .HasIndex(gr => new { gr.CreatedDate, gr.ReportType });
+
+            // Report Schedule relationships
+            modelBuilder.Entity<ReportSchedule>()
+                .HasOne(rs => rs.StaffCreated)
+                .WithMany()
+                .HasForeignKey(rs => rs.CreatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ReportSchedule>()
+                .HasIndex(rs => new { rs.IsActive, rs.NextRunDate });
+
             // Billing relationships
             modelBuilder.Entity<Bill>()
                 .HasMany(b => b.BillItems)
@@ -173,6 +279,33 @@ namespace MedyxHMS.Data
                 .HasOne(sr => sr.Role)
                 .WithMany(r => r.StaffRoles)
                 .HasForeignKey(sr => sr.RoleId);
+
+            // CMS relationships
+            modelBuilder.Entity<CmsMenuItem>()
+                .HasOne(m => m.CmsPage)
+                .WithMany()
+                .HasForeignKey(m => m.CmsPageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<CmsPage>()
+                .HasIndex(p => p.Slug)
+                .IsUnique();
+
+            modelBuilder.Entity<CmsNotice>()
+                .HasIndex(n => n.Slug)
+                .IsUnique();
+
+            modelBuilder.Entity<DoctorShift>()
+                .HasOne(ds => ds.Doctor)
+                .WithMany()
+                .HasForeignKey(ds => ds.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PublicAppointmentRequest>()
+                .HasOne(r => r.Doctor)
+                .WithMany()
+                .HasForeignKey(r => r.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private static void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
@@ -200,6 +333,11 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<PharmacyBill>().Property(x => x.TotalAmount).HasPrecision(precision, scale);
             modelBuilder.Entity<PharmacyBill>().Property(x => x.PaidAmount).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<PayrollRecord>().Property(x => x.BasicSalary).HasPrecision(precision, scale);
+            modelBuilder.Entity<PayrollRecord>().Property(x => x.Allowances).HasPrecision(precision, scale);
+            modelBuilder.Entity<PayrollRecord>().Property(x => x.Deductions).HasPrecision(precision, scale);
+            modelBuilder.Entity<PayrollRecord>().Property(x => x.NetSalary).HasPrecision(precision, scale);
 
             modelBuilder.Entity<Prescription>().Property(x => x.UnitPrice).HasPrecision(precision, scale);
             modelBuilder.Entity<Prescription>().Property(x => x.TotalPrice).HasPrecision(precision, scale);

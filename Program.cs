@@ -83,6 +83,14 @@ builder.Services.AddScoped<IBloodBankService, BloodBankService>();
 builder.Services.AddScoped<IOperationTheatreService, OperationTheatreService>();
 builder.Services.AddScoped<IReferralService, ReferralService>();
 
+// Administrative Module Services (STEP 4.1)
+builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<ILeaveService, LeaveService>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
+builder.Services.AddScoped<IFrontOfficeService, FrontOfficeService>();
+builder.Services.AddScoped<ICertificateService, CertificateService>();
+builder.Services.AddScoped<IReportService, ReportService>();
+
 builder.Services.AddScoped<DatabaseInitializer>();
 
 // Add HttpContext accessor for audit logging

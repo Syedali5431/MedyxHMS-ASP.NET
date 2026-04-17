@@ -1,0 +1,99 @@
+@model MedyxHMS.ViewModels.SiteDoctorListViewModel
+@{
+    ViewData["Title"] = "Our Doctors";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<div class="container my-5">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Site" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item active">Our Doctors</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Our Doctors</h2>
+        <a asp-controller="Site" asp-action="BookAppointment" class="btn btn-primary">
+            📅 Book an Appointment
+        </a>
+    </div>
+
+    <!-- Department filter -->
+    @if (Model.Departments.Any())
+    {
+        <div class="mb-4 d-flex flex-wrap gap-2">
+            <a asp-action="Doctors" class="btn btn-sm @(Model.DepartmentFilter == null ? "btn-dark" : "btn-outline-dark")">
+                All
+            </a>
+            @foreach (var dept in Model.Departments)
+            {
+                <a asp-action="Doctors" asp-route-departmentId="@dept.Id"
+                   class="btn btn-sm @(Model.DepartmentFilter == dept.Id ? "btn-primary" : "btn-outline-primary")">
+                    @dept.Name
+                </a>
+            }
+        </div>
+    }
+
+    @if (!Model.Doctors.Any())
+    {
+        <div class="alert alert-info">No doctors found for the selected filter.</div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var item in Model.Doctors)
+            {
+                var doc = item.Doctor;
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                                     style="width:48px;height:48px;font-size:1.4rem;">
+                                    👨‍⚕️
+                                </div>
+                                <div>
+                                    <h6 class="mb-0 fw-bold">Dr. @doc.FirstName @doc.LastName</h6>
+                                    <small class="text-muted">@doc.Specialization</small>
+                                </div>
+                            </div>
+
+                            @if (doc.Department != null)
+                            {
+                                <p class="small mb-2">
+                                    <span class="badge bg-light text-dark border">@doc.Department</span>
+                                </p>
+                            }
+
+                            @if (item.Shifts.Any())
+                            {
+                                <div class="mt-2">
+                                    <p class="small fw-semibold mb-1">Availability:</p>
+                                    @foreach (var shift in item.Shifts.OrderBy(s => s.DayOfWeek))
+                                    {
+                                        var day = ((DayOfWeek)shift.DayOfWeek).ToString();
+                                        var start = DateTime.Today.Add(shift.StartTime).ToString("hh:mm tt");
+                                        var end = DateTime.Today.Add(shift.EndTime).ToString("hh:mm tt");
+                                        <span class="badge bg-light text-dark border me-1 mb-1">
+                                            @day: @start – @end
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <a asp-controller="Site" asp-action="BookAppointment"
+                               asp-route-doctorId="@doc.Id"
+                               class="btn btn-sm btn-outline-primary w-100">
+                                Book with Dr. @doc.LastName
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

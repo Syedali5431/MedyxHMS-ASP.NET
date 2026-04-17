@@ -1,0 +1,116 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using MedyxHMS.Models;
+
+namespace MedyxHMS.ViewModels
+{
+    // ─── Public Homepage ──────────────────────────────────────────────────────
+    public class SiteHomeViewModel
+    {
+        public List<CmsNotice> RecentNotices { get; set; } = new();
+        public List<CmsNotice> RecentNews { get; set; } = new();
+        public List<CmsNotice> UpcomingEvents { get; set; } = new();
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+        public string HospitalName { get; set; }
+        public string HospitalTagline { get; set; }
+    }
+
+    // ─── Public CMS Page View ────────────────────────────────────────────────
+    public class SitePageViewModel
+    {
+        public CmsPage Page { get; set; }
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    // ─── Public Notice / News List ───────────────────────────────────────────
+    public class SiteNoticeListViewModel
+    {
+        public List<CmsNotice> Notices { get; set; } = new();
+        public string Type { get; set; }   // e.g. "News", "Notice", "Event"
+        public string PageTitle { get; set; }
+        public string SearchTerm { get; set; }
+        public int Page { get; set; } = 1;
+        public int PageSize { get; set; } = 9;
+        public int TotalCount { get; set; }
+        public int TotalPages => (int)Math.Ceiling((double)TotalCount / Math.Max(1, PageSize));
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    // ─── Public Doctor Listing ───────────────────────────────────────────────
+    public class SiteDoctorListViewModel
+    {
+        public List<DoctorWithShifts> Doctors { get; set; } = new();
+        public List<Department> Departments { get; set; } = new();
+        public int? DepartmentFilter { get; set; }
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    public class DoctorWithShifts
+    {
+        public Doctor Doctor { get; set; }
+        public List<DoctorShift> Shifts { get; set; } = new();
+    }
+
+    // ─── Public Booking Form ─────────────────────────────────────────────────
+    public class PublicBookingViewModel
+    {
+        // Form fields
+        [Required, MaxLength(150), Display(Name = "Full Name")]
+        public string PatientName { get; set; }
+
+        [Required, MaxLength(20), Phone]
+        public string Phone { get; set; }
+
+        [MaxLength(200), EmailAddress]
+        public string Email { get; set; }
+
+        [MaxLength(10)]
+        public string Gender { get; set; }
+
+        [MaxLength(10)]
+        public string Age { get; set; }
+
+        [Required(ErrorMessage = "Please select a doctor.")]
+        [Display(Name = "Doctor")]
+        public int DoctorId { get; set; }
+
+        [Required, Display(Name = "Preferred Date")]
+        [DataType(DataType.Date)]
+        public DateTime PreferredDate { get; set; } = DateTime.Today.AddDays(1);
+
+        [Required, Display(Name = "Preferred Time")]
+        public string PreferredTimeStr { get; set; }
+
+        [MaxLength(500)]
+        public string Symptoms { get; set; }
+
+        [MaxLength(500)]
+        public string Notes { get; set; }
+
+        // Honeypot field — must be empty on submit (anti-bot)
+        public string Website { get; set; }
+
+        // Populated for the view
+        public List<Doctor> AvailableDoctors { get; set; } = new();
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    // ─── Booking Confirmation ─────────────────────────────────────────────────
+    public class BookingConfirmationViewModel
+    {
+        public string PatientName { get; set; }
+        public string DoctorName { get; set; }
+        public DateTime PreferredDate { get; set; }
+        public string PreferredTime { get; set; }
+        public int RequestId { get; set; }
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    // ─── Available Slot (JSON response) ──────────────────────────────────────
+    public class AvailableSlotDto
+    {
+        public string Time { get; set; }
+        public string Display { get; set; }
+    }
+}
