@@ -92,6 +92,24 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
 - CMS, public booking, export/download coverage: [PH8.md](PH8.md)
 
+## Planned Design Docs
+
+### Licensing & Commercial Control
+- Document: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)
+- Focus:
+  - License data model and enforcement workflow
+  - SuperAdmin-only renewal design
+  - 5-day pre-expiry reminder automation
+  - Access-control rules for expired licenses
+
+### OpenAI Chatbot
+- Document: [OPENAI-CHATBOT-DESIGN.md](OPENAI-CHATBOT-DESIGN.md)
+- Focus:
+  - Backend-only OpenAI integration architecture
+  - Safety guardrails and privacy controls
+  - Role-aware chatbot behavior and knowledge scope
+  - Rollout, observability, and moderation design
+
 ## Maintenance Rule
 When a new implementation phase is completed, create a new file in this folder (for example PH6.md), then append it to this index with:
 - phase objective
