@@ -1,0 +1,45 @@
+name: dotnet-ci
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore main project
+        run: dotnet restore MedyxHMS.csproj
+
+      - name: Build main project
+        run: dotnet build MedyxHMS.csproj --configuration Release --no-restore
+
+      - name: Restore tests
+        run: dotnet restore tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj
+
+      - name: Build tests
+        run: dotnet build tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj --configuration Release --no-build --verbosity normal --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx" --results-directory "./TestResults"
+
+      - name: Upload test results and coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-and-coverage
+          path: TestResults/**
+          if-no-files-found: warn
