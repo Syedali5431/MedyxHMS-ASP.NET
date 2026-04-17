@@ -1,0 +1,168 @@
+@model MedyxHMS.ViewModels.NotificationDeliveryLogIndexViewModel
+@{
+    ViewData["Title"] = "Notification Delivery Logs";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Notification Delivery Logs</h2>
+        <span class="badge bg-primary fs-6">@Model.TotalCount records</span>
+    </div>
+
+    <form method="get" class="row g-2 mb-4">
+        <div class="col-md-2">
+            <select name="channel" class="form-select form-select-sm">
+                <option value="">All Channels</option>
+                <option value="Email" selected="@(Model.ChannelFilter == "Email")">Email</option>
+                <option value="SMS" selected="@(Model.ChannelFilter == "SMS")">SMS</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All Statuses</option>
+                <option value="Sent" selected="@(Model.StatusFilter == "Sent")">Sent</option>
+                <option value="Failed" selected="@(Model.StatusFilter == "Failed")">Failed</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="isTest" class="form-select form-select-sm">
+                <option value="" selected="@(Model.IsTestFilter == null)">All Types</option>
+                <option value="true" selected="@(Model.IsTestFilter == true)">Test Only</option>
+                <option value="false" selected="@(Model.IsTestFilter == false)">Production Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="text" name="recipient" value="@Model.RecipientFilter" class="form-control form-control-sm" placeholder="Recipient..." />
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="dateFrom" value="@Model.DateFrom?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+        <div class="col-md-2">
+            <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
+            <a asp-action="DeliveryLogs" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+        <div class="col-auto ms-auto">
+            <a asp-action="DeliveryLogsExport"
+               asp-route-format="csv"
+               asp-route-channel="@Model.ChannelFilter"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-isTest="@Model.IsTestFilter"
+               asp-route-recipient="@Model.RecipientFilter"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               class="btn btn-outline-primary btn-sm">Export CSV</a>
+            <a asp-action="DeliveryLogsExport"
+               asp-route-format="pdf"
+               asp-route-channel="@Model.ChannelFilter"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-isTest="@Model.IsTestFilter"
+               asp-route-recipient="@Model.RecipientFilter"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               class="btn btn-outline-danger btn-sm">Export PDF</a>
+        </div>
+    </form>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0 small">
+                <thead class="table-light">
+                    <tr>
+                        <th>When (UTC)</th>
+                        <th>Channel</th>
+                        <th>Provider</th>
+                        <th>Recipient</th>
+                        <th>Status</th>
+                        <th>Type</th>
+                        <th>Subject</th>
+                        <th>Response</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Logs.Any())
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">No delivery logs found.</td>
+                        </tr>
+                    }
+                    @foreach (var log in Model.Logs)
+                    {
+                        <tr>
+                            <td>@log.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                            <td>@log.Channel</td>
+                            <td>@log.Provider</td>
+                            <td>@log.Recipient</td>
+                            <td>
+                                <span class="badge @(log.Status == "Sent" ? "bg-success" : "bg-danger")">@log.Status</span>
+                            </td>
+                            <td>@(log.IsTest ? "Test" : "Production")</td>
+                            <td>@(string.IsNullOrWhiteSpace(log.Subject) ? "-" : log.Subject)</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(log.ProviderResponse))
+                                {
+                                    <span title="@log.ProviderResponse">
+                                        @(log.ProviderResponse.Length > 70 ? log.ProviderResponse.Substring(0, 70) + "..." : log.ProviderResponse)
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span>-</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-3" aria-label="Delivery log pagination">
+            <ul class="pagination pagination-sm">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="DeliveryLogs"
+                       asp-route-channel="@Model.ChannelFilter"
+                       asp-route-status="@Model.StatusFilter"
+                       asp-route-isTest="@Model.IsTestFilter"
+                       asp-route-recipient="@Model.RecipientFilter"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-page="@(Model.Page - 1)"
+                       asp-route-pageSize="@Model.PageSize">Previous</a>
+                </li>
+                @for (var i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(i == Model.Page ? "active" : "")">
+                        <a class="page-link"
+                           asp-action="DeliveryLogs"
+                           asp-route-channel="@Model.ChannelFilter"
+                           asp-route-status="@Model.StatusFilter"
+                           asp-route-isTest="@Model.IsTestFilter"
+                           asp-route-recipient="@Model.RecipientFilter"
+                           asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                           asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                           asp-route-page="@i"
+                           asp-route-pageSize="@Model.PageSize">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link"
+                       asp-action="DeliveryLogs"
+                       asp-route-channel="@Model.ChannelFilter"
+                       asp-route-status="@Model.StatusFilter"
+                       asp-route-isTest="@Model.IsTestFilter"
+                       asp-route-recipient="@Model.RecipientFilter"
+                       asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+                       asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-page="@(Model.Page + 1)"
+                       asp-route-pageSize="@Model.PageSize">Next</a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

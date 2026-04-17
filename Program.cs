@@ -19,6 +19,7 @@ builder.Host.UseSerilog((context, configuration) =>
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient();
 
 // Configure Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -66,6 +67,11 @@ builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IPatientPortalService, PatientPortalService>();
+builder.Services.AddScoped<IEmailNotificationProvider, SmtpEmailNotificationProvider>();
+builder.Services.AddScoped<ISmsNotificationProvider, TwilioSmsNotificationProvider>();
+builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotificationService>();
+builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
+builder.Services.AddScoped<IExportService, ExportService>();
 
 // Clinical Module Services (STEP 3.1)
 builder.Services.AddScoped<IOPDService, OPDService>();

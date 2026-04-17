@@ -60,6 +60,7 @@ namespace MedyxHMS.Data
 
         // Audit & Reporting
         public DbSet<AuditLog> AuditLogs { get; set; }
+        public DbSet<NotificationDeliveryLog> NotificationDeliveryLogs { get; set; }
         public DbSet<UserActionLog> UserActionLogs { get; set; }
         public DbSet<GeneratedReport> GeneratedReports { get; set; }
         public DbSet<ReportSchedule> ReportSchedules { get; set; }
@@ -242,6 +243,9 @@ namespace MedyxHMS.Data
             modelBuilder.Entity<ReportSchedule>()
                 .HasIndex(rs => new { rs.IsActive, rs.NextRunDate });
 
+            modelBuilder.Entity<NotificationDeliveryLog>()
+                .HasIndex(n => new { n.CreatedAt, n.Channel, n.Status });
+
             // Billing relationships
             modelBuilder.Entity<Bill>()
                 .HasMany(b => b.BillItems)
@@ -305,6 +309,12 @@ namespace MedyxHMS.Data
                 .HasOne(r => r.Doctor)
                 .WithMany()
                 .HasForeignKey(r => r.DoctorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PublicAppointmentRequest>()
+                .HasOne(r => r.Patient)
+                .WithMany()
+                .HasForeignKey(r => r.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
         }
 

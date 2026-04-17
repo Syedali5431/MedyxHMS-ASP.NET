@@ -29,6 +29,7 @@ namespace MedyxHMS.Services.Implementations
 
             // Ensure newly introduced module tables exist for existing databases
             await EnsureStep42TablesAsync();
+            await EnsureNotificationDeliveryLogTableAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
@@ -237,6 +238,7 @@ BEGIN
         [Email] NVARCHAR(200) NULL,
         [Gender] NVARCHAR(10) NULL,
         [Age] NVARCHAR(10) NULL,
+        [PatientId] INT NOT NULL,
         [DoctorId] INT NOT NULL,
         [PreferredDate] DATETIME2 NOT NULL,
         [PreferredTime] TIME NOT NULL,
@@ -247,9 +249,68 @@ BEGIN
         [CreatedAt] DATETIME2 NOT NULL,
         [UpdatedAt] DATETIME2 NULL,
         [IpAddress] NVARCHAR(45) NULL,
+        CONSTRAINT [FK_PublicAppointmentRequests_Patients_PatientId] FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE NO ACTION,
         CONSTRAINT [FK_PublicAppointmentRequests_Doctors_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [dbo].[Doctors]([Id]) ON DELETE NO ACTION
     );
+    CREATE INDEX [IX_PublicAppointmentRequests_PatientId] ON [dbo].[PublicAppointmentRequests]([PatientId]);
     CREATE INDEX [IX_PublicAppointmentRequests_DoctorId] ON [dbo].[PublicAppointmentRequests]([DoctorId]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[PublicAppointmentRequests]', N'PatientId') IS NULL
+    BEGIN
+        ALTER TABLE [dbo].[PublicAppointmentRequests] ADD [PatientId] INT NULL;
+    END
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[PublicAppointmentRequests]', N'PatientId') IS NOT NULL
+BEGIN
+    UPDATE pr
+    SET pr.PatientId = p.Id
+    FROM [dbo].[PublicAppointmentRequests] pr
+    INNER JOIN [dbo].[Patients] p ON p.Phone = pr.Phone
+    WHERE pr.PatientId IS NULL;
+
+    UPDATE pr
+    SET pr.PatientId = p.Id
+    FROM [dbo].[PublicAppointmentRequests] pr
+    INNER JOIN [dbo].[Patients] p ON p.Email = pr.Email
+    WHERE pr.PatientId IS NULL AND pr.Email IS NOT NULL;
+
+    UPDATE pr
+    SET pr.PatientId = fallbackPatient.Id
+    FROM [dbo].[PublicAppointmentRequests] pr
+    CROSS APPLY (SELECT TOP 1 Id FROM [dbo].[Patients] ORDER BY Id) fallbackPatient
+    WHERE pr.PatientId IS NULL;
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[PublicAppointmentRequests]', N'PatientId') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_PublicAppointmentRequests_Patients_PatientId'
+   )
+BEGIN
+    ALTER TABLE [dbo].[PublicAppointmentRequests] ALTER COLUMN [PatientId] INT NOT NULL;
+    ALTER TABLE [dbo].[PublicAppointmentRequests]
+        ADD CONSTRAINT [FK_PublicAppointmentRequests_Patients_PatientId]
+        FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE NO ACTION;
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NOT NULL
+   AND COL_LENGTH(N'[dbo].[PublicAppointmentRequests]', N'PatientId') IS NOT NULL
+   AND NOT EXISTS (
+       SELECT 1 FROM sys.indexes
+       WHERE name = N'IX_PublicAppointmentRequests_PatientId'
+         AND object_id = OBJECT_ID(N'[dbo].[PublicAppointmentRequests]')
+   )
+BEGIN
+    CREATE INDEX [IX_PublicAppointmentRequests_PatientId] ON [dbo].[PublicAppointmentRequests]([PatientId]);
 END");
 
             // CmsMenuItems (depends on CmsPages)
@@ -267,6 +328,31 @@ BEGIN
         CONSTRAINT [FK_CmsMenuItems_CmsPages_CmsPageId] FOREIGN KEY ([CmsPageId]) REFERENCES [dbo].[CmsPages]([Id]) ON DELETE SET NULL
     );
     CREATE INDEX [IX_CmsMenuItems_CmsPageId] ON [dbo].[CmsMenuItems]([CmsPageId]);
+END");
+        }
+
+        private async Task EnsureNotificationDeliveryLogTableAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[NotificationDeliveryLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[NotificationDeliveryLogs] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Channel] NVARCHAR(20) NOT NULL,
+        [Provider] NVARCHAR(50) NOT NULL,
+        [Recipient] NVARCHAR(200) NOT NULL,
+        [Subject] NVARCHAR(200) NULL,
+        [MessageBody] NVARCHAR(MAX) NOT NULL,
+        [Status] NVARCHAR(20) NOT NULL,
+        [ProviderResponse] NVARCHAR(2000) NULL,
+        [RelatedEntityType] NVARCHAR(50) NULL,
+        [RelatedEntityId] NVARCHAR(100) NULL,
+        [IsTest] BIT NOT NULL DEFAULT(0),
+        [CreatedAt] DATETIME2 NOT NULL
+    );
+
+    CREATE INDEX [IX_NotificationDeliveryLogs_CreatedAt_Channel_Status]
+        ON [dbo].[NotificationDeliveryLogs]([CreatedAt], [Channel], [Status]);
 END");
         }
 

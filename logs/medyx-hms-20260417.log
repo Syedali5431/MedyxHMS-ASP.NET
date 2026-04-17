@@ -778,3 +778,37 @@ System.Data.SqlTypes.SqlNullValueException: Data is Null. This method or propert
    at Microsoft.AspNetCore.Session.SessionMiddleware.Invoke(HttpContext context)
    at Microsoft.AspNetCore.Session.SessionMiddleware.Invoke(HttpContext context)
    at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
+2026-04-17 14:15:48.401 +10:00 [ERR] Failed executing DbCommand (9ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF OBJECT_ID(N'[dbo].[PublicAppointmentRequests]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[PublicAppointmentRequests]', N'PatientId') IS NULL
+    BEGIN
+        ALTER TABLE [dbo].[PublicAppointmentRequests] ADD [PatientId] INT NULL;
+
+        UPDATE pr
+        SET pr.PatientId = p.Id
+        FROM [dbo].[PublicAppointmentRequests] pr
+        INNER JOIN [dbo].[Patients] p ON p.Phone = pr.Phone
+        WHERE pr.PatientId IS NULL;
+
+        UPDATE pr
+        SET pr.PatientId = p.Id
+        FROM [dbo].[PublicAppointmentRequests] pr
+        INNER JOIN [dbo].[Patients] p ON p.Email = pr.Email
+        WHERE pr.PatientId IS NULL AND pr.Email IS NOT NULL;
+
+        UPDATE pr
+        SET pr.PatientId = fallbackPatient.Id
+        FROM [dbo].[PublicAppointmentRequests] pr
+        CROSS APPLY (SELECT TOP 1 Id FROM [dbo].[Patients] ORDER BY Id) fallbackPatient
+        WHERE pr.PatientId IS NULL;
+
+        ALTER TABLE [dbo].[PublicAppointmentRequests] ALTER COLUMN [PatientId] INT NOT NULL;
+        ALTER TABLE [dbo].[PublicAppointmentRequests]
+            ADD CONSTRAINT [FK_PublicAppointmentRequests_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE NO ACTION;
+        CREATE INDEX [IX_PublicAppointmentRequests_PatientId] ON [dbo].[PublicAppointmentRequests]([PatientId]);
+    END
+END
+2026-04-17 15:52:37.363 +10:00 [WRN] Failed to determine the https port for redirect.

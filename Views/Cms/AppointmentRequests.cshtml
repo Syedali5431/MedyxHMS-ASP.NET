@@ -39,9 +39,33 @@
             <input type="date" name="dateTo" value="@Model.DateTo?.ToString("yyyy-MM-dd")"
                    class="form-control form-control-sm" title="To date" />
         </div>
+        <div class="col-md-2">
+            <div class="form-check pt-2">
+                <input class="form-check-input" type="checkbox" name="duplicatesOnly" value="true" id="duplicatesOnly" @(Model.DuplicatesOnly ? "checked" : null) />
+                <label class="form-check-label small" for="duplicatesOnly">Duplicates only</label>
+            </div>
+        </div>
         <div class="col-auto">
             <button type="submit" class="btn btn-secondary btn-sm">Filter</button>
             <a asp-action="AppointmentRequests" class="btn btn-outline-secondary btn-sm">Clear</a>
+        </div>
+        <div class="col-auto ms-auto">
+            <a asp-action="AppointmentRequestsExport"
+               asp-route-format="csv"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-search="@Model.SearchTerm"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               asp-route-duplicatesOnly="@Model.DuplicatesOnly"
+               class="btn btn-outline-primary btn-sm">Export CSV</a>
+            <a asp-action="AppointmentRequestsExport"
+               asp-route-format="pdf"
+               asp-route-status="@Model.StatusFilter"
+               asp-route-search="@Model.SearchTerm"
+               asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
+               asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+               asp-route-duplicatesOnly="@Model.DuplicatesOnly"
+               class="btn btn-outline-danger btn-sm">Export PDF</a>
         </div>
     </form>
 
@@ -52,29 +76,42 @@
                     <tr>
                         <th>#</th>
                         <th>Patient</th>
+                        <th>Patient ID</th>
                         <th>Phone</th>
                         <th>Doctor</th>
                         <th>Pref. Date</th>
                         <th>Pref. Time</th>
                         <th>Status</th>
                         <th>Submitted</th>
+                        <th>Duplicates</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @if (!Model.Requests.Any())
+                    @if (!Model.RequestRows.Any())
                     {
                         <tr>
-                            <td colspan="9" class="text-center text-muted py-4">No appointment requests found.</td>
+                            <td colspan="11" class="text-center text-muted py-4">No appointment requests found.</td>
                         </tr>
                     }
-                    @foreach (var r in Model.Requests)
+                    @foreach (var row in Model.RequestRows)
                     {
+                        var r = row.Request;
                         <tr>
                             <td>@r.Id</td>
                             <td>
                                 <strong>@r.PatientName</strong><br />
                                 <span class="text-muted">@r.Gender @r.Age</span>
+                            </td>
+                            <td>
+                                @if (r.Patient != null)
+                                {
+                                    <span class="badge bg-light text-dark border">@r.Patient.PatientId</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
                             </td>
                             <td>@r.Phone</td>
                             <td>
@@ -95,6 +132,18 @@
                                 </span>
                             </td>
                             <td>@r.CreatedAt.ToString("dd MMM HH:mm")</td>
+                            <td>
+                                @if (row.HasDuplicates)
+                                {
+                                    <a asp-action="ReviewDuplicates" asp-route-id="@r.Id" class="btn btn-outline-warning btn-sm">
+                                        @row.DuplicateCount total / @row.ActiveDuplicateCount active
+                                    </a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
                             <td>
                                 @if (r.Status == "Pending")
                                 {
@@ -134,6 +183,7 @@
                        asp-route-search="@Model.SearchTerm"
                        asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
                        asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                              asp-route-duplicatesOnly="@Model.DuplicatesOnly"
                        asp-route-page="@(Model.Page - 1)"
                        asp-route-pageSize="@Model.PageSize">Previous</a>
                 </li>
@@ -146,6 +196,7 @@
                            asp-route-search="@Model.SearchTerm"
                            asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
                            asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                                    asp-route-duplicatesOnly="@Model.DuplicatesOnly"
                            asp-route-page="@i"
                            asp-route-pageSize="@Model.PageSize">@i</a>
                     </li>
@@ -157,6 +208,7 @@
                        asp-route-search="@Model.SearchTerm"
                        asp-route-dateFrom="@Model.DateFrom?.ToString("yyyy-MM-dd")"
                        asp-route-dateTo="@Model.DateTo?.ToString("yyyy-MM-dd")"
+                       asp-route-duplicatesOnly="@Model.DuplicatesOnly"
                        asp-route-page="@(Model.Page + 1)"
                        asp-route-pageSize="@Model.PageSize">Next</a>
                 </li>

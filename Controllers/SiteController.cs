@@ -17,6 +17,8 @@ namespace MedyxHMS.Controllers
     /// </summary>
     public class SiteController : Controller
     {
+        private const string BookingCaptchaSessionKey = "PublicBookingCaptchaExpected";
+
         private readonly ApplicationDbContext _db;
         private readonly ILogger<SiteController> _logger;
 
@@ -180,6 +182,8 @@ namespace MedyxHMS.Controllers
                     .ToListAsync(),
                 MenuItems = await GetActiveMenuItemsAsync()
             };
+
+            SetBookingCaptchaChallenge(vm);
             return View(vm);
         }
 
@@ -196,12 +200,26 @@ namespace MedyxHMS.Controllers
             vm.AvailableDoctors = await _db.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
             vm.MenuItems = await GetActiveMenuItemsAsync();
 
-            if (!ModelState.IsValid) return View(vm);
+            if (!ModelState.IsValid)
+            {
+                SetBookingCaptchaChallenge(vm);
+                return View(vm);
+            }
+
+            if (!ValidateBookingCaptcha(vm.CaptchaAnswer))
+            {
+                ModelState.AddModelError(nameof(vm.CaptchaAnswer), "Captcha validation failed. Please try again.");
+                SetBookingCaptchaChallenge(vm);
+                return View(vm);
+            }
+
+            HttpContext.Session.Remove(BookingCaptchaSessionKey);
 
             // Validate preferred date is in the future
             if (vm.PreferredDate.Date < DateTime.Today)
             {
                 ModelState.AddModelError(nameof(vm.PreferredDate), "Preferred date must be today or in the future.");
+                SetBookingCaptchaChallenge(vm);
                 return View(vm);
             }
 
@@ -209,6 +227,7 @@ namespace MedyxHMS.Controllers
             if (!TimeSpan.TryParse(vm.PreferredTimeStr, out var preferredTime))
             {
                 ModelState.AddModelError(nameof(vm.PreferredTimeStr), "Invalid time format.");
+                SetBookingCaptchaChallenge(vm);
                 return View(vm);
             }
 
@@ -216,8 +235,27 @@ namespace MedyxHMS.Controllers
             if (doctor == null)
             {
                 ModelState.AddModelError(nameof(vm.DoctorId), "Selected doctor not found.");
+                SetBookingCaptchaChallenge(vm);
                 return View(vm);
             }
+
+            var normalizedPhone = (vm.Phone ?? string.Empty).Trim();
+            var duplicateRequestExists = await _db.PublicAppointmentRequests.AnyAsync(r =>
+                r.Phone == normalizedPhone
+                && r.DoctorId == vm.DoctorId
+                && r.PreferredDate.Date == vm.PreferredDate.Date
+                && r.PreferredTime == preferredTime
+                && (r.Status == "Pending" || r.Status == "Confirmed"));
+
+            if (duplicateRequestExists)
+            {
+                ModelState.AddModelError(string.Empty,
+                    "An active appointment request already exists for this phone number, doctor, date, and time. Please choose another slot or contact the hospital.");
+                SetBookingCaptchaChallenge(vm);
+                return View(vm);
+            }
+
+            var patient = await FindOrCreatePatientFromBookingAsync(vm);
 
             var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
 
@@ -228,12 +266,14 @@ namespace MedyxHMS.Controllers
                 Email = vm.Email,
                 Gender = vm.Gender,
                 Age = vm.Age,
+                PatientId = patient.Id,
                 DoctorId = vm.DoctorId,
                 PreferredDate = vm.PreferredDate,
                 PreferredTime = preferredTime,
                 Symptoms = vm.Symptoms,
                 Notes = vm.Notes,
                 Status = "Pending",
+                AdminNotes = null,
                 CreatedAt = DateTime.UtcNow,
                 IpAddress = ipAddress
             };
@@ -243,6 +283,9 @@ namespace MedyxHMS.Controllers
 
             _logger.LogInformation("New public appointment request #{Id} for Dr. {Doctor} on {Date}",
                 request.Id, $"{doctor.FirstName} {doctor.LastName}", request.PreferredDate.ToString("yyyy-MM-dd"));
+
+            _logger.LogInformation("Public booking request #{RequestId} linked to patient {PatientId}",
+                request.Id, patient.PatientId);
 
             return RedirectToAction(nameof(BookingConfirmation), new { requestId = request.Id });
         }
@@ -334,5 +377,117 @@ namespace MedyxHMS.Controllers
                .Where(m => m.IsActive)
                .OrderBy(m => m.SortOrder)
                .ToListAsync();
+
+        private void SetBookingCaptchaChallenge(PublicBookingViewModel vm)
+        {
+            var left = Random.Shared.Next(1, 10);
+            var right = Random.Shared.Next(1, 10);
+            HttpContext.Session.SetInt32(BookingCaptchaSessionKey, left + right);
+            vm.CaptchaQuestion = $"What is {left} + {right}?";
+            vm.CaptchaAnswer = string.Empty;
+        }
+
+        private bool ValidateBookingCaptcha(string? answer)
+        {
+            var expected = HttpContext.Session.GetInt32(BookingCaptchaSessionKey);
+            if (!expected.HasValue)
+            {
+                return false;
+            }
+
+            return int.TryParse(answer?.Trim(), out var actual) && actual == expected.Value;
+        }
+
+        private async Task<Patient> FindOrCreatePatientFromBookingAsync(PublicBookingViewModel vm)
+        {
+            var phone = (vm.Phone ?? string.Empty).Trim();
+            var email = (vm.Email ?? string.Empty).Trim();
+
+            var existingPatient = await _db.Patients.FirstOrDefaultAsync(p =>
+                p.Phone == phone || (!string.IsNullOrWhiteSpace(email) && p.Email == email));
+
+            if (existingPatient != null)
+            {
+                return existingPatient;
+            }
+
+            var (firstName, lastName) = SplitName(vm.PatientName);
+            var estimatedDob = EstimateDateOfBirthFromAge(vm.Age);
+
+            var patient = new Patient
+            {
+                PatientId = await GeneratePublicPatientIdAsync(),
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                Phone = phone,
+                DateOfBirth = estimatedDob,
+                Gender = string.IsNullOrWhiteSpace(vm.Gender) ? "Other" : vm.Gender,
+                Address = string.Empty,
+                City = string.Empty,
+                State = string.Empty,
+                Country = string.Empty,
+                PostalCode = string.Empty,
+                BloodGroup = string.Empty,
+                EmergencyContactName = string.Empty,
+                EmergencyContactPhone = string.Empty,
+                EmergencyContactRelation = string.Empty,
+                MedicalHistory = string.Empty,
+                Allergies = string.Empty,
+                GuardianName = string.Empty,
+                GuardianPhone = string.Empty,
+                MaritalStatus = string.Empty,
+                Occupation = string.Empty,
+                UserId = string.Empty,
+                ProfileImagePath = string.Empty,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                LastVisitDate = vm.PreferredDate.Date
+            };
+
+            _db.Patients.Add(patient);
+            await _db.SaveChangesAsync();
+
+            return patient;
+        }
+
+        private async Task<string> GeneratePublicPatientIdAsync()
+        {
+            string candidate;
+            do
+            {
+                candidate = $"PAT{DateTime.UtcNow:yyyyMMdd}{Random.Shared.Next(1000, 9999)}";
+            }
+            while (await _db.Patients.AnyAsync(p => p.PatientId == candidate));
+
+            return candidate;
+        }
+
+        private static (string FirstName, string LastName) SplitName(string? fullName)
+        {
+            var safeName = (fullName ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(safeName))
+            {
+                return ("Guest", "Patient");
+            }
+
+            var parts = safeName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 1)
+            {
+                return (parts[0], "Patient");
+            }
+
+            return (parts[0], string.Join(' ', parts.Skip(1)));
+        }
+
+        private static DateTime EstimateDateOfBirthFromAge(string? ageInput)
+        {
+            if (int.TryParse(ageInput, out var years) && years > 0 && years < 125)
+            {
+                return DateTime.Today.AddYears(-years);
+            }
+
+            return DateTime.Today.AddYears(-30);
+        }
     }
 }

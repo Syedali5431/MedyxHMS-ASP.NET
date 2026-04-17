@@ -88,6 +88,13 @@ namespace MedyxHMS.ViewModels
         [MaxLength(500)]
         public string Notes { get; set; }
 
+        [Display(Name = "Captcha")]
+        public string? CaptchaQuestion { get; set; }
+
+        [Required(ErrorMessage = "Please solve the captcha challenge.")]
+        [Display(Name = "Captcha Answer")]
+        public string CaptchaAnswer { get; set; }
+
         // Honeypot field — must be empty on submit (anti-bot)
         public string Website { get; set; }
 

@@ -64,6 +64,16 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Step 4.1 complete and validated (report routes verified; basic audit viewer routes implemented)
 - Read this for comprehensive HR workflow implementation patterns.
 
+### PH8 - Phase 4 Step 4.2 Delivery (CMS, Public Booking, Exports)
+- Document: [PH8.md](PH8.md)
+- Focus:
+  - Public CMS and public booking administrative workflow completion
+  - Shared CSV/PDF export subsystem using QuestPDF
+  - Cross-module dashboard export coverage and PDF-only report downloads
+  - Build/runtime validation for export and protected-route behavior
+- **Status:** Step 4.2 export/download layer completed and validated
+- Read this for the implementation snapshot of CMS/public-booking observability and document export patterns.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -72,8 +82,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 5. [PH5.md](PH5.md)
 6. [PH6.md](PH6.md)
 7. [PH7.md](PH7.md)
-5. [PH5.md](PH5.md)
-6. [PH6.md](PH6.md)
+8. [PH8.md](PH8.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -81,6 +90,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Routing and authorization pipeline: [PH4.md](PH4.md)
 - Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md)
 - Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
+- CMS, public booking, export/download coverage: [PH8.md](PH8.md)
 
 ## Maintenance Rule
 When a new implementation phase is completed, create a new file in this folder (for example PH6.md), then append it to this index with:

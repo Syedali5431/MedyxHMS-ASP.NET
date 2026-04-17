@@ -151,6 +151,8 @@ namespace MedyxHMS.Models
         [MaxLength(10)]
         public string? Age { get; set; }
 
+        public int PatientId { get; set; }
+
         public int DoctorId { get; set; }
 
         public DateTime PreferredDate { get; set; }
@@ -176,6 +178,9 @@ namespace MedyxHMS.Models
         public string? IpAddress { get; set; }
 
         // Navigation
+        [ForeignKey(nameof(PatientId))]
+        public Patient Patient { get; set; }
+
         [ForeignKey(nameof(DoctorId))]
         public Doctor Doctor { get; set; }
     }

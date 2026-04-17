@@ -19,15 +19,18 @@ namespace MedyxHMS.Controllers
         private readonly IPatientService _patientService;
         private readonly AuthService _authorizationService;
         private readonly IAuditService _auditService;
+        private readonly IExportService _exportService;
 
         public PatientController(
             IPatientService patientService,
             AuthService authorizationService,
-            IAuditService auditService)
+            IAuditService auditService,
+            IExportService exportService)
         {
             _patientService = patientService;
             _authorizationService = authorizationService;
             _auditService = auditService;
+            _exportService = exportService;
         }
 
         // GET: Patient
@@ -56,6 +59,46 @@ namespace MedyxHMS.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string format = "csv", string searchTerm = null)
+        {
+            if (!await HasPermissionAsync("Patient", "View"))
+                return Forbid();
+
+            format = (format ?? "csv").Trim().ToLowerInvariant();
+            if (format != "csv" && format != "pdf")
+                return BadRequest("Only CSV and PDF exports are supported.");
+
+            var patients = string.IsNullOrWhiteSpace(searchTerm)
+                ? await _patientService.GetAllPatientsAsync()
+                : await _patientService.SearchPatientsAsync(searchTerm);
+
+            var headers = new[] { "Patient ID", "Name", "Email", "Phone", "Gender", "Blood Group", "Status", "Created" };
+            var rows = patients.Select(p => (IReadOnlyList<string>)new[]
+            {
+                p.PatientId ?? string.Empty,
+                (p.FirstName + " " + p.LastName).Trim(),
+                p.Email ?? string.Empty,
+                p.Phone ?? string.Empty,
+                p.Gender ?? string.Empty,
+                p.BloodGroup ?? string.Empty,
+                p.IsActive ? "Active" : "Inactive",
+                p.CreatedDate.ToString("yyyy-MM-dd")
+            }).ToList();
+
+            var title = "Patient Management Export";
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+
+            if (format == "csv")
+            {
+                var bytes = _exportService.BuildCsv(title, headers, rows);
+                return File(bytes, "text/csv", $"patients_{stamp}.csv");
+            }
+
+            var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
+            return File(pdfBytes, "application/pdf", $"patients_{stamp}.pdf");
         }
 
         // GET: Patient/Details/5

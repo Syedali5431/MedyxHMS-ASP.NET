@@ -12,10 +12,12 @@ namespace MedyxHMS.Controllers
     public class BillingController : Controller
     {
         private readonly IBillingService _billingService;
+        private readonly IExportService _exportService;
 
-        public BillingController(IBillingService billingService)
+        public BillingController(IBillingService billingService, IExportService exportService)
         {
             _billingService = billingService;
+            _exportService = exportService;
         }
 
         public async Task<IActionResult> Index(string filter = "all", int page = 1, int pageSize = 10)
@@ -83,6 +85,69 @@ namespace MedyxHMS.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string format = "csv", string filter = "all")
+        {
+            format = (format ?? "csv").Trim().ToLowerInvariant();
+            if (format != "csv" && format != "pdf")
+                return BadRequest("Only CSV and PDF exports are supported.");
+
+            var bills = await _billingService.GetAllBillsAsync();
+            if (!string.IsNullOrEmpty(filter) && filter != "all")
+                bills = bills.Where(b => string.Equals(b.Status, filter, StringComparison.OrdinalIgnoreCase));
+
+            var headers = new[] { "Bill #", "Patient", "Bill Date", "Due Date", "Total", "Paid", "Pending", "Status" };
+            var rows = bills
+                .OrderByDescending(b => b.CreatedDate)
+                .Select(b => (IReadOnlyList<string>)new[]
+                {
+                    b.BillNumber ?? string.Empty,
+                    b.Patient != null ? (b.Patient.FirstName + " " + b.Patient.LastName).Trim() : "Unknown",
+                    b.BillDate.ToString("yyyy-MM-dd"),
+                    b.DueDate.ToString("yyyy-MM-dd"),
+                    b.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture),
+                    b.PaidAmount.ToString("0.00", CultureInfo.InvariantCulture),
+                    (b.TotalAmount - b.PaidAmount).ToString("0.00", CultureInfo.InvariantCulture),
+                    b.Status ?? string.Empty
+                }).ToList();
+
+            var title = "Billing Overview Export";
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (format == "csv")
+            {
+                var bytes = _exportService.BuildCsv(title, headers, rows);
+                return File(bytes, "text/csv", $"billing_{stamp}.csv");
+            }
+
+            var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
+            return File(pdfBytes, "application/pdf", $"billing_{stamp}.pdf");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadReceipt(int id)
+        {
+            var bill = await _billingService.GetBillByIdAsync(id);
+            if (bill == null)
+                return NotFound();
+
+            var headers = new[] { "Field", "Value" };
+            var rows = new List<IReadOnlyList<string>>
+            {
+                new [] { "Bill Number", bill.BillNumber ?? string.Empty },
+                new [] { "Patient", bill.Patient != null ? (bill.Patient.FirstName + " " + bill.Patient.LastName).Trim() : "Unknown" },
+                new [] { "Bill Date", bill.BillDate.ToString("yyyy-MM-dd") },
+                new [] { "Due Date", bill.DueDate.ToString("yyyy-MM-dd") },
+                new [] { "Total Amount", bill.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture) },
+                new [] { "Paid Amount", bill.PaidAmount.ToString("0.00", CultureInfo.InvariantCulture) },
+                new [] { "Pending Amount", bill.PendingAmount.ToString("0.00", CultureInfo.InvariantCulture) },
+                new [] { "Status", bill.Status ?? string.Empty }
+            };
+
+            var pdfBytes = _exportService.BuildPdfTable("Billing Receipt", headers, rows);
+            var safeBillNumber = string.IsNullOrWhiteSpace(bill.BillNumber) ? bill.Id.ToString(CultureInfo.InvariantCulture) : bill.BillNumber;
+            return File(pdfBytes, "application/pdf", $"receipt_{safeBillNumber}.pdf");
         }
 
         public async Task<IActionResult> Details(int id)

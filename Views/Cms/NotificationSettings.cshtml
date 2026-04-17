@@ -1,0 +1,177 @@
+@model MedyxHMS.ViewModels.CmsNotificationSettingsViewModel
+@{
+    ViewData["Title"] = "Notification Settings";
+}
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Notification Settings</h2>
+        <a asp-action="AppointmentRequests" class="btn btn-outline-secondary btn-sm">Back to Requests</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-end mb-2">
+        <form asp-action="ClearNotificationTestHistory" method="post" class="d-inline">
+            @Html.AntiForgeryToken()
+            <button type="submit" class="btn btn-outline-danger btn-sm">Clear Test History</button>
+        </form>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-2">Last SMS Test</h6>
+                    @if (!string.IsNullOrWhiteSpace(Model.LastSmsTestStatus))
+                    {
+                        <div class="mb-1">
+                            <span class="badge @(Model.LastSmsTestStatus == "Success" ? "bg-success" : "bg-danger")">@Model.LastSmsTestStatus</span>
+                        </div>
+                        <div class="small text-muted">Target: @Model.LastSmsTestTarget</div>
+                        <div class="small text-muted">At (UTC): @Model.LastSmsTestAtUtc?.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        <div class="small mt-1">@Model.LastSmsTestMessage</div>
+                    }
+                    else
+                    {
+                        <div class="text-muted small">No SMS test has been run yet.</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <h6 class="mb-2">Last Email Test</h6>
+                    @if (!string.IsNullOrWhiteSpace(Model.LastEmailTestStatus))
+                    {
+                        <div class="mb-1">
+                            <span class="badge @(Model.LastEmailTestStatus == "Success" ? "bg-success" : "bg-danger")">@Model.LastEmailTestStatus</span>
+                        </div>
+                        <div class="small text-muted">Target: @Model.LastEmailTestTarget</div>
+                        <div class="small text-muted">At (UTC): @Model.LastEmailTestAtUtc?.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                        <div class="small mt-1">@Model.LastEmailTestMessage</div>
+                    }
+                    else
+                    {
+                        <div class="text-muted small">No email test has been run yet.</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form asp-action="NotificationSettings" method="post" class="card border-0 shadow-sm">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <h5 class="mb-3">General Notification Toggles</h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="form-check form-switch">
+                        <input asp-for="EnableEmailNotifications" class="form-check-input" />
+                        <label asp-for="EnableEmailNotifications" class="form-check-label"></label>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-check form-switch">
+                        <input asp-for="EnableSMSNotifications" class="form-check-input" />
+                        <label asp-for="EnableSMSNotifications" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <h5 class="mb-3">Twilio SMS Provider</h5>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="TwilioAccountSid" class="form-label"></label>
+                    <input asp-for="TwilioAccountSid" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="TwilioAccountSid" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="TwilioFromPhone" class="form-label"></label>
+                    <input asp-for="TwilioFromPhone" class="form-control" placeholder="+15551234567" autocomplete="off" />
+                    <span asp-validation-for="TwilioFromPhone" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="TwilioAuthToken" class="form-label"></label>
+                    <input asp-for="TwilioAuthToken" type="password" class="form-control" autocomplete="new-password" placeholder="Enter new token to update" />
+                    <span asp-validation-for="TwilioAuthToken" class="text-danger small"></span>
+                    @if (Model.HasSavedTwilioAuthToken)
+                    {
+                        <div class="form-text text-success">A Twilio auth token is already saved. Leave blank to keep existing token.</div>
+                    }
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="TwilioEnableLiveSend" class="form-check-input" />
+                        <label asp-for="TwilioEnableLiveSend" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-end gap-2">
+            <a asp-action="NotificationSettings" class="btn btn-outline-secondary">Reset</a>
+            <button type="submit" class="btn btn-primary">Save Settings</button>
+        </div>
+    </form>
+
+    <form asp-action="SendTestSms" method="post" class="card border-0 shadow-sm mt-3">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <h5 class="mb-3">Send Test SMS</h5>
+            <p class="text-muted small mb-3">
+                Uses the current Twilio settings. Live send must be enabled to send to Twilio.
+            </p>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label asp-for="TestSmsPhone" class="form-label"></label>
+                    <input asp-for="TestSmsPhone" class="form-control" placeholder="+15551234567" autocomplete="off" />
+                    <span asp-validation-for="TestSmsPhone" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">Send Test SMS</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+    <form asp-action="SendTestEmail" method="post" class="card border-0 shadow-sm mt-3">
+        @Html.AntiForgeryToken()
+        <div class="card-body">
+            <h5 class="mb-3">Send Test Email</h5>
+            <p class="text-muted small mb-3">
+                Uses the current SMTP settings. Ensure SMTP host, sender, and credentials are configured.
+            </p>
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label asp-for="TestEmailTo" class="form-label"></label>
+                    <input asp-for="TestEmailTo" class="form-control" placeholder="admin@example.com" autocomplete="off" />
+                    <span asp-validation-for="TestEmailTo" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-outline-primary w-100">Send Test Email</button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

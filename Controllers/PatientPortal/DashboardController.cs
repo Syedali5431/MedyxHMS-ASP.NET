@@ -13,10 +13,12 @@ namespace MedyxHMS.Controllers.PatientPortal
     public class DashboardController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
+        private readonly IExportService _exportService;
 
-        public DashboardController(IPatientPortalService patientPortalService)
+        public DashboardController(IPatientPortalService patientPortalService, IExportService exportService)
         {
             _patientPortalService = patientPortalService;
+            _exportService = exportService;
         }
 
         // GET: /PatientPortal/Dashboard/Index
@@ -251,6 +253,69 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string section = "appointments", string format = "csv")
+        {
+            format = (format ?? "csv").Trim().ToLowerInvariant();
+            section = (section ?? "appointments").Trim().ToLowerInvariant();
+
+            if (format != "csv" && format != "pdf")
+                return BadRequest("Only CSV and PDF exports are supported.");
+
+            if (section != "appointments" && section != "bills")
+                return BadRequest("Invalid dashboard section.");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            string[] headers;
+            List<IReadOnlyList<string>> rows;
+            string title;
+            string filePrefix;
+
+            if (section == "appointments")
+            {
+                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(userId, "upcoming");
+                headers = new[] { "Date", "Time", "Doctor", "Department", "Status" };
+                rows = appointments.Take(5).Select(a => (IReadOnlyList<string>)new[]
+                {
+                    a.AppointmentDate.ToString("yyyy-MM-dd"),
+                    a.AppointmentDate.ToString("HH:mm"),
+                    (a.Staff != null ? ($"{a.Staff.FirstName} {a.Staff.LastName}").Trim() : string.Empty),
+                    a.Staff?.Department ?? string.Empty,
+                    a.Status ?? string.Empty
+                }).ToList();
+                title = "Patient Dashboard - Upcoming Appointments";
+                filePrefix = "dashboard_appointments";
+            }
+            else
+            {
+                var bills = await _patientPortalService.GetPatientBillsAsync(userId);
+                headers = new[] { "Bill #", "Date", "Total", "Paid", "Status" };
+                rows = bills.Take(5).Select(b => (IReadOnlyList<string>)new[]
+                {
+                    b.BillNumber ?? string.Empty,
+                    b.BillDate.ToString("yyyy-MM-dd"),
+                    b.TotalAmount.ToString("0.00"),
+                    b.PaidAmount.ToString("0.00"),
+                    b.Status ?? string.Empty
+                }).ToList();
+                title = "Patient Dashboard - Recent Bills";
+                filePrefix = "dashboard_bills";
+            }
+
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (format == "csv")
+            {
+                var bytes = _exportService.BuildCsv(title, headers, rows);
+                return File(bytes, "text/csv", $"{filePrefix}_{stamp}.csv");
+            }
+
+            var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
+            return File(pdfBytes, "application/pdf", $"{filePrefix}_{stamp}.pdf");
         }
     }
 }

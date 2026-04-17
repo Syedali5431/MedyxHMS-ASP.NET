@@ -23,19 +23,22 @@ namespace MedyxHMS.Controllers
         private readonly AuthService _authorizationService;
         private readonly IAuditService _auditService;
         private readonly ApplicationDbContext _context;
+        private readonly IExportService _exportService;
 
         public AppointmentController(
             IAppointmentService appointmentService,
             IPatientService patientService,
             AuthService authorizationService,
             IAuditService auditService,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IExportService exportService)
         {
             _appointmentService = appointmentService;
             _patientService = patientService;
             _authorizationService = authorizationService;
             _auditService = auditService;
             _context = context;
+            _exportService = exportService;
         }
 
         // GET: Appointment
@@ -92,6 +95,65 @@ namespace MedyxHMS.Controllers
             };
 
             return View(viewModel);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string format = "csv", string searchTerm = null, string statusFilter = null, DateTime? dateFilter = null, int? doctorFilter = null)
+        {
+            if (!await HasPermissionAsync("Appointment", "View"))
+                return Forbid();
+
+            format = (format ?? "csv").Trim().ToLowerInvariant();
+            if (format != "csv" && format != "pdf")
+                return BadRequest("Only CSV and PDF exports are supported.");
+
+            var appointments = await _appointmentService.GetAllAppointmentsAsync();
+
+            if (!string.IsNullOrEmpty(searchTerm))
+            {
+                appointments = appointments.Where(a =>
+                    a.Patient.FirstName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    a.Patient.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    a.Patient.PatientId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                    (a.Doctor != null && a.Doctor.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
+            }
+
+            if (!string.IsNullOrEmpty(statusFilter) && statusFilter != "All")
+                appointments = appointments.Where(a => a.Status == statusFilter);
+
+            if (dateFilter.HasValue)
+                appointments = appointments.Where(a => a.AppointmentDate.Date == dateFilter.Value.Date);
+
+            if (doctorFilter.HasValue)
+                appointments = appointments.Where(a => a.DoctorId == doctorFilter.Value);
+
+            var headers = new[] { "Patient", "Patient ID", "Doctor", "Date", "Time", "Type", "Status", "Symptoms" };
+            var rows = appointments
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenBy(a => a.AppointmentTime)
+                .Select(a => (IReadOnlyList<string>)new[]
+                {
+                    (a.Patient?.FirstName + " " + a.Patient?.LastName).Trim(),
+                    a.Patient?.PatientId ?? string.Empty,
+                    a.Doctor?.Name ?? string.Empty,
+                    a.AppointmentDate.ToString("yyyy-MM-dd"),
+                    a.AppointmentTime.ToString(@"hh\:mm"),
+                    a.AppointmentType ?? string.Empty,
+                    a.Status ?? string.Empty,
+                    a.Symptoms ?? string.Empty
+                }).ToList();
+
+            var title = "Appointment Management Export";
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+
+            if (format == "csv")
+            {
+                var bytes = _exportService.BuildCsv(title, headers, rows);
+                return File(bytes, "text/csv", $"appointments_{stamp}.csv");
+            }
+
+            var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
+            return File(pdfBytes, "application/pdf", $"appointments_{stamp}.pdf");
         }
 
         // GET: Appointment/Calendar

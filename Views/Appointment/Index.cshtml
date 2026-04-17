@@ -151,6 +151,14 @@
                         </a>
                     }
                 </div>
+                <div class="col-12 text-end mt-2">
+                    <a href="@Url.Action("Export", "Appointment", new { format = "csv", searchTerm = Model.SearchTerm, statusFilter = Model.StatusFilter, dateFilter = Model.DateFilter?.ToString("yyyy-MM-dd"), doctorFilter = Model.DoctorFilter })" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-csv"></i> Export CSV
+                    </a>
+                    <a href="@Url.Action("Export", "Appointment", new { format = "pdf", searchTerm = Model.SearchTerm, statusFilter = Model.StatusFilter, dateFilter = Model.DateFilter?.ToString("yyyy-MM-dd"), doctorFilter = Model.DoctorFilter })" class="btn btn-outline-danger btn-sm ml-2">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </a>
+                </div>
             </form>
         </div>
 

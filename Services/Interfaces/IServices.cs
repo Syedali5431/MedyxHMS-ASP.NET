@@ -144,6 +144,42 @@ namespace MedyxHMS.Services.Interfaces
         Task<bool> DeleteNotificationAsync(string notificationId);
     }
 
+    public interface IPublicBookingNotificationService
+    {
+        Task NotifyAppointmentConfirmedAsync(PublicAppointmentRequest request, string doctorDisplayName);
+    }
+
+    public interface IEmailNotificationProvider
+    {
+        Task SendAsync(string toEmail, string subject, string body);
+    }
+
+    public interface ISmsNotificationProvider
+    {
+        Task SendAsync(string toPhone, string message);
+    }
+
+    public interface INotificationDeliveryAuditService
+    {
+        Task LogAsync(
+            string channel,
+            string provider,
+            string recipient,
+            string subject,
+            string messageBody,
+            string status,
+            string providerResponse = null,
+            string relatedEntityType = null,
+            string relatedEntityId = null,
+            bool isTest = false);
+    }
+
+    public interface IExportService
+    {
+        byte[] BuildCsv(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
+        byte[] BuildPdfTable(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
+    }
+
     public class DoctorAvailability
     {
         public string DayOfWeek { get; set; }

@@ -113,6 +113,17 @@
                                 <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
                             </div>
 
+                            <div class="col-md-7">
+                                <label class="form-label">Captcha Challenge</label>
+                                <div class="form-control bg-light">@Model.CaptchaQuestion</div>
+                            </div>
+
+                            <div class="col-md-5">
+                                <label asp-for="CaptchaAnswer" class="form-label"></label>
+                                <input asp-for="CaptchaAnswer" class="form-control" placeholder="Enter answer" autocomplete="off" />
+                                <span asp-validation-for="CaptchaAnswer" class="text-danger small"></span>
+                            </div>
+
                         </div>
 
                         <div class="mt-4 d-flex gap-3">

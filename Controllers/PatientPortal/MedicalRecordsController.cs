@@ -14,17 +14,20 @@ namespace MedyxHMS.Controllers.PatientPortal
         private readonly IPrescriptionService _prescriptionService;
         private readonly ILabService _labService;
         private readonly IRadiologyService _radiologyService;
+        private readonly IExportService _exportService;
 
         public MedicalRecordsController(
             IPatientPortalService patientPortalService,
             IPrescriptionService prescriptionService,
             ILabService labService,
-            IRadiologyService radiologyService)
+            IRadiologyService radiologyService,
+            IExportService exportService)
         {
             _patientPortalService = patientPortalService;
             _prescriptionService = prescriptionService;
             _labService = labService;
             _radiologyService = radiologyService;
+            _exportService = exportService;
         }
 
         // GET: /PatientPortal/MedicalRecords/Index
@@ -300,6 +303,112 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             return int.TryParse(userId, out var parsedPatientId) ? parsedPatientId : null;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadReport(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            var records = await _patientPortalService.GetPatientMedicalRecordsAsync(patientId.Value.ToString(), startDate, endDate);
+
+            var headers = new[] { "Date", "Doctor", "Department", "Diagnosis", "Treatment" };
+            var rows = records.Select(r => (IReadOnlyList<string>)new[]
+            {
+                r.RecordDate.ToString("yyyy-MM-dd"),
+                (r.Staff?.FirstName + " " + r.Staff?.LastName).Trim(),
+                r.Staff?.Department ?? string.Empty,
+                r.Diagnosis ?? string.Empty,
+                r.Treatment ?? string.Empty
+            }).ToList();
+
+            var bytes = _exportService.BuildPdfTable("Patient Medical Report", headers, rows);
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            return File(bytes, "application/pdf", $"medical_report_{stamp}.pdf");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadPrescriptionsReport()
+        {
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            var prescriptions = await _prescriptionService.GetPrescriptionsByPatientAsync(patientId.Value);
+            var headers = new[] { "Date", "Medicine", "Dosage", "Frequency", "Duration (days)", "Qty", "Amount" };
+            var rows = prescriptions.Select(p => (IReadOnlyList<string>)new[]
+            {
+                p.CreatedDate.ToString("yyyy-MM-dd"),
+                p.Medicine?.Name ?? string.Empty,
+                p.Dosage ?? string.Empty,
+                p.Frequency ?? string.Empty,
+                p.Duration.ToString(),
+                p.Quantity.ToString(),
+                p.TotalPrice.ToString("0.00")
+            }).ToList();
+
+            var bytes = _exportService.BuildPdfTable("Patient Prescription Report", headers, rows);
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            return File(bytes, "application/pdf", $"prescriptions_report_{stamp}.pdf");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadLabResultsReport(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            var results = await _labService.GetLabResultsByPatientAsync(patientId.Value);
+            if (startDate.HasValue)
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) >= startDate.Value).ToList();
+            if (endDate.HasValue)
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+
+            var headers = new[] { "Date", "Test", "Result", "Units", "Reference Range", "Status" };
+            var rows = results.Select(r => (IReadOnlyList<string>)new[]
+            {
+                (r.ResultDate ?? r.OrderDate).ToString("yyyy-MM-dd"),
+                r.LabTest?.TestName ?? string.Empty,
+                r.ResultValue ?? string.Empty,
+                r.Unit ?? string.Empty,
+                r.NormalRange ?? string.Empty,
+                r.Interpretation ?? r.Status ?? string.Empty
+            }).ToList();
+
+            var bytes = _exportService.BuildPdfTable("Patient Pathology Report", headers, rows);
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            return File(bytes, "application/pdf", $"pathology_report_{stamp}.pdf");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadRadiologyResultsReport(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            var results = await _radiologyService.GetRadiologyResultsByPatientAsync(patientId.Value);
+            if (startDate.HasValue)
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) >= startDate.Value).ToList();
+            if (endDate.HasValue)
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+
+            var headers = new[] { "Date", "Test", "Findings", "Impression", "Status" };
+            var rows = results.Select(r => (IReadOnlyList<string>)new[]
+            {
+                (r.ResultDate ?? r.OrderDate).ToString("yyyy-MM-dd"),
+                r.RadiologyTest?.TestName ?? string.Empty,
+                r.Findings ?? string.Empty,
+                r.Impression ?? string.Empty,
+                r.Status ?? string.Empty
+            }).ToList();
+
+            var bytes = _exportService.BuildPdfTable("Patient Radiology Report", headers, rows);
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            return File(bytes, "application/pdf", $"radiology_report_{stamp}.pdf");
         }
     }
 }

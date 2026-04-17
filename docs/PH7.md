@@ -540,12 +540,18 @@ All services follow standard patterns:
 
 1. **Advanced Audit Analytics**
     - Aggregated dashboard widgets (top actions/users/entities)
-    - Export/download options for audit datasets
     - Saved filter presets and date comparison views
+
+### Step 4.2 Documentation Note
+
+The completed CMS/public-booking export and download work has been moved into a dedicated document:
+
+- See [PH8.md](PH8.md) for the Step 4.2 implementation summary
+- Includes shared export subsystem, QuestPDF integration, CMS/dashboard export coverage, PDF-only reports, and runtime validation notes
 
 ### Recommendations for Phase 4.2
 
-- Extend Audit/Log viewers with dashboards and export (PDF, Excel)
+- Extend Audit/Log viewers with richer dashboard widgets and saved filter presets
 - Create comprehensive report generation with scheduled delivery enhancements
 - Add email notifications for leave approvals, payroll processing
 - Implement overtime tracking and additional allowances
@@ -573,7 +579,7 @@ All services follow standard patterns:
 - **Runtime:** ✅ App runs and validated module/report routes are accessible (auth-protected)
 - **Database:** Ready for EnsureCreated() or migrations
 - **Step 4.1 Status:** ✅ Complete (build + route validation completed and documented)
-- **Next Phase:** Step 4.2 - Public Website & CMS (plus advanced audit analytics)
+- **Next Documented Phase:** [PH8.md](PH8.md) - Step 4.2 Public Website, CMS, Notifications & Export Layer
 
 ---
 

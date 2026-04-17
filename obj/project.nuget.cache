@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "YYjcZJcW9lc=",
+  "dgSpecHash": "sBm/LhNgGiI=",
   "success": true,
   "projectFilePath": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
   "expectedPackageFiles": [
@@ -55,6 +55,7 @@
     "C:\\Users\\alin\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\alin\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
     "C:\\Users\\alin\\.nuget\\packages\\mono.texttemplating\\2.2.1\\mono.texttemplating.2.2.1.nupkg.sha512",
+    "C:\\Users\\alin\\.nuget\\packages\\questpdf\\2024.7.1\\questpdf.2024.7.1.nupkg.sha512",
     "C:\\Users\\alin\\.nuget\\packages\\serilog\\3.1.1\\serilog.3.1.1.nupkg.sha512",
     "C:\\Users\\alin\\.nuget\\packages\\serilog.aspnetcore\\8.0.0\\serilog.aspnetcore.8.0.0.nupkg.sha512",
     "C:\\Users\\alin\\.nuget\\packages\\serilog.extensions.hosting\\8.0.0\\serilog.extensions.hosting.8.0.0.nupkg.sha512",

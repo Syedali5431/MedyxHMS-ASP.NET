@@ -15,6 +15,9 @@
         </div>
         <div class="col-md-4 text-md-end">
             <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                <a href="@Url.Action("DownloadReport", "MedicalRecords", new { area = "PatientPortal", startDate = Model.StartDate?.ToString("yyyy-MM-dd"), endDate = Model.EndDate?.ToString("yyyy-MM-dd") })" class="btn btn-outline-danger">
+                    <i class="fas fa-file-pdf"></i> Download PDF Report
+                </a>
                 <a href="@Url.Action("Prescriptions", "MedicalRecords")" class="btn btn-outline-primary">
                     <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
                 </a>
@@ -108,9 +111,9 @@
                                 <a href="@Url.Action("Details", "MedicalRecords", new { id = record.Id })" class="btn btn-primary w-100 mb-2">
                                     <i class="fas fa-eye"></i> View Details
                                 </a>
-                                <button class="btn btn-outline-secondary w-100">
-                                    <i class="fas fa-download"></i> Download
-                                </button>
+                                <a href="@Url.Action("DownloadReport", "MedicalRecords", new { area = "PatientPortal", startDate = record.RecordDate?.ToString("yyyy-MM-dd"), endDate = record.RecordDate?.ToString("yyyy-MM-dd") })" class="btn btn-outline-danger w-100">
+                                    <i class="fas fa-file-pdf"></i> Download PDF
+                                </a>
                             </div>
                         </div>
                     </div>

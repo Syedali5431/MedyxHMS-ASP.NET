@@ -11,10 +11,12 @@ namespace MedyxHMS.Controllers.PatientPortal
     public class BillsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
+        private readonly IExportService _exportService;
 
-        public BillsController(IPatientPortalService patientPortalService)
+        public BillsController(IPatientPortalService patientPortalService, IExportService exportService)
         {
             _patientPortalService = patientPortalService;
+            _exportService = exportService;
         }
 
         // GET: /PatientPortal/Bills/Index
@@ -194,16 +196,62 @@ namespace MedyxHMS.Controllers.PatientPortal
                     return Forbid();
                 }
 
-                // Generate PDF (placeholder)
-                // In production, use a library like iText or SelectPdf to generate PDF
-                TempData["SuccessMessage"] = "Bill downloaded successfully!";
-                return RedirectToAction("Details", new { id });
+                var headers = new[] { "Field", "Value" };
+                var rows = new List<IReadOnlyList<string>>
+                {
+                    new [] { "Bill Number", bill.BillNumber ?? string.Empty },
+                    new [] { "Bill Date", bill.BillDate.ToString("yyyy-MM-dd") },
+                    new [] { "Due Date", bill.DueDate.ToString("yyyy-MM-dd") },
+                    new [] { "Total Amount", bill.TotalAmount.ToString("0.00") },
+                    new [] { "Paid Amount", bill.PaidAmount.ToString("0.00") },
+                    new [] { "Pending Amount", (bill.TotalAmount - bill.PaidAmount).ToString("0.00") },
+                    new [] { "Status", bill.Status ?? string.Empty }
+                };
+
+                var bytes = _exportService.BuildPdfTable("Patient Bill Receipt", headers, rows);
+                var safeBillNumber = string.IsNullOrWhiteSpace(bill.BillNumber) ? id : bill.BillNumber;
+                return File(bytes, "application/pdf", $"patient_bill_{safeBillNumber}.pdf");
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error downloading bill: {ex.Message}";
                 return RedirectToAction("Details", new { id });
             }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Export(string format = "csv", string filter = "all")
+        {
+            format = (format ?? "csv").Trim().ToLowerInvariant();
+            if (format != "csv" && format != "pdf")
+                return BadRequest("Only CSV and PDF exports are supported.");
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId))
+                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+
+            var bills = await _patientPortalService.GetPatientBillsAsync(userId, filter);
+            var headers = new[] { "Bill #", "Bill Date", "Due Date", "Total", "Paid", "Status" };
+            var rows = bills.Select(b => (IReadOnlyList<string>)new[]
+            {
+                b.BillNumber ?? string.Empty,
+                b.BillDate.ToString("yyyy-MM-dd"),
+                b.DueDate.ToString("yyyy-MM-dd"),
+                b.TotalAmount.ToString("0.00"),
+                b.PaidAmount.ToString("0.00"),
+                b.Status ?? string.Empty
+            }).ToList();
+
+            var title = "Patient Bills Export";
+            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (format == "csv")
+            {
+                var bytes = _exportService.BuildCsv(title, headers, rows);
+                return File(bytes, "text/csv", $"patient_bills_{stamp}.csv");
+            }
+
+            var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
+            return File(pdfBytes, "application/pdf", $"patient_bills_{stamp}.pdf");
         }
     }
 }
