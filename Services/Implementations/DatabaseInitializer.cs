@@ -566,24 +566,63 @@ END");
                 };
 
                 var result = await _userManager.CreateAsync(superAdminUser, "SuperAdmin@123!");
-                if (result.Succeeded)
+                if (!result.Succeeded)
                 {
-                    // Assign SuperAdmin role
-                    var superAdminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "SuperAdmin");
-                    if (superAdminRole != null)
-                    {
-                        var staffRole = new StaffRole
-                        {
-                            StaffId = superAdminUser.Id,
-                            RoleId = superAdminRole.Id,
-                            AssignedDate = DateTime.UtcNow,
-                            AssignedBy = "System"
-                        };
-                        _context.StaffRoles.Add(staffRole);
-                        await _context.SaveChangesAsync();
-                    }
+                    return;
                 }
             }
+
+            await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
+        }
+
+        private async Task EnsureStaffAndSuperAdminRoleAsync(ApplicationUser superAdminUser, string superAdminEmployeeId)
+        {
+            var staff = await _context.Staff.FirstOrDefaultAsync(s => s.Id == superAdminUser.Id);
+            if (staff == null)
+            {
+                staff = new Staff
+                {
+                    Id = superAdminUser.Id,
+                    EmployeeId = superAdminEmployeeId,
+                    FirstName = superAdminUser.FirstName ?? "Super",
+                    LastName = superAdminUser.LastName ?? "Admin",
+                    Department = "Administration",
+                    Designation = "SuperAdmin",
+                    DateOfJoining = DateTime.UtcNow,
+                    Salary = 0,
+                    Email = superAdminUser.Email ?? "superadmin@hospital.com",
+                    Phone = string.Empty,
+                    Address = string.Empty,
+                    About = "System generated SuperAdmin staff profile",
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow,
+                    User = superAdminUser
+                };
+                _context.Staff.Add(staff);
+                await _context.SaveChangesAsync();
+            }
+
+            var superAdminRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == "SuperAdmin");
+            if (superAdminRole == null)
+            {
+                return;
+            }
+
+            var hasStaffRole = await _context.StaffRoles.AnyAsync(sr => sr.StaffId == superAdminUser.Id && sr.RoleId == superAdminRole.Id);
+            if (hasStaffRole)
+            {
+                return;
+            }
+
+            var staffRole = new StaffRole
+            {
+                StaffId = superAdminUser.Id,
+                RoleId = superAdminRole.Id,
+                AssignedDate = DateTime.UtcNow,
+                AssignedBy = "System"
+            };
+            _context.StaffRoles.Add(staffRole);
+            await _context.SaveChangesAsync();
         }
     }
 }

@@ -14,28 +14,21 @@ This document tracks the Step 5.2 data migration validation attempt and provides
 ## Execution Attempt
 Command used:
 
-sqlcmd -S localhost -d MedyxHMS -E -i "scripts\\data-migration-validation.sql" -W -s ","
+sqlcmd -S "(localdb)\\MSSQLLocalDB" -d MedyxHMS -E -i "scripts\\data-migration-validation.sql" -W -s ","
 
 Observed result:
-- Connection failure to localhost SQL Server instance
-- Error summary:
-  - Named Pipes Provider: Could not open a connection to SQL Server
-  - Login timeout expired
-  - Server not found or not accessible
+- Validation script executed successfully on LocalDB-backed `MedyxHMS`
+- Record counts returned (baseline dataset with seeded SuperAdmin staff profile)
+- Integrity checks returned 0 issues for all checks
 
-## Secondary Instance Check
-Command used:
-
-sqlcmd -S "(localdb)\\MSSQLLocalDB" -d MedyxHMS -E -Q "SELECT DB_NAME() AS DatabaseName"
-
-Observed result:
-- Login succeeded to instance but target database unavailable for current login
-- Error summary:
-  - Cannot open database "MedyxHMS" requested by the login
+## Notes From Provisioning
+- Initial startup provisioning surfaced seeding issues in `DatabaseInitializer` (staff-role linkage and required staff email).
+- Seeding logic was updated to ensure SuperAdmin has a linked Staff profile and role assignment without violating constraints.
 
 ## Status
 - Validation script creation: Completed
-- Validation execution against accessible target DB: Blocked (database/instance not reachable from current environment)
+- Validation execution against accessible target DB: Completed (LocalDB baseline)
+- Validation execution against real migrated dataset: Pending
 
 ## Next Action
-Run the same script against the actual reachable SQL Server host containing the MedyxHMS migrated database, then record the output and reconcile any non-zero integrity issues.
+Run the same script against the SQL Server instance containing migrated production-like data, compare counts with source snapshot, and reconcile any non-zero integrity issues.
