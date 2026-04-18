@@ -189,6 +189,8 @@ namespace MedyxHMS.ViewModels
         public string LastEmailTestMessage { get; set; }
         public string LastEmailTestTarget { get; set; }
         public DateTime? LastEmailTestAtUtc { get; set; }
+
+        public SmtpHealthStatus? SmtpHealth { get; set; }
     }
 
     public class NotificationDeliveryLogIndexViewModel

@@ -1,0 +1,60 @@
+@model MedyxHMS.ViewModels.ChatbotPageViewModel
+@{
+    ViewData["Title"] = "AI Assistant";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <h2 class="h4 mb-1">Medyx AI Assistant</h2>
+                    <p class="text-muted mb-0">
+                        Use this assistant for application navigation, appointment guidance, billing guidance, and support help.
+                        It cannot provide diagnosis or treatment advice.
+                    </p>
+                </div>
+            </div>
+
+            <form asp-action="Ask" method="post" class="card border-0 shadow-sm mb-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="SessionId" />
+                <div class="card-body">
+                    <label asp-for="Prompt" class="form-label">Ask a question</label>
+                    <textarea asp-for="Prompt" class="form-control" rows="4" placeholder="Example: Where can I review pending bills?" required></textarea>
+                </div>
+                <div class="card-footer bg-white d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">Ask Assistant</button>
+                </div>
+            </form>
+
+            @if (!string.IsNullOrWhiteSpace(Model.LastAnswer))
+            {
+                <div class="alert @(Model.EscalationSuggested ? "alert-warning" : "alert-info")">
+                    @Model.LastAnswer
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="mb-3">Conversation</h5>
+                    @if (Model.History.Count == 0)
+                    {
+                        <p class="text-muted mb-0">No messages yet in this session.</p>
+                    }
+                    else
+                    {
+                        @foreach (var message in Model.History)
+                        {
+                            var isUser = string.Equals(message.SenderType, "User", StringComparison.OrdinalIgnoreCase);
+                            <div class="mb-3 p-3 rounded @(isUser ? "bg-light" : "bg-primary-subtle")">
+                                <div class="small text-muted mb-1">@message.SenderType | @message.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+                                <div>@message.Content</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

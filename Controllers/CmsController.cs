@@ -24,6 +24,7 @@ namespace MedyxHMS.Controllers
         private readonly ISmsNotificationProvider _smsNotificationProvider;
         private readonly IPublicBookingNotificationService _publicBookingNotificationService;
         private readonly IExportService _exportService;
+        private readonly ISmtpHealthService? _smtpHealthService;
 
         public CmsController(
             ApplicationDbContext db,
@@ -32,7 +33,8 @@ namespace MedyxHMS.Controllers
             IEmailNotificationProvider emailNotificationProvider,
             ISmsNotificationProvider smsNotificationProvider,
             IPublicBookingNotificationService publicBookingNotificationService,
-            IExportService exportService)
+            IExportService exportService,
+            ISmtpHealthService? smtpHealthService = null)
         {
             _db = db;
             _logger = logger;
@@ -41,6 +43,7 @@ namespace MedyxHMS.Controllers
             _smsNotificationProvider = smsNotificationProvider;
             _publicBookingNotificationService = publicBookingNotificationService;
             _exportService = exportService;
+            _smtpHealthService = smtpHealthService;
         }
 
         // ─── Pages ────────────────────────────────────────────────────────────
@@ -478,7 +481,15 @@ namespace MedyxHMS.Controllers
                 LastEmailTestStatus = await GetSettingValueAsync("Notification:Test:Email:LastStatus"),
                 LastEmailTestMessage = await GetSettingValueAsync("Notification:Test:Email:LastMessage"),
                 LastEmailTestTarget = await GetSettingValueAsync("Notification:Test:Email:LastTarget"),
-                LastEmailTestAtUtc = ParseNullableDateTime(await GetSettingValueAsync("Notification:Test:Email:LastAtUtc"))
+                LastEmailTestAtUtc = ParseNullableDateTime(await GetSettingValueAsync("Notification:Test:Email:LastAtUtc")),
+                SmtpHealth = _smtpHealthService == null
+                    ? new SmtpHealthStatus
+                    {
+                        IsConfigured = false,
+                        ConnectivityOk = false,
+                        Issues = new List<string> { "SMTP health service is unavailable in this context." }
+                    }
+                    : await _smtpHealthService.CheckAsync()
             };
 
             return View(vm);
@@ -565,6 +576,28 @@ namespace MedyxHMS.Controllers
                 await RecordNotificationTestResultAsync("Email", "Failed", email,
                     "Test email failed. Review SMTP settings and logs.");
                 TempData["Error"] = "Test email failed. Review SMTP settings and logs.";
+            }
+
+            return RedirectToAction(nameof(NotificationSettings));
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> RunSmtpHealthCheck()
+        {
+            if (_smtpHealthService == null)
+            {
+                TempData["Error"] = "SMTP health service is unavailable.";
+                return RedirectToAction(nameof(NotificationSettings));
+            }
+
+            var status = await _smtpHealthService.CheckAsync();
+            if (status.IsConfigured && status.ConnectivityOk)
+            {
+                TempData["Success"] = $"SMTP health check passed: {status.Host}:{status.Port} is reachable.";
+            }
+            else
+            {
+                TempData["Error"] = "SMTP health check failed: " + string.Join(" | ", status.Issues);
             }
 
             return RedirectToAction(nameof(NotificationSettings));

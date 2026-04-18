@@ -1,6 +1,6 @@
 # Licensing Feature Technical Design
 
-**Status:** Planned | **Target Phase:** Phase 6 | **Date:** April 2026
+**Status:** Implemented | **Target Phase:** Phase 6 | **Date:** April 2026
 
 ## Objective
 
@@ -13,6 +13,15 @@ Add a secure, auditable licensing system that:
 - allows only `SuperAdmin` users to renew the license for 1, 2, or 3 years
 
 The design must keep all enforcement server-side and avoid any client-controlled license state.
+
+## Implementation Notes
+
+The current implementation applies these product decisions:
+
+- renewal extends from the current UTC date when the previous license is already expired
+- reminder recipients are all active users with valid email addresses
+- patient exemption is enforced through `PatientPortal` route bypass and `Patient` role bypass when present
+- no post-expiry grace period is applied
 
 ---
 

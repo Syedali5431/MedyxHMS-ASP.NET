@@ -7,13 +7,38 @@ namespace MedyxHMS.Tests.TestSupport;
 
 internal sealed class FakeSettingService : ISettingService
 {
-    public Task<HospitalSettings> GetHospitalSettingsAsync() => Task.FromResult(new HospitalSettings());
+    public Dictionary<string, string?> Values { get; } = new();
+
+    public Task<HospitalSettings> GetHospitalSettingsAsync() => Task.FromResult(new HospitalSettings
+    {
+        Name = "Test Hospital",
+        Version = "1.0.0",
+        DefaultLanguage = "en",
+        SupportedLanguages = new List<string> { "en" },
+        TimeZone = "UTC",
+        Currency = "USD",
+        DateFormat = "yyyy-MM-dd",
+        EnableAuditLogging = true,
+        EnableEmailNotifications = true,
+        EnableSMSNotifications = false,
+        FileUploadPath = "uploads/",
+        MaxFileSizeMB = 10,
+        AllowedFileTypes = new List<string> { ".pdf" }
+    });
 
     public Task<FeatureToggles> GetFeatureTogglesAsync() => Task.FromResult(new FeatureToggles());
 
-    public Task<string?> GetSettingValueAsync(string key) => Task.FromResult<string?>(string.Empty);
+    public Task<string?> GetSettingValueAsync(string key)
+    {
+        Values.TryGetValue(key, out var value);
+        return Task.FromResult(value);
+    }
 
-    public Task<bool> UpdateSettingAsync(string key, string value) => Task.FromResult(true);
+    public Task<bool> UpdateSettingAsync(string key, string value)
+    {
+        Values[key] = value;
+        return Task.FromResult(true);
+    }
 
     public Task<IEnumerable<Language>> GetSupportedLanguagesAsync() => Task.FromResult(Enumerable.Empty<Language>());
 }

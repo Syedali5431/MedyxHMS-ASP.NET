@@ -64,6 +64,12 @@ namespace MedyxHMS.Data
         public DbSet<UserActionLog> UserActionLogs { get; set; }
         public DbSet<GeneratedReport> GeneratedReports { get; set; }
         public DbSet<ReportSchedule> ReportSchedules { get; set; }
+        public DbSet<LicenseRecord> LicenseRecords { get; set; }
+        public DbSet<LicenseAuditLog> LicenseAuditLogs { get; set; }
+        public DbSet<LicenseReminderLog> LicenseReminderLogs { get; set; }
+        public DbSet<ChatSession> ChatSessions { get; set; }
+        public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<ChatFeedback> ChatFeedback { get; set; }
 
         // Settings & Configuration
         public DbSet<Setting> Settings { get; set; }
@@ -245,6 +251,57 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<NotificationDeliveryLog>()
                 .HasIndex(n => new { n.CreatedAt, n.Channel, n.Status });
+
+            modelBuilder.Entity<LicenseRecord>()
+                .HasMany(l => l.AuditLogs)
+                .WithOne(a => a.LicenseRecord)
+                .HasForeignKey(a => a.LicenseRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LicenseRecord>()
+                .HasMany(l => l.ReminderLogs)
+                .WithOne(r => r.LicenseRecord)
+                .HasForeignKey(r => r.LicenseRecordId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LicenseRecord>()
+                .HasIndex(l => new { l.IsActive, l.ExpiresAtUtc });
+
+            modelBuilder.Entity<LicenseAuditLog>()
+                .HasOne(a => a.PerformedByUser)
+                .WithMany()
+                .HasForeignKey(a => a.PerformedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<LicenseAuditLog>()
+                .HasIndex(a => new { a.LicenseRecordId, a.PerformedAtUtc });
+
+            modelBuilder.Entity<LicenseReminderLog>()
+                .HasIndex(r => new { r.LicenseRecordId, r.TargetExpiryUtc, r.TriggeredAtUtc });
+
+            modelBuilder.Entity<ChatSession>()
+                .HasMany(s => s.Messages)
+                .WithOne(m => m.Session)
+                .HasForeignKey(m => m.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatSession>()
+                .HasMany(s => s.FeedbackItems)
+                .WithOne(f => f.Session)
+                .HasForeignKey(f => f.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatMessage>()
+                .HasIndex(m => new { m.SessionId, m.CreatedAtUtc });
+
+            modelBuilder.Entity<ChatFeedback>()
+                .HasOne(f => f.Message)
+                .WithMany()
+                .HasForeignKey(f => f.MessageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ChatFeedback>()
+                .HasIndex(f => new { f.SessionId, f.CreatedAtUtc });
 
             // Billing relationships
             modelBuilder.Entity<Bill>()

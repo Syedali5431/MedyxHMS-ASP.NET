@@ -56,6 +56,35 @@
         <div class="col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
+                    <h6 class="mb-2">SMTP Health</h6>
+                    @if (Model.SmtpHealth != null)
+                    {
+                        <div class="mb-1">
+                            <span class="badge @(Model.SmtpHealth.Status == "Healthy" ? "bg-success" : "bg-danger")">@Model.SmtpHealth.Status</span>
+                        </div>
+                        <div class="small text-muted">Host: @Model.SmtpHealth.Host:@Model.SmtpHealth.Port</div>
+                        <div class="small text-muted">From: @Model.SmtpHealth.FromEmail</div>
+                        @if (Model.SmtpHealth.Issues.Any())
+                        {
+                            <ul class="small mt-2 mb-0">
+                                @foreach (var issue in Model.SmtpHealth.Issues)
+                                {
+                                    <li>@issue</li>
+                                }
+                            </ul>
+                        }
+                    }
+
+                    <form asp-action="RunSmtpHealthCheck" method="post" class="mt-3">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Run SMTP Health Check</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
                     <h6 class="mb-2">Last Email Test</h6>
                     @if (!string.IsNullOrWhiteSpace(Model.LastEmailTestStatus))
                     {

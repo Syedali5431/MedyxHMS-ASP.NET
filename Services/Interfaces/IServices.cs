@@ -1,4 +1,5 @@
 using MedyxHMS.Models;
+using System.Security.Claims;
 
 namespace MedyxHMS.Services.Interfaces
 {
@@ -178,6 +179,37 @@ namespace MedyxHMS.Services.Interfaces
     {
         byte[] BuildCsv(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
         byte[] BuildPdfTable(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
+    }
+
+    public interface IChatbotModerationService
+    {
+        ChatModerationResult Evaluate(string input);
+    }
+
+    public interface IChatbotPromptBuilder
+    {
+        string BuildSystemPrompt(ClaimsPrincipal user);
+    }
+
+    public interface IChatbotService
+    {
+        Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null);
+        Task<IReadOnlyList<ChatMessage>> GetSessionMessagesAsync(string sessionId, ClaimsPrincipal user, int take = 30);
+    }
+
+    public interface ISmtpHealthService
+    {
+        Task<SmtpHealthStatus> CheckAsync();
+    }
+
+    public interface ILicenseService
+    {
+        Task<LicenseSnapshot> GetCurrentSnapshotAsync();
+        Task<IReadOnlyList<LicenseAuditLog>> GetAuditHistoryAsync(int take = 20);
+        Task<IReadOnlyList<LicenseReminderLog>> GetReminderHistoryAsync(int take = 20);
+        Task<LicenseRecord> RenewAsync(int termYears, string performedByUserId, string? notes = null, string? ipAddress = null);
+        Task<ReminderDispatchResult> SendReminderAsync(bool force, string? performedByUserId = null, string? ipAddress = null);
+        Task<bool> ShouldRestrictAccessAsync(ClaimsPrincipal user, string requestPath);
     }
 
     public class DoctorAvailability

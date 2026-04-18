@@ -30,9 +30,12 @@ namespace MedyxHMS.Services.Implementations
             // Ensure newly introduced module tables exist for existing databases
             await EnsureStep42TablesAsync();
             await EnsureNotificationDeliveryLogTableAsync();
+            await EnsureLicenseTablesAsync();
+            await EnsureChatbotTablesAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
+            await SeedLicenseDefaultsAsync();
 
             // Seed roles and features
             await SeedRolesAndFeaturesAsync();
@@ -329,6 +332,214 @@ BEGIN
     );
     CREATE INDEX [IX_CmsMenuItems_CmsPageId] ON [dbo].[CmsMenuItems]([CmsPageId]);
 END");
+        }
+
+        private async Task EnsureLicenseTablesAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[LicenseRecords]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[LicenseRecords] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [LicenseReference] NVARCHAR(100) NOT NULL,
+        [IssuedAtUtc] DATETIME2 NOT NULL,
+        [ExpiresAtUtc] DATETIME2 NOT NULL,
+        [Status] NVARCHAR(30) NOT NULL,
+        [LastReminderSentAtUtc] DATETIME2 NULL,
+        [LastReminderCycleExpiryUtc] DATETIME2 NULL,
+        [RenewedByUserId] NVARCHAR(450) NULL,
+        [RenewedAtUtc] DATETIME2 NULL,
+        [RenewalTermYears] INT NULL,
+        [Notes] NVARCHAR(1000) NULL,
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        [UpdatedAtUtc] DATETIME2 NOT NULL
+    );
+
+    CREATE INDEX [IX_LicenseRecords_IsActive_ExpiresAtUtc]
+        ON [dbo].[LicenseRecords]([IsActive], [ExpiresAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[LicenseAuditLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[LicenseAuditLogs] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [LicenseRecordId] INT NOT NULL,
+        [ActionType] NVARCHAR(50) NOT NULL,
+        [PerformedByUserId] NVARCHAR(450) NULL,
+        [PerformedAtUtc] DATETIME2 NOT NULL,
+        [OldExpiresAtUtc] DATETIME2 NULL,
+        [NewExpiresAtUtc] DATETIME2 NULL,
+        [RenewalTermYears] INT NULL,
+        [Details] NVARCHAR(2000) NULL,
+        [IpAddress] NVARCHAR(64) NULL,
+        CONSTRAINT [FK_LicenseAuditLogs_LicenseRecords_LicenseRecordId]
+            FOREIGN KEY ([LicenseRecordId]) REFERENCES [dbo].[LicenseRecords]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_LicenseAuditLogs_LicenseRecordId_PerformedAtUtc]
+        ON [dbo].[LicenseAuditLogs]([LicenseRecordId], [PerformedAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[LicenseReminderLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[LicenseReminderLogs] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [LicenseRecordId] INT NOT NULL,
+        [ReminderType] NVARCHAR(50) NOT NULL,
+        [TargetExpiryUtc] DATETIME2 NOT NULL,
+        [TriggeredAtUtc] DATETIME2 NOT NULL,
+        [SentToCount] INT NOT NULL DEFAULT(0),
+        [Status] NVARCHAR(30) NOT NULL,
+        [ErrorMessage] NVARCHAR(2000) NULL,
+        CONSTRAINT [FK_LicenseReminderLogs_LicenseRecords_LicenseRecordId]
+            FOREIGN KEY ([LicenseRecordId]) REFERENCES [dbo].[LicenseRecords]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_LicenseReminderLogs_LicenseRecordId_TargetExpiryUtc_TriggeredAtUtc]
+        ON [dbo].[LicenseReminderLogs]([LicenseRecordId], [TargetExpiryUtc], [TriggeredAtUtc]);
+END");
+        }
+
+        private async Task EnsureChatbotTablesAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatSessions]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatSessions] (
+        [Id] NVARCHAR(64) NOT NULL PRIMARY KEY,
+        [UserId] NVARCHAR(450) NULL,
+        [UserRole] NVARCHAR(40) NOT NULL,
+        [StartedAtUtc] DATETIME2 NOT NULL,
+        [EndedAtUtc] DATETIME2 NULL,
+        [Status] NVARCHAR(30) NOT NULL,
+        [Channel] NVARCHAR(20) NOT NULL
+    );
+
+    CREATE INDEX [IX_ChatSessions_UserId_StartedAtUtc]
+        ON [dbo].[ChatSessions]([UserId], [StartedAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatMessages]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatMessages] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SessionId] NVARCHAR(64) NOT NULL,
+        [SenderType] NVARCHAR(20) NOT NULL,
+        [Content] NVARCHAR(MAX) NOT NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        [ModerationStatus] NVARCHAR(30) NOT NULL,
+        [TokenCount] INT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_ChatMessages_ChatSessions_SessionId]
+            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_ChatMessages_SessionId_CreatedAtUtc]
+        ON [dbo].[ChatMessages]([SessionId], [CreatedAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatFeedback]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatFeedback] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SessionId] NVARCHAR(64) NOT NULL,
+        [MessageId] BIGINT NULL,
+        [FeedbackType] NVARCHAR(20) NOT NULL,
+        [Comment] NVARCHAR(1000) NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_ChatFeedback_ChatSessions_SessionId]
+            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ChatFeedback_ChatMessages_MessageId]
+            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE SET NULL
+    );
+
+    CREATE INDEX [IX_ChatFeedback_SessionId_CreatedAtUtc]
+        ON [dbo].[ChatFeedback]([SessionId], [CreatedAtUtc]);
+END");
+        }
+
+        private async Task SeedLicenseDefaultsAsync()
+        {
+            var now = DateTime.UtcNow;
+
+            if (!await _context.LicenseRecords.AnyAsync())
+            {
+                var license = new LicenseRecord
+                {
+                    LicenseReference = $"INITIAL-{now:yyyyMMdd}",
+                    IssuedAtUtc = now,
+                    ExpiresAtUtc = now.Date.AddYears(1),
+                    Status = LicenseState.Active.ToString(),
+                    IsActive = true,
+                    Notes = "Initial application bootstrap license.",
+                    CreatedAtUtc = now,
+                    UpdatedAtUtc = now
+                };
+                _context.LicenseRecords.Add(license);
+                await _context.SaveChangesAsync();
+
+                _context.LicenseAuditLogs.Add(new LicenseAuditLog
+                {
+                    LicenseRecordId = license.Id,
+                    ActionType = "Initialized",
+                    PerformedAtUtc = now,
+                    NewExpiresAtUtc = license.ExpiresAtUtc,
+                    Details = license.Notes
+                });
+                await _context.SaveChangesAsync();
+            }
+
+            await EnsureSystemSettingAsync(
+                "LicenseReminderSubject",
+                "MedyxHMS license expires in {DaysRemaining} days",
+                "string",
+                "Licensing",
+                "Reminder email subject template for license expiry notifications.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseReminderBody",
+                "This is a reminder that your MedyxHMS license will expire soon.\n\nExpiry Date: {ExpiryDate}\nDays Remaining: {DaysRemaining}\n\nPlease arrange payment and contact a SuperAdmin user to complete the renewal.\nSuperAdmin Contact: {SuperAdminContact}\nBilling Contact: {BillingContact}\n\nHospital/App: {HospitalName}",
+                "string",
+                "Licensing",
+                "Reminder email body template for license expiry notifications.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseSuperAdminContact",
+                "superadmin@hospital.com",
+                "string",
+                "Licensing",
+                "Default SuperAdmin contact guidance displayed on license workflows.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseBillingContact",
+                "superadmin@hospital.com",
+                "string",
+                "Licensing",
+                "Billing contact guidance displayed on license reminders and expired screens.");
+        }
+
+        private async Task EnsureSystemSettingAsync(string key, string value, string type, string category, string description)
+        {
+            if (await _context.Settings.AnyAsync(setting => setting.Key == key))
+                return;
+
+            _context.Settings.Add(new Setting
+            {
+                Key = key,
+                Value = value,
+                Type = type,
+                Category = category,
+                Description = description,
+                IsSystem = true,
+                CreatedDate = DateTime.UtcNow,
+                ModifiedBy = "System"
+            });
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task EnsureNotificationDeliveryLogTableAsync()

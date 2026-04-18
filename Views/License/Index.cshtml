@@ -1,0 +1,161 @@
+@model MedyxHMS.ViewModels.LicenseManagementViewModel
+@{
+    ViewData["Title"] = "License Management";
+}
+
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="h3 mb-1">License Management</h1>
+            <p class="text-muted mb-0">SuperAdmin-only renewal, expiry visibility, and reminder controls.</p>
+        </div>
+        <span class="badge bg-@(Model.Snapshot.State == MedyxHMS.Models.LicenseState.Expired ? "danger" : Model.Snapshot.State == MedyxHMS.Models.LicenseState.ExpiringSoon ? "warning text-dark" : "success") fs-6">
+            @Model.Snapshot.State
+        </span>
+    </div>
+</div>
+
+@if (TempData["SuccessMessage"] is string successMessage)
+{
+    <div class="alert alert-success">@successMessage</div>
+}
+
+@if (TempData["ErrorMessage"] is string errorMessage)
+{
+    <div class="alert alert-danger">@errorMessage</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-5">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Current License</h2>
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Reference</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.License.LicenseReference</dd>
+                    <dt class="col-sm-5">Expiry</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.License.ExpiresAtUtc.ToString("yyyy-MM-dd")</dd>
+                    <dt class="col-sm-5">Days Remaining</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.DaysRemaining</dd>
+                    <dt class="col-sm-5">Reminder Due</dt>
+                    <dd class="col-sm-7">@(Model.Snapshot.ReminderDue ? "Yes" : "No")</dd>
+                    <dt class="col-sm-5">SuperAdmin Contact</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.SuperAdminContact</dd>
+                    <dt class="col-sm-5">Billing Contact</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.BillingContact</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h2 class="h5">Renew License</h2>
+                <form asp-action="Renew" method="post" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label asp-for="SelectedRenewalTermYears" class="form-label">Renewal Term</label>
+                        <select asp-for="SelectedRenewalTermYears" class="form-select">
+                            <option value="1">1 year</option>
+                            <option value="2">2 years</option>
+                            <option value="3">3 years</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Notes" class="form-label">Notes</label>
+                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Optional renewal notes for audit history."></textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">Apply Renewal</button>
+                    </div>
+                </form>
+
+                <hr />
+
+                <form asp-action="SendReminder" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary">Send Manual Reminder</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-1">
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Reminder History</h2>
+                @if (Model.ReminderHistory.Count == 0)
+                {
+                    <p class="text-muted mb-0">No reminder activity recorded yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>When</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Sent</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var reminder in Model.ReminderHistory)
+                            {
+                                <tr>
+                                    <td>@reminder.TriggeredAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@reminder.ReminderType</td>
+                                    <td>@reminder.Status</td>
+                                    <td>@reminder.SentToCount</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h2 class="h5">Audit History</h2>
+                @if (Model.AuditHistory.Count == 0)
+                {
+                    <p class="text-muted mb-0">No license audit entries recorded yet.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>When</th>
+                                    <th>Action</th>
+                                    <th>Term</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var audit in Model.AuditHistory)
+                            {
+                                <tr>
+                                    <td>@audit.PerformedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@audit.ActionType</td>
+                                    <td>@(audit.RenewalTermYears?.ToString() ?? "-")</td>
+                                    <td>@audit.Details</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -72,6 +72,12 @@ builder.Services.AddScoped<ISmsNotificationProvider, TwilioSmsNotificationProvid
 builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotificationService>();
 builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<ILicenseService, LicenseService>();
+builder.Services.AddScoped<IChatbotModerationService, ChatbotModerationService>();
+builder.Services.AddScoped<IChatbotPromptBuilder, ChatbotPromptBuilder>();
+builder.Services.AddScoped<IChatbotService, OpenAiChatbotService>();
+builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
+builder.Services.AddHostedService<LicenseReminderHostedService>();
 
 // Clinical Module Services (STEP 3.1)
 builder.Services.AddScoped<IOPDService, OPDService>();
@@ -161,6 +167,7 @@ app.UseCors("AllowAll");
 app.UseSession();
 
 app.UseAuthentication();
+app.UseMiddleware<LicenseEnforcementMiddleware>();
 app.UseAuthorization();
 
 // Enable Response Caching

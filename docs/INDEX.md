@@ -84,6 +84,26 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Internal Step 5.2 work completed; external migrated-data validation remains blocked by environment availability
 - Read this for the latest integration/deployment readiness snapshot.
 
+### PH10 - Phase 6 Licensing & Commercial Control Delivery
+- Document: [PH10.md](PH10.md)
+- Focus:
+  - license domain entities and audit/reminder logs
+  - SuperAdmin-only renewal workflow and admin screen
+  - expiry enforcement middleware and expired-license messaging
+  - daily reminder automation and manual resend controls
+- **Status:** Phase 6 implemented and validated
+- Read this for the complete licensing implementation snapshot before Phase 7 work.
+
+### PH11 - Phase 7.1 Chatbot Foundation and SMTP Operational Check
+- Document: [PH11.md](PH11.md)
+- Focus:
+  - backend-only OpenAI chatbot orchestration foundation
+  - moderation and role-aware prompt safety baseline
+  - chat session/message persistence and initial chat UI route
+  - SMTP configuration/connectivity operational health check in CMS settings
+- **Status:** Phase 7.1 started and validated (foundation scope)
+- Read this for the first implementation snapshot of Phase 7.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -94,6 +114,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 7. [PH7.md](PH7.md)
 8. [PH8.md](PH8.md)
 9. [PH9.md](PH9.md)
+10. [PH10.md](PH10.md)
+11. [PH11.md](PH11.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -103,6 +125,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
 - CMS, public booking, export/download coverage: [PH8.md](PH8.md)
 - Integration, go-live readiness, and deployment/support planning: [PH9.md](PH9.md)
+- Licensing domain, renewal workflow, and expiry enforcement: [PH10.md](PH10.md)
+- Chatbot foundation, moderation baseline, and SMTP health checks: [PH11.md](PH11.md)
 
 ## Planned Design Docs
 
@@ -130,7 +154,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Document: [STAGE-5.2-HANDOFF.md](STAGE-5.2-HANDOFF.md)
 
 ### Licensing & Commercial Control
-- Document: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)
+- Design: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)
+- Delivery: [PH10.md](PH10.md)
 - Focus:
   - License data model and enforcement workflow
   - SuperAdmin-only renewal design
