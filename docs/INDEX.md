@@ -126,6 +126,9 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 ### Training and Support
 - Document: [TRAINING-SUPPORT-PLAN.md](TRAINING-SUPPORT-PLAN.md)
 
+### Stage Handoff
+- Document: [STAGE-5.2-HANDOFF.md](STAGE-5.2-HANDOFF.md)
+
 ### Licensing & Commercial Control
 - Document: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)
 - Focus:
