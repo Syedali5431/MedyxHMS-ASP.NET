@@ -101,8 +101,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
   - moderation and role-aware prompt safety baseline
   - chat session/message persistence and initial chat UI route
   - SMTP configuration/connectivity operational health check in CMS settings
-- **Status:** Phase 7.1 started and validated (foundation scope)
-- Read this for the first implementation snapshot of Phase 7.
+- **Status:** Phase 7.1 implemented and validated
+- Read this for the completed implementation snapshot of Step 7.1 before Step 7.2 work.
 
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
