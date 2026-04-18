@@ -64,4 +64,52 @@ internal static class ModelFactory
             IsActive = true
         };
     }
+
+    public static Ward CreateWard(int id = 1)
+    {
+        return new Ward
+        {
+            Id = id,
+            Name = $"Ward {id}",
+            Description = "Test ward",
+            TotalBeds = 10,
+            OccupiedBeds = 0,
+            IsActive = true,
+            Beds = new List<Bed>()
+        };
+    }
+
+    public static Bed CreateBed(int id = 1, int wardId = 1)
+    {
+        return new Bed
+        {
+            Id = id,
+            WardId = wardId,
+            BedNumber = $"B-{id:000}",
+            BedType = "General",
+            DailyCharges = 125m,
+            Status = "Available",
+            IsActive = true
+        };
+    }
+
+    public static Medicine CreateMedicine(int id = 1, string name = "Paracetamol")
+    {
+        return new Medicine
+        {
+            Id = id,
+            Name = name,
+            GenericName = name,
+            Category = "General",
+            DosageForm = "Tablet",
+            Strength = "500mg",
+            Manufacturer = "Test Pharma",
+            UnitPrice = 5m,
+            StockQuantity = 100,
+            MinStockLevel = 10,
+            ExpiryDate = DateTime.UtcNow.AddMonths(6),
+            BatchNumber = $"BATCH-{id:000}",
+            IsActive = true
+        };
+    }
 }

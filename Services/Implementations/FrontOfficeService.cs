@@ -42,7 +42,7 @@ namespace MedyxHMS.Services.Implementations
             return visitor;
         }
 
-        public async Task<bool> CheckOutVisitorAsync(int visitorId, DateTime checkOutTime, string notes = null)
+        public async Task<bool> CheckOutVisitorAsync(int visitorId, DateTime checkOutTime, string? notes = null)
         {
             var visitor = await _context.VisitorLogs.FindAsync(visitorId);
             if (visitor == null)
@@ -60,7 +60,7 @@ namespace MedyxHMS.Services.Implementations
             return true;
         }
 
-        public async Task<IEnumerable<ComplaintRecord>> GetComplaintsAsync(string status = null)
+        public async Task<IEnumerable<ComplaintRecord>> GetComplaintsAsync(string? status = null)
         {
             var query = _context.ComplaintRecords.AsQueryable();
             if (!string.IsNullOrWhiteSpace(status))
@@ -87,7 +87,7 @@ namespace MedyxHMS.Services.Implementations
             return complaint;
         }
 
-        public async Task<bool> UpdateComplaintStatusAsync(int complaintId, string status, string resolutionNotes = null)
+        public async Task<bool> UpdateComplaintStatusAsync(int complaintId, string status, string? resolutionNotes = null)
         {
             var complaint = await _context.ComplaintRecords.FindAsync(complaintId);
             if (complaint == null)
@@ -103,7 +103,7 @@ namespace MedyxHMS.Services.Implementations
             return true;
         }
 
-        public async Task<IEnumerable<DispatchReceiveRecord>> GetDispatchReceiveRecordsAsync(string recordType = null, DateTime? date = null)
+        public async Task<IEnumerable<DispatchReceiveRecord>> GetDispatchReceiveRecordsAsync(string? recordType = null, DateTime? date = null)
         {
             var query = _context.DispatchReceiveRecords.AsQueryable();
             if (!string.IsNullOrWhiteSpace(recordType))

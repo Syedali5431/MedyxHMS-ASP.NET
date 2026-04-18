@@ -479,7 +479,7 @@ namespace MedyxHMS.Controllers
             public int TotalPages => (TotalRecords + PageSize - 1) / PageSize;
             public bool HasPreviousPage => CurrentPage > 1;
             public bool HasNextPage => CurrentPage < TotalPages;
-            public string SearchTerm { get; set; }
+            public string SearchTerm { get; set; } = string.Empty;
         }
 
         #endregion

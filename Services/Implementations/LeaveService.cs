@@ -60,7 +60,7 @@ namespace MedyxHMS.Services.Implementations
             return existing;
         }
 
-        public async Task<IEnumerable<LeaveRequest>> GetLeaveRequestsAsync(string staffId = null, string status = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IEnumerable<LeaveRequest>> GetLeaveRequestsAsync(string? staffId = null, string? status = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var query = _context.LeaveRequests
                 .Include(x => x.Staff)
@@ -125,7 +125,7 @@ namespace MedyxHMS.Services.Implementations
             return leaveRequest;
         }
 
-        public async Task<bool> UpdateLeaveRequestStatusAsync(int requestId, string status, string approverId, string remarks = null)
+        public async Task<bool> UpdateLeaveRequestStatusAsync(int requestId, string status, string? approverId, string? remarks = null)
         {
             var request = await _context.LeaveRequests.FindAsync(requestId);
             if (request == null)
@@ -164,7 +164,7 @@ namespace MedyxHMS.Services.Implementations
             return true;
         }
 
-        public async Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string staffId = null, int? year = null)
+        public async Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string? staffId = null, int? year = null)
         {
             var targetYear = year ?? DateTime.UtcNow.Year;
             var query = _context.LeaveBalances

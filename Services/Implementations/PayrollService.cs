@@ -14,7 +14,7 @@ namespace MedyxHMS.Services.Implementations
             _context = context;
         }
 
-        public async Task<IEnumerable<PayrollRecord>> GetPayrollRecordsAsync(DateTime? month = null, string staffId = null)
+        public async Task<IEnumerable<PayrollRecord>> GetPayrollRecordsAsync(DateTime? month = null, string? staffId = null)
         {
             var targetMonth = month.HasValue
                 ? new DateTime(month.Value.Year, month.Value.Month, 1)
@@ -41,7 +41,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<PayrollRecord> GetPayrollRecordByIdAsync(int id)
+        public async Task<PayrollRecord?> GetPayrollRecordByIdAsync(int id)
         {
             return await _context.PayrollRecords
                 .Include(x => x.Staff)
@@ -49,7 +49,7 @@ namespace MedyxHMS.Services.Implementations
                 .FirstOrDefaultAsync(x => x.Id == id);
         }
 
-        public async Task<PayrollRecord> GeneratePayrollAsync(string staffId, DateTime payrollMonth, decimal allowances = 0, decimal deductions = 0, string notes = null)
+        public async Task<PayrollRecord> GeneratePayrollAsync(string staffId, DateTime payrollMonth, decimal allowances = 0, decimal deductions = 0, string? notes = null)
         {
             if (string.IsNullOrWhiteSpace(staffId))
                 throw new InvalidOperationException("Staff ID is required.");
@@ -87,7 +87,7 @@ namespace MedyxHMS.Services.Implementations
             return payroll;
         }
 
-        public async Task<bool> MarkPayrollAsPaidAsync(int payrollRecordId, DateTime paymentDate, string notes = null)
+        public async Task<bool> MarkPayrollAsPaidAsync(int payrollRecordId, DateTime paymentDate, string? notes = null)
         {
             var payroll = await _context.PayrollRecords.FindAsync(payrollRecordId);
             if (payroll == null)

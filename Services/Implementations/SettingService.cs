@@ -63,7 +63,7 @@ namespace MedyxHMS.Services.Implementations
             };
         }
 
-        public async Task<string> GetSettingValueAsync(string key)
+        public async Task<string?> GetSettingValueAsync(string key)
         {
             var setting = await _context.Settings
                 .FirstOrDefaultAsync(s => s.Key == key);

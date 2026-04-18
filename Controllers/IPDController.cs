@@ -108,7 +108,7 @@ namespace MedyxHMS.Controllers
             var relatedBills = await _billingService.GetBillsByPatientAsync(admission.PatientId);
             var ipdBills = relatedBills.Where(b => b.BillType == "IPD").ToList();
 
-            var totalCharges = admission.DailyCharges * (decimal)((admission.DischargeDate ?? DateTime.UtcNow) - admission.AdmissionDate).TotalDays;
+            var totalCharges = admission.DailyCharges * Math.Max(1, (decimal)((admission.DischargeDate ?? DateTime.UtcNow) - admission.AdmissionDate).TotalDays);
 
             var viewModel = new IPDAdmissionDetailsViewModel
             {
@@ -329,8 +329,8 @@ namespace MedyxHMS.Controllers
                 model.CurrentAdmission = MapToIPDAdmissionDto(admission);
                 model.Patient = MapToPatientPortalDto(patient);
                 model.Doctor = MapToStaffDto(doctor);
-                model.AvailableBeds = availableBeds.Select(b => MapToBedDto(b)).ToList();
-                model.Wards = wards.Select(w => MapToWardDto(w)).ToList();
+                model.AvailableBeds = availableBeds.Select(b => MapToBedDto(b)!).ToList();
+                model.Wards = wards.Select(w => MapToWardDto(w)!).ToList();
             }
 
             return View(model);
@@ -439,7 +439,7 @@ namespace MedyxHMS.Controllers
             };
         }
 
-        private PatientPortalDto MapToPatientPortalDto(Patient patient)
+        private PatientPortalDto? MapToPatientPortalDto(Patient? patient)
         {
             if (patient == null) return null;
             return new PatientPortalDto
@@ -455,7 +455,7 @@ namespace MedyxHMS.Controllers
             };
         }
 
-        private StaffDto MapToStaffDto(Staff staff)
+        private StaffDto? MapToStaffDto(Staff? staff)
         {
             if (staff == null) return null;
             return new StaffDto
@@ -470,7 +470,7 @@ namespace MedyxHMS.Controllers
             };
         }
 
-        private BedDto MapToBedDto(Bed bed)
+        private BedDto? MapToBedDto(Bed? bed)
         {
             if (bed == null) return null;
             return new BedDto
@@ -487,7 +487,7 @@ namespace MedyxHMS.Controllers
             };
         }
 
-        private WardDto MapToWardDto(Ward ward)
+        private WardDto? MapToWardDto(Ward? ward)
         {
             if (ward == null) return null;
             return new WardDto
@@ -502,7 +502,7 @@ namespace MedyxHMS.Controllers
             };
         }
 
-        private BillDto MapToBillDto(Bill bill)
+        private BillDto? MapToBillDto(Bill? bill)
         {
             if (bill == null) return null;
             return new BillDto

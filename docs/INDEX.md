@@ -74,6 +74,16 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Step 4.2 export/download layer completed and validated
 - Read this for the implementation snapshot of CMS/public-booking observability and document export patterns.
 
+### PH9 - Phase 5 Step 5.2 Readiness Delivery
+- Document: [PH9.md](PH9.md)
+- Focus:
+  - regression suite expansion
+  - go-live runbooks and operational documentation
+  - security/performance validation planning
+  - migrated-data validation blocker documentation
+- **Status:** Internal Step 5.2 work completed; external migrated-data validation remains blocked by environment availability
+- Read this for the latest integration/deployment readiness snapshot.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -83,6 +93,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 6. [PH6.md](PH6.md)
 7. [PH7.md](PH7.md)
 8. [PH8.md](PH8.md)
+9. [PH9.md](PH9.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -91,8 +102,29 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md)
 - Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
 - CMS, public booking, export/download coverage: [PH8.md](PH8.md)
+- Integration, go-live readiness, and deployment/support planning: [PH9.md](PH9.md)
 
 ## Planned Design Docs
+
+## Operational Docs
+
+### Deployment and Cutover
+- Document: [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md)
+- Checklist: [MIGRATION-COUNT-COMPARISON-CHECKLIST.md](MIGRATION-COUNT-COMPARISON-CHECKLIST.md)
+- Script: `scripts/compare-migration-counts.ps1`
+- Template: `scripts/source-count-snapshot.template.csv`
+
+### Security and Performance Validation
+- Document: [SECURITY-PERFORMANCE-VALIDATION.md](SECURITY-PERFORMANCE-VALIDATION.md)
+
+### User Guidance
+- Document: [USER-GUIDE.md](USER-GUIDE.md)
+
+### Admin Guidance
+- Document: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
+
+### Training and Support
+- Document: [TRAINING-SUPPORT-PLAN.md](TRAINING-SUPPORT-PLAN.md)
 
 ### Licensing & Commercial Control
 - Document: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)

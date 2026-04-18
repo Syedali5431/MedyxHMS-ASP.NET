@@ -11,7 +11,7 @@ internal sealed class FakeSettingService : ISettingService
 
     public Task<FeatureToggles> GetFeatureTogglesAsync() => Task.FromResult(new FeatureToggles());
 
-    public Task<string> GetSettingValueAsync(string key) => Task.FromResult(string.Empty);
+    public Task<string?> GetSettingValueAsync(string key) => Task.FromResult<string?>(string.Empty);
 
     public Task<bool> UpdateSettingAsync(string key, string value) => Task.FromResult(true);
 

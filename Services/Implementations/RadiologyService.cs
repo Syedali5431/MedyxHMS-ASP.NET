@@ -114,7 +114,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<RadiologyResult> GetRadiologyResultByIdAsync(int id)
+        public async Task<RadiologyResult?> GetRadiologyResultByIdAsync(int id)
         {
             return await _context.RadiologyResults
                 .Include(r => r.Patient)
@@ -138,7 +138,7 @@ namespace MedyxHMS.Services.Implementations
             return radiologyResult;
         }
 
-        public async Task<RadiologyResult> UpdateRadiologyResultAsync(RadiologyResult radiologyResult)
+        public async Task<RadiologyResult?> UpdateRadiologyResultAsync(RadiologyResult radiologyResult)
         {
             if (radiologyResult == null)
                 throw new ArgumentNullException(nameof(radiologyResult));

@@ -77,7 +77,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     AppointmentId = a.AppointmentId,
                     AppointmentDate = a.AppointmentDate,
                     DoctorName = $"{a.Staff?.FirstName} {a.Staff?.LastName}",
-                    Department = a.Staff?.Department,
+                    Department = a.Staff?.Department ?? string.Empty,
                     Status = a.Status,
                     Symptoms = a.Symptoms
                 }).ToList();

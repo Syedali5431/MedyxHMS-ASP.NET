@@ -76,7 +76,7 @@ namespace MedyxHMS.Services.Implementations
             }
         }
 
-        public async Task<Patient> GetPatientByIdAsync(string patientId)
+        public async Task<Patient?> GetPatientByIdAsync(string patientId)
         {
             return await _context.Patients
                 .Include(p => p.User)
@@ -216,7 +216,7 @@ namespace MedyxHMS.Services.Implementations
             return await query.OrderByDescending(a => a.AppointmentDate).ToListAsync();
         }
 
-        public async Task<Appointment> GetAppointmentDetailsAsync(string appointmentId)
+        public async Task<Appointment?> GetAppointmentDetailsAsync(string appointmentId)
         {
             return await _context.Appointments
                 .Include(a => a.Staff)
@@ -334,7 +334,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<MedicalRecord> GetMedicalRecordDetailsAsync(string recordId)
+        public async Task<MedicalRecord?> GetMedicalRecordDetailsAsync(string recordId)
         {
             return await _context.MedicalRecords
                 .Include(m => m.Staff)
@@ -356,13 +356,13 @@ namespace MedyxHMS.Services.Implementations
             return await query.OrderByDescending(t => t.TestDate).ToListAsync();
         }
 
-        public async Task<TestResult> GetTestResultDetailsAsync(string testResultId)
+        public async Task<TestResult?> GetTestResultDetailsAsync(string testResultId)
         {
             return await _context.TestResults
                 .FirstOrDefaultAsync(t => t.Id.ToString() == testResultId);
         }
 
-        public async Task<byte[]> DownloadTestReportAsync(string testResultId)
+        public Task<byte[]> DownloadTestReportAsync(string testResultId)
         {
             // Implementation would depend on how reports are stored
             // This is a placeholder for future implementation
@@ -386,7 +386,7 @@ namespace MedyxHMS.Services.Implementations
             return await query.OrderByDescending(b => b.BillDate).ToListAsync();
         }
 
-        public async Task<Bill> GetBillDetailsAsync(string billId)
+        public async Task<Bill?> GetBillDetailsAsync(string billId)
         {
             return await _context.Bills
                 .Include(b => b.Payments)
@@ -430,7 +430,7 @@ namespace MedyxHMS.Services.Implementations
             return await query.OrderBy(s => s.FirstName).ToListAsync();
         }
 
-        public async Task<Staff> GetDoctorDetailsAsync(string doctorId)
+        public async Task<Staff?> GetDoctorDetailsAsync(string doctorId)
         {
             return await _context.Staff
                 .Include(s => s.User)
@@ -439,7 +439,7 @@ namespace MedyxHMS.Services.Implementations
                 .FirstOrDefaultAsync(s => s.Id.ToString() == doctorId);
         }
 
-        public async Task<List<DoctorAvailability>> GetDoctorAvailabilityAsync(string doctorId)
+        public Task<List<DoctorAvailability>> GetDoctorAvailabilityAsync(string doctorId)
         {
             // This would typically come from a schedule/availability table
             // For now, returning default availability
@@ -454,22 +454,22 @@ namespace MedyxHMS.Services.Implementations
                 new DoctorAvailability { DayOfWeek = "Sunday", StartTime = TimeSpan.Zero, EndTime = TimeSpan.Zero, IsAvailable = false }
             };
 
-            return await Task.FromResult(availability);
+            return Task.FromResult(availability);
         }
 
         // Patient Notifications
-        public async Task<IEnumerable<Notification>> GetPatientNotificationsAsync(string patientId)
+        public Task<IEnumerable<Notification>> GetPatientNotificationsAsync(string patientId)
         {
             // This would be implemented when notifications table is added to the database
             throw new NotImplementedException("Notifications feature not yet implemented");
         }
 
-        public async Task<bool> MarkNotificationAsReadAsync(string notificationId)
+        public Task<bool> MarkNotificationAsReadAsync(string notificationId)
         {
             throw new NotImplementedException("Notifications feature not yet implemented");
         }
 
-        public async Task<bool> DeleteNotificationAsync(string notificationId)
+        public Task<bool> DeleteNotificationAsync(string notificationId)
         {
             throw new NotImplementedException("Notifications feature not yet implemented");
         }

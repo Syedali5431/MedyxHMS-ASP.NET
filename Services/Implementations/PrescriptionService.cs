@@ -107,7 +107,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<Medicine> GetMedicineByIdAsync(int id)
+        public async Task<Medicine?> GetMedicineByIdAsync(int id)
         {
             return await _context.Medicines.FindAsync(id);
         }
@@ -198,7 +198,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<PharmacyBill> GetPharmacyBillByIdAsync(int id)
+        public async Task<PharmacyBill?> GetPharmacyBillByIdAsync(int id)
         {
             return await _context.PharmacyBills
                 .Include(b => b.Patient)

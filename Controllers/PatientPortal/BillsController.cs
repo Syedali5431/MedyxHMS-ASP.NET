@@ -151,7 +151,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         // POST: /PatientPortal/Bills/Pay/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Pay(string id, PatientPortalPaymentViewModel viewModel)
+        public IActionResult Pay(string id, PatientPortalPaymentViewModel viewModel)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))

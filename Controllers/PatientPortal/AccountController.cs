@@ -199,7 +199,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         // GET: /PatientPortal/Account/ResetPassword
         [HttpGet]
         [AllowAnonymous]
-        public IActionResult ResetPassword(string token = null, string email = null)
+        public IActionResult ResetPassword(string? token = null, string? email = null)
         {
             if (token == null || email == null)
             {
@@ -268,7 +268,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var result = await _userManager.ConfirmEmailAsync(user, token);
             var viewModel = new PatientPortalEmailConfirmationViewModel
             {
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 IsConfirmed = result.Succeeded,
                 Message = result.Succeeded ? "Email confirmed successfully" : "Email confirmation failed"
             };

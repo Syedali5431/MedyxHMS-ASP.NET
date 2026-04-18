@@ -22,7 +22,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<Patient> GetPatientByIdAsync(int id)
+        public async Task<Patient?> GetPatientByIdAsync(int id)
         {
             return await _context.Patients
                 .Include(p => p.Appointments)
@@ -42,7 +42,7 @@ namespace MedyxHMS.Services.Implementations
             return patient;
         }
 
-        public async Task<Patient> UpdatePatientAsync(Patient patient)
+        public async Task<Patient?> UpdatePatientAsync(Patient patient)
         {
             var existingPatient = await _context.Patients.FindAsync(patient.Id);
             if (existingPatient == null)

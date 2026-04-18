@@ -30,5 +30,34 @@ Observed result:
 - Validation execution against accessible target DB: Completed (LocalDB baseline)
 - Validation execution against real migrated dataset: Pending
 
+## Environment Check for Real Dataset
+- Checked common local SQL Server targets: `localhost`, `.\\SQLEXPRESS`, `(localdb)\\MSSQLLocalDB`
+- Result:
+  - `localhost`: not reachable
+  - `.\\SQLEXPRESS`: instance not present/reachable
+  - `(localdb)\\MSSQLLocalDB`: reachable, but only baseline `MedyxHMS` database is available in current environment
+- Checked documented external import files referenced by conversion docs:
+  - `c:\Users\alin\Downloads\Medyx-HMS\hospitaldemo_db.sql`
+  - `c:\Databases\Medyx-HMS\Medyx-HMS-php\php-original\Scripts\NewDatabase.sql`
+- Result: neither file exists on this machine at those paths
+- Checked for installed SQL Server services (`MSSQL*`, `SQLAgent*`, `SQLBrowser`)
+- Result: no full SQL Server service/instance is installed or running on this machine
+- Searched likely local roots for migrated artifacts (`c:\Databases`, `c:\Users`, `d:\`, `e:\`) using Medyx/HMS/hospitaldemo filename filters
+- Result: no `NewDatabase.sql`, `hospitaldemo_db.sql`, or matching `.bak` backup file was found
+- Reconfirmed accessible LocalDB content:
+  - `Patients`: 0
+  - `Staff`: 1
+  - `Appointments`: 0
+  - `Bills`: 0
+  - `Payments`: 0
+  - `PublicAppointmentRequests`: 0
+
+Conclusion:
+- The real migrated SQL Server dataset is not currently available from this environment, so record-count comparison against the real migrated data cannot be completed yet.
+
 ## Next Action
-Run the same script against the SQL Server instance containing migrated production-like data, compare counts with source snapshot, and reconcile any non-zero integrity issues.
+Provide one of the following so validation can be completed:
+- reachable SQL Server instance name hosting the migrated MedyxHMS dataset, or
+- restored/imported migrated SQL script/dump on this machine
+
+After that, run the same validation script, capture counts, compare with the source snapshot, and reconcile any non-zero integrity issues.

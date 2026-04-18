@@ -22,9 +22,9 @@ namespace MedyxHMS.Services.Implementations
             string subject,
             string messageBody,
             string status,
-            string providerResponse = null,
-            string relatedEntityType = null,
-            string relatedEntityId = null,
+            string? providerResponse = null,
+            string? relatedEntityType = null,
+            string? relatedEntityId = null,
             bool isTest = false)
         {
             var entry = new NotificationDeliveryLog

@@ -5,9 +5,9 @@ namespace MedyxHMS.ViewModels
 {
     public class AppointmentIndexViewModel
     {
-        public IEnumerable<AppointmentDto> Appointments { get; set; }
-        public string SearchTerm { get; set; }
-        public string StatusFilter { get; set; }
+        public IEnumerable<AppointmentDto> Appointments { get; set; } = new List<AppointmentDto>();
+        public string SearchTerm { get; set; } = string.Empty;
+        public string StatusFilter { get; set; } = string.Empty;
         public DateTime? DateFilter { get; set; }
         public int? DoctorFilter { get; set; }
         public int TotalAppointments { get; set; }
@@ -21,12 +21,12 @@ namespace MedyxHMS.ViewModels
             "All", "Scheduled", "Confirmed", "Completed", "Cancelled", "No-Show"
         };
 
-        public IEnumerable<DoctorDto> AvailableDoctors { get; set; }
+        public IEnumerable<DoctorDto> AvailableDoctors { get; set; } = new List<DoctorDto>();
     }
 
     public class AppointmentCreateViewModel
     {
-        public AppointmentCreateDto Appointment { get; set; }
+        public AppointmentCreateDto Appointment { get; set; } = new AppointmentCreateDto();
 
         // Dropdown options
         public List<string> AppointmentTypeOptions => new List<string>
@@ -35,17 +35,17 @@ namespace MedyxHMS.ViewModels
             "Diagnostic", "Surgery Consultation", "Telemedicine"
         };
 
-        public IEnumerable<DoctorDto> AvailableDoctors { get; set; }
-        public IEnumerable<PatientDto> RecentPatients { get; set; }
+        public IEnumerable<DoctorDto> AvailableDoctors { get; set; } = new List<DoctorDto>();
+        public IEnumerable<PatientDto> RecentPatients { get; set; } = new List<PatientDto>();
 
         // For patient search
-        public string PatientSearchTerm { get; set; }
-        public IEnumerable<PatientDto> PatientSearchResults { get; set; }
+        public string PatientSearchTerm { get; set; } = string.Empty;
+        public IEnumerable<PatientDto> PatientSearchResults { get; set; } = new List<PatientDto>();
     }
 
     public class AppointmentEditViewModel
     {
-        public AppointmentDto CurrentAppointment { get; set; }
+        public AppointmentDto CurrentAppointment { get; set; } = new AppointmentDto();
         public AppointmentUpdateDto Appointment { get; set; }
 
         // Dropdown options
@@ -55,25 +55,25 @@ namespace MedyxHMS.ViewModels
             "Diagnostic", "Surgery Consultation", "Telemedicine"
         };
 
-        public IEnumerable<DoctorDto> AvailableDoctors { get; set; }
-        public PatientDto Patient { get; set; }
-        public DoctorDto Doctor { get; set; }
+        public IEnumerable<DoctorDto> AvailableDoctors { get; set; } = new List<DoctorDto>();
+        public PatientDto Patient { get; set; } = new PatientDto();
+        public DoctorDto Doctor { get; set; } = new DoctorDto();
         public bool HasConflict { get; set; }
     }
 
     public class AppointmentDetailsViewModel
     {
-        public AppointmentDto Appointment { get; set; }
-        public PatientDto Patient { get; set; }
-        public DoctorDto Doctor { get; set; }
-        public IEnumerable<AppointmentSummaryDto> PatientRecentAppointments { get; set; }
-        public IEnumerable<AppointmentSummaryDto> DoctorTodayAppointments { get; set; }
+        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
+        public PatientDto Patient { get; set; } = new PatientDto();
+        public DoctorDto Doctor { get; set; } = new DoctorDto();
+        public IEnumerable<AppointmentSummaryDto> PatientRecentAppointments { get; set; } = new List<AppointmentSummaryDto>();
+        public IEnumerable<AppointmentSummaryDto> DoctorTodayAppointments { get; set; } = new List<AppointmentSummaryDto>();
     }
 
     public class AppointmentStatusUpdateViewModel
     {
-        public AppointmentDto Appointment { get; set; }
-        public AppointmentStatusUpdateDto StatusUpdate { get; set; }
+        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
+        public AppointmentStatusUpdateDto StatusUpdate { get; set; } = new AppointmentStatusUpdateDto();
 
         public List<string> AvailableStatuses => new List<string>
         {
@@ -100,13 +100,13 @@ namespace MedyxHMS.ViewModels
         public DateTime CurrentDate { get; set; }
         public DateTime StartOfWeek { get; set; }
         public DateTime EndOfWeek { get; set; }
-        public IEnumerable<AppointmentDto> WeekAppointments { get; set; }
-        public IEnumerable<DoctorDto> Doctors { get; set; }
+        public IEnumerable<AppointmentDto> WeekAppointments { get; set; } = new List<AppointmentDto>();
+        public IEnumerable<DoctorDto> Doctors { get; set; } = new List<DoctorDto>();
         public int? SelectedDoctorId { get; set; }
         public string ViewType { get; set; } = "week";
         public IEnumerable<DoctorDto> AvailableDoctors => Doctors;
         public int? DoctorFilter => SelectedDoctorId;
-        public string StatusFilter { get; set; }
+        public string StatusFilter { get; set; } = string.Empty;
         public List<string> StatusOptions => new() { "All", "Scheduled", "Confirmed", "Completed", "Cancelled", "No-Show" };
         public object CalendarEvents => WeekAppointments;
 
@@ -146,10 +146,10 @@ namespace MedyxHMS.ViewModels
         public int UpcomingAppointments { get; set; }
         public int CompletedToday { get; set; }
         public int CancelledToday { get; set; }
-        public IEnumerable<AppointmentDto> TodayAppointmentsList { get; set; }
-        public IEnumerable<AppointmentDto> UpcomingAppointmentsList { get; set; }
-        public Dictionary<string, int> AppointmentsByType { get; set; }
-        public Dictionary<string, int> AppointmentsByStatus { get; set; }
+        public IEnumerable<AppointmentDto> TodayAppointmentsList { get; set; } = new List<AppointmentDto>();
+        public IEnumerable<AppointmentDto> UpcomingAppointmentsList { get; set; } = new List<AppointmentDto>();
+        public Dictionary<string, int> AppointmentsByType { get; set; } = new Dictionary<string, int>();
+        public Dictionary<string, int> AppointmentsByStatus { get; set; } = new Dictionary<string, int>();
         public int TotalAppointments => TodayAppointments + UpcomingAppointments + CompletedToday + CancelledToday;
         public decimal TotalAppointmentsChange => 0;
         public decimal CompletionRate => TotalAppointments > 0 ? (decimal)CompletedToday / TotalAppointments * 100 : 0;
@@ -174,20 +174,20 @@ namespace MedyxHMS.ViewModels
     public class PatientDto
     {
         public int Id { get; set; }
-        public string PatientId { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public string FullName { get; set; }
-        public string Phone { get; set; }
-        public string Gender { get; set; }
+        public string PatientId { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
         public DateTime DateOfBirth { get; set; }
         public int Age { get; set; }
     }
 
     public class DoctorPerformanceItem
     {
-        public string DoctorName { get; set; }
-        public string Specialization { get; set; }
+        public string DoctorName { get; set; } = string.Empty;
+        public string Specialization { get; set; } = string.Empty;
         public int TotalAppointments { get; set; }
         public int CompletedAppointments { get; set; }
         public decimal CompletionRate { get; set; }
@@ -198,18 +198,18 @@ namespace MedyxHMS.ViewModels
     public class RecentAppointmentActivityItem
     {
         public DateTime Timestamp { get; set; }
-        public string Action { get; set; }
-        public string PatientName { get; set; }
-        public string DoctorName { get; set; }
-        public string Details { get; set; }
-        public string UserName { get; set; }
+        public string Action { get; set; } = string.Empty;
+        public string PatientName { get; set; } = string.Empty;
+        public string DoctorName { get; set; } = string.Empty;
+        public string Details { get; set; } = string.Empty;
+        public string UserName { get; set; } = string.Empty;
     }
 
     public class AppointmentViewModel
     {
-        public AppointmentDto Appointment { get; set; }
-        public PatientDto Patient { get; set; }
-        public DoctorDto Doctor { get; set; }
+        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
+        public PatientDto Patient { get; set; } = new PatientDto();
+        public DoctorDto Doctor { get; set; } = new DoctorDto();
         public string StatusBadgeClass => Appointment?.Status?.ToLower() switch
         {
             "scheduled" => "badge-warning",
@@ -225,19 +225,19 @@ namespace MedyxHMS.ViewModels
 
     public class AppointmentDeleteViewModel
     {
-        public AppointmentDto Appointment { get; set; }
-        public PatientDto Patient { get; set; }
-        public DoctorDto Doctor { get; set; }
+        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
+        public PatientDto Patient { get; set; } = new PatientDto();
+        public DoctorDto Doctor { get; set; } = new DoctorDto();
         public bool HasFutureAppointments { get; set; }
-        public string WarningMessage { get; set; }
+        public string WarningMessage { get; set; } = string.Empty;
     }
 
     public class AppointmentUpdateStatusViewModel
     {
-        public AppointmentDto Appointment { get; set; }
-        public AppointmentStatusUpdateDto StatusUpdate { get; set; }
-        public PatientDto Patient { get; set; }
-        public DoctorDto Doctor { get; set; }
+        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
+        public AppointmentStatusUpdateDto StatusUpdate { get; set; } = new AppointmentStatusUpdateDto();
+        public PatientDto Patient { get; set; } = new PatientDto();
+        public DoctorDto Doctor { get; set; } = new DoctorDto();
         public List<string> StatusOrder => new() { "Scheduled", "Confirmed", "Completed", "Cancelled", "No-Show" };
         public string NewStatus
         {

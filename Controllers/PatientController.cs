@@ -328,7 +328,7 @@ namespace MedyxHMS.Controllers
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.Identity?.Name,
                     "Update",
                     "Patient",
                     id.ToString(),
@@ -343,7 +343,7 @@ namespace MedyxHMS.Controllers
             {
                 ModelState.AddModelError("", "An error occurred while updating the patient. Please try again.");
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.Identity?.Name,
                     "Update",
                     "Patient",
                     id.ToString(),
@@ -436,7 +436,7 @@ namespace MedyxHMS.Controllers
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.Identity?.Name,
                     "Delete",
                     "Patient",
                     id.ToString(),
@@ -450,7 +450,7 @@ namespace MedyxHMS.Controllers
             catch (Exception ex)
             {
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.Identity?.Name,
                     "Delete",
                     "Patient",
                     id.ToString(),

@@ -233,6 +233,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 var bill = new Bill
                 {
+                    BillNumber = GenerateBillNumber(),
                     PatientId = admission.PatientId,
                     BillDate = admission.DischargeDate.Value,
                     DueDate = admission.DischargeDate.Value.Date,
@@ -315,8 +316,29 @@ namespace MedyxHMS.Services.Implementations
         public async Task<decimal> GetIPDRevenueAsync(DateTime startDate, DateTime endDate)
         {
             return await _context.IPDAdmissions
-                .Where(a => a.DischargeDate >= startDate && a.DischargeDate <= endDate && a.Status == "Discharged")
-                .SumAsync(a => (a.DischargeDate.Value - a.AdmissionDate).Days * a.DailyCharges);
+                .Where(a => a.DischargeDate.HasValue && a.DischargeDate >= startDate && a.DischargeDate <= endDate && a.Status == "Discharged")
+                .SumAsync(a => (a.DischargeDate!.Value - a.AdmissionDate).Days * a.DailyCharges);
+        }
+
+        private string GenerateBillNumber()
+        {
+            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var lastBill = _context.Bills
+                .Where(b => b.BillNumber.StartsWith($"BILL{datePart}"))
+                .OrderByDescending(b => b.Id)
+                .FirstOrDefault();
+
+            var sequentialNumber = 1;
+            if (lastBill != null)
+            {
+                var lastNumber = lastBill.BillNumber.Substring(12);
+                if (int.TryParse(lastNumber, out var parsedNumber))
+                {
+                    sequentialNumber = parsedNumber + 1;
+                }
+            }
+
+            return $"BILL{datePart}{sequentialNumber:D4}";
         }
     }
 }

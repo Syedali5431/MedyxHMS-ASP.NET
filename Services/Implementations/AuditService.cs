@@ -16,11 +16,11 @@ namespace MedyxHMS.Services.Implementations
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public async Task LogActivityAsync(string userId, string action, string entityName, string entityId, string oldValues = null, string newValues = null)
+        public async Task LogActivityAsync(string? userId, string action, string entityName, string entityId, string? oldValues = null, string? newValues = null)
         {
             var auditLog = new AuditLog
             {
-                UserId = userId,
+            UserId = string.IsNullOrWhiteSpace(userId) ? "system" : userId,
                 Action = action,
                 EntityName = entityName,
                 EntityId = entityId,
@@ -36,7 +36,7 @@ namespace MedyxHMS.Services.Implementations
             await _context.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, string userId = null)
+        public async Task<IEnumerable<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, string? userId = null)
         {
             var query = _context.AuditLogs.AsQueryable();
 

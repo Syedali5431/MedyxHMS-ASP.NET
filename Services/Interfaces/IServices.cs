@@ -6,7 +6,7 @@ namespace MedyxHMS.Services.Interfaces
     {
         Task<HospitalSettings> GetHospitalSettingsAsync();
         Task<FeatureToggles> GetFeatureTogglesAsync();
-        Task<string> GetSettingValueAsync(string key);
+        Task<string?> GetSettingValueAsync(string key);
         Task<bool> UpdateSettingAsync(string key, string value);
         Task<IEnumerable<Language>> GetSupportedLanguagesAsync();
     }
@@ -14,9 +14,9 @@ namespace MedyxHMS.Services.Interfaces
     public interface IPatientService
     {
         Task<IEnumerable<Patient>> GetAllPatientsAsync();
-        Task<Patient> GetPatientByIdAsync(int id);
+        Task<Patient?> GetPatientByIdAsync(int id);
         Task<Patient> CreatePatientAsync(Patient patient);
-        Task<Patient> UpdatePatientAsync(Patient patient);
+        Task<Patient?> UpdatePatientAsync(Patient patient);
         Task<bool> DeletePatientAsync(int id);
         Task<IEnumerable<Patient>> SearchPatientsAsync(string searchTerm);
     }
@@ -47,8 +47,8 @@ namespace MedyxHMS.Services.Interfaces
 
     public interface IAuditService
     {
-        Task LogActivityAsync(string userId, string action, string entityName, string entityId, string oldValues = null, string newValues = null);
-        Task<IEnumerable<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, string userId = null);
+        Task LogActivityAsync(string? userId, string action, string entityName, string entityId, string? oldValues = null, string? newValues = null);
+        Task<IEnumerable<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, string? userId = null);
         Task<IEnumerable<AuditLog>> GetEntityAuditLogsAsync(string entityName, string entityId);
     }
 
@@ -99,7 +99,7 @@ namespace MedyxHMS.Services.Interfaces
     {
         // Patient Account Management
         Task<Patient> RegisterPatientAsync(Patient patient, string password);
-        Task<Patient> GetPatientByIdAsync(string patientId);
+        Task<Patient?> GetPatientByIdAsync(string patientId);
         Task<Patient> UpdatePatientProfileAsync(Patient patient);
         Task<bool> ChangePatientPasswordAsync(string patientId, string currentPassword, string newPassword);
         Task<bool> ResetPatientPasswordAsync(string email, string newPassword);
@@ -112,7 +112,7 @@ namespace MedyxHMS.Services.Interfaces
         
         // Patient Appointments
         Task<IEnumerable<Appointment>> GetPatientAppointmentsAsync(string patientId, string filter = "all");
-        Task<Appointment> GetAppointmentDetailsAsync(string appointmentId);
+        Task<Appointment?> GetAppointmentDetailsAsync(string appointmentId);
         Task<Appointment> BookAppointmentAsync(Appointment appointment);
         Task<bool> RescheduleAppointmentAsync(string appointmentId, DateTime newDate, TimeSpan newTime);
         Task<bool> CancelAppointmentAsync(string appointmentId, string cancelReason);
@@ -121,21 +121,21 @@ namespace MedyxHMS.Services.Interfaces
         
         // Patient Medical Records
         Task<IEnumerable<MedicalRecord>> GetPatientMedicalRecordsAsync(string patientId, DateTime? startDate = null, DateTime? endDate = null);
-        Task<MedicalRecord> GetMedicalRecordDetailsAsync(string recordId);
+        Task<MedicalRecord?> GetMedicalRecordDetailsAsync(string recordId);
         Task<IEnumerable<TestResult>> GetPatientTestResultsAsync(string patientId, DateTime? startDate = null, DateTime? endDate = null);
-        Task<TestResult> GetTestResultDetailsAsync(string testResultId);
+        Task<TestResult?> GetTestResultDetailsAsync(string testResultId);
         Task<byte[]> DownloadTestReportAsync(string testResultId);
         
         // Patient Bills and Payments
         Task<IEnumerable<Bill>> GetPatientBillsAsync(string patientId, string filter = "all");
-        Task<Bill> GetBillDetailsAsync(string billId);
+        Task<Bill?> GetBillDetailsAsync(string billId);
         Task<IEnumerable<Payment>> GetPaymentHistoryAsync(string patientId);
         Task<decimal> GetTotalOutstandingAsync(string patientId);
         Task<int> GetOverdueBillsCountAsync(string patientId);
         
         // Doctor Information
-        Task<IEnumerable<Staff>> GetAvailableDoctorsForBookingAsync(string departmentFilter = null);
-        Task<Staff> GetDoctorDetailsAsync(string doctorId);
+        Task<IEnumerable<Staff>> GetAvailableDoctorsForBookingAsync(string? departmentFilter = null);
+        Task<Staff?> GetDoctorDetailsAsync(string doctorId);
         Task<List<DoctorAvailability>> GetDoctorAvailabilityAsync(string doctorId);
         
         // Patient Notifications
@@ -168,9 +168,9 @@ namespace MedyxHMS.Services.Interfaces
             string subject,
             string messageBody,
             string status,
-            string providerResponse = null,
-            string relatedEntityType = null,
-            string relatedEntityId = null,
+            string? providerResponse = null,
+            string? relatedEntityType = null,
+            string? relatedEntityId = null,
             bool isTest = false);
     }
 
@@ -274,7 +274,7 @@ namespace MedyxHMS.Services.Interfaces
 
         // Medicine methods
         Task<IEnumerable<Medicine>> GetAllMedicinesAsync();
-        Task<Medicine> GetMedicineByIdAsync(int id);
+        Task<Medicine?> GetMedicineByIdAsync(int id);
         Task<Medicine> CreateMedicineAsync(Medicine medicine);
         Task<Medicine> UpdateMedicineAsync(Medicine medicine);
         Task<bool> DeleteMedicineAsync(int id);
@@ -286,7 +286,7 @@ namespace MedyxHMS.Services.Interfaces
 
         // Pharmacy Bill methods
         Task<IEnumerable<PharmacyBill>> GetAllPharmacyBillsAsync();
-        Task<PharmacyBill> GetPharmacyBillByIdAsync(int id);
+        Task<PharmacyBill?> GetPharmacyBillByIdAsync(int id);
         Task<PharmacyBill> CreatePharmacyBillAsync(PharmacyBill bill);
         Task<PharmacyBill> UpdatePharmacyBillAsync(PharmacyBill bill);
         Task<bool> DeletePharmacyBillAsync(int id);
@@ -301,9 +301,9 @@ namespace MedyxHMS.Services.Interfaces
     {
         // Lab Test Catalog methods
         Task<IEnumerable<LabTest>> GetAllLabTestsAsync();
-        Task<LabTest> GetLabTestByIdAsync(int id);
+        Task<LabTest?> GetLabTestByIdAsync(int id);
         Task<LabTest> CreateLabTestAsync(LabTest labTest);
-        Task<LabTest> UpdateLabTestAsync(LabTest labTest);
+        Task<LabTest?> UpdateLabTestAsync(LabTest labTest);
         Task<bool> DeleteLabTestAsync(int id);
         Task<IEnumerable<LabTest>> GetActiveLabTestsAsync();
         Task<IEnumerable<LabTest>> SearchLabTestsByCategoryAsync(string category);
@@ -311,9 +311,9 @@ namespace MedyxHMS.Services.Interfaces
 
         // Lab Result methods
         Task<IEnumerable<LabResult>> GetAllLabResultsAsync();
-        Task<LabResult> GetLabResultByIdAsync(int id);
+        Task<LabResult?> GetLabResultByIdAsync(int id);
         Task<LabResult> CreateLabResultAsync(LabResult labResult);
-        Task<LabResult> UpdateLabResultAsync(LabResult labResult);
+        Task<LabResult?> UpdateLabResultAsync(LabResult labResult);
         Task<bool> DeleteLabResultAsync(int id);
         Task<IEnumerable<LabResult>> GetLabResultsByPatientAsync(int patientId);
         Task<IEnumerable<LabResult>> GetLabResultsByStatusAsync(string status);
@@ -339,9 +339,9 @@ namespace MedyxHMS.Services.Interfaces
 
         // Radiology Result methods
         Task<IEnumerable<RadiologyResult>> GetAllRadiologyResultsAsync();
-        Task<RadiologyResult> GetRadiologyResultByIdAsync(int id);
+        Task<RadiologyResult?> GetRadiologyResultByIdAsync(int id);
         Task<RadiologyResult> CreateRadiologyResultAsync(RadiologyResult radiologyResult);
-        Task<RadiologyResult> UpdateRadiologyResultAsync(RadiologyResult radiologyResult);
+        Task<RadiologyResult?> UpdateRadiologyResultAsync(RadiologyResult radiologyResult);
         Task<bool> DeleteRadiologyResultAsync(int id);
         Task<IEnumerable<RadiologyResult>> GetRadiologyResultsByPatientAsync(int patientId);
         Task<IEnumerable<RadiologyResult>> GetRadiologyResultsByStatusAsync(string status);
@@ -394,42 +394,42 @@ namespace MedyxHMS.Services.Interfaces
         Task<LeaveType> CreateLeaveTypeAsync(LeaveType leaveType);
         Task<LeaveType> UpdateLeaveTypeAsync(LeaveType leaveType);
 
-        Task<IEnumerable<LeaveRequest>> GetLeaveRequestsAsync(string staffId = null, string status = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<IEnumerable<LeaveRequest>> GetLeaveRequestsAsync(string? staffId = null, string? status = null, DateTime? startDate = null, DateTime? endDate = null);
         Task<LeaveRequest> GetLeaveRequestByIdAsync(int id);
         Task<LeaveRequest> CreateLeaveRequestAsync(LeaveRequest leaveRequest);
-        Task<bool> UpdateLeaveRequestStatusAsync(int requestId, string status, string approverId, string remarks = null);
+        Task<bool> UpdateLeaveRequestStatusAsync(int requestId, string status, string? approverId, string? remarks = null);
 
-        Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string staffId = null, int? year = null);
+        Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string? staffId = null, int? year = null);
     }
 
     public interface IPayrollService
     {
-        Task<IEnumerable<PayrollRecord>> GetPayrollRecordsAsync(DateTime? month = null, string staffId = null);
-        Task<PayrollRecord> GetPayrollRecordByIdAsync(int id);
-        Task<PayrollRecord> GeneratePayrollAsync(string staffId, DateTime payrollMonth, decimal allowances = 0, decimal deductions = 0, string notes = null);
-        Task<bool> MarkPayrollAsPaidAsync(int payrollRecordId, DateTime paymentDate, string notes = null);
+        Task<IEnumerable<PayrollRecord>> GetPayrollRecordsAsync(DateTime? month = null, string? staffId = null);
+        Task<PayrollRecord?> GetPayrollRecordByIdAsync(int id);
+        Task<PayrollRecord> GeneratePayrollAsync(string staffId, DateTime payrollMonth, decimal allowances = 0, decimal deductions = 0, string? notes = null);
+        Task<bool> MarkPayrollAsPaidAsync(int payrollRecordId, DateTime paymentDate, string? notes = null);
     }
 
     public interface IFrontOfficeService
     {
         Task<IEnumerable<VisitorLog>> GetVisitorsAsync(DateTime? date = null);
         Task<VisitorLog> AddVisitorAsync(VisitorLog visitor);
-        Task<bool> CheckOutVisitorAsync(int visitorId, DateTime checkOutTime, string notes = null);
+        Task<bool> CheckOutVisitorAsync(int visitorId, DateTime checkOutTime, string? notes = null);
 
-        Task<IEnumerable<ComplaintRecord>> GetComplaintsAsync(string status = null);
+        Task<IEnumerable<ComplaintRecord>> GetComplaintsAsync(string? status = null);
         Task<ComplaintRecord> AddComplaintAsync(ComplaintRecord complaint);
-        Task<bool> UpdateComplaintStatusAsync(int complaintId, string status, string resolutionNotes = null);
+        Task<bool> UpdateComplaintStatusAsync(int complaintId, string status, string? resolutionNotes = null);
 
-        Task<IEnumerable<DispatchReceiveRecord>> GetDispatchReceiveRecordsAsync(string recordType = null, DateTime? date = null);
+        Task<IEnumerable<DispatchReceiveRecord>> GetDispatchReceiveRecordsAsync(string? recordType = null, DateTime? date = null);
         Task<DispatchReceiveRecord> AddDispatchReceiveRecordAsync(DispatchReceiveRecord record);
     }
 
     public interface ICertificateService
     {
-        Task<IEnumerable<CertificateRecord>> GetCertificatesAsync(string staffId = null);
+        Task<IEnumerable<CertificateRecord>> GetCertificatesAsync(string? staffId = null);
         Task<CertificateRecord> GenerateCertificateAsync(CertificateRecord certificate);
 
-        Task<IEnumerable<IdCardRecord>> GetIdCardsAsync(string staffId = null);
+        Task<IEnumerable<IdCardRecord>> GetIdCardsAsync(string? staffId = null);
         Task<IdCardRecord> GenerateIdCardAsync(IdCardRecord idCard);
     }
 
@@ -453,7 +453,7 @@ namespace MedyxHMS.Services.Interfaces
 
         // General Report Management
         Task<GeneratedReport> SaveReportAsync(GeneratedReport report);
-        Task<IEnumerable<GeneratedReport>> GetGeneratedReportsAsync(string reportType = null, DateTime? startDate = null, DateTime? endDate = null);
+        Task<IEnumerable<GeneratedReport>> GetGeneratedReportsAsync(string? reportType = null, DateTime? startDate = null, DateTime? endDate = null);
         Task<bool> DeleteGeneratedReportAsync(int reportId);
 
         // Report Scheduling

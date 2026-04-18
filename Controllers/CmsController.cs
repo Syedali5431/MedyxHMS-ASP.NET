@@ -1054,7 +1054,7 @@ namespace MedyxHMS.Controllers
             return string.Join("|", phone, doctorId, preferredDate.ToString("yyyy-MM-dd"), preferredTime.Ticks);
         }
 
-        private async Task<string> GetSettingValueAsync(string key)
+        private async Task<string?> GetSettingValueAsync(string key)
         {
             var setting = await _db.Settings
                 .AsNoTracking()
@@ -1078,7 +1078,7 @@ namespace MedyxHMS.Controllers
                     Description = description,
                     IsSystem = false,
                     CreatedDate = DateTime.UtcNow,
-                    ModifiedBy = User?.Identity?.Name
+                    ModifiedBy = User?.Identity?.Name ?? string.Empty
                 });
             }
             else
@@ -1088,7 +1088,7 @@ namespace MedyxHMS.Controllers
                 setting.Category = category;
                 setting.Description = description;
                 setting.ModifiedDate = DateTime.UtcNow;
-                setting.ModifiedBy = User?.Identity?.Name;
+                setting.ModifiedBy = User?.Identity?.Name ?? string.Empty;
             }
 
             await _db.SaveChangesAsync();

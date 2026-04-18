@@ -136,7 +136,7 @@ namespace MedyxHMS.Controllers
                     DateOfBirth = patient.DateOfBirth,
                     Gender = patient.Gender,
                     Address = patient.Address
-                } : null,
+                } : new PatientPortalDto(),
                 Doctor = doctor != null ? new StaffDto
                 {
                     Id = doctor.Id,
@@ -146,7 +146,7 @@ namespace MedyxHMS.Controllers
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
                     Department = doctor.Department
-                } : null
+                } : new StaffDto()
             };
 
             return View(viewModel);
@@ -331,7 +331,7 @@ namespace MedyxHMS.Controllers
                     DateOfBirth = patient.DateOfBirth,
                     Gender = patient.Gender,
                     Address = patient.Address
-                } : null,
+                } : new PatientPortalDto(),
                 Doctor = doctor != null ? new StaffDto
                 {
                     Id = doctor.Id,
@@ -341,7 +341,7 @@ namespace MedyxHMS.Controllers
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
                     Department = doctor.Department
-                } : null
+                } : new StaffDto()
             };
 
             return View(viewModel);
@@ -406,7 +406,7 @@ namespace MedyxHMS.Controllers
                     DateOfBirth = patient.DateOfBirth,
                     Gender = patient.Gender,
                     Address = patient.Address
-                } : null;
+                } : new PatientPortalDto();
 
                 model.Doctor = doctor != null ? new StaffDto
                 {
@@ -417,7 +417,7 @@ namespace MedyxHMS.Controllers
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
                     Department = doctor.Department
-                } : null;
+                } : new StaffDto();
             }
 
             return View(model);
@@ -465,7 +465,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetDoctorSchedule(int doctorId, DateTime date)
+        public IActionResult GetDoctorSchedule(int doctorId, DateTime date)
         {
             // This would integrate with appointment system to check doctor's availability
             // For now, return basic availability

@@ -23,7 +23,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<LabTest> GetLabTestByIdAsync(int id)
+        public async Task<LabTest?> GetLabTestByIdAsync(int id)
         {
             return await _context.LabTests.FindAsync(id);
         }
@@ -39,7 +39,7 @@ namespace MedyxHMS.Services.Implementations
             return labTest;
         }
 
-        public async Task<LabTest> UpdateLabTestAsync(LabTest labTest)
+        public async Task<LabTest?> UpdateLabTestAsync(LabTest labTest)
         {
             if (labTest == null)
                 throw new ArgumentNullException(nameof(labTest));
@@ -113,7 +113,7 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<LabResult> GetLabResultByIdAsync(int id)
+        public async Task<LabResult?> GetLabResultByIdAsync(int id)
         {
             return await _context.LabResults
                 .Include(r => r.Patient)
@@ -137,7 +137,7 @@ namespace MedyxHMS.Services.Implementations
             return labResult;
         }
 
-        public async Task<LabResult> UpdateLabResultAsync(LabResult labResult)
+        public async Task<LabResult?> UpdateLabResultAsync(LabResult labResult)
         {
             if (labResult == null)
                 throw new ArgumentNullException(nameof(labResult));

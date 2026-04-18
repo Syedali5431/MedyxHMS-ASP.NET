@@ -300,7 +300,7 @@ namespace MedyxHMS.Services.Implementations
                     s.FirstName.Contains(searchTerm) ||
                     s.LastName.Contains(searchTerm) ||
                     s.EmployeeId.Contains(searchTerm) ||
-                    s.User.Email.Contains(searchTerm) ||
+                    (s.User != null && s.User.Email.Contains(searchTerm)) ||
                     s.Department.Contains(searchTerm) ||
                     s.Designation.Contains(searchTerm))
                 .OrderBy(s => s.LastName)
@@ -379,7 +379,7 @@ namespace MedyxHMS.Services.Implementations
             }
 
             // Handle profile image upload
-            string profileImagePath = null;
+            string? profileImagePath = null;
             if (profileImage != null && profileImage.Length > 0)
             {
                 profileImagePath = await _fileService.UploadFileAsync(profileImage, "profiles");

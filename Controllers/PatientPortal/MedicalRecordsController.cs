@@ -146,7 +146,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                         .Select(p => new PatientPortalPrescriptionDto
                         {
                             Id = p.Id,
-                            MedicineName = p.Medicine?.Name,
+                            MedicineName = p.Medicine?.Name ?? string.Empty,
                             Dosage = p.Dosage,
                             Frequency = p.Frequency,
                             Duration = p.Duration,
@@ -155,8 +155,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                             TotalPrice = p.TotalPrice,
                             Instructions = p.Instructions,
                             PrescribedDate = p.CreatedDate,
-                            PharmacyBillNumber = p.PharmacyBill?.BillNumber,
-                            BillStatus = p.PharmacyBill?.Status
+                            PharmacyBillNumber = p.PharmacyBill?.BillNumber ?? string.Empty,
+                            BillStatus = p.PharmacyBill?.Status ?? string.Empty
                         })
                         .ToList()
                 };
@@ -207,7 +207,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                         .Select(r => new PatientPortalTestResultDto
                         {
                             Id = r.Id.ToString(),
-                            TestName = r.LabTest?.TestName,
+                            TestName = r.LabTest?.TestName ?? string.Empty,
                             TestType = "Pathology",
                             TestDate = r.ResultDate ?? r.OrderDate,
                             Result = r.ResultValue,
@@ -266,7 +266,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                         .Select(r => new PatientPortalTestResultDto
                         {
                             Id = r.Id.ToString(),
-                            TestName = r.RadiologyTest?.TestName,
+                            TestName = r.RadiologyTest?.TestName ?? string.Empty,
                             TestType = "Radiology",
                             TestDate = r.ResultDate ?? r.OrderDate,
                             Result = r.Findings,
