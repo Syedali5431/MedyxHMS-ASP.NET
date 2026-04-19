@@ -10,34 +10,53 @@
                 <div class="card-body">
                     <h2 class="h4 mb-1">Medyx AI Assistant</h2>
                     <p class="text-muted mb-0">
-                        Use this assistant for application navigation, appointment guidance, billing guidance, and support help.
+                        Use this assistant for application navigation, appointment guidance, billing guidance, policy/helpdesk, and support contact details.
                         It cannot provide diagnosis or treatment advice.
                     </p>
                 </div>
             </div>
 
-            <form asp-action="Ask" method="post" class="card border-0 shadow-sm mb-3">
+            <form id="chatbotAskForm" asp-action="Ask" method="post" class="card border-0 shadow-sm mb-3" data-ask-url="@Url.Action("AskJson", "Chatbot")" data-feedback-url="@Url.Action("SubmitFeedback", "Chatbot")">
                 @Html.AntiForgeryToken()
-                <input type="hidden" asp-for="SessionId" />
+                <input type="hidden" asp-for="SessionId" id="chatSessionId" />
                 <div class="card-body">
                     <label asp-for="Prompt" class="form-label">Ask a question</label>
-                    <textarea asp-for="Prompt" class="form-control" rows="4" placeholder="Example: Where can I review pending bills?" required></textarea>
+                    <textarea asp-for="Prompt" id="chatPrompt" class="form-control" rows="4" placeholder="Example: Where can I review pending bills?" required></textarea>
+                    <div id="chatbotError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                    <div id="chatbotTyping" class="small text-muted mt-3 d-none">Assistant is preparing a grounded answer...</div>
                 </div>
-                <div class="card-footer bg-white d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary">Ask Assistant</button>
+                <div class="card-footer bg-white d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                    <button type="button" id="chatRetry" class="btn btn-outline-secondary btn-sm" disabled>Retry Last Request</button>
+                    <button type="submit" id="chatSubmit" class="btn btn-primary">Ask Assistant</button>
                 </div>
             </form>
 
             @if (!string.IsNullOrWhiteSpace(Model.LastAnswer))
             {
-                <div class="alert @(Model.EscalationSuggested ? "alert-warning" : "alert-info")">
-                    @Model.LastAnswer
+                <div class="alert @(Model.EscalationSuggested ? "alert-warning" : "alert-info")" id="lastAnswerContainer">
+                    <div id="lastAnswerText">@Model.LastAnswer</div>
+                    <div class="small mt-2" id="lastAnswerMeta">Confidence: @Model.ConfidenceScore.ToString("0.00")</div>
                 </div>
             }
+            else
+            {
+                <div class="alert alert-light d-none" id="lastAnswerContainer">
+                    <div id="lastAnswerText"></div>
+                    <div class="small mt-2" id="lastAnswerMeta"></div>
+                </div>
+            }
+
+            <div class="card border-0 shadow-sm mb-3 d-none" id="sourceCard">
+                <div class="card-body">
+                    <h6 class="mb-3">Grounding Sources</h6>
+                    <div id="sourceList" class="d-flex flex-column gap-2"></div>
+                </div>
+            </div>
 
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <h5 class="mb-3">Conversation</h5>
+                    <div id="chatHistory">
                     @if (Model.History.Count == 0)
                     {
                         <p class="text-muted mb-0">No messages yet in this session.</p>
@@ -50,11 +69,23 @@
                             <div class="mb-3 p-3 rounded @(isUser ? "bg-light" : "bg-primary-subtle")">
                                 <div class="small text-muted mb-1">@message.SenderType | @message.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
                                 <div>@message.Content</div>
+                                @if (!isUser)
+                                {
+                                    <div class="mt-2 d-flex gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-success chat-feedback" data-feedback="Helpful" data-message-id="@message.Id">Helpful</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger chat-feedback" data-feedback="NotHelpful" data-message-id="@message.Id">Not Helpful</button>
+                                    </div>
+                                }
                             </div>
                         }
                     }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/chatbot-ui.js" asp-append-version="true"></script>
+}

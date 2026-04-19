@@ -188,13 +188,19 @@ namespace MedyxHMS.Services.Interfaces
 
     public interface IChatbotPromptBuilder
     {
-        string BuildSystemPrompt(ClaimsPrincipal user);
+        string BuildSystemPrompt(ClaimsPrincipal user, ChatKnowledgeContext context);
+    }
+
+    public interface IChatbotKnowledgeService
+    {
+        Task<ChatKnowledgeContext> RetrieveContextAsync(ClaimsPrincipal user, string message);
     }
 
     public interface IChatbotService
     {
         Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null);
         Task<IReadOnlyList<ChatMessage>> GetSessionMessagesAsync(string sessionId, ClaimsPrincipal user, int take = 30);
+        Task<bool> SubmitFeedbackAsync(ClaimsPrincipal user, string sessionId, long? messageId, string feedbackType, string? comment = null);
     }
 
     public interface ISmtpHealthService

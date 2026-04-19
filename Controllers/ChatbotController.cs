@@ -49,10 +49,66 @@ namespace MedyxHMS.Controllers
                 Prompt = string.Empty,
                 LastAnswer = response.Answer,
                 EscalationSuggested = response.EscalationSuggested,
+                ConfidenceScore = response.ConfidenceScore,
+                Sources = response.Sources,
                 History = (await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30)).ToList()
             };
 
             return View("Index", resultModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AskJson([FromForm] ChatbotAskRequestViewModel vm)
+        {
+            if (!ModelState.IsValid || string.IsNullOrWhiteSpace(vm.Prompt))
+            {
+                return BadRequest(new { error = "Please enter a message for the assistant." });
+            }
+
+            var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId);
+            var history = await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30);
+
+            return Json(new
+            {
+                sessionId = response.SessionId,
+                answer = response.Answer,
+                escalationSuggested = response.EscalationSuggested,
+                confidenceScore = response.ConfidenceScore,
+                providerModel = response.ProviderModel,
+                sources = response.Sources.Select(s => new
+                {
+                    sourceType = s.SourceType,
+                    sourceName = s.SourceName,
+                    sourcePath = s.SourcePath,
+                    excerpt = s.Excerpt
+                }),
+                history = history.Select(m => new
+                {
+                    id = m.Id,
+                    senderType = m.SenderType,
+                    content = m.Content,
+                    createdAtUtc = m.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss")
+                })
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitFeedback([FromForm] ChatbotFeedbackRequestViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid feedback request." });
+            }
+
+            var ok = await _chatbotService.SubmitFeedbackAsync(User, vm.SessionId, vm.MessageId, vm.FeedbackType, vm.Comment);
+            if (!ok)
+            {
+                return Forbid();
+            }
+
+            return Json(new { success = true });
         }
     }
 }

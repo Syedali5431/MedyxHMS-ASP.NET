@@ -25,7 +25,7 @@ This file is a single in-folder index of what has been completed so far in the A
 
 Latest validation:
 - `dotnet test tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj --verbosity minimal`
-- Result: total 28, failed 0, succeeded 28, skipped 0.
+- Result: total 31, failed 0, succeeded 31, skipped 0.
 
 Latest code-quality baseline:
 - `dotnet build MedyxHMS.csproj --no-restore -t:Rebuild --verbosity minimal`
@@ -121,6 +121,28 @@ Latest baseline execution (LocalDB):
   - role-aware prompt construction and session/message persistence
   - initial chatbot page routing for authenticated usage
   - SMTP config/connectivity health checks exposed in CMS notification settings
+
+### 8) Phase 7.2 core chat experience and knowledge grounding
+- Added:
+  - `docs/PH12.md`
+  - `Services/Implementations/ChatbotKnowledgeService.cs`
+  - `wwwroot/js/chatbot-ui.js`
+  - `tests/MedyxHMS.Tests/Services/ChatbotKnowledgeServiceTests.cs`
+- Updated:
+  - `Services/Interfaces/IServices.cs`
+  - `Models/Chatbot.cs`
+  - `Services/Implementations/OpenAiChatbotService.cs`
+  - `Services/Implementations/ChatbotPromptBuilder.cs`
+  - `Controllers/ChatbotController.cs`
+  - `ViewModels/ChatbotViewModels.cs`
+  - `Views/Chatbot/Index.cshtml`
+  - `Program.cs`
+- Coverage:
+  - retrieval-grounded chatbot context from approved CMS/support/workflow sources
+  - source attribution and confidence scoring in chatbot responses
+  - asynchronous chat UX with typing/retry/error states
+  - assistant feedback capture persisted per owned chat session
+  - patient-context scoping constrained to the authenticated user only
 
 ## Remaining gap for final migration sign-off
 - Run `scripts/data-migration-validation.sql` against the real migrated SQL Server dataset (not only LocalDB baseline) and compare counts to source snapshot.

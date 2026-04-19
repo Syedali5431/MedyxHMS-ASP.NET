@@ -94,8 +94,30 @@ namespace MedyxHMS.Models
 
         public bool EscalationSuggested { get; set; }
 
+        public decimal ConfidenceScore { get; set; }
+
         public string Reason { get; set; } = string.Empty;
 
         public string ProviderModel { get; set; } = string.Empty;
+
+        public List<ChatKnowledgeSource> Sources { get; set; } = new List<ChatKnowledgeSource>();
+    }
+
+    public class ChatKnowledgeContext
+    {
+        public string SystemContext { get; set; } = string.Empty;
+
+        public List<ChatKnowledgeSource> Sources { get; set; } = new List<ChatKnowledgeSource>();
+    }
+
+    public class ChatKnowledgeSource
+    {
+        public string SourceType { get; set; } = string.Empty;
+
+        public string SourceName { get; set; } = string.Empty;
+
+        public string SourcePath { get; set; } = string.Empty;
+
+        public string Excerpt { get; set; } = string.Empty;
     }
 }

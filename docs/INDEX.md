@@ -104,6 +104,16 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Phase 7.1 implemented and validated
 - Read this for the completed implementation snapshot of Step 7.1 before Step 7.2 work.
 
+### PH12 - Phase 7.2 Core Chat Experience and Knowledge Grounding
+- Document: [PH12.md](PH12.md)
+- Focus:
+  - grounded chatbot retrieval from approved CMS/support/workflow sources
+  - source attribution and confidence-scored response shaping
+  - asynchronous chat UX (typing/retry/error handling) and feedback capture
+  - role-safe patient-context boundaries and ownership checks
+- **Status:** Phase 7.2 implemented and validated
+- Read this for the complete implementation snapshot of Step 7.2 before Step 7.3 operational controls.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -116,6 +126,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 9. [PH9.md](PH9.md)
 10. [PH10.md](PH10.md)
 11. [PH11.md](PH11.md)
+12. [PH12.md](PH12.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -127,6 +138,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Integration, go-live readiness, and deployment/support planning: [PH9.md](PH9.md)
 - Licensing domain, renewal workflow, and expiry enforcement: [PH10.md](PH10.md)
 - Chatbot foundation, moderation baseline, and SMTP health checks: [PH11.md](PH11.md)
+- Chatbot grounded UX, source attribution, and feedback workflow: [PH12.md](PH12.md)
 
 ## Planned Design Docs
 

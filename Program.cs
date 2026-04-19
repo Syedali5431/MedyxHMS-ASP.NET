@@ -75,6 +75,7 @@ builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.AddScoped<IChatbotModerationService, ChatbotModerationService>();
 builder.Services.AddScoped<IChatbotPromptBuilder, ChatbotPromptBuilder>();
+builder.Services.AddScoped<IChatbotKnowledgeService, ChatbotKnowledgeService>();
 builder.Services.AddScoped<IChatbotService, OpenAiChatbotService>();
 builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
 builder.Services.AddHostedService<LicenseReminderHostedService>();
