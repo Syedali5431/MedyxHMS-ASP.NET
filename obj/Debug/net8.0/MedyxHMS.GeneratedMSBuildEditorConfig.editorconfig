@@ -112,6 +112,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2VydGlmaWNhdGVcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[E:/HMS/MedyxHMS-ASPNET/Views/ChatbotAdmin/Analytics.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdGJvdEFkbWluXEFuYWx5dGljcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/ChatbotAdmin/Escalations.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdGJvdEFkbWluXEVzY2FsYXRpb25zLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/ChatbotAdmin/Settings.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdGJvdEFkbWluXFNldHRpbmdzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [E:/HMS/MedyxHMS-ASPNET/Views/Chatbot/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQ2hhdGJvdFxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
