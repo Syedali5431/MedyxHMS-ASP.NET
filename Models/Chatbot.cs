@@ -23,9 +23,18 @@ namespace MedyxHMS.Models
         [MaxLength(20)]
         public string Channel { get; set; } = "Web";
 
+        public bool IsEscalated { get; set; }
+
+        public bool IsUnresolved { get; set; }
+
+        [MaxLength(12)]
+        public string PreferredLanguage { get; set; } = "en";
+
         public ICollection<ChatMessage> Messages { get; set; } = new List<ChatMessage>();
 
         public ICollection<ChatFeedback> FeedbackItems { get; set; } = new List<ChatFeedback>();
+
+        public ICollection<ChatEscalation> Escalations { get; set; } = new List<ChatEscalation>();
     }
 
     public class ChatMessage
@@ -48,7 +57,67 @@ namespace MedyxHMS.Models
 
         public int TokenCount { get; set; }
 
+        [MaxLength(30)]
+        public string Category { get; set; } = "General";
+
         public ChatSession? Session { get; set; }
+    }
+
+    public class ChatEscalation
+    {
+        public long Id { get; set; }
+
+        [Required, MaxLength(64)]
+        public string SessionId { get; set; } = string.Empty;
+
+        public long? MessageId { get; set; }
+
+        [MaxLength(450)]
+        public string? UserId { get; set; }
+
+        [Required, MaxLength(30)]
+        public string EscalationType { get; set; } = "Support";
+
+        [Required, MaxLength(1200)]
+        public string Reason { get; set; } = string.Empty;
+
+        [MaxLength(30)]
+        public string Status { get; set; } = "Pending";
+
+        [MaxLength(200)]
+        public string? TargetContact { get; set; }
+
+        [MaxLength(450)]
+        public string? ResolvedByUserId { get; set; }
+
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
+
+        public DateTime? ResolvedAtUtc { get; set; }
+
+        public ChatSession? Session { get; set; }
+
+        public ChatMessage? Message { get; set; }
+    }
+
+    public class ChatbotEventLog
+    {
+        public long Id { get; set; }
+
+        [MaxLength(64)]
+        public string? SessionId { get; set; }
+
+        public long? MessageId { get; set; }
+
+        [Required, MaxLength(50)]
+        public string EventType { get; set; } = string.Empty;
+
+        [Required, MaxLength(20)]
+        public string Severity { get; set; } = "Info";
+
+        [Required, MaxLength(2000)]
+        public string Details { get; set; } = string.Empty;
+
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 
     public class ChatFeedback
@@ -100,12 +169,52 @@ namespace MedyxHMS.Models
 
         public string ProviderModel { get; set; } = string.Empty;
 
+        public string DetectedCategory { get; set; } = "General";
+
+        public string DetectedLanguage { get; set; } = "en";
+
+        public long? EscalationId { get; set; }
+
         public List<ChatKnowledgeSource> Sources { get; set; } = new List<ChatKnowledgeSource>();
+    }
+
+    public class ChatbotAdminSettings
+    {
+        public bool Enabled { get; set; }
+        public bool EnableEscalation { get; set; }
+        public bool EnableAppointmentGuidance { get; set; }
+        public bool EnableBillingGuidance { get; set; }
+        public bool EnableMultilingual { get; set; }
+        public bool EnabledForPatients { get; set; }
+        public bool EnabledForStaff { get; set; }
+        public bool EnabledForAdmins { get; set; }
+        public string Model { get; set; } = "gpt-4o-mini";
+        public decimal Temperature { get; set; } = 0.2m;
+        public int MaxTokens { get; set; } = 350;
+        public decimal UnresolvedThreshold { get; set; } = 0.45m;
+        public int HourlyUsageLimit { get; set; } = 100;
+        public string SupportedLanguagesCsv { get; set; } = "en";
+        public string DefaultLanguage { get; set; } = "en";
+    }
+
+    public class ChatbotAnalyticsSnapshot
+    {
+        public int TotalSessions { get; set; }
+        public int TotalMessages { get; set; }
+        public int TotalEscalations { get; set; }
+        public int UnresolvedSessions { get; set; }
+        public decimal EscalationRate { get; set; }
+        public decimal UnresolvedRate { get; set; }
+        public Dictionary<string, int> CategoryCounts { get; set; } = new Dictionary<string, int>();
     }
 
     public class ChatKnowledgeContext
     {
         public string SystemContext { get; set; } = string.Empty;
+
+        public string DetectedCategory { get; set; } = "General";
+
+        public string LanguageCode { get; set; } = "en";
 
         public List<ChatKnowledgeSource> Sources { get; set; } = new List<ChatKnowledgeSource>();
     }

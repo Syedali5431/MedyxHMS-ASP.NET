@@ -16,10 +16,19 @@
                 </div>
             </div>
 
-            <form id="chatbotAskForm" asp-action="Ask" method="post" class="card border-0 shadow-sm mb-3" data-ask-url="@Url.Action("AskJson", "Chatbot")" data-feedback-url="@Url.Action("SubmitFeedback", "Chatbot")">
+            <form id="chatbotAskForm" asp-action="Ask" method="post" class="card border-0 shadow-sm mb-3" data-ask-url="@Url.Action("AskJson", "Chatbot")" data-feedback-url="@Url.Action("SubmitFeedback", "Chatbot")" data-escalate-url="@Url.Action("Escalate", "Chatbot")" data-unresolved-url="@Url.Action("MarkUnresolved", "Chatbot")">
                 @Html.AntiForgeryToken()
                 <input type="hidden" asp-for="SessionId" id="chatSessionId" />
                 <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="chatLanguage">Response language</label>
+                        <select id="chatLanguage" class="form-select">
+                            <option value="en" selected="@(Model.LanguageCode == "en")">English</option>
+                            <option value="es" selected="@(Model.LanguageCode == "es")">Spanish</option>
+                            <option value="fr" selected="@(Model.LanguageCode == "fr")">French</option>
+                            <option value="ar" selected="@(Model.LanguageCode == "ar")">Arabic</option>
+                        </select>
+                    </div>
                     <label asp-for="Prompt" class="form-label">Ask a question</label>
                     <textarea asp-for="Prompt" id="chatPrompt" class="form-control" rows="4" placeholder="Example: Where can I review pending bills?" required></textarea>
                     <div id="chatbotError" class="alert alert-danger mt-3 d-none" role="alert"></div>
@@ -27,15 +36,26 @@
                 </div>
                 <div class="card-footer bg-white d-flex justify-content-between align-items-center gap-2 flex-wrap">
                     <button type="button" id="chatRetry" class="btn btn-outline-secondary btn-sm" disabled>Retry Last Request</button>
+                    <button type="button" id="chatMarkUnresolved" class="btn btn-outline-warning btn-sm" disabled>Mark Unresolved</button>
                     <button type="submit" id="chatSubmit" class="btn btn-primary">Ask Assistant</button>
                 </div>
             </form>
+
+            <div class="card border-0 shadow-sm mb-3 d-none" id="escalationCard">
+                <div class="card-body d-flex justify-content-between align-items-center gap-3 flex-wrap">
+                    <div>
+                        <h6 class="mb-1">Need direct support handoff?</h6>
+                        <p class="small text-muted mb-0">Use escalation when the assistant confidence is low or your issue remains unresolved.</p>
+                    </div>
+                    <button type="button" class="btn btn-warning" id="chatEscalate">Escalate to Support</button>
+                </div>
+            </div>
 
             @if (!string.IsNullOrWhiteSpace(Model.LastAnswer))
             {
                 <div class="alert @(Model.EscalationSuggested ? "alert-warning" : "alert-info")" id="lastAnswerContainer">
                     <div id="lastAnswerText">@Model.LastAnswer</div>
-                    <div class="small mt-2" id="lastAnswerMeta">Confidence: @Model.ConfidenceScore.ToString("0.00")</div>
+                    <div class="small mt-2" id="lastAnswerMeta">Confidence: @Model.ConfidenceScore.ToString("0.00") | Category: @Model.DetectedCategory</div>
                 </div>
             }
             else

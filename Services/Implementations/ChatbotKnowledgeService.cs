@@ -18,11 +18,14 @@ namespace MedyxHMS.Services.Implementations
             _settingService = settingService;
         }
 
-        public async Task<ChatKnowledgeContext> RetrieveContextAsync(ClaimsPrincipal user, string message)
+        public async Task<ChatKnowledgeContext> RetrieveContextAsync(ClaimsPrincipal user, string message, string? languageCode = null)
         {
             var tokens = Tokenize(message);
             var context = new ChatKnowledgeContext();
             var builder = new StringBuilder();
+            var normalizedLanguage = NormalizeLanguage(languageCode);
+            context.LanguageCode = normalizedLanguage;
+            context.DetectedCategory = DetectCategory(message);
 
             var role = ResolveRole(user);
             builder.AppendLine($"Role Context: {role}");
@@ -31,12 +34,13 @@ namespace MedyxHMS.Services.Implementations
             builder.AppendLine($"Hospital: {hospital.Name}");
 
             var supportEmail = await _settingService.GetSettingValueAsync("LicenseSuperAdminContact") ?? "superadmin@hospital.com";
+            var supportContact = await _settingService.GetSettingValueAsync("ChatbotSupportContact") ?? supportEmail;
             context.Sources.Add(new ChatKnowledgeSource
             {
                 SourceType = "Contact",
                 SourceName = "Support Contact",
                 SourcePath = "Settings:LicenseSuperAdminContact",
-                Excerpt = supportEmail
+                Excerpt = supportContact
             });
 
             var publishedPages = await _context.CmsPages.AsNoTracking()
@@ -86,23 +90,29 @@ namespace MedyxHMS.Services.Implementations
             var lower = message.ToLowerInvariant();
             if (lower.Contains("appointment") || lower.Contains("book"))
             {
+                var appointmentGuidance = await GetLocalizedSettingAsync("ChatbotAppointmentGuidance", normalizedLanguage,
+                    "Use the appointment module to create, reschedule, or cancel bookings.");
+
                 context.Sources.Add(new ChatKnowledgeSource
                 {
                     SourceType = "Workflow",
                     SourceName = "Appointment Guidance",
                     SourcePath = role == "Patient" ? "/PatientPortal/Appointment" : "/Appointment",
-                    Excerpt = "Use the appointment module to create, reschedule, or cancel bookings."
+                    Excerpt = appointmentGuidance
                 });
             }
 
             if (lower.Contains("bill") || lower.Contains("payment") || lower.Contains("invoice"))
             {
+                var billingGuidance = await GetLocalizedSettingAsync("ChatbotBillingGuidance", normalizedLanguage,
+                    "Use the billing module to review invoices, payment status, and outstanding balances.");
+
                 context.Sources.Add(new ChatKnowledgeSource
                 {
                     SourceType = "Workflow",
                     SourceName = "Billing Guidance",
                     SourcePath = role == "Patient" ? "/PatientPortal/Billing" : "/Billing",
-                    Excerpt = "Use the billing module to review invoices, payment status, and outstanding balances."
+                    Excerpt = billingGuidance
                 });
             }
 
@@ -174,6 +184,18 @@ namespace MedyxHMS.Services.Implementations
             return context;
         }
 
+        private async Task<string> GetLocalizedSettingAsync(string baseKey, string languageCode, string fallback)
+        {
+            var langSpecific = await _settingService.GetSettingValueAsync($"{baseKey}.{languageCode}");
+            if (!string.IsNullOrWhiteSpace(langSpecific))
+            {
+                return langSpecific;
+            }
+
+            var defaultValue = await _settingService.GetSettingValueAsync($"{baseKey}.en");
+            return string.IsNullOrWhiteSpace(defaultValue) ? fallback : defaultValue;
+        }
+
         private static HashSet<string> Tokenize(string message)
         {
             var chars = message.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : ' ').ToArray();
@@ -194,6 +216,26 @@ namespace MedyxHMS.Services.Implementations
             if (user.IsInRole("Doctor")) return "Doctor";
             if (user.IsInRole("Nurse")) return "Nurse";
             return "Staff";
+        }
+
+        private static string DetectCategory(string message)
+        {
+            var lower = message.ToLowerInvariant();
+            if (lower.Contains("appointment") || lower.Contains("book") || lower.Contains("schedule")) return "Appointment";
+            if (lower.Contains("bill") || lower.Contains("invoice") || lower.Contains("payment")) return "Billing";
+            if (lower.Contains("help") || lower.Contains("support") || lower.Contains("contact")) return "Support";
+            return "Navigation";
+        }
+
+        private static string NormalizeLanguage(string? languageCode)
+        {
+            if (string.IsNullOrWhiteSpace(languageCode))
+            {
+                return "en";
+            }
+
+            var normalized = languageCode.Trim().ToLowerInvariant();
+            return normalized.Length <= 5 ? normalized : "en";
         }
 
         private static bool MatchesAnyToken(IEnumerable<string> tokens, params string?[] values)

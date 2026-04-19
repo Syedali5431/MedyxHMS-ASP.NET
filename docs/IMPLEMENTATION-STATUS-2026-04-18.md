@@ -25,7 +25,7 @@ This file is a single in-folder index of what has been completed so far in the A
 
 Latest validation:
 - `dotnet test tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj --verbosity minimal`
-- Result: total 31, failed 0, succeeded 31, skipped 0.
+- Result: total 34, failed 0, succeeded 34, skipped 0.
 
 Latest code-quality baseline:
 - `dotnet build MedyxHMS.csproj --no-restore -t:Rebuild --verbosity minimal`
@@ -143,6 +143,33 @@ Latest baseline execution (LocalDB):
   - asynchronous chat UX with typing/retry/error states
   - assistant feedback capture persisted per owned chat session
   - patient-context scoping constrained to the authenticated user only
+
+### 9) Phase 7.3 operational features and integrations
+- Added:
+  - `docs/PH13.md`
+  - `Controllers/ChatbotAdminController.cs`
+  - `Views/ChatbotAdmin/Settings.cshtml`
+  - `Views/ChatbotAdmin/Analytics.cshtml`
+  - `Views/ChatbotAdmin/Escalations.cshtml`
+  - `tests/MedyxHMS.Tests/Services/ChatbotOperationsStep73Tests.cs`
+- Updated:
+  - `Models/Chatbot.cs`
+  - `Data/ApplicationDbContext.cs`
+  - `Services/Interfaces/IServices.cs`
+  - `Services/Implementations/OpenAiChatbotService.cs`
+  - `Services/Implementations/ChatbotKnowledgeService.cs`
+  - `Services/Implementations/DatabaseInitializer.cs`
+  - `Controllers/ChatbotController.cs`
+  - `ViewModels/ChatbotViewModels.cs`
+  - `Views/Chatbot/Index.cshtml`
+  - `Views/Shared/_Layout.cshtml`
+  - `wwwroot/js/chatbot-ui.js`
+- Coverage:
+  - guided appointment/billing operational response strategy
+  - escalation handoff flow and unresolved conversation marking
+  - admin chatbot controls for role access and runtime model/limits
+  - event logging and analytics snapshots for categories/escalation/unresolved rates
+  - multilingual response strategy via language selection and configurable defaults
 
 ## Remaining gap for final migration sign-off
 - Run `scripts/data-migration-validation.sql` against the real migrated SQL Server dataset (not only LocalDB baseline) and compare counts to source snapshot.

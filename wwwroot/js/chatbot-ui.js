@@ -16,9 +16,14 @@
     const answerMeta = document.getElementById("lastAnswerMeta");
     const sourceCard = document.getElementById("sourceCard");
     const sourceList = document.getElementById("sourceList");
+    const language = document.getElementById("chatLanguage");
+    const escalateBtn = document.getElementById("chatEscalate");
+    const unresolvedBtn = document.getElementById("chatMarkUnresolved");
+    const escalationCard = document.getElementById("escalationCard");
 
     const antiForgery = form.querySelector("input[name='__RequestVerificationToken']")?.value || "";
     let lastPrompt = "";
+    let lastEscalationId = null;
 
     async function postForm(url, payload) {
         const body = new URLSearchParams(payload);
@@ -47,6 +52,8 @@
     function setBusy(isBusy) {
         submitBtn.disabled = isBusy;
         retryBtn.disabled = isBusy || !lastPrompt;
+        unresolvedBtn.disabled = isBusy || !sessionIdInput.value;
+        escalateBtn.disabled = isBusy || !sessionIdInput.value;
         typing.classList.toggle("d-none", !isBusy);
     }
 
@@ -85,12 +92,13 @@
         sourceCard.classList.remove("d-none");
     }
 
-    function renderAnswer(answer, confidence, escalation) {
+    function renderAnswer(answer, confidence, escalation, category, languageCode) {
         const alertClass = escalation ? "alert alert-warning" : "alert alert-info";
         answerContainer.className = alertClass;
         answerContainer.classList.remove("d-none");
         answerText.textContent = answer || "";
-        answerMeta.textContent = `Confidence: ${Number(confidence || 0).toFixed(2)}`;
+        answerMeta.textContent = `Confidence: ${Number(confidence || 0).toFixed(2)} | Category: ${category || "General"} | Language: ${languageCode || "en"}`;
+        escalationCard.classList.toggle("d-none", !escalation);
     }
 
     function renderHistory(items) {
@@ -140,15 +148,19 @@
             const data = await postForm(form.dataset.askUrl, {
                 __RequestVerificationToken: antiForgery,
                 sessionId: sessionIdInput.value || "",
+                languageCode: language.value || "en",
                 prompt: prompt
             });
 
             sessionIdInput.value = data.sessionId || "";
+            lastEscalationId = data.escalationId || null;
             lastPrompt = prompt;
             retryBtn.disabled = false;
+            unresolvedBtn.disabled = false;
+            escalateBtn.disabled = false;
             promptBox.value = "";
 
-            renderAnswer(data.answer, data.confidenceScore, data.escalationSuggested);
+            renderAnswer(data.answer, data.confidenceScore, data.escalationSuggested, data.detectedCategory, data.detectedLanguage);
             renderSources(data.sources);
             renderHistory(data.history);
         } catch (error) {
@@ -200,6 +212,48 @@
             target.setAttribute("disabled", "disabled");
         } catch {
             showError("Unable to save feedback right now.");
+        }
+    });
+
+    unresolvedBtn.addEventListener("click", async function () {
+        if (!sessionIdInput.value) {
+            return;
+        }
+
+        try {
+            await postForm(form.dataset.unresolvedUrl, {
+                __RequestVerificationToken: antiForgery,
+                sessionId: sessionIdInput.value,
+                reason: "User marked conversation unresolved"
+            });
+
+            unresolvedBtn.textContent = "Marked";
+            unresolvedBtn.setAttribute("disabled", "disabled");
+            escalationCard.classList.remove("d-none");
+        } catch {
+            showError("Unable to mark session unresolved right now.");
+        }
+    });
+
+    escalateBtn.addEventListener("click", async function () {
+        if (!sessionIdInput.value) {
+            return;
+        }
+
+        try {
+            const data = await postForm(form.dataset.escalateUrl, {
+                __RequestVerificationToken: antiForgery,
+                sessionId: sessionIdInput.value,
+                reason: "User requested support handoff",
+                escalationType: "Support"
+            });
+
+            lastEscalationId = data.escalationId || lastEscalationId;
+            escalateBtn.textContent = "Escalated";
+            escalateBtn.setAttribute("disabled", "disabled");
+            answerMeta.textContent = `${answerMeta.textContent} | Escalation #${lastEscalationId}`;
+        } catch {
+            showError("Unable to create escalation right now.");
         }
     });
 })();

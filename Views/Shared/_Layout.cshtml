@@ -59,6 +59,16 @@
                                     <li><a class="dropdown-item" asp-area="" asp-controller="Site" asp-action="Index" target="_blank">View Public Site</a></li>
                                 </ul>
                             </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link text-dark dropdown-toggle" href="#" id="chatbotAdminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Chatbot Admin
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="chatbotAdminDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="ChatbotAdmin" asp-action="Settings">Settings</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="ChatbotAdmin" asp-action="Analytics">Analytics</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="ChatbotAdmin" asp-action="Escalations">Escalations</a></li>
+                                </ul>
+                            </li>
                         }
                         @if (User.IsInRole("SuperAdmin"))
                         {

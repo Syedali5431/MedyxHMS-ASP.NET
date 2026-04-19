@@ -114,6 +114,16 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Phase 7.2 implemented and validated
 - Read this for the complete implementation snapshot of Step 7.2 before Step 7.3 operational controls.
 
+### PH13 - Phase 7.3 Operational Features and Integrations
+- Document: [PH13.md](PH13.md)
+- Focus:
+  - chatbot operational guidance for appointment and billing flows
+  - escalation handoff workflow and unresolved conversation handling
+  - multilingual strategy controls and language-aware response path
+  - admin settings, escalation queue, event logging, and analytics snapshots
+- **Status:** Phase 7.3 implemented and validated
+- Read this for the completion snapshot of Step 7.3 before Step 7.4 hardening.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -127,6 +137,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 10. [PH10.md](PH10.md)
 11. [PH11.md](PH11.md)
 12. [PH12.md](PH12.md)
+13. [PH13.md](PH13.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -139,6 +150,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Licensing domain, renewal workflow, and expiry enforcement: [PH10.md](PH10.md)
 - Chatbot foundation, moderation baseline, and SMTP health checks: [PH11.md](PH11.md)
 - Chatbot grounded UX, source attribution, and feedback workflow: [PH12.md](PH12.md)
+- Chatbot operational controls, escalation, and analytics: [PH13.md](PH13.md)
 
 ## Planned Design Docs
 

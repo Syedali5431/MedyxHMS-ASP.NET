@@ -1,6 +1,6 @@
 # OpenAI Chatbot Technical Design
 
-**Status:** Phase 7.2 Complete | **Target Phase:** Phase 7 | **Date:** April 2026
+**Status:** Phase 7.3 Complete | **Target Phase:** Phase 7 | **Date:** April 2026
 
 ## Objective
 
@@ -8,9 +8,9 @@ Add an OpenAI-powered chatbot to the application using secure backend-only integ
 
 The chatbot should improve navigation, support, and operational help without acting as an unsafe clinical decision engine.
 
-## Implementation Snapshot (Phase 7.2)
+## Implementation Snapshot (Phase 7.3)
 
-Implemented foundation and core experience:
+Implemented foundation, core experience, and operational controls:
 
 - backend-only `IChatbotService` integration path (`OpenAiChatbotService`)
 - role-aware prompt builder (`IChatbotPromptBuilder`)
@@ -20,6 +20,9 @@ Implemented foundation and core experience:
 - chatbot controller with async ask and feedback endpoints
 - chat page with typing/retry/error handling and feedback actions
 - source attribution and confidence scoring in responses
+- escalation handoff workflow and unresolved session tracking
+- admin chatbot settings, analytics, and escalation management UI
+- language-selection strategy and configurable multilingual support flags
 - safe fallback responses when provider/config is unavailable
 
 Operational companion work completed in the same delivery:

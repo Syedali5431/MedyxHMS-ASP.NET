@@ -70,6 +70,8 @@ namespace MedyxHMS.Data
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatFeedback> ChatFeedback { get; set; }
+        public DbSet<ChatEscalation> ChatEscalations { get; set; }
+        public DbSet<ChatbotEventLog> ChatbotEventLogs { get; set; }
 
         // Settings & Configuration
         public DbSet<Setting> Settings { get; set; }
@@ -302,6 +304,24 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<ChatFeedback>()
                 .HasIndex(f => new { f.SessionId, f.CreatedAtUtc });
+
+            modelBuilder.Entity<ChatEscalation>()
+                .HasOne(e => e.Session)
+                .WithMany(s => s.Escalations)
+                .HasForeignKey(e => e.SessionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ChatEscalation>()
+                .HasOne(e => e.Message)
+                .WithMany()
+                .HasForeignKey(e => e.MessageId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<ChatEscalation>()
+                .HasIndex(e => new { e.Status, e.CreatedAtUtc });
+
+            modelBuilder.Entity<ChatbotEventLog>()
+                .HasIndex(e => new { e.SessionId, e.CreatedAtUtc });
 
             // Billing relationships
             modelBuilder.Entity<Bill>()

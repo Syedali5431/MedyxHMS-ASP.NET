@@ -1,0 +1,82 @@
+@model MedyxHMS.ViewModels.ChatbotEscalationsViewModel
+@{
+    ViewData["Title"] = "Chatbot Escalations";
+}
+
+<div class="container py-4">
+    <h2 class="h4 mb-3">Chatbot Escalations</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <label class="form-label" for="status">Status</label>
+            <select id="status" name="status" class="form-select">
+                <option value="Pending" selected="@(Model.Status == "Pending")">Pending</option>
+                <option value="Resolved" selected="@(Model.Status == "Resolved")">Resolved</option>
+                <option value="All" selected="@(Model.Status == "All")">All</option>
+            </select>
+        </div>
+        <div class="col-md-2 align-self-end">
+            <button class="btn btn-outline-primary" type="submit">Filter</button>
+        </div>
+    </form>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-body">
+            @if (Model.Items.Count == 0)
+            {
+                <p class="text-muted mb-0">No escalations found.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Id</th>
+                                <th>Session</th>
+                                <th>Type</th>
+                                <th>Status</th>
+                                <th>Reason</th>
+                                <th>Created</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td>@item.Id</td>
+                                <td>@item.SessionId</td>
+                                <td>@item.EscalationType</td>
+                                <td>@item.Status</td>
+                                <td>@item.Reason</td>
+                                <td>@item.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                                <td>
+                                    @if (item.Status == "Pending")
+                                    {
+                                        <form asp-action="ResolveEscalation" method="post" class="d-flex gap-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@item.Id" />
+                                            <input type="text" name="targetContact" class="form-control form-control-sm" value="@(item.TargetContact ?? "support@hospital.com")" />
+                                            <button type="submit" class="btn btn-sm btn-success">Resolve</button>
+                                        </form>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

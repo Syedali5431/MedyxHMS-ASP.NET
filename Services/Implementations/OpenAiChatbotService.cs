@@ -37,18 +37,35 @@ namespace MedyxHMS.Services.Implementations
             _logger = logger;
         }
 
-        public async Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null)
+        public async Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null, string? languageCode = null)
         {
+            if (!await IsChatbotEnabledForUserAsync(user))
+            {
+                return new ChatbotAskResponse
+                {
+                    SessionId = sessionId ?? string.Empty,
+                    Answer = "The chatbot is currently disabled for your role. Please contact support.",
+                    IsBlocked = true,
+                    Reason = "ChatbotDisabled",
+                    ProviderModel = "ConfigurationGuard"
+                };
+            }
+
             var moderation = _moderationService.Evaluate(message);
             var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var role = ResolveRole(user);
             var session = await GetOrCreateSessionAsync(sessionId, userId, role);
+            session.PreferredLanguage = NormalizeLanguage(languageCode);
+            await _context.SaveChangesAsync();
+            var category = DetectCategory(message);
 
-            await AddMessageAsync(session.Id, "User", message, moderation.IsBlocked ? "Blocked" : "Allowed", 0);
+            await AddMessageAsync(session.Id, "User", message, moderation.IsBlocked ? "Blocked" : "Allowed", 0, category);
+            await AddEventAsync(session.Id, null, "QuestionCategorized", "Info", $"Category={category}");
 
             if (moderation.IsBlocked)
             {
-                await AddMessageAsync(session.Id, "Assistant", moderation.SafeResponse, "SafeFallback", 0);
+                await AddMessageAsync(session.Id, "Assistant", moderation.SafeResponse, "SafeFallback", 0, "Safety");
+                await AddEventAsync(session.Id, null, "ModerationBlocked", "Warning", moderation.Reason);
                 return new ChatbotAskResponse
                 {
                     SessionId = session.Id,
@@ -57,25 +74,46 @@ namespace MedyxHMS.Services.Implementations
                     EscalationSuggested = moderation.NeedsEmergencyEscalation,
                     ConfidenceScore = 0.10m,
                     Reason = moderation.Reason,
-                    ProviderModel = "SafetyGuardrails"
+                    ProviderModel = "SafetyGuardrails",
+                    DetectedCategory = category,
+                    DetectedLanguage = session.PreferredLanguage
                 };
             }
 
-            var knowledgeContext = await _knowledgeService.RetrieveContextAsync(user, message);
+            var knowledgeContext = await _knowledgeService.RetrieveContextAsync(user, message, session.PreferredLanguage);
             var answer = await AskProviderAsync(user, message, knowledgeContext);
             answer = EnsureSourceLine(answer, knowledgeContext.Sources);
             var confidence = ComputeConfidence(answer, knowledgeContext.Sources.Count);
+            var threshold = await GetDecimalSettingAsync("ChatbotUnresolvedThreshold", 0.45m);
 
-            await AddMessageAsync(session.Id, "Assistant", answer, "Allowed", EstimateTokenCount(answer));
+            long? escalationId = null;
+            var escalationEnabled = await GetBoolSettingAsync("ChatbotEnableEscalation", true);
+            if (escalationEnabled && confidence <= threshold)
+            {
+                var escalation = await EscalateAsync(user, session.Id, null, "Low confidence response auto-escalation.");
+                escalationId = escalation?.Id;
+            }
+
+            await AddMessageAsync(session.Id, "Assistant", answer, "Allowed", EstimateTokenCount(answer), knowledgeContext.DetectedCategory);
+
+            if (confidence <= threshold)
+            {
+                session.IsUnresolved = true;
+                await _context.SaveChangesAsync();
+                await AddEventAsync(session.Id, null, "UnresolvedConversation", "Warning", $"Confidence={confidence:0.00}");
+            }
 
             return new ChatbotAskResponse
             {
                 SessionId = session.Id,
                 Answer = answer,
-                EscalationSuggested = confidence <= 0.45m,
+                EscalationSuggested = confidence <= threshold,
                 ConfidenceScore = confidence,
                 Sources = knowledgeContext.Sources,
-                ProviderModel = _configuration["OpenAI:Model"] ?? "FallbackTemplate"
+                ProviderModel = _configuration["OpenAI:Model"] ?? "FallbackTemplate",
+                DetectedCategory = knowledgeContext.DetectedCategory,
+                DetectedLanguage = knowledgeContext.LanguageCode,
+                EscalationId = escalationId
             };
         }
 
@@ -125,7 +163,235 @@ namespace MedyxHMS.Services.Implementations
                 CreatedAtUtc = DateTime.UtcNow
             });
 
+            if (string.Equals(normalizedType, "NotHelpful", StringComparison.OrdinalIgnoreCase))
+            {
+                var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId);
+                if (session != null)
+                {
+                    session.IsUnresolved = true;
+                }
+
+                await AddEventAsync(sessionId, messageId, "NegativeFeedback", "Warning", "User marked response as not helpful.");
+            }
+
             await _context.SaveChangesAsync();
+            return true;
+        }
+
+        public async Task<bool> IsChatbotEnabledForUserAsync(ClaimsPrincipal user)
+        {
+            var global = await GetBoolSettingAsync("ChatbotEnabled", true);
+            if (!global) return false;
+
+            if (user.IsInRole("Patient")) return await GetBoolSettingAsync("ChatbotEnabledForPatients", true);
+            if (user.IsInRole("Admin") || user.IsInRole("SuperAdmin")) return await GetBoolSettingAsync("ChatbotEnabledForAdmins", true);
+            return await GetBoolSettingAsync("ChatbotEnabledForStaff", true);
+        }
+
+        public async Task<ChatEscalation?> EscalateAsync(ClaimsPrincipal user, string sessionId, long? messageId, string reason, string escalationType = "Support")
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(sessionId))
+            {
+                return null;
+            }
+
+            var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+            if (session == null)
+            {
+                return null;
+            }
+
+            var support = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == "ChatbotSupportContact");
+            var escalation = new ChatEscalation
+            {
+                SessionId = sessionId,
+                MessageId = messageId,
+                UserId = userId,
+                EscalationType = string.IsNullOrWhiteSpace(escalationType) ? "Support" : escalationType,
+                Reason = reason,
+                Status = "Pending",
+                TargetContact = support?.Value ?? "support@hospital.com",
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            session.IsEscalated = true;
+            _context.ChatEscalations.Add(escalation);
+            await _context.SaveChangesAsync();
+            await AddEventAsync(sessionId, messageId, "EscalationCreated", "Info", reason);
+            return escalation;
+        }
+
+        public async Task<bool> MarkSessionUnresolvedAsync(ClaimsPrincipal user, string sessionId, string reason)
+        {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return false;
+            }
+
+            var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == sessionId && s.UserId == userId);
+            if (session == null)
+            {
+                return false;
+            }
+
+            session.IsUnresolved = true;
+            await _context.SaveChangesAsync();
+            await AddEventAsync(sessionId, null, "UnresolvedMarkedByUser", "Warning", reason);
+            return true;
+        }
+
+        public async Task<IReadOnlyList<ChatEscalation>> GetEscalationsAsync(string status = "Pending", int take = 100)
+        {
+            var query = _context.ChatEscalations.AsNoTracking();
+            if (!string.Equals(status, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                query = query.Where(e => e.Status == status);
+            }
+
+            return await query
+                .OrderByDescending(e => e.CreatedAtUtc)
+                .Take(take)
+                .ToListAsync();
+        }
+
+        public async Task<bool> ResolveEscalationAsync(long escalationId, string targetContact, string resolverUserId)
+        {
+            var escalation = await _context.ChatEscalations.FirstOrDefaultAsync(e => e.Id == escalationId);
+            if (escalation == null)
+            {
+                return false;
+            }
+
+            escalation.Status = "Resolved";
+            escalation.TargetContact = targetContact;
+            escalation.ResolvedByUserId = resolverUserId;
+            escalation.ResolvedAtUtc = DateTime.UtcNow;
+
+            var session = await _context.ChatSessions.FirstOrDefaultAsync(s => s.Id == escalation.SessionId);
+            if (session != null)
+            {
+                session.IsEscalated = true;
+                session.IsUnresolved = false;
+            }
+
+            await _context.SaveChangesAsync();
+            await AddEventAsync(escalation.SessionId, escalation.MessageId, "EscalationResolved", "Info", $"Target={targetContact}");
+            return true;
+        }
+
+        public async Task<ChatbotAnalyticsSnapshot> GetAnalyticsAsync(int days = 30)
+        {
+            var from = DateTime.UtcNow.AddDays(-Math.Max(1, days));
+
+            var sessions = await _context.ChatSessions.AsNoTracking()
+                .Where(s => s.StartedAtUtc >= from)
+                .ToListAsync();
+
+            var sessionIds = sessions.Select(s => s.Id).ToList();
+
+            var messages = await _context.ChatMessages.AsNoTracking()
+                .Where(m => sessionIds.Contains(m.SessionId))
+                .ToListAsync();
+
+            var escalations = await _context.ChatEscalations.AsNoTracking()
+                .Where(e => e.CreatedAtUtc >= from)
+                .ToListAsync();
+
+            var unresolved = sessions.Count(s => s.IsUnresolved);
+            var categoryCounts = messages
+                .Where(m => !string.Equals(m.SenderType, "Assistant", StringComparison.OrdinalIgnoreCase))
+                .GroupBy(m => string.IsNullOrWhiteSpace(m.Category) ? "General" : m.Category)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var totalSessions = sessions.Count;
+            return new ChatbotAnalyticsSnapshot
+            {
+                TotalSessions = totalSessions,
+                TotalMessages = messages.Count,
+                TotalEscalations = escalations.Count,
+                UnresolvedSessions = unresolved,
+                EscalationRate = totalSessions == 0 ? 0 : (decimal)escalations.Count / totalSessions,
+                UnresolvedRate = totalSessions == 0 ? 0 : (decimal)unresolved / totalSessions,
+                CategoryCounts = categoryCounts
+            };
+        }
+
+        public async Task<ChatbotAdminSettings> GetAdminSettingsAsync()
+        {
+            var settings = await _context.Settings.AsNoTracking()
+                .Where(s => s.Category == "Chatbot")
+                .ToDictionaryAsync(s => s.Key, s => s.Value);
+
+            return new ChatbotAdminSettings
+            {
+                Enabled = ParseBool(settings, "ChatbotEnabled", true),
+                EnableEscalation = ParseBool(settings, "ChatbotEnableEscalation", true),
+                EnableAppointmentGuidance = ParseBool(settings, "ChatbotEnableAppointmentGuidance", true),
+                EnableBillingGuidance = ParseBool(settings, "ChatbotEnableBillingGuidance", true),
+                EnableMultilingual = ParseBool(settings, "ChatbotEnableMultilingual", false),
+                EnabledForPatients = ParseBool(settings, "ChatbotEnabledForPatients", true),
+                EnabledForStaff = ParseBool(settings, "ChatbotEnabledForStaff", true),
+                EnabledForAdmins = ParseBool(settings, "ChatbotEnabledForAdmins", true),
+                Model = settings.GetValueOrDefault("ChatbotModel", "gpt-4o-mini"),
+                Temperature = ParseDecimal(settings, "ChatbotTemperature", 0.2m),
+                MaxTokens = ParseInt(settings, "ChatbotMaxTokens", 350),
+                UnresolvedThreshold = ParseDecimal(settings, "ChatbotUnresolvedThreshold", 0.45m),
+                HourlyUsageLimit = ParseInt(settings, "ChatbotHourlyUsageLimit", 100),
+                SupportedLanguagesCsv = settings.GetValueOrDefault("ChatbotSupportedLanguages", "en"),
+                DefaultLanguage = settings.GetValueOrDefault("ChatbotDefaultLanguage", "en")
+            };
+        }
+
+        public async Task<bool> UpdateAdminSettingsAsync(ChatbotAdminSettings settings, string modifiedByUserId)
+        {
+            var values = new Dictionary<string, string>
+            {
+                ["ChatbotEnabled"] = settings.Enabled.ToString().ToLowerInvariant(),
+                ["ChatbotEnableEscalation"] = settings.EnableEscalation.ToString().ToLowerInvariant(),
+                ["ChatbotEnableAppointmentGuidance"] = settings.EnableAppointmentGuidance.ToString().ToLowerInvariant(),
+                ["ChatbotEnableBillingGuidance"] = settings.EnableBillingGuidance.ToString().ToLowerInvariant(),
+                ["ChatbotEnableMultilingual"] = settings.EnableMultilingual.ToString().ToLowerInvariant(),
+                ["ChatbotEnabledForPatients"] = settings.EnabledForPatients.ToString().ToLowerInvariant(),
+                ["ChatbotEnabledForStaff"] = settings.EnabledForStaff.ToString().ToLowerInvariant(),
+                ["ChatbotEnabledForAdmins"] = settings.EnabledForAdmins.ToString().ToLowerInvariant(),
+                ["ChatbotModel"] = settings.Model,
+                ["ChatbotTemperature"] = settings.Temperature.ToString("0.##"),
+                ["ChatbotMaxTokens"] = settings.MaxTokens.ToString(),
+                ["ChatbotUnresolvedThreshold"] = settings.UnresolvedThreshold.ToString("0.##"),
+                ["ChatbotHourlyUsageLimit"] = settings.HourlyUsageLimit.ToString(),
+                ["ChatbotSupportedLanguages"] = settings.SupportedLanguagesCsv,
+                ["ChatbotDefaultLanguage"] = settings.DefaultLanguage
+            };
+
+            foreach (var entry in values)
+            {
+                var setting = await _context.Settings.FirstOrDefaultAsync(s => s.Key == entry.Key);
+                if (setting == null)
+                {
+                    _context.Settings.Add(new Setting
+                    {
+                        Key = entry.Key,
+                        Value = entry.Value,
+                        Type = "string",
+                        Category = "Chatbot",
+                        Description = "Chatbot configuration setting",
+                        IsSystem = true,
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedBy = modifiedByUserId
+                    });
+                }
+                else
+                {
+                    setting.Value = entry.Value;
+                    setting.ModifiedDate = DateTime.UtcNow;
+                    setting.ModifiedBy = modifiedByUserId;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            await AddEventAsync(null, null, "AdminSettingsUpdated", "Info", $"Updated by {modifiedByUserId}");
             return true;
         }
 
@@ -149,8 +415,8 @@ namespace MedyxHMS.Services.Implementations
                     new { role = "system", content = _promptBuilder.BuildSystemPrompt(user, context) },
                     new { role = "user", content = userInput }
                 },
-                temperature = 0.2,
-                max_tokens = 350
+                temperature = await GetDecimalSettingAsync("ChatbotTemperature", 0.2m),
+                max_tokens = await GetIntSettingAsync("ChatbotMaxTokens", 350)
             };
 
             try
@@ -166,6 +432,7 @@ namespace MedyxHMS.Services.Implementations
                 if (!response.IsSuccessStatusCode)
                 {
                     _logger.LogWarning("OpenAI request failed with status {StatusCode}: {Body}", (int)response.StatusCode, responseBody);
+                    await AddEventAsync(null, null, "ProviderError", "Warning", $"Status={(int)response.StatusCode}");
                     return BuildFallbackAnswer(context);
                 }
 
@@ -181,6 +448,7 @@ namespace MedyxHMS.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "OpenAI chat call failed. Falling back to safe local guidance.");
+                await AddEventAsync(null, null, "ProviderException", "Warning", ex.Message);
                 return BuildFallbackAnswer(context);
             }
         }
@@ -215,14 +483,15 @@ namespace MedyxHMS.Services.Implementations
                 UserRole = role,
                 Status = "Active",
                 Channel = "Web",
-                StartedAtUtc = DateTime.UtcNow
+                StartedAtUtc = DateTime.UtcNow,
+                PreferredLanguage = "en"
             };
             _context.ChatSessions.Add(session);
             await _context.SaveChangesAsync();
             return session;
         }
 
-        private async Task AddMessageAsync(string sessionId, string senderType, string content, string moderationStatus, int tokenCount)
+        private async Task AddMessageAsync(string sessionId, string senderType, string content, string moderationStatus, int tokenCount, string category)
         {
             _context.ChatMessages.Add(new ChatMessage
             {
@@ -231,6 +500,21 @@ namespace MedyxHMS.Services.Implementations
                 Content = content,
                 ModerationStatus = moderationStatus,
                 TokenCount = tokenCount,
+                Category = category,
+                CreatedAtUtc = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task AddEventAsync(string? sessionId, long? messageId, string eventType, string severity, string details)
+        {
+            _context.ChatbotEventLogs.Add(new ChatbotEventLog
+            {
+                SessionId = sessionId,
+                MessageId = messageId,
+                EventType = eventType,
+                Severity = severity,
+                Details = details,
                 CreatedAtUtc = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
@@ -291,6 +575,58 @@ namespace MedyxHMS.Services.Implementations
             if (user.IsInRole("Nurse")) return "Nurse";
             if (user.IsInRole("Patient")) return "Patient";
             return "Staff";
+        }
+
+        private static string DetectCategory(string message)
+        {
+            var lower = message.ToLowerInvariant();
+            if (lower.Contains("appointment") || lower.Contains("book") || lower.Contains("schedule")) return "Appointment";
+            if (lower.Contains("bill") || lower.Contains("invoice") || lower.Contains("payment")) return "Billing";
+            if (lower.Contains("support") || lower.Contains("contact") || lower.Contains("handoff")) return "Support";
+            return "Navigation";
+        }
+
+        private static string NormalizeLanguage(string? languageCode)
+        {
+            if (string.IsNullOrWhiteSpace(languageCode)) return "en";
+            var lang = languageCode.Trim().ToLowerInvariant();
+            return lang.Length > 5 ? "en" : lang;
+        }
+
+        private async Task<bool> GetBoolSettingAsync(string key, bool fallback)
+        {
+            var setting = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key);
+            if (setting == null) return fallback;
+            return bool.TryParse(setting.Value, out var parsed) ? parsed : fallback;
+        }
+
+        private async Task<decimal> GetDecimalSettingAsync(string key, decimal fallback)
+        {
+            var setting = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key);
+            if (setting == null) return fallback;
+            return decimal.TryParse(setting.Value, out var parsed) ? parsed : fallback;
+        }
+
+        private async Task<int> GetIntSettingAsync(string key, int fallback)
+        {
+            var setting = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key);
+            if (setting == null) return fallback;
+            return int.TryParse(setting.Value, out var parsed) ? parsed : fallback;
+        }
+
+        private static bool ParseBool(IReadOnlyDictionary<string, string> values, string key, bool fallback)
+        {
+            return values.TryGetValue(key, out var value) && bool.TryParse(value, out var parsed) ? parsed : fallback;
+        }
+
+        private static int ParseInt(IReadOnlyDictionary<string, string> values, string key, int fallback)
+        {
+            return values.TryGetValue(key, out var value) && int.TryParse(value, out var parsed) ? parsed : fallback;
+        }
+
+        private static decimal ParseDecimal(IReadOnlyDictionary<string, string> values, string key, decimal fallback)
+        {
+            return values.TryGetValue(key, out var value) && decimal.TryParse(value, out var parsed) ? parsed : fallback;
         }
     }
 }

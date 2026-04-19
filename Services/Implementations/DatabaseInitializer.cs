@@ -415,7 +415,10 @@ BEGIN
         [StartedAtUtc] DATETIME2 NOT NULL,
         [EndedAtUtc] DATETIME2 NULL,
         [Status] NVARCHAR(30) NOT NULL,
-        [Channel] NVARCHAR(20) NOT NULL
+        [Channel] NVARCHAR(20) NOT NULL,
+        [IsEscalated] BIT NOT NULL DEFAULT(0),
+        [IsUnresolved] BIT NOT NULL DEFAULT(0),
+        [PreferredLanguage] NVARCHAR(12) NOT NULL DEFAULT('en')
     );
 
     CREATE INDEX [IX_ChatSessions_UserId_StartedAtUtc]
@@ -433,12 +436,33 @@ BEGIN
         [CreatedAtUtc] DATETIME2 NOT NULL,
         [ModerationStatus] NVARCHAR(30) NOT NULL,
         [TokenCount] INT NOT NULL DEFAULT(0),
+        [Category] NVARCHAR(30) NOT NULL DEFAULT('General'),
         CONSTRAINT [FK_ChatMessages_ChatSessions_SessionId]
             FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE
     );
 
     CREATE INDEX [IX_ChatMessages_SessionId_CreatedAtUtc]
         ON [dbo].[ChatMessages]([SessionId], [CreatedAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatSessions]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[ChatSessions]', N'IsEscalated') IS NULL
+        ALTER TABLE [dbo].[ChatSessions] ADD [IsEscalated] BIT NOT NULL CONSTRAINT [DF_ChatSessions_IsEscalated] DEFAULT(0);
+
+    IF COL_LENGTH(N'[dbo].[ChatSessions]', N'IsUnresolved') IS NULL
+        ALTER TABLE [dbo].[ChatSessions] ADD [IsUnresolved] BIT NOT NULL CONSTRAINT [DF_ChatSessions_IsUnresolved] DEFAULT(0);
+
+    IF COL_LENGTH(N'[dbo].[ChatSessions]', N'PreferredLanguage') IS NULL
+        ALTER TABLE [dbo].[ChatSessions] ADD [PreferredLanguage] NVARCHAR(12) NOT NULL CONSTRAINT [DF_ChatSessions_PreferredLanguage] DEFAULT('en');
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatMessages]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[ChatMessages]', N'Category') IS NULL
+        ALTER TABLE [dbo].[ChatMessages] ADD [Category] NVARCHAR(30) NOT NULL CONSTRAINT [DF_ChatMessages_Category] DEFAULT('General');
 END");
 
             await _context.Database.ExecuteSqlRawAsync(@"
@@ -460,6 +484,67 @@ BEGIN
     CREATE INDEX [IX_ChatFeedback_SessionId_CreatedAtUtc]
         ON [dbo].[ChatFeedback]([SessionId], [CreatedAtUtc]);
 END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatEscalations]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatEscalations] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SessionId] NVARCHAR(64) NOT NULL,
+        [MessageId] BIGINT NULL,
+        [UserId] NVARCHAR(450) NULL,
+        [EscalationType] NVARCHAR(30) NOT NULL,
+        [Reason] NVARCHAR(1200) NOT NULL,
+        [Status] NVARCHAR(30) NOT NULL,
+        [TargetContact] NVARCHAR(200) NULL,
+        [ResolvedByUserId] NVARCHAR(450) NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        [ResolvedAtUtc] DATETIME2 NULL,
+        CONSTRAINT [FK_ChatEscalations_ChatSessions_SessionId]
+            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ChatEscalations_ChatMessages_MessageId]
+            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE SET NULL
+    );
+
+    CREATE INDEX [IX_ChatEscalations_Status_CreatedAtUtc]
+        ON [dbo].[ChatEscalations]([Status], [CreatedAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatbotEventLogs]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatbotEventLogs] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SessionId] NVARCHAR(64) NULL,
+        [MessageId] BIGINT NULL,
+        [EventType] NVARCHAR(50) NOT NULL,
+        [Severity] NVARCHAR(20) NOT NULL,
+        [Details] NVARCHAR(2000) NOT NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL
+    );
+
+    CREATE INDEX [IX_ChatbotEventLogs_SessionId_CreatedAtUtc]
+        ON [dbo].[ChatbotEventLogs]([SessionId], [CreatedAtUtc]);
+END");
+
+            await EnsureSystemSettingAsync("ChatbotEnabled", "true", "bool", "Chatbot", "Enable or disable chatbot globally.");
+            await EnsureSystemSettingAsync("ChatbotEnabledForPatients", "true", "bool", "Chatbot", "Allow chatbot access for patient users.");
+            await EnsureSystemSettingAsync("ChatbotEnabledForStaff", "true", "bool", "Chatbot", "Allow chatbot access for staff users.");
+            await EnsureSystemSettingAsync("ChatbotEnabledForAdmins", "true", "bool", "Chatbot", "Allow chatbot access for admin and superadmin users.");
+            await EnsureSystemSettingAsync("ChatbotEnableEscalation", "true", "bool", "Chatbot", "Allow escalation handoff workflow.");
+            await EnsureSystemSettingAsync("ChatbotEnableAppointmentGuidance", "true", "bool", "Chatbot", "Enable appointment guided assistance.");
+            await EnsureSystemSettingAsync("ChatbotEnableBillingGuidance", "true", "bool", "Chatbot", "Enable billing/payment guided assistance.");
+            await EnsureSystemSettingAsync("ChatbotEnableMultilingual", "false", "bool", "Chatbot", "Enable multilingual strategy in chatbot responses.");
+            await EnsureSystemSettingAsync("ChatbotSupportedLanguages", "en,es,fr,ar", "string", "Chatbot", "Supported language codes for chatbot usage.");
+            await EnsureSystemSettingAsync("ChatbotDefaultLanguage", "en", "string", "Chatbot", "Default chatbot language.");
+            await EnsureSystemSettingAsync("ChatbotModel", "gpt-4o-mini", "string", "Chatbot", "Configured provider model for chatbot responses.");
+            await EnsureSystemSettingAsync("ChatbotTemperature", "0.2", "decimal", "Chatbot", "Configured model temperature for chatbot responses.");
+            await EnsureSystemSettingAsync("ChatbotMaxTokens", "350", "int", "Chatbot", "Configured max token target for chatbot responses.");
+            await EnsureSystemSettingAsync("ChatbotHourlyUsageLimit", "100", "int", "Chatbot", "Per-user per-hour chatbot request cap.");
+            await EnsureSystemSettingAsync("ChatbotUnresolvedThreshold", "0.45", "decimal", "Chatbot", "Confidence threshold under which escalation is suggested.");
+            await EnsureSystemSettingAsync("ChatbotSupportContact", "support@hospital.com", "string", "Chatbot", "Support contact for chatbot handoff.");
+            await EnsureSystemSettingAsync("ChatbotAppointmentGuidance.en", "To book: open Appointment module, choose doctor, date, and confirm slot.", "string", "Chatbot", "English appointment guidance template.");
+            await EnsureSystemSettingAsync("ChatbotBillingGuidance.en", "To pay bills: open Billing module, review invoice, choose method, and submit payment.", "string", "Chatbot", "English billing guidance template.");
         }
 
         private async Task SeedLicenseDefaultsAsync()

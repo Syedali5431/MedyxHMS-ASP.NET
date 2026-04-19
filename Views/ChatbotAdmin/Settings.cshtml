@@ -1,0 +1,90 @@
+@model MedyxHMS.ViewModels.ChatbotAdminSettingsViewModel
+@{
+    ViewData["Title"] = "Chatbot Settings";
+}
+
+<div class="container py-4">
+    <h2 class="h4 mb-3">Chatbot Settings</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+    }
+
+    <form method="post" class="card border-0 shadow-sm">
+        @Html.AntiForgeryToken()
+        <div class="card-body row g-3">
+            <div class="col-md-4 form-check">
+                <input asp-for="Enabled" class="form-check-input" />
+                <label asp-for="Enabled" class="form-check-label">Enable Chatbot</label>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnableEscalation" class="form-check-input" />
+                <label asp-for="EnableEscalation" class="form-check-label">Enable Escalation</label>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnableMultilingual" class="form-check-input" />
+                <label asp-for="EnableMultilingual" class="form-check-label">Enable Multilingual Strategy</label>
+            </div>
+
+            <div class="col-md-4 form-check">
+                <input asp-for="EnableAppointmentGuidance" class="form-check-input" />
+                <label asp-for="EnableAppointmentGuidance" class="form-check-label">Appointment Guidance</label>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnableBillingGuidance" class="form-check-input" />
+                <label asp-for="EnableBillingGuidance" class="form-check-label">Billing Guidance</label>
+            </div>
+
+            <div class="col-md-4 form-check">
+                <input asp-for="EnabledForPatients" class="form-check-input" />
+                <label asp-for="EnabledForPatients" class="form-check-label">Enabled For Patients</label>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnabledForStaff" class="form-check-input" />
+                <label asp-for="EnabledForStaff" class="form-check-label">Enabled For Staff</label>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnabledForAdmins" class="form-check-input" />
+                <label asp-for="EnabledForAdmins" class="form-check-label">Enabled For Admins</label>
+            </div>
+
+            <div class="col-md-4">
+                <label asp-for="Model" class="form-label">Model</label>
+                <input asp-for="Model" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="Temperature" class="form-label">Temperature</label>
+                <input asp-for="Temperature" class="form-control" step="0.01" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="MaxTokens" class="form-label">Max Tokens</label>
+                <input asp-for="MaxTokens" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="UnresolvedThreshold" class="form-label">Unresolved Threshold</label>
+                <input asp-for="UnresolvedThreshold" class="form-control" step="0.01" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="HourlyUsageLimit" class="form-label">Hourly Usage Limit</label>
+                <input asp-for="HourlyUsageLimit" class="form-control" />
+            </div>
+
+            <div class="col-md-6">
+                <label asp-for="SupportedLanguagesCsv" class="form-label">Supported Languages (CSV)</label>
+                <input asp-for="SupportedLanguagesCsv" class="form-control" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="DefaultLanguage" class="form-label">Default Language</label>
+                <input asp-for="DefaultLanguage" class="form-control" />
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-end">
+            <button class="btn btn-primary" type="submit">Save Settings</button>
+        </div>
+    </form>
+</div>

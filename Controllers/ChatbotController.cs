@@ -18,6 +18,11 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Index(string? sessionId = null)
         {
+            if (!await _chatbotService.IsChatbotEnabledForUserAsync(User))
+            {
+                return Forbid();
+            }
+
             var vm = new ChatbotPageViewModel
             {
                 SessionId = sessionId
@@ -50,6 +55,9 @@ namespace MedyxHMS.Controllers
                 LastAnswer = response.Answer,
                 EscalationSuggested = response.EscalationSuggested,
                 ConfidenceScore = response.ConfidenceScore,
+                EscalationId = response.EscalationId,
+                LanguageCode = response.DetectedLanguage,
+                DetectedCategory = response.DetectedCategory,
                 Sources = response.Sources,
                 History = (await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30)).ToList()
             };
@@ -66,7 +74,12 @@ namespace MedyxHMS.Controllers
                 return BadRequest(new { error = "Please enter a message for the assistant." });
             }
 
-            var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId);
+            if (!await _chatbotService.IsChatbotEnabledForUserAsync(User))
+            {
+                return StatusCode(403, new { error = "Chatbot access is disabled for your role." });
+            }
+
+            var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId, vm.LanguageCode);
             var history = await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30);
 
             return Json(new
@@ -74,6 +87,9 @@ namespace MedyxHMS.Controllers
                 sessionId = response.SessionId,
                 answer = response.Answer,
                 escalationSuggested = response.EscalationSuggested,
+                escalationId = response.EscalationId,
+                detectedCategory = response.DetectedCategory,
+                detectedLanguage = response.DetectedLanguage,
                 confidenceScore = response.ConfidenceScore,
                 providerModel = response.ProviderModel,
                 sources = response.Sources.Select(s => new
@@ -103,6 +119,48 @@ namespace MedyxHMS.Controllers
             }
 
             var ok = await _chatbotService.SubmitFeedbackAsync(User, vm.SessionId, vm.MessageId, vm.FeedbackType, vm.Comment);
+            if (!ok)
+            {
+                return Forbid();
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Escalate([FromForm] ChatbotEscalationRequestViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid escalation request." });
+            }
+
+            var escalation = await _chatbotService.EscalateAsync(User, vm.SessionId, vm.MessageId, vm.Reason, vm.EscalationType);
+            if (escalation == null)
+            {
+                return Forbid();
+            }
+
+            return Json(new
+            {
+                success = true,
+                escalationId = escalation.Id,
+                status = escalation.Status,
+                targetContact = escalation.TargetContact
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkUnresolved([FromForm] ChatbotUnresolvedRequestViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid unresolved request." });
+            }
+
+            var ok = await _chatbotService.MarkSessionUnresolvedAsync(User, vm.SessionId, vm.Reason);
             if (!ok)
             {
                 return Forbid();

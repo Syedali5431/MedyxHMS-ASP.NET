@@ -193,14 +193,22 @@ namespace MedyxHMS.Services.Interfaces
 
     public interface IChatbotKnowledgeService
     {
-        Task<ChatKnowledgeContext> RetrieveContextAsync(ClaimsPrincipal user, string message);
+        Task<ChatKnowledgeContext> RetrieveContextAsync(ClaimsPrincipal user, string message, string? languageCode = null);
     }
 
     public interface IChatbotService
     {
-        Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null);
+        Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null, string? languageCode = null);
         Task<IReadOnlyList<ChatMessage>> GetSessionMessagesAsync(string sessionId, ClaimsPrincipal user, int take = 30);
         Task<bool> SubmitFeedbackAsync(ClaimsPrincipal user, string sessionId, long? messageId, string feedbackType, string? comment = null);
+        Task<bool> IsChatbotEnabledForUserAsync(ClaimsPrincipal user);
+        Task<ChatEscalation?> EscalateAsync(ClaimsPrincipal user, string sessionId, long? messageId, string reason, string escalationType = "Support");
+        Task<bool> MarkSessionUnresolvedAsync(ClaimsPrincipal user, string sessionId, string reason);
+        Task<IReadOnlyList<ChatEscalation>> GetEscalationsAsync(string status = "Pending", int take = 100);
+        Task<bool> ResolveEscalationAsync(long escalationId, string targetContact, string resolverUserId);
+        Task<ChatbotAnalyticsSnapshot> GetAnalyticsAsync(int days = 30);
+        Task<ChatbotAdminSettings> GetAdminSettingsAsync();
+        Task<bool> UpdateAdminSettingsAsync(ChatbotAdminSettings settings, string modifiedByUserId);
     }
 
     public interface ISmtpHealthService
