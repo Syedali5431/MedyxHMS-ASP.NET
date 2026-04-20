@@ -78,6 +78,20 @@ Rollback steps:
 - Review billing and appointment creation during the first live hour.
 - Confirm support desk has escalation contacts and issue templates.
 
+## Windows Clone and Checkout Recovery
+
+If clone/check-out fails with `Filename too long` on Windows, apply the following recovery steps:
+
+1. Enable long paths in Git:
+	- `git config --global core.longpaths true`
+	- `git config core.longpaths true`
+2. Delete recursive build output folders that were created before long-path support was enabled:
+	- `cmd /c "rmdir /s /q \\?\c:\path\to\repo\bin\Debug\net8.0\temp_build_output"`
+3. Rehydrate files from HEAD:
+	- `git restore --source=HEAD :/`
+4. Prevent recurrence by ensuring build artifacts are ignored:
+	- `.gitignore` must include `bin/`, `obj/`, `temp_build_output/`, and `TestResults/`.
+
 ## Automated Count Comparison Example
 
 For an operator-focused run checklist and required evidence bundle, see `docs/MIGRATION-COUNT-COMPARISON-CHECKLIST.md`.
