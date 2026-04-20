@@ -20,16 +20,16 @@ namespace MedyxHMS.Services.Implementations
         {
             var auditLog = new AuditLog
             {
-            UserId = string.IsNullOrWhiteSpace(userId) ? "system" : userId,
+                UserId = string.IsNullOrWhiteSpace(userId) ? "system" : userId,
                 Action = action,
                 EntityName = entityName,
-                EntityId = entityId,
-                OldValues = oldValues,
-                NewValues = newValues,
+                EntityId = string.IsNullOrWhiteSpace(entityId) ? "N/A" : entityId,
+                OldValues = oldValues ?? string.Empty,
+                NewValues = newValues ?? string.Empty,
                 Timestamp = DateTime.UtcNow,
                 IpAddress = GetClientIpAddress(),
-                UserAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString(),
-                SessionId = _httpContextAccessor.HttpContext?.Session.Id
+                UserAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? string.Empty,
+                SessionId = _httpContextAccessor.HttpContext?.Session.Id ?? string.Empty
             };
 
             _context.AuditLogs.Add(auditLog);
