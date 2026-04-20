@@ -166,6 +166,12 @@ namespace MedyxHMS.Services.Implementations
                     await _context.SaveChangesAsync();
                 }
             }
+
+            await EnsureSystemSettingAsync("PublicSiteAddress", "Medyx Hospital, Main Road, Your City", "string", "PublicSite", "Public website address displayed on contact/location pages.");
+            await EnsureSystemSettingAsync("PublicSitePhone", "+000-000-0000", "string", "PublicSite", "Public website contact phone number.");
+            await EnsureSystemSettingAsync("PublicSiteEmail", "info@medyxhospital.com", "string", "PublicSite", "Public website contact email address.");
+            await EnsureSystemSettingAsync("PublicSiteMapEmbedUrl", "", "string", "PublicSite", "Optional Google map embed URL; when empty, map is generated from address.");
+            await EnsureSystemSettingAsync("PublicSiteCareersContent", "We are hiring doctors, nurses, technicians, and support staff. Share your resume using the contact email.", "string", "PublicSite", "Public careers page content.");
         }
 
         private async Task EnsureStep42TablesAsync()
@@ -478,7 +484,7 @@ BEGIN
         CONSTRAINT [FK_ChatFeedback_ChatSessions_SessionId]
             FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
         CONSTRAINT [FK_ChatFeedback_ChatMessages_MessageId]
-            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE SET NULL
+            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE NO ACTION
     );
 
     CREATE INDEX [IX_ChatFeedback_SessionId_CreatedAtUtc]
@@ -503,7 +509,7 @@ BEGIN
         CONSTRAINT [FK_ChatEscalations_ChatSessions_SessionId]
             FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
         CONSTRAINT [FK_ChatEscalations_ChatMessages_MessageId]
-            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE SET NULL
+            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE NO ACTION
     );
 
     CREATE INDEX [IX_ChatEscalations_Status_CreatedAtUtc]

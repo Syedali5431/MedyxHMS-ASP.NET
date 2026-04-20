@@ -1,0 +1,42 @@
+@model MedyxHMS.ViewModels.PublicSiteSettingsViewModel
+@{
+    ViewData["Title"] = "Public Site Settings";
+}
+
+<div class="container py-4">
+    <h2 class="h4 mb-3">Public Site Settings</h2>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <form method="post" class="card border-0 shadow-sm">
+        @Html.AntiForgeryToken()
+        <div class="card-body row g-3">
+            <div class="col-md-6">
+                <label asp-for="PublicPhone" class="form-label">Public Phone</label>
+                <input asp-for="PublicPhone" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="PublicEmail" class="form-label">Public Email</label>
+                <input asp-for="PublicEmail" class="form-control" />
+            </div>
+            <div class="col-12">
+                <label asp-for="PublicAddress" class="form-label">Public Address</label>
+                <textarea asp-for="PublicAddress" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <label asp-for="PublicMapEmbedUrl" class="form-label">Google Map Embed URL (optional)</label>
+                <input asp-for="PublicMapEmbedUrl" class="form-control" placeholder="If empty, map is generated from address automatically." />
+            </div>
+            <div class="col-12">
+                <label asp-for="CareersContent" class="form-label">Careers Page Content</label>
+                <textarea asp-for="CareersContent" class="form-control" rows="6"></textarea>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">Save</button>
+        </div>
+    </form>
+</div>

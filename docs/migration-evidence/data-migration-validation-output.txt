@@ -1,0 +1,24 @@
+=== Record Counts ===
+CheckName,Value
+---------,-----
+Patients,0
+Doctors,0
+Appointments,0
+Bills,0
+BillItems,0
+Payments,0
+PublicAppointmentRequests,0
+Staff,1
+=== Integrity Checks (expected 0) ===
+CheckName,IssueCount
+---------,----------
+OrphanAppointmentsMissingPatient,0
+OrphanAppointmentsMissingDoctor,0
+OrphanBillsMissingPatient,0
+OrphanBillItemsMissingBill,0
+OrphanPaymentsMissingBill,0
+OrphanPublicRequestsMissingPatient,0
+OrphanPublicRequestsMissingDoctor,0
+BillsPaidGreaterThanTotal,0
+BillsNegativePendingAmount,0
+DuplicatePatientIds,0

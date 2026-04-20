@@ -103,7 +103,7 @@ Write-Host ""
 Write-Host "Comparison summary:"
 $comparison | Format-Table -AutoSize
 
-$mismatches = $comparison | Where-Object { $_.Match -eq "No" }
+$mismatches = @($comparison | Where-Object { $_.Match -eq "No" })
 if ($mismatches.Count -gt 0) {
     Write-Warning "Count mismatches detected. Review the comparison CSV."
     exit 2

@@ -14,6 +14,45 @@ namespace MedyxHMS.ViewModels
         public List<CmsMenuItem> MenuItems { get; set; } = new();
         public string HospitalName { get; set; }
         public string HospitalTagline { get; set; }
+        public string ContactPhone { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string MapEmbedUrl { get; set; } = string.Empty;
+    }
+
+    public class SiteContactViewModel
+    {
+        public string ContactPhone { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string MapEmbedUrl { get; set; } = string.Empty;
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    public class SiteCareersViewModel
+    {
+        public string CareersContent { get; set; } = string.Empty;
+        public string ContactEmail { get; set; } = string.Empty;
+        public List<CmsMenuItem> MenuItems { get; set; } = new();
+    }
+
+    public class PublicSiteSettingsViewModel
+    {
+        [MaxLength(250)]
+        public string PublicAddress { get; set; } = string.Empty;
+
+        [MaxLength(50)]
+        public string PublicPhone { get; set; } = string.Empty;
+
+        [EmailAddress]
+        [MaxLength(200)]
+        public string PublicEmail { get; set; } = string.Empty;
+
+        [MaxLength(1000)]
+        public string PublicMapEmbedUrl { get; set; } = string.Empty;
+
+        [MaxLength(4000)]
+        public string CareersContent { get; set; } = string.Empty;
     }
 
     // ─── Public CMS Page View ────────────────────────────────────────────────

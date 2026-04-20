@@ -183,6 +183,11 @@ namespace MedyxHMS.Services.Implementations
             var global = await GetBoolSettingAsync("ChatbotEnabled", true);
             if (!global) return false;
 
+            if (user.Identity?.IsAuthenticated != true)
+            {
+                return true;
+            }
+
             if (user.IsInRole("Patient")) return await GetBoolSettingAsync("ChatbotEnabledForPatients", true);
             if (user.IsInRole("Admin") || user.IsInRole("SuperAdmin")) return await GetBoolSettingAsync("ChatbotEnabledForAdmins", true);
             return await GetBoolSettingAsync("ChatbotEnabledForStaff", true);

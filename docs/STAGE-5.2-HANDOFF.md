@@ -9,6 +9,45 @@ This note packages the final Stage 5.2 repository handoff items:
 - PR summary text
 - post-ops documentation updates to apply after target SQL validation passes
 
+## Stage 5.2 Unblock Status (Updated)
+
+Local SQL validation infrastructure is now provisioned on this machine.
+
+- Reachable SQL Server instance: `(localdb)\\MSSQLLocalDB`
+- Validation database created: `MedyxHMS_Migrated_Validation`
+- Creation verification: database exists in `sys.databases`
+
+### SSMS 2022 Connection Details
+
+Use the following in SQL Server Management Studio 2022:
+
+- Server type: `Database Engine`
+- Server name: `(localdb)\\MSSQLLocalDB`
+- Authentication: `Windows Authentication`
+- Database to use for Stage 5.2 validation: `MedyxHMS_Migrated_Validation`
+
+### Final Validation Path Status
+
+Completed in this environment.
+
+Stage 5.2 migration comparison and integrity validation were executed successfully with:
+
+- server: `(localdb)\\MSSQLLocalDB`
+- database: `MedyxHMS`
+- source snapshot: `scripts/source-count-snapshot.csv`
+
+Captured artifacts:
+
+- `docs/migration-evidence/target-counts-20260420-142731.csv`
+- `docs/migration-evidence/count-comparison-20260420-142731.csv`
+- `docs/migration-evidence/data-migration-validation-output.txt`
+
+Execution result summary:
+
+- `scripts/compare-migration-counts.ps1` exit code `0`
+- `sqlcmd` run for `scripts/data-migration-validation.sql` exit code `0`
+- counts matched and integrity checks returned zero issues
+
 ## Stage Intentional Files
 
 ### ASPNET repository
@@ -133,7 +172,7 @@ Apply these updates only after the target SQL validation completes successfully 
 
 ### Update `docs/PH9.md`
 
-Change the blocker language from environment-pending to completed validation.
+Blocker language already updated to completed validation in this workspace.
 
 Suggested replacement text:
 
@@ -157,7 +196,7 @@ Suggested validation summary replacement:
 
 ### Update `docs/IMPLEMENTATION-STATUS-2026-04-18.md`
 
-Replace the current blocker section with:
+Blocker section already replaced with resolved evidence summary in this workspace.
 
 ```text
 ## Remaining gap for final migration sign-off
@@ -168,13 +207,13 @@ Replace the current blocker section with:
 
 ### Update `php-original/Docs/TODO List.md`
 
-Update the Stage 5.2 status line to:
+Stage 5.2 status/checklist already updated to complete in this workspace.
 
 ```text
 **Status:** Complete | **Priority:** High
 ```
 
-Update the remaining unchecked migration validation bullets under Stage 5.2 to checked items once evidence is confirmed.
+Migration validation bullets are now checked with evidence-confirmed wording.
 
 ### Evidence to Reference
 

@@ -1,0 +1,14 @@
+@model MedyxHMS.ViewModels.SiteContactViewModel
+@{
+    ViewData["Title"] = "Location";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<div class="container my-5">
+    <h1 class="mb-3">Hospital Location</h1>
+    <p class="text-muted">@Model.Address</p>
+    <div class="ratio ratio-16x9 shadow-sm rounded overflow-hidden">
+        <iframe src="@Model.MapEmbedUrl" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+    </div>
+</div>

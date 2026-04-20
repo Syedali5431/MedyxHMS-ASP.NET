@@ -17,6 +17,9 @@
             <a asp-controller="Site" asp-action="Doctors" class="btn btn-outline-light btn-lg">
                 👨‍⚕️ Our Doctors
             </a>
+            <a asp-controller="Account" asp-action="Login" class="btn btn-light btn-lg fw-semibold">
+                Login
+            </a>
         </div>
     </div>
 </section>
@@ -134,4 +137,69 @@
             </div>
         </div>
     </div>
+
+    <!-- Public AI Helper -->
+    <div class="row mt-5">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <h4 class="fw-bold mb-2">Need quick help?</h4>
+                    <p class="text-muted mb-3">Ask the assistant about appointments, billing, navigation, hospital contact details, and public instructions without logging in.</p>
+
+                    <form id="chatbotAskForm" method="post" class="mb-3"
+                          data-ask-url="@Url.Action("AskJson", "Chatbot")"
+                          data-feedback-url="@Url.Action("SubmitFeedback", "Chatbot")"
+                          data-escalate-url="@Url.Action("Escalate", "Chatbot")"
+                          data-unresolved-url="@Url.Action("MarkUnresolved", "Chatbot")">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="chatSessionId" name="sessionId" />
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-2">
+                                <label class="form-label" for="chatLanguage">Language</label>
+                                <select id="chatLanguage" class="form-select">
+                                    <option value="en">EN</option>
+                                    <option value="es">ES</option>
+                                    <option value="fr">FR</option>
+                                    <option value="ar">AR</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label" for="chatPrompt">Your Question</label>
+                                <input id="chatPrompt" name="prompt" class="form-control" placeholder="Example: How do I book an appointment?" required />
+                            </div>
+                            <div class="col-md-2 d-grid">
+                                <button type="submit" id="chatSubmit" class="btn btn-primary">Ask</button>
+                            </div>
+                        </div>
+                        <div id="chatbotError" class="alert alert-danger mt-3 d-none" role="alert"></div>
+                        <div id="chatbotTyping" class="small text-muted mt-2 d-none">Assistant is preparing a response...</div>
+                    </form>
+
+                    <div class="d-none" id="escalationCard">
+                        <button type="button" id="chatEscalate" class="btn btn-warning btn-sm">Escalate</button>
+                    </div>
+                    <button type="button" id="chatRetry" class="btn btn-outline-secondary btn-sm d-none" disabled>Retry</button>
+                    <button type="button" id="chatMarkUnresolved" class="btn btn-outline-warning btn-sm d-none" disabled>Unresolved</button>
+
+                    <div class="alert alert-light d-none mt-3" id="lastAnswerContainer">
+                        <div id="lastAnswerText"></div>
+                        <div class="small mt-2" id="lastAnswerMeta"></div>
+                    </div>
+
+                    <div class="card border-0 bg-light d-none" id="sourceCard">
+                        <div class="card-body py-2">
+                            <h6 class="mb-2">Sources</h6>
+                            <div id="sourceList" class="d-flex flex-column gap-2"></div>
+                        </div>
+                    </div>
+
+                    <div id="chatHistory" class="d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="~/js/chatbot-ui.js" asp-append-version="true"></script>
+}

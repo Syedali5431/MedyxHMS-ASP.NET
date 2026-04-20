@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    [AllowAnonymous]
     public class ChatbotController : Controller
     {
         private readonly IChatbotService _chatbotService;
@@ -30,7 +30,10 @@ namespace MedyxHMS.Controllers
 
             if (!string.IsNullOrWhiteSpace(sessionId))
             {
-                vm.History = (await _chatbotService.GetSessionMessagesAsync(sessionId, User, 30)).ToList();
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    vm.History = (await _chatbotService.GetSessionMessagesAsync(sessionId, User, 30)).ToList();
+                }
             }
 
             return View(vm);
@@ -47,6 +50,9 @@ namespace MedyxHMS.Controllers
             }
 
             var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId);
+            var history = User.Identity?.IsAuthenticated == true
+                ? (await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30)).ToList()
+                : new List<Models.ChatMessage>();
 
             var resultModel = new ChatbotPageViewModel
             {
@@ -59,7 +65,7 @@ namespace MedyxHMS.Controllers
                 LanguageCode = response.DetectedLanguage,
                 DetectedCategory = response.DetectedCategory,
                 Sources = response.Sources,
-                History = (await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30)).ToList()
+                History = history
             };
 
             return View("Index", resultModel);
@@ -80,7 +86,9 @@ namespace MedyxHMS.Controllers
             }
 
             var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId, vm.LanguageCode);
-            var history = await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30);
+            var history = User.Identity?.IsAuthenticated == true
+                ? await _chatbotService.GetSessionMessagesAsync(response.SessionId, User, 30)
+                : Array.Empty<Models.ChatMessage>();
 
             return Json(new
             {
@@ -111,6 +119,7 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> SubmitFeedback([FromForm] ChatbotFeedbackRequestViewModel vm)
         {
             if (!ModelState.IsValid)
@@ -129,6 +138,7 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Escalate([FromForm] ChatbotEscalationRequestViewModel vm)
         {
             if (!ModelState.IsValid)
@@ -153,6 +163,7 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> MarkUnresolved([FromForm] ChatbotUnresolvedRequestViewModel vm)
         {
             if (!ModelState.IsValid)

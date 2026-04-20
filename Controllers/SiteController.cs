@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Encodings.Web;
 using System.Threading.Tasks;
 using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,11 +22,13 @@ namespace MedyxHMS.Controllers
         private const string BookingCaptchaSessionKey = "PublicBookingCaptchaExpected";
 
         private readonly ApplicationDbContext _db;
+        private readonly ISettingService _settingService;
         private readonly ILogger<SiteController> _logger;
 
-        public SiteController(ApplicationDbContext db, ILogger<SiteController> logger)
+        public SiteController(ApplicationDbContext db, ISettingService settingService, ILogger<SiteController> logger)
         {
             _db = db;
+            _settingService = settingService;
             _logger = logger;
         }
 
@@ -56,7 +60,55 @@ namespace MedyxHMS.Controllers
 
                 MenuItems = await GetActiveMenuItemsAsync(),
                 HospitalName = "Medyx Hospital",
-                HospitalTagline = "Compassionate Care, Advanced Medicine"
+                HospitalTagline = "Compassionate Care, Advanced Medicine",
+                ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
+                ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
+                Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
+                MapEmbedUrl = await ResolveMapEmbedUrlAsync()
+            };
+
+            return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ContactUs()
+        {
+            var vm = new SiteContactViewModel
+            {
+                ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
+                ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
+                Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
+                MapEmbedUrl = await ResolveMapEmbedUrlAsync(),
+                MenuItems = await GetActiveMenuItemsAsync()
+            };
+
+            return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Careers()
+        {
+            var vm = new SiteCareersViewModel
+            {
+                CareersContent = await _settingService.GetSettingValueAsync("PublicSiteCareersContent")
+                    ?? "We are always looking for dedicated professionals in nursing, diagnostics, administration, and patient support. Send your updated resume to the contact email below.",
+                ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "hr@medyxhospital.com",
+                MenuItems = await GetActiveMenuItemsAsync()
+            };
+
+            return View(vm);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Location()
+        {
+            var vm = new SiteContactViewModel
+            {
+                ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
+                ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
+                Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
+                MapEmbedUrl = await ResolveMapEmbedUrlAsync(),
+                MenuItems = await GetActiveMenuItemsAsync()
             };
 
             return View(vm);
@@ -377,6 +429,18 @@ namespace MedyxHMS.Controllers
                .Where(m => m.IsActive)
                .OrderBy(m => m.SortOrder)
                .ToListAsync();
+
+        private async Task<string> ResolveMapEmbedUrlAsync()
+        {
+            var configured = await _settingService.GetSettingValueAsync("PublicSiteMapEmbedUrl");
+            if (!string.IsNullOrWhiteSpace(configured))
+            {
+                return configured;
+            }
+
+            var address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital";
+            return $"https://www.google.com/maps?q={UrlEncoder.Default.Encode(address)}&output=embed";
+        }
 
         private void SetBookingCaptchaChallenge(PublicBookingViewModel vm)
         {

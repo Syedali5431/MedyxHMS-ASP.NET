@@ -1,0 +1,28 @@
+@model MedyxHMS.ViewModels.SiteContactViewModel
+@{
+    ViewData["Title"] = "Contact Us";
+    Layout = "~/Views/Shared/_PublicLayout.cshtml";
+    ViewBag.MenuItems = Model.MenuItems;
+}
+
+<div class="container my-5">
+    <h1 class="mb-4">Contact Us</h1>
+
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body">
+                    <h5>Hospital Contact</h5>
+                    <p class="mb-2"><strong>Phone:</strong> @Model.ContactPhone</p>
+                    <p class="mb-2"><strong>Email:</strong> @Model.ContactEmail</p>
+                    <p class="mb-0"><strong>Address:</strong><br />@Model.Address</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-7">
+            <div class="ratio ratio-16x9 shadow-sm rounded overflow-hidden">
+                <iframe src="@Model.MapEmbedUrl" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+        </div>
+    </div>
+</div>

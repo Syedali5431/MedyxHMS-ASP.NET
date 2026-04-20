@@ -1,0 +1,32 @@
+2026-04-19 23:25:15.943 +10:00 [ERR] Failed executing DbCommand (5ms) [Parameters=[], CommandType='"Text"', CommandTimeout='30']
+
+IF OBJECT_ID(N'[dbo].[ChatFeedback]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatFeedback] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SessionId] NVARCHAR(64) NOT NULL,
+        [MessageId] BIGINT NULL,
+        [FeedbackType] NVARCHAR(20) NOT NULL,
+        [Comment] NVARCHAR(1000) NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_ChatFeedback_ChatSessions_SessionId]
+            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_ChatFeedback_ChatMessages_MessageId]
+            FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE SET NULL
+    );
+
+    CREATE INDEX [IX_ChatFeedback_SessionId_CreatedAtUtc]
+        ON [dbo].[ChatFeedback]([SessionId], [CreatedAtUtc]);
+END
+2026-04-19 23:51:04.842 +10:00 [ERR] An unhandled exception has occurred while executing the request.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+MedyxHMS.Controllers.PatientPortal.DashboardController.Index (MedyxHMS)
+MedyxHMS.Controllers.DashboardController.Index (MedyxHMS)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddlewareImpl.Invoke(HttpContext context)
