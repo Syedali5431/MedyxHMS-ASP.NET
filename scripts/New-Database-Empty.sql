@@ -19,7 +19,7 @@ SET QUOTED_IDENTIFIER ON;
 GO
 
 CREATE TABLE [AspNetRoles] (
-    [Id] nvarchar(450) NOT NULL,
+    [Id] nvarchar(128) NOT NULL,
     [Name] nvarchar(256) NULL,
     [NormalizedName] nvarchar(256) NULL,
     [ConcurrencyStamp] nvarchar(max) NULL,
@@ -29,7 +29,7 @@ GO
 
 
 CREATE TABLE [AspNetUsers] (
-    [Id] nvarchar(450) NOT NULL,
+    [Id] nvarchar(128) NOT NULL,
     [EmployeeId] nvarchar(max) NOT NULL,
     [FirstName] nvarchar(max) NOT NULL,
     [LastName] nvarchar(max) NOT NULL,
@@ -85,7 +85,7 @@ GO
 
 CREATE TABLE [ChatSessions] (
     [Id] nvarchar(64) NOT NULL,
-    [UserId] nvarchar(450) NULL,
+    [UserId] nvarchar(128) NULL,
     [UserRole] nvarchar(40) NOT NULL,
     [StartedAtUtc] datetime2 NOT NULL,
     [EndedAtUtc] datetime2 NULL,
@@ -241,7 +241,7 @@ CREATE TABLE [LicenseRecords] (
     [Status] nvarchar(30) NOT NULL,
     [LastReminderSentAtUtc] datetime2 NULL,
     [LastReminderCycleExpiryUtc] datetime2 NULL,
-    [RenewedByUserId] nvarchar(450) NULL,
+    [RenewedByUserId] nvarchar(128) NULL,
     [RenewedAtUtc] datetime2 NULL,
     [RenewalTermYears] int NULL,
     [Notes] nvarchar(1000) NULL,
@@ -382,7 +382,7 @@ GO
 
 CREATE TABLE [AspNetRoleClaims] (
     [Id] int NOT NULL IDENTITY,
-    [RoleId] nvarchar(450) NOT NULL,
+    [RoleId] nvarchar(128) NOT NULL,
     [ClaimType] nvarchar(max) NULL,
     [ClaimValue] nvarchar(max) NULL,
     CONSTRAINT [PK_AspNetRoleClaims] PRIMARY KEY ([Id]),
@@ -393,7 +393,7 @@ GO
 
 CREATE TABLE [AspNetUserClaims] (
     [Id] int NOT NULL IDENTITY,
-    [UserId] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
     [ClaimType] nvarchar(max) NULL,
     [ClaimValue] nvarchar(max) NULL,
     CONSTRAINT [PK_AspNetUserClaims] PRIMARY KEY ([Id]),
@@ -403,10 +403,10 @@ GO
 
 
 CREATE TABLE [AspNetUserLogins] (
-    [LoginProvider] nvarchar(450) NOT NULL,
-    [ProviderKey] nvarchar(450) NOT NULL,
+    [LoginProvider] nvarchar(128) NOT NULL,
+    [ProviderKey] nvarchar(128) NOT NULL,
     [ProviderDisplayName] nvarchar(max) NULL,
-    [UserId] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
     CONSTRAINT [PK_AspNetUserLogins] PRIMARY KEY ([LoginProvider], [ProviderKey]),
     CONSTRAINT [FK_AspNetUserLogins_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
 );
@@ -414,8 +414,8 @@ GO
 
 
 CREATE TABLE [AspNetUserRoles] (
-    [UserId] nvarchar(450) NOT NULL,
-    [RoleId] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
+    [RoleId] nvarchar(128) NOT NULL,
     CONSTRAINT [PK_AspNetUserRoles] PRIMARY KEY ([UserId], [RoleId]),
     CONSTRAINT [FK_AspNetUserRoles_AspNetRoles_RoleId] FOREIGN KEY ([RoleId]) REFERENCES [AspNetRoles] ([Id]) ON DELETE CASCADE,
     CONSTRAINT [FK_AspNetUserRoles_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
@@ -424,9 +424,9 @@ GO
 
 
 CREATE TABLE [AspNetUserTokens] (
-    [UserId] nvarchar(450) NOT NULL,
-    [LoginProvider] nvarchar(450) NOT NULL,
-    [Name] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
+    [LoginProvider] nvarchar(128) NOT NULL,
+    [Name] nvarchar(128) NOT NULL,
     [Value] nvarchar(max) NULL,
     CONSTRAINT [PK_AspNetUserTokens] PRIMARY KEY ([UserId], [LoginProvider], [Name]),
     CONSTRAINT [FK_AspNetUserTokens_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
@@ -436,7 +436,7 @@ GO
 
 CREATE TABLE [AuditLogs] (
     [Id] int NOT NULL IDENTITY,
-    [UserId] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
     [Action] nvarchar(max) NOT NULL,
     [EntityName] nvarchar(max) NOT NULL,
     [EntityId] nvarchar(max) NOT NULL,
@@ -477,7 +477,7 @@ CREATE TABLE [Patients] (
     [GuardianPhone] nvarchar(max) NOT NULL,
     [MaritalStatus] nvarchar(max) NOT NULL,
     [Occupation] nvarchar(max) NOT NULL,
-    [UserId] nvarchar(450) NOT NULL,
+    [UserId] nvarchar(128) NOT NULL,
     [ProfileImagePath] nvarchar(max) NOT NULL,
     [IsActive] bit NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
@@ -489,7 +489,7 @@ GO
 
 
 CREATE TABLE [Staff] (
-    [Id] nvarchar(450) NOT NULL,
+    [Id] nvarchar(128) NOT NULL,
     [EmployeeId] nvarchar(max) NOT NULL,
     [FirstName] nvarchar(max) NOT NULL,
     [LastName] nvarchar(max) NOT NULL,
@@ -503,7 +503,7 @@ CREATE TABLE [Staff] (
     [About] nvarchar(max) NOT NULL,
     [IsActive] bit NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
-    [UserId] nvarchar(450) NULL,
+    [UserId] nvarchar(128) NULL,
     CONSTRAINT [PK_Staff] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_Staff_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id])
 );
@@ -561,7 +561,7 @@ CREATE TABLE [LicenseAuditLogs] (
     [Id] int NOT NULL IDENTITY,
     [LicenseRecordId] int NOT NULL,
     [ActionType] nvarchar(50) NOT NULL,
-    [PerformedByUserId] nvarchar(450) NULL,
+    [PerformedByUserId] nvarchar(128) NULL,
     [PerformedAtUtc] datetime2 NOT NULL,
     [OldExpiresAtUtc] datetime2 NULL,
     [NewExpiresAtUtc] datetime2 NULL,
@@ -674,7 +674,7 @@ CREATE TABLE [MedicalRecords] (
     [Treatment] nvarchar(2000) NOT NULL,
     [Notes] nvarchar(1000) NOT NULL,
     [DoctorName] nvarchar(100) NOT NULL,
-    [DoctorId] nvarchar(450) NOT NULL,
+    [DoctorId] nvarchar(128) NOT NULL,
     [RecordDate] datetime2 NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
     [CreatedBy] nvarchar(max) NOT NULL,
@@ -729,7 +729,7 @@ GO
 
 CREATE TABLE [CertificateRecords] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [CertificateType] nvarchar(max) NOT NULL,
     [Title] nvarchar(max) NOT NULL,
     [Content] nvarchar(max) NOT NULL,
@@ -745,7 +745,7 @@ GO
 CREATE TABLE [GeneratedReports] (
     [Id] int NOT NULL IDENTITY,
     [ReportName] nvarchar(max) NOT NULL,
-    [ReportType] nvarchar(450) NOT NULL,
+    [ReportType] nvarchar(128) NOT NULL,
     [Description] nvarchar(max) NOT NULL,
     [FromDate] datetime2 NOT NULL,
     [ToDate] datetime2 NOT NULL,
@@ -753,7 +753,7 @@ CREATE TABLE [GeneratedReports] (
     [FilePath] nvarchar(max) NOT NULL,
     [FileFormat] nvarchar(max) NOT NULL,
     [FileSize] bigint NOT NULL,
-    [GeneratedBy] nvarchar(450) NOT NULL,
+    [GeneratedBy] nvarchar(128) NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
     [Status] nvarchar(max) NOT NULL,
     CONSTRAINT [PK_GeneratedReports] PRIMARY KEY ([Id]),
@@ -764,8 +764,8 @@ GO
 
 CREATE TABLE [IdCardRecords] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
-    [CardNumber] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
+    [CardNumber] nvarchar(128) NOT NULL,
     [IssueDate] datetime2 NOT NULL,
     [ExpiryDate] datetime2 NULL,
     [Status] nvarchar(max) NOT NULL,
@@ -779,7 +779,7 @@ GO
 
 CREATE TABLE [LeaveBalances] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [LeaveTypeId] int NOT NULL,
     [Year] int NOT NULL,
     [AllocatedDays] int NOT NULL,
@@ -796,7 +796,7 @@ GO
 
 CREATE TABLE [LeaveRequests] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [LeaveTypeId] int NOT NULL,
     [StartDate] datetime2 NOT NULL,
     [EndDate] datetime2 NOT NULL,
@@ -817,7 +817,7 @@ GO
 
 CREATE TABLE [PayrollRecords] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [PayrollMonth] datetime2 NOT NULL,
     [BasicSalary] decimal(18,2) NOT NULL,
     [Allowances] decimal(18,2) NOT NULL,
@@ -844,7 +844,7 @@ CREATE TABLE [ReportSchedules] (
     [TimeOfDay] nvarchar(max) NOT NULL,
     [IsActive] bit NOT NULL,
     [EmailRecipients] nvarchar(max) NOT NULL,
-    [CreatedBy] nvarchar(450) NOT NULL,
+    [CreatedBy] nvarchar(128) NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
     [LastRunDate] datetime2 NULL,
     [NextRunDate] datetime2 NULL,
@@ -856,7 +856,7 @@ GO
 
 CREATE TABLE [StaffAttendances] (
     [Id] int NOT NULL IDENTITY,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [AttendanceDate] datetime2 NOT NULL,
     [CheckInTime] datetime2 NULL,
     [CheckOutTime] datetime2 NULL,
@@ -871,7 +871,7 @@ GO
 
 
 CREATE TABLE [StaffRoles] (
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [RoleId] int NOT NULL,
     [AssignedDate] datetime2 NOT NULL,
     [AssignedBy] nvarchar(max) NOT NULL,
@@ -890,7 +890,7 @@ CREATE TABLE [UserActionLogs] (
     [IPAddress] nvarchar(max) NOT NULL,
     [LoggedDate] datetime2 NOT NULL,
     [Status] nvarchar(max) NOT NULL,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     CONSTRAINT [PK_UserActionLogs] PRIMARY KEY ([Id]),
     CONSTRAINT [FK_UserActionLogs_Staff_StaffId] FOREIGN KEY ([StaffId]) REFERENCES [Staff] ([Id]) ON DELETE CASCADE
 );
@@ -901,12 +901,12 @@ CREATE TABLE [ChatEscalations] (
     [Id] bigint NOT NULL IDENTITY,
     [SessionId] nvarchar(64) NOT NULL,
     [MessageId] bigint NULL,
-    [UserId] nvarchar(450) NULL,
+    [UserId] nvarchar(128) NULL,
     [EscalationType] nvarchar(30) NOT NULL,
     [Reason] nvarchar(1200) NOT NULL,
     [Status] nvarchar(30) NOT NULL,
     [TargetContact] nvarchar(200) NULL,
-    [ResolvedByUserId] nvarchar(450) NULL,
+    [ResolvedByUserId] nvarchar(128) NULL,
     [CreatedAtUtc] datetime2 NOT NULL,
     [ResolvedAtUtc] datetime2 NULL,
     CONSTRAINT [PK_ChatEscalations] PRIMARY KEY ([Id]),
@@ -935,7 +935,7 @@ CREATE TABLE [Appointments] (
     [AppointmentId] int NOT NULL,
     [PatientId] int NOT NULL,
     [DoctorId] int NOT NULL,
-    [StaffId] nvarchar(450) NOT NULL,
+    [StaffId] nvarchar(128) NOT NULL,
     [AppointmentDate] datetime2 NOT NULL,
     [AppointmentTime] time NOT NULL,
     [Status] nvarchar(max) NOT NULL,
@@ -1146,7 +1146,7 @@ CREATE TABLE [TestResults] (
     [ReferenceRange] nvarchar(50) NOT NULL,
     [Status] nvarchar(20) NOT NULL,
     [PerformedBy] nvarchar(100) NOT NULL,
-    [DoctorId] nvarchar(450) NOT NULL,
+    [DoctorId] nvarchar(128) NOT NULL,
     [TestDate] datetime2 NOT NULL,
     [CreatedDate] datetime2 NOT NULL,
     [CreatedBy] nvarchar(max) NOT NULL,
