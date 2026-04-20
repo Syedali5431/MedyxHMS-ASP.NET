@@ -159,8 +159,11 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 ### Deployment and Cutover
 - Document: [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md)
 - Checklist: [MIGRATION-COUNT-COMPARISON-CHECKLIST.md](MIGRATION-COUNT-COMPARISON-CHECKLIST.md)
-- Script: `scripts/compare-migration-counts.ps1`
-- Template: `scripts/source-count-snapshot.template.csv`
+- Scripts Guide: [../scripts/README.md](../scripts/README.md)
+- Bootstrap (seeded): [../scripts/New-Database.sql](../scripts/New-Database.sql)
+- Bootstrap (empty): [../scripts/New-Database-Empty.sql](../scripts/New-Database-Empty.sql)
+- Script: [../scripts/compare-migration-counts.ps1](../scripts/compare-migration-counts.ps1)
+- Template: [../scripts/source-count-snapshot.template.csv](../scripts/source-count-snapshot.template.csv)
 
 ### Security and Performance Validation
 - Document: [SECURITY-PERFORMANCE-VALIDATION.md](SECURITY-PERFORMANCE-VALIDATION.md)
