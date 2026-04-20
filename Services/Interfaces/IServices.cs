@@ -508,4 +508,54 @@ namespace MedyxHMS.Services.Interfaces
         Task<bool> UpdateReportScheduleAsync(ReportSchedule schedule);
         Task<bool> DeleteReportScheduleAsync(int scheduleId);
     }
+
+    /// <summary>
+    /// Manages system-module visibility:
+    ///   - SuperAdmin can toggle a module globally on/off.
+    ///   - Admin and SuperAdmin can enable/disable a module for a specific user.
+    /// </summary>
+    public interface IModuleService
+    {
+        /// <summary>Returns all registered system modules.</summary>
+        Task<IReadOnlyList<SystemModule>> GetAllModulesAsync();
+
+        /// <summary>
+        /// Returns true when the module is globally enabled AND either:
+        ///   (a) no per-user access record exists (default = enabled), or
+        ///   (b) the per-user access record explicitly sets IsEnabled = true.
+        /// SuperAdmin users bypass both global and per-user restrictions.
+        /// </summary>
+        Task<bool> IsModuleEnabledForUserAsync(string moduleKey, string userId, bool isSuperAdmin = false);
+
+        /// <summary>
+        /// Returns a dictionary of moduleKey → isEnabled for a given user,
+        /// respecting global and per-user overrides.
+        /// </summary>
+        Task<Dictionary<string, bool>> GetUserModuleMapAsync(string userId, bool isSuperAdmin = false);
+
+        /// <summary>SuperAdmin only: toggle global on/off for a module.</summary>
+        Task<bool> SetGlobalModuleEnabledAsync(int moduleId, bool isEnabled, string performedByUserId);
+
+        /// <summary>Admin/SuperAdmin: set per-user access for a module.</summary>
+        Task<bool> SetUserModuleAccessAsync(string userId, int moduleId, bool isEnabled, string performedByUserId);
+
+        /// <summary>
+        /// Returns all modules with each user's per-module access status.
+        /// Used by the admin "User Module Access" screen.
+        /// </summary>
+        Task<IReadOnlyList<UserModuleAccessRow>> GetUserModuleAccessRowsAsync(string userId);
+    }
+
+    /// <summary>Flat projection used in the module-management UI.</summary>
+    public class UserModuleAccessRow
+    {
+        public int ModuleId { get; set; }
+        public string Key { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string? Icon { get; set; }
+        public bool IsGloballyEnabled { get; set; }
+        public bool? UserOverride { get; set; }   // null = no explicit record (inherits global)
+        public bool EffectivelyEnabled { get; set; }
+        public int SortOrder { get; set; }
+    }
 }

@@ -73,6 +73,7 @@ builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotif
 builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ILicenseService, LicenseService>();
+builder.Services.AddScoped<IModuleService, ModuleService>();
 builder.Services.AddScoped<IChatbotModerationService, ChatbotModerationService>();
 builder.Services.AddScoped<IChatbotPromptBuilder, ChatbotPromptBuilder>();
 builder.Services.AddScoped<IChatbotKnowledgeService, ChatbotKnowledgeService>();

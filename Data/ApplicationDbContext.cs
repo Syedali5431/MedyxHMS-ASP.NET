@@ -90,6 +90,10 @@ namespace MedyxHMS.Data
         public DbSet<RoleFeature> RoleFeatures { get; set; }
         public DbSet<StaffRole> StaffRoles { get; set; }
 
+        // Module Management
+        public DbSet<SystemModule> SystemModules { get; set; }
+        public DbSet<UserModuleAccess> UserModuleAccesses { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -360,6 +364,27 @@ namespace MedyxHMS.Data
                 .HasOne(sr => sr.Role)
                 .WithMany(r => r.StaffRoles)
                 .HasForeignKey(sr => sr.RoleId);
+
+            // SystemModule / UserModuleAccess relationships
+            modelBuilder.Entity<UserModuleAccess>()
+                .HasIndex(u => new { u.UserId, u.ModuleId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserModuleAccess>()
+                .HasOne(u => u.User)
+                .WithMany()
+                .HasForeignKey(u => u.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserModuleAccess>()
+                .HasOne(u => u.Module)
+                .WithMany(m => m.UserAccesses)
+                .HasForeignKey(u => u.ModuleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SystemModule>()
+                .HasIndex(m => m.Key)
+                .IsUnique();
 
             // CMS relationships
             modelBuilder.Entity<CmsMenuItem>()

@@ -15,6 +15,13 @@ namespace MedyxHMS.ViewModels
 
         [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
+
+        /// <summary>
+        /// Set after the AJAX credential check reveals available roles.
+        /// Required when the user has more than one role.
+        /// </summary>
+        [Display(Name = "Login as")]
+        public string? SelectedRole { get; set; }
     }
 
     public class RegisterViewModel

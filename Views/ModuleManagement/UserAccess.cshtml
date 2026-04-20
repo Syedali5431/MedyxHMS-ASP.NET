@@ -1,0 +1,165 @@
+@model MedyxHMS.ViewModels.UserModuleAccessViewModel
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "Module Access – " + Model.UserFullName;
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+    bool isSuperAdmin = User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="mb-0">
+                <i class="fas fa-sliders-h me-2 text-primary"></i>
+                Module Access
+            </h2>
+            <p class="text-muted small mb-0">
+                User: <strong>@Model.UserFullName</strong>
+                @if (!string.IsNullOrWhiteSpace(Model.UserEmail))
+                {
+                    <span class="ms-1 text-secondary">(@Model.UserEmail)</span>
+                }
+            </p>
+        </div>
+        <div class="col-auto">
+            <a asp-action="Users" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-arrow-left me-1"></i>Back to Users
+            </a>
+        </div>
+    </div>
+
+    <div id="alertBox" class="alert d-none mb-3"></div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:50px">#</th>
+                        <th>Module</th>
+                        <th>Description</th>
+                        @if (isSuperAdmin)
+                        {
+                            <th class="text-center" style="width:130px">Global</th>
+                        }
+                        <th class="text-center" style="width:170px">Access for This User</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr class="@(!row.IsGloballyEnabled ? "table-secondary" : "")">
+                            <td class="text-muted small">@row.SortOrder</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(row.Icon))
+                                {
+                                    <i class="@row.Icon me-2 text-secondary"></i>
+                                }
+                                <strong>@row.DisplayName</strong>
+                            </td>
+                            <td class="text-muted small">
+                                @if (!row.IsGloballyEnabled)
+                                {
+                                    <span class="badge bg-secondary me-1">globally disabled</span>
+                                }
+                            </td>
+                            @if (isSuperAdmin)
+                            {
+                                <td class="text-center">
+                                    <span class="badge @(row.IsGloballyEnabled ? "bg-success" : "bg-secondary")">
+                                        @(row.IsGloballyEnabled ? "Enabled" : "Disabled")
+                                    </span>
+                                </td>
+                            }
+                            <td class="text-center">
+                                @{
+                                    bool canToggle = row.IsGloballyEnabled;
+                                    string statusLabel = !row.IsGloballyEnabled
+                                        ? "N/A"
+                                        : (row.EffectivelyEnabled ? "Allowed" : "Blocked");
+                                }
+                                <div class="form-check form-switch d-inline-block"
+                                     title="@(!canToggle ? "Cannot enable; module is disabled globally" : "")">
+                                    <input class="form-check-input user-module-toggle"
+                                           type="checkbox"
+                                           role="switch"
+                                           id="ua-@row.ModuleId"
+                                           data-module-id="@row.ModuleId"
+                                           data-module-name="@row.DisplayName"
+                                           data-user-id="@Model.UserId"
+                                           @(row.EffectivelyEnabled ? "checked" : "")
+                                           @(!canToggle ? "disabled" : "") />
+                                    <label class="form-check-label ms-1 small ua-label-@row.ModuleId"
+                                           for="ua-@row.ModuleId">
+                                        @statusLabel
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="text-muted small mt-3">
+        <i class="fas fa-info-circle me-1"></i>
+        Grayed rows are globally disabled by a SuperAdmin. Toggling access here
+        applies only to <strong>@Model.UserFullName</strong>.
+    </p>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    var csrfToken = '@Html.Raw(token)';
+
+    document.querySelectorAll('.user-module-toggle').forEach(function (chk) {
+        chk.addEventListener('change', async function () {
+            var moduleId   = parseInt(this.dataset.moduleId);
+            var userId     = this.dataset.userId;
+            var isEnabled  = this.checked;
+            var moduleName = this.dataset.moduleName;
+            var labelEl    = document.querySelector('.ua-label-' + moduleId);
+
+            labelEl.textContent = isEnabled ? 'Allowed' : 'Blocked';
+
+            try {
+                var resp = await fetch('/ModuleManagement/SetUserAccess', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':             'application/json',
+                        'RequestVerificationToken': csrfToken
+                    },
+                    body: JSON.stringify({ userId: userId, moduleId: moduleId, isEnabled: isEnabled })
+                });
+                var data = await resp.json();
+
+                if (!data.success) {
+                    this.checked = !isEnabled;
+                    labelEl.textContent = !isEnabled ? 'Allowed' : 'Blocked';
+                    showAlert('danger', data.message || 'Failed to update.');
+                } else {
+                    showAlert('success', moduleName + ' access ' + (isEnabled ? 'granted to' : 'revoked from') + ' this user.');
+                }
+            } catch {
+                this.checked = !isEnabled;
+                labelEl.textContent = !isEnabled ? 'Allowed' : 'Blocked';
+                showAlert('danger', 'Network error. Please try again.');
+            }
+        });
+    });
+
+    function showAlert(type, msg) {
+        var box = document.getElementById('alertBox');
+        box.className = 'alert alert-' + type;
+        box.textContent = msg;
+        clearTimeout(box._timer);
+        box._timer = setTimeout(function () { box.classList.add('d-none'); }, 4000);
+    }
+}());
+</script>
+}

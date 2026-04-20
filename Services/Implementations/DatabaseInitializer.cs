@@ -32,10 +32,12 @@ namespace MedyxHMS.Services.Implementations
             await EnsureNotificationDeliveryLogTableAsync();
             await EnsureLicenseTablesAsync();
             await EnsureChatbotTablesAsync();
+            await EnsureModuleTablesAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
             await SeedLicenseDefaultsAsync();
+            await SeedSystemModulesAsync();
 
             // Seed roles and features
             await SeedRolesAndFeaturesAsync();
@@ -611,6 +613,98 @@ END");
                 "string",
                 "Licensing",
                 "Billing contact guidance displayed on license reminders and expired screens.");
+        }
+
+        private async Task EnsureModuleTablesAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[SystemModules]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SystemModules] (
+        [Id]                INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Key]               NVARCHAR(50)  NOT NULL,
+        [DisplayName]       NVARCHAR(100) NOT NULL,
+        [Description]       NVARCHAR(300) NULL,
+        [Icon]              NVARCHAR(100) NULL,
+        [IsGloballyEnabled] BIT NOT NULL DEFAULT(1),
+        [SortOrder]         INT NOT NULL DEFAULT(0),
+        [CreatedAtUtc]      DATETIME2 NOT NULL,
+        [UpdatedAtUtc]      DATETIME2 NOT NULL,
+        [UpdatedByUserId]   NVARCHAR(450) NULL
+    );
+    CREATE UNIQUE INDEX [UX_SystemModules_Key] ON [dbo].[SystemModules]([Key]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[UserModuleAccesses]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[UserModuleAccesses] (
+        [Id]              INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [UserId]          NVARCHAR(450) NOT NULL,
+        [ModuleId]        INT NOT NULL,
+        [IsEnabled]       BIT NOT NULL DEFAULT(1),
+        [CreatedAtUtc]    DATETIME2 NOT NULL,
+        [UpdatedAtUtc]    DATETIME2 NOT NULL,
+        [UpdatedByUserId] NVARCHAR(450) NULL,
+        CONSTRAINT [FK_UserModuleAccesses_AspNetUsers_UserId]
+            FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_UserModuleAccesses_SystemModules_ModuleId]
+            FOREIGN KEY ([ModuleId]) REFERENCES [dbo].[SystemModules]([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [UX_UserModuleAccesses_UserId_ModuleId]
+        ON [dbo].[UserModuleAccesses]([UserId], [ModuleId]);
+END");
+        }
+
+        private static readonly (string Key, string DisplayName, string? Description, string? Icon, int SortOrder)[] DefaultModules =
+        {
+            ("Dashboard",          "Dashboard",                  "Main dashboard",                        "fas fa-tachometer-alt",     1),
+            ("Patient",            "Patient Management",         "Patient registration and records",      "fas fa-user-injured",       2),
+            ("Appointment",        "Appointments",               "Appointment scheduling",                "fas fa-calendar-check",     3),
+            ("OPD",                "Outpatient Department",      "OPD visits and consultations",          "fas fa-stethoscope",        4),
+            ("IPD",                "Inpatient Department",       "IPD admissions and wards",              "fas fa-bed",               5),
+            ("Billing",            "Billing",                    "Invoices and payments",                 "fas fa-file-invoice-dollar", 6),
+            ("Prescription",       "Pharmacy & Prescription",    "Pharmacy and prescriptions",            "fas fa-pills",             7),
+            ("Lab",                "Laboratory",                 "Lab tests and results",                 "fas fa-flask",             8),
+            ("Radiology",          "Radiology",                  "Radiology tests and reports",           "fas fa-x-ray",             9),
+            ("BloodBank",          "Blood Bank",                 "Blood inventory and issues",            "fas fa-tint",              10),
+            ("OperationTheatre",   "Operation Theatre",          "OT scheduling and records",             "fas fa-hospital",          11),
+            ("FrontOffice",        "Front Office",               "Visitor and complaint management",      "fas fa-concierge-bell",    12),
+            ("Attendance",         "Attendance",                 "Staff attendance tracking",             "fas fa-clipboard-check",   13),
+            ("Leave",              "Leave Management",           "Leave requests and balances",           "fas fa-calendar-minus",    14),
+            ("Payroll",            "Payroll",                    "Staff payroll processing",              "fas fa-money-check-alt",   15),
+            ("Certificate",        "Certificates & ID Cards",    "Certificate and ID card issuance",      "fas fa-id-card",           16),
+            ("Referral",           "Referrals",                  "Patient referral management",           "fas fa-share-alt",         17),
+            ("Report",             "Reports",                    "System reports and analytics",          "fas fa-chart-bar",         18),
+            ("PatientPortal",      "Patient Portal",             "Patient self-service portal",           "fas fa-user-circle",       19),
+            ("Ambulance",          "Ambulance Management",       "Ambulance dispatch and tracking",       "fas fa-ambulance",         20),
+            ("Chatbot",            "Chatbot",                    "AI chatbot assistant",                  "fas fa-robot",             21),
+            ("CMS",                "CMS / Public Website",       "Public website and CMS management",     "fas fa-globe",             22),
+            ("License",            "License Management",         "System license management",             "fas fa-key",               23),
+        };
+
+        private async Task SeedSystemModulesAsync()
+        {
+            var now = DateTime.UtcNow;
+            foreach (var (key, displayName, description, icon, sortOrder) in DefaultModules)
+            {
+                if (!await _context.SystemModules.AnyAsync(m => m.Key == key))
+                {
+                    _context.SystemModules.Add(new MedyxHMS.Models.SystemModule
+                    {
+                        Key = key,
+                        DisplayName = displayName,
+                        Description = description,
+                        Icon = icon,
+                        IsGloballyEnabled = true,
+                        SortOrder = sortOrder,
+                        CreatedAtUtc = now,
+                        UpdatedAtUtc = now
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
         }
 
         private async Task EnsureSystemSettingAsync(string key, string value, string type, string category, string description)

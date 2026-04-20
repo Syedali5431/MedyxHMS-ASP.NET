@@ -1,40 +1,85 @@
 @model MedyxHMS.ViewModels.LoginViewModel
 @{
     ViewData["Title"] = "Login";
+    var antiforgery = ViewContext.HttpContext.RequestServices
+        .GetRequiredService<Microsoft.AspNetCore.Antiforgery.IAntiforgery>()
+        .GetAndStoreTokens(ViewContext.HttpContext);
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h3 class="card-title">Hospital Management System Login</h3>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-hospital-alt me-2"></i>MedyxHMS Login</h4>
             </div>
-            <div class="card-body">
-                <form asp-action="Login" method="post">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="card-body p-4">
+                <form asp-action="Login" method="post" id="loginForm">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" id="serverErrors"></div>
 
-                    <div class="form-group">
-                        <label asp-for="Email"></label>
-                        <input asp-for="Email" class="form-control" placeholder="Enter email or employee ID" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+                    @* Step 1: credentials *@
+                    <div id="credentialsStep">
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control" placeholder="Email or Employee ID"
+                                   autocomplete="username" id="emailInput" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <div class="input-group">
+                                <input asp-for="Password" class="form-control" id="passwordInput"
+                                       autocomplete="current-password" />
+                                <button type="button" class="btn btn-outline-secondary" id="togglePwd"
+                                        title="Show/hide password">
+                                    <i class="fas fa-eye" id="eyeIcon"></i>
+                                </button>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div id="ajaxError" class="alert alert-danger py-2 small d-none"></div>
+
+                        <div class="d-grid mb-3">
+                            <button type="button" class="btn btn-primary" id="checkRolesBtn">
+                                <span id="checkBtnText">Continue</span>
+                                <span id="checkBtnSpinner" class="spinner-border spinner-border-sm ms-1 d-none"></span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label asp-for="Password"></label>
-                        <input asp-for="Password" class="form-control" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
+                    @* Step 2: role selection (hidden until credentials are verified) *@
+                    <div id="roleStep" class="d-none">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label asp-for="SelectedRole" class="form-label fw-semibold mb-0">Login as</label>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-secondary" id="backToCredentials">
+                                    <i class="fas fa-arrow-left me-1"></i>Change account
+                                </button>
+                            </div>
+                            <div id="loggedInAs" class="alert alert-success py-2 small mb-3"></div>
+                            <select asp-for="SelectedRole" class="form-select" id="roleSelect"></select>
+                            <div class="small text-muted mt-1" id="singleRoleNote" style="display:none">
+                                You have only one role assigned; you will be logged in automatically.
+                            </div>
+                        </div>
 
-                    <div class="form-group form-check">
-                        <input asp-for="RememberMe" class="form-check-input" />
-                        <label asp-for="RememberMe" class="form-check-label"></label>
-                    </div>
+                        <div class="mb-3 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" />
+                            <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+                        </div>
 
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-block">Login</button>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                            </button>
+                        </div>
                     </div>
 
                     <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
+                    {{!-- Email + password are also re-submitted in hidden fields so the POST action receives them --}}
+                    <input type="hidden" id="hiddenEmail"    name="Email"    value="" />
+                    <input type="hidden" id="hiddenPassword" name="Password" value="" />
                 </form>
             </div>
         </div>
@@ -42,5 +87,125 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+@{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+<script>
+(function () {
+    'use strict';
+
+    // ── Password visibility toggle ────────────────────────────────────────────
+    document.getElementById('togglePwd').addEventListener('click', function () {
+        var inp = document.getElementById('passwordInput');
+        var ico = document.getElementById('eyeIcon');
+        if (inp.type === 'password') {
+            inp.type = 'text';
+            ico.className = 'fas fa-eye-slash';
+        } else {
+            inp.type = 'password';
+            ico.className = 'fas fa-eye';
+        }
+    });
+
+    // ── AJAX role-check ───────────────────────────────────────────────────────
+    document.getElementById('checkRolesBtn').addEventListener('click', async function () {
+        var email    = document.getElementById('emailInput').value.trim();
+        var password = document.getElementById('passwordInput').value;
+        var errBox   = document.getElementById('ajaxError');
+
+        errBox.classList.add('d-none');
+        errBox.textContent = '';
+
+        if (!email || !password) {
+            errBox.textContent = 'Please enter your email/employee ID and password.';
+            errBox.classList.remove('d-none');
+            return;
+        }
+
+        // Show spinner
+        document.getElementById('checkBtnSpinner').classList.remove('d-none');
+        document.getElementById('checkBtnText').textContent = 'Checking…';
+        this.disabled = true;
+
+        try {
+            var formData = new FormData();
+            formData.append('email',    email);
+            formData.append('password', password);
+            formData.append('__RequestVerificationToken', '@antiforgery.RequestToken');
+
+            var resp = await fetch('/Account/ValidateCredentials', {
+                method: 'POST',
+                body:   formData
+            });
+
+            var data = await resp.json();
+
+            if (!data.success) {
+                errBox.textContent = data.message || 'Invalid credentials.';
+                errBox.classList.remove('d-none');
+                return;
+            }
+
+            // ── Populate role selector ────────────────────────────────────────
+            var select = document.getElementById('roleSelect');
+            select.innerHTML = '';
+            data.roles.forEach(function (role) {
+                var opt = document.createElement('option');
+                opt.value = role;
+                opt.textContent = formatRole(role);
+                select.appendChild(opt);
+            });
+
+            document.getElementById('loggedInAs').textContent = 'Signed in as: ' + email;
+
+            if (data.roles.length === 1) {
+                document.getElementById('singleRoleNote').style.display = 'block';
+            }
+
+            // Copy credentials into hidden fields so the full POST can re-validate them
+            document.getElementById('hiddenEmail').value    = email;
+            document.getElementById('hiddenPassword').value = password;
+
+            // Clear visible inputs so the browser doesn't re-submit them as duplicate fields
+            document.getElementById('emailInput').name    = '';
+            document.getElementById('passwordInput').name = '';
+
+            // Switch to role step
+            document.getElementById('credentialsStep').classList.add('d-none');
+            document.getElementById('roleStep').classList.remove('d-none');
+
+        } catch (err) {
+            errBox.textContent = 'A network error occurred. Please try again.';
+            errBox.classList.remove('d-none');
+        } finally {
+            document.getElementById('checkBtnSpinner').classList.add('d-none');
+            document.getElementById('checkBtnText').textContent = 'Continue';
+            this.disabled = false;
+        }
+    });
+
+    // ── Back button ───────────────────────────────────────────────────────────
+    document.getElementById('backToCredentials').addEventListener('click', function () {
+        document.getElementById('roleStep').classList.add('d-none');
+        document.getElementById('credentialsStep').classList.remove('d-none');
+
+        // Restore names so validation works again
+        document.getElementById('emailInput').name    = 'Email';
+        document.getElementById('passwordInput').name = 'Password';
+        document.getElementById('hiddenEmail').value    = '';
+        document.getElementById('hiddenPassword').value = '';
+    });
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+    function formatRole(role) {
+        // Insert spaces before capital letters for readability, e.g. SuperAdmin → Super Admin
+        return role.replace(/([A-Z])/g, ' $1').trim();
+    }
+
+    // If the page was reloaded with a server-side error and email is known,
+    // show the credentials step with the stored value
+    var prefilledEmail = document.getElementById('hiddenEmail').value;
+    if (prefilledEmail) {
+        document.getElementById('emailInput').value = prefilledEmail;
+    }
+}());
+</script>
 }

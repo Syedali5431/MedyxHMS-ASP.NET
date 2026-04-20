@@ -250,6 +250,18 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGljZW5zZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/ModuleManagement/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlTWFuYWdlbWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/ModuleManagement/UserAccess.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlTWFuYWdlbWVudFxVc2VyQWNjZXNzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/ModuleManagement/Users.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlTWFuYWdlbWVudFxVc2Vycy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/OPD/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT1BEXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 

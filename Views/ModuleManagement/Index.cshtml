@@ -1,0 +1,124 @@
+@model MedyxHMS.ViewModels.SystemModuleListViewModel
+@using Microsoft.AspNetCore.Antiforgery
+@inject IAntiforgery Antiforgery
+@{
+    ViewData["Title"] = "System Modules";
+    var token = Antiforgery.GetAndStoreTokens(Context).RequestToken;
+}
+
+<div class="container-fluid">
+    <div class="row mb-3 align-items-center">
+        <div class="col">
+            <h2 class="mb-0"><i class="fas fa-puzzle-piece me-2 text-primary"></i>System Modules</h2>
+            <p class="text-muted small mb-0">Enable or disable modules globally. Disabled modules are hidden for all non-SuperAdmin users.</p>
+        </div>
+        <div class="col-auto">
+            <a asp-controller="ModuleManagement" asp-action="Users" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-users me-1"></i>Per-User Access
+            </a>
+        </div>
+    </div>
+
+    <div id="alertBox" class="alert d-none mb-3"></div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:60px">#</th>
+                        <th>Module</th>
+                        <th>Description</th>
+                        <th class="text-center" style="width:160px">Global Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model.Modules)
+                    {
+                        <tr id="row-@m.Id">
+                            <td class="text-muted small">@m.SortOrder</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(m.Icon))
+                                {
+                                    <i class="@m.Icon me-2 text-secondary"></i>
+                                }
+                                <strong>@m.DisplayName</strong>
+                            </td>
+                            <td class="text-muted small">@m.Description</td>
+                            <td class="text-center">
+                                <div class="form-check form-switch d-inline-block" title="Toggle globally">
+                                    <input class="form-check-input module-toggle"
+                                           type="checkbox"
+                                           role="switch"
+                                           id="toggle-@m.Id"
+                                           data-module-id="@m.Id"
+                                           data-module-name="@m.DisplayName"
+                                           @(m.IsGloballyEnabled ? "checked" : "") />
+                                    <label class="form-check-label ms-1 small toggle-label-@m.Id"
+                                           for="toggle-@m.Id">
+                                        @(m.IsGloballyEnabled ? "Enabled" : "Disabled")
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    'use strict';
+
+    var csrfToken = '@Html.Raw(token)';
+
+    document.querySelectorAll('.module-toggle').forEach(function (chk) {
+        chk.addEventListener('change', async function () {
+            var moduleId   = parseInt(this.dataset.moduleId);
+            var isEnabled  = this.checked;
+            var moduleName = this.dataset.moduleName;
+            var labelEl    = document.querySelector('.toggle-label-' + moduleId);
+
+            // Optimistic UI
+            labelEl.textContent = isEnabled ? 'Enabled' : 'Disabled';
+
+            try {
+                var resp = await fetch('/ModuleManagement/ToggleGlobal', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type':              'application/json',
+                        'RequestVerificationToken':  csrfToken
+                    },
+                    body: JSON.stringify({ moduleId: moduleId, isEnabled: isEnabled })
+                });
+                var data = await resp.json();
+
+                if (!data.success) {
+                    // Revert
+                    this.checked = !isEnabled;
+                    labelEl.textContent = !isEnabled ? 'Enabled' : 'Disabled';
+                    showAlert('danger', data.message || 'Failed to update module.');
+                } else {
+                    showAlert('success', moduleName + ' has been ' + (isEnabled ? 'enabled' : 'disabled') + ' globally.');
+                }
+            } catch {
+                this.checked = !isEnabled;
+                labelEl.textContent = !isEnabled ? 'Enabled' : 'Disabled';
+                showAlert('danger', 'Network error. Please try again.');
+            }
+        });
+    });
+
+    function showAlert(type, msg) {
+        var box = document.getElementById('alertBox');
+        box.className = 'alert alert-' + type;
+        box.textContent = msg;
+        clearTimeout(box._timer);
+        box._timer = setTimeout(function () { box.classList.add('d-none'); }, 4000);
+    }
+}());
+</script>
+}

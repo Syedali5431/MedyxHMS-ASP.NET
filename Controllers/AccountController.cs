@@ -36,6 +36,42 @@ namespace MedyxHMS.Controllers
             return View();
         }
 
+        /// <summary>
+        /// AJAX endpoint: validate credentials and return the roles assigned to the user.
+        /// Credentials are NOT persisted/signed-in here – only checked so the UI can
+        /// display only the roles relevant to that user.
+        /// </summary>
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ValidateCredentials([FromForm] string email, [FromForm] string password)
+        {
+            if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+                return Json(new { success = false, message = "Email and password are required." });
+
+            var user = await _userManager.FindByEmailAsync(email)
+                    ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == email);
+
+            if (user == null || !user.IsActive)
+                return Json(new { success = false, message = "Invalid credentials." });
+
+            // Check password without signing in
+            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
+            if (!passwordValid)
+            {
+                // Attempt bcrypt migration check (same logic as full login)
+                var migrated = await TryMigratePasswordAsync(user, password);
+                if (!migrated)
+                    return Json(new { success = false, message = "Invalid credentials." });
+            }
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Count == 0)
+                return Json(new { success = false, message = "No roles assigned to this account." });
+
+            return Json(new { success = true, roles = roles.OrderBy(r => r).ToList() });
+        }
+
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -43,53 +79,61 @@ namespace MedyxHMS.Controllers
         {
             ViewData["ReturnUrl"] = returnUrl;
 
-            if (ModelState.IsValid)
+            if (!ModelState.IsValid)
+                return View(model);
+
+            // Try to find user by email or employee ID
+            var user = await _userManager.FindByEmailAsync(model.Email)
+                    ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == model.Email);
+
+            if (user != null)
             {
-                // Try to find user by email or employee ID
-                var user = await _userManager.FindByEmailAsync(model.Email) ??
-                          await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == model.Email);
+                var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
 
-                if (user != null)
+                if (result.IsLockedOut)
                 {
-                    // Check if password needs migration from PHP bcrypt
-                    var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+                    await _auditService.LogActivityAsync(user.Id, "LOGIN_FAILED_LOCKOUT", "User", user.Id);
+                    ModelState.AddModelError("", "Account locked out due to multiple failed login attempts.");
+                    return View(model);
+                }
 
-                    if (!result.Succeeded && result.IsLockedOut)
-                    {
-                        await _auditService.LogActivityAsync(user.Id, "LOGIN_FAILED_LOCKOUT", "User", user.Id);
-                        ModelState.AddModelError("", "Account locked out due to multiple failed login attempts.");
-                        return View(model);
-                    }
+                if (!result.Succeeded)
+                {
+                    if (await TryMigratePasswordAsync(user, model.Password))
+                        result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+                }
 
-                    if (!result.Succeeded)
+                if (result.Succeeded)
+                {
+                    await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS", "User", user.Id);
+                    user.LastLoginDate = DateTime.UtcNow;
+                    await _userManager.UpdateAsync(user);
+
+                    // Validate the selected role actually belongs to the user
+                    if (!string.IsNullOrWhiteSpace(model.SelectedRole))
                     {
-                        // Try password migration if login failed
-                        if (await TryMigratePasswordAsync(user, model.Password))
+                        var userRoles = await _userManager.GetRolesAsync(user);
+                        if (!userRoles.Contains(model.SelectedRole, StringComparer.OrdinalIgnoreCase))
                         {
-                            // Password migrated successfully, try login again
-                            result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
+                            // Submitted a role they don't have – ignore it silently and use normal precedence
+                            model.SelectedRole = null;
                         }
                     }
 
-                    if (result.Succeeded)
-                    {
-                        await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS", "User", user.Id);
-                        user.LastLoginDate = DateTime.UtcNow;
-                        await _userManager.UpdateAsync(user);
+                    // Persist the active role for this session so the navigation can use it
+                    if (!string.IsNullOrWhiteSpace(model.SelectedRole))
+                        HttpContext.Session.SetString("ActiveRole", model.SelectedRole);
 
-                        return await RedirectToLocalAsync(user, returnUrl);
-                    }
-                    else
-                    {
-                        await _auditService.LogActivityAsync(user.Id, "LOGIN_FAILED", "User", user.Id);
-                        ModelState.AddModelError("", "Invalid login attempt.");
-                    }
+                    return await RedirectToLocalAsync(user, model.SelectedRole, returnUrl);
                 }
-                else
-                {
-                    await _auditService.LogActivityAsync(null, "LOGIN_FAILED_USER_NOT_FOUND", "User", null, null, $"Email/EmployeeId: {model.Email}");
-                    ModelState.AddModelError("", "Invalid login attempt.");
-                }
+
+                await _auditService.LogActivityAsync(user.Id, "LOGIN_FAILED", "User", user.Id);
+                ModelState.AddModelError("", "Invalid login attempt.");
+            }
+            else
+            {
+                await _auditService.LogActivityAsync(null, "LOGIN_FAILED_USER_NOT_FOUND", "User", null, null, $"Email/EmployeeId: {model.Email}");
+                ModelState.AddModelError("", "Invalid login attempt.");
             }
 
             return View(model);
@@ -101,10 +145,9 @@ namespace MedyxHMS.Controllers
         {
             var user = await _userManager.GetUserAsync(User);
             if (user != null)
-            {
                 await _auditService.LogActivityAsync(user.Id, "LOGOUT", "User", user.Id);
-            }
 
+            HttpContext.Session.Remove("ActiveRole");
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
         }
@@ -120,10 +163,6 @@ namespace MedyxHMS.Controllers
         {
             try
             {
-                // Check if password is in old PHP bcrypt format
-                // This is a simplified migration - in production you'd check against the old hash
-                // For now, we'll assume migration is needed and update the password
-
                 var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                 var result = await _userManager.ResetPasswordAsync(user, token, password);
 
@@ -141,46 +180,46 @@ namespace MedyxHMS.Controllers
             return false;
         }
 
-        private async Task<IActionResult> RedirectToLocalAsync(ApplicationUser user, string? returnUrl)
+        private async Task<IActionResult> RedirectToLocalAsync(ApplicationUser user, string? selectedRole, string? returnUrl)
         {
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
                 return Redirect(returnUrl);
-            }
 
-            var roles = await _userManager.GetRolesAsync(user);
+            // If the user selected a specific role, route to that role's dashboard
+            var roleToUse = selectedRole;
 
-            if (roles.Contains("Patient"))
+            // Fallback: derive from assigned roles using priority order
+            if (string.IsNullOrWhiteSpace(roleToUse))
             {
-                return LocalRedirect(Url.Content("~/PatientPortal/Dashboard"));
+                var roles = await _userManager.GetRolesAsync(user);
+                roleToUse = PickPrimaryRole(roles);
             }
 
-            if (roles.Contains("Receptionist"))
+            return roleToUse switch
             {
-                return RedirectToAction("Index", "FrontOffice");
-            }
+                "Patient"       => LocalRedirect(Url.Content("~/PatientPortal/Dashboard")),
+                "Receptionist"  => RedirectToAction("Index", "FrontOffice"),
+                "Accountant"    => RedirectToAction("Index", "Billing"),
+                "Pharmacist"    => RedirectToAction("Index", "Prescription"),
+                "Nurse"         => RedirectToAction("Index", "IPD"),
+                "Doctor"        => RedirectToAction("Index", "OPD"),
+                _               => RedirectToAction("Index", "Dashboard"),
+            };
+        }
 
-            if (roles.Contains("Accountant"))
+        /// <summary>
+        /// Returns the highest-priority role from a set of assigned roles when no
+        /// explicit selection was made by the user.
+        /// </summary>
+        private static string PickPrimaryRole(IList<string> roles)
+        {
+            foreach (var candidate in new[] { "SuperAdmin", "Admin", "Doctor", "Nurse", "Pharmacist", "Accountant", "Receptionist", "Patient" })
             {
-                return RedirectToAction("Index", "Billing");
+                if (roles.Contains(candidate, StringComparer.OrdinalIgnoreCase))
+                    return candidate;
             }
 
-            if (roles.Contains("Pharmacist"))
-            {
-                return RedirectToAction("Index", "Prescription");
-            }
-
-            if (roles.Contains("Nurse"))
-            {
-                return RedirectToAction("Index", "IPD");
-            }
-
-            if (roles.Contains("Doctor"))
-            {
-                return RedirectToAction("Index", "OPD");
-            }
-
-            return RedirectToAction("Index", "Dashboard");
+            return roles.FirstOrDefault() ?? "Admin";
         }
     }
 }

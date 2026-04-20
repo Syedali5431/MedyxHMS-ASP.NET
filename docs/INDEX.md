@@ -135,6 +135,18 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Implemented and validated (role-based redirect logic enforced)
 - Read this for the latest authentication and dashboard routing assurance snapshot.
 
+### PH15 - Dynamic Role Selection Login & Module Management System
+- Document: [PH15.md](PH15.md)
+- Focus:
+  - Two-step AJAX login UX: credentials first, then only the user's assigned roles are shown
+  - Multi-role user support with explicit role selection stored in session
+  - `SystemModule` and `UserModuleAccess` models + DB table creation and 23-module seed
+  - `IModuleService` / `ModuleService` with global-disabled enforcement rule
+  - `ModuleManagementController` with SuperAdmin global toggle and Admin+SuperAdmin per-user toggle
+  - Three new views: global module list, searchable user list, per-user module access grid
+- **Status:** Implemented and validated (build clean, 0 errors)
+- Read this for the dynamic login role selection and module visibility control implementation.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -150,6 +162,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 12. [PH12.md](PH12.md)
 13. [PH13.md](PH13.md)
 14. [PH14.md](PH14.md)
+15. [PH15.md](PH15.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -164,6 +177,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Chatbot grounded UX, source attribution, and feedback workflow: [PH12.md](PH12.md)
 - Chatbot operational controls, escalation, and analytics: [PH13.md](PH13.md)
 - Authentication redirect assurance and dashboard routing: [PH14.md](PH14.md)
+- Dynamic role selection login and module management system: [PH15.md](PH15.md)
 
 ## Planned Design Docs
 
