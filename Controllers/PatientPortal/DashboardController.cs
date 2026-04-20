@@ -10,7 +10,6 @@ using System.Security.Claims;
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize]
-    [Route("PatientPortal/[controller]")]
     [Route("PatientPortal/[controller]/[action]")]
     public class DashboardController : Controller
     {
@@ -23,7 +22,8 @@ namespace MedyxHMS.Controllers.PatientPortal
             _exportService = exportService;
         }
 
-        // GET: /PatientPortal/Dashboard/Index
+        // GET: /PatientPortal/Dashboard and /PatientPortal/Dashboard/Index
+        [HttpGet("/PatientPortal/Dashboard")]
         public async Task<IActionResult> Index()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -241,7 +241,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     if (result)
                     {
                         TempData["SuccessMessage"] = "Password changed successfully!";
-                        return RedirectToAction("Dashboard", "Index");
+                        return RedirectToAction(nameof(Index));
                     }
                     else
                     {

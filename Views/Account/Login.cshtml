@@ -34,7 +34,7 @@
                         <button type="submit" class="btn btn-primary btn-block">Login</button>
                     </div>
 
-                    <input type="hidden" asp-for="@ViewData["ReturnUrl"]" />
+                    <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
                 </form>
             </div>
         </div>
