@@ -77,7 +77,7 @@ namespace MedyxHMS.Controllers
                         user.LastLoginDate = DateTime.UtcNow;
                         await _userManager.UpdateAsync(user);
 
-                        return RedirectToLocal(returnUrl ?? "/Dashboard");
+                        return await RedirectToLocalAsync(user, returnUrl);
                     }
                     else
                     {
@@ -141,16 +141,46 @@ namespace MedyxHMS.Controllers
             return false;
         }
 
-        private IActionResult RedirectToLocal(string returnUrl)
+        private async Task<IActionResult> RedirectToLocalAsync(ApplicationUser user, string? returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl))
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             {
                 return Redirect(returnUrl);
             }
-            else
+
+            var roles = await _userManager.GetRolesAsync(user);
+
+            if (roles.Contains("Patient"))
             {
-                return RedirectToAction("Index", "Dashboard");
+                return LocalRedirect(Url.Content("~/PatientPortal/Dashboard"));
             }
+
+            if (roles.Contains("Receptionist"))
+            {
+                return RedirectToAction("Index", "FrontOffice");
+            }
+
+            if (roles.Contains("Accountant"))
+            {
+                return RedirectToAction("Index", "Billing");
+            }
+
+            if (roles.Contains("Pharmacist"))
+            {
+                return RedirectToAction("Index", "Prescription");
+            }
+
+            if (roles.Contains("Nurse"))
+            {
+                return RedirectToAction("Index", "IPD");
+            }
+
+            if (roles.Contains("Doctor"))
+            {
+                return RedirectToAction("Index", "OPD");
+            }
+
+            return RedirectToAction("Index", "Dashboard");
         }
     }
 }

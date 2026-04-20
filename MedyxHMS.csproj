@@ -19,8 +19,13 @@
 
   <ItemGroup>
     <Compile Remove="tests\**\*.cs" />
+    <Compile Remove="temp_build_output\**\*.cs" />
     <EmbeddedResource Remove="tests\**\*" />
+    <EmbeddedResource Remove="temp_build_output\**\*" />
     <None Remove="tests\**\*" />
+    <None Remove="temp_build_output\**\*" />
+    <Content Remove="tests\**\*" />
+    <Content Remove="temp_build_output\**\*" />
   </ItemGroup>
 
 </Project>

@@ -17,6 +17,7 @@ This file is a single in-folder index of what has been completed so far in the A
   - `tests/MedyxHMS.Tests/Services/SmtpHealthServiceTests.cs`
 - Integration test:
   - `tests/MedyxHMS.Tests/Integration/PublicBookingApprovalBillingFlowTests.cs`
+  - `tests/MedyxHMS.Tests/Integration/LoginRedirectSmokeTests.cs`
 - Test support:
   - `tests/MedyxHMS.Tests/TestSupport/TestDbContextFactory.cs`
   - `tests/MedyxHMS.Tests/TestSupport/TestDoubles.cs`
@@ -170,6 +171,26 @@ Latest baseline execution (LocalDB):
   - admin chatbot controls for role access and runtime model/limits
   - event logging and analytics snapshots for categories/escalation/unresolved rates
   - multilingual response strategy via language selection and configurable defaults
+
+### 10) Phase 14 authentication and dashboard routing audit
+- Added:
+  - `docs/PH14.md`
+- Updated:
+  - `Controllers/AccountController.cs`
+  - `MedyxHMS.csproj`
+  - `docs/INDEX.md`
+- Coverage:
+  - full module/controller authorization reachability audit for major HMS domains
+  - role-aware post-login redirection from main account login flow
+  - patient-vs-staff portal redirect separation hardening
+  - redirect precedence for multi-role users with secure local return URL handling retained
+  - build input stabilization by excluding test/temp generated artifacts from web project content pipeline
+- Build validation:
+  - `dotnet build -nologo -clp:ErrorsOnly`
+  - Result: build succeeded (warnings present)
+- Targeted redirect test validation:
+  - `dotnet test tests/MedyxHMS.Tests/MedyxHMS.Tests.csproj --filter 'FullyQualifiedName~MedyxHMS.Tests.Integration.LoginRedirectSmokeTests|FullyQualifiedName~MedyxHMS.Tests.Integration.DashboardRoutingConfigurationTests' -v minimal`
+  - Result: total 26, failed 0, succeeded 26, skipped 0.
 
 ## Remaining gap for final migration sign-off
 Resolved.

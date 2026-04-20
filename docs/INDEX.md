@@ -124,6 +124,17 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Phase 7.3 implemented and validated
 - Read this for the completion snapshot of Step 7.3 before Step 7.4 hardening.
 
+### PH14 - Authentication and Dashboard Routing Audit
+- Document: [PH14.md](PH14.md)
+- Focus:
+  - end-to-end module reachability and authorization audit
+  - login and post-authentication redirect path verification
+  - role-aware dashboard redirection hardening in main account flow
+  - patient portal and staff portal routing separation checks
+  - focused integration smoke tests for role routing, precedence, and return URL safety
+- **Status:** Implemented and validated (role-based redirect logic enforced)
+- Read this for the latest authentication and dashboard routing assurance snapshot.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -138,12 +149,13 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 11. [PH11.md](PH11.md)
 12. [PH12.md](PH12.md)
 13. [PH13.md](PH13.md)
+14. [PH14.md](PH14.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
 - EF models, DbContext, relationships, seeding: [PH3.md](PH3.md), [PH5.md](PH5.md)
-- Routing and authorization pipeline: [PH4.md](PH4.md)
-- Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md)
+- Routing and authorization pipeline: [PH4.md](PH4.md), [PH14.md](PH14.md)
+- Runtime smoke validation: [PH3.md](PH3.md), [PH4.md](PH4.md), [PH5.md](PH5.md), [PH14.md](PH14.md)
 - Phase 3 module completion and billing integrations: [PH6.md](PH6.md)
 - CMS, public booking, export/download coverage: [PH8.md](PH8.md)
 - Integration, go-live readiness, and deployment/support planning: [PH9.md](PH9.md)
@@ -151,6 +163,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Chatbot foundation, moderation baseline, and SMTP health checks: [PH11.md](PH11.md)
 - Chatbot grounded UX, source attribution, and feedback workflow: [PH12.md](PH12.md)
 - Chatbot operational controls, escalation, and analytics: [PH13.md](PH13.md)
+- Authentication redirect assurance and dashboard routing: [PH14.md](PH14.md)
 
 ## Planned Design Docs
 

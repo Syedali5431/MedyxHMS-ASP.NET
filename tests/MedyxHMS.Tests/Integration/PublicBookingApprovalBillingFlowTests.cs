@@ -23,7 +23,7 @@ public class PublicBookingApprovalBillingFlowTests
         context.Doctors.Add(ModelFactory.CreateDoctor());
         await context.SaveChangesAsync();
 
-        var siteController = new SiteController(context, NullLogger<SiteController>.Instance)
+        var siteController = new SiteController(context, new FakeSettingService(), NullLogger<SiteController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
