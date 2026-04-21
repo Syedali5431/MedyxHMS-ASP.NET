@@ -33,6 +33,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureLicenseTablesAsync();
             await EnsureChatbotTablesAsync();
             await EnsureModuleTablesAsync();
+            await EnsureAccountApprovalTableAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
@@ -783,6 +784,32 @@ BEGIN
     );
     CREATE UNIQUE INDEX [UX_UserModuleAccesses_UserId_ModuleId]
         ON [dbo].[UserModuleAccesses]([UserId], [ModuleId]);
+END");
+        }
+
+        private async Task EnsureAccountApprovalTableAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[AccountApprovalRequests]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[AccountApprovalRequests] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [RequestedUserId] NVARCHAR(450) NOT NULL,
+        [RequestedRole] NVARCHAR(100) NOT NULL,
+        [Status] NVARCHAR(30) NOT NULL,
+        [RequestedAtUtc] DATETIME2 NOT NULL,
+        [Notes] NVARCHAR(1000) NULL,
+        [ApprovedByUserId] NVARCHAR(450) NULL,
+        [ApprovedAtUtc] DATETIME2 NULL,
+        CONSTRAINT [FK_AccountApprovalRequests_AspNetUsers_RequestedUserId]
+            FOREIGN KEY ([RequestedUserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE UNIQUE INDEX [UX_AccountApprovalRequests_RequestedUserId]
+        ON [dbo].[AccountApprovalRequests]([RequestedUserId]);
+
+    CREATE INDEX [IX_AccountApprovalRequests_Status_RequestedAtUtc]
+        ON [dbo].[AccountApprovalRequests]([Status], [RequestedAtUtc]);
 END");
         }
 

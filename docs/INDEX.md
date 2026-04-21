@@ -212,6 +212,15 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Implemented as UX acceleration for style preset application
 - Read this for visual preset card behavior and interaction rules.
 
+### PH23 - Password Governance and Accounts Approval
+- Document: [PH23.md](PH23.md)
+- Focus:
+  - Admin/SuperAdmin account approval queue for new signups
+  - inactive-until-approved activation flow and pending-state messaging
+  - role-governed password reset authority (SuperAdmin-protected target rule)
+- **Status:** Implemented for account lifecycle governance and credential control
+- Read this for approval pipeline and password authority model details.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -235,6 +244,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 20. [PH20.md](PH20.md)
 21. [PH21.md](PH21.md)
 22. [PH22.md](PH22.md)
+23. [PH23.md](PH23.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -257,6 +267,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Dual desktop/mobile live preview support: [PH20.md](PH20.md)
 - Theme preset selector and custom override behavior: [PH21.md](PH21.md)
 - Visual preset swatch card interactions: [PH22.md](PH22.md)
+- Password governance and account approval workflow: [PH23.md](PH23.md)
 
 ## Planned Design Docs
 

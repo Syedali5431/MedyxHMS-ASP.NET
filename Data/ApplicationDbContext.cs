@@ -94,6 +94,7 @@ namespace MedyxHMS.Data
         // Module Management
         public DbSet<SystemModule> SystemModules { get; set; }
         public DbSet<UserModuleAccess> UserModuleAccesses { get; set; }
+        public DbSet<AccountApprovalRequest> AccountApprovalRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -401,6 +402,13 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<SystemModule>()
                 .HasIndex(m => m.Key)
+                .IsUnique();
+
+            modelBuilder.Entity<AccountApprovalRequest>()
+                .HasIndex(a => new { a.Status, a.RequestedAtUtc });
+
+            modelBuilder.Entity<AccountApprovalRequest>()
+                .HasIndex(a => a.RequestedUserId)
                 .IsUnique();
 
             // CMS relationships

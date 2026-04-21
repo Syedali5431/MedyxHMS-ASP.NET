@@ -13,6 +13,7 @@ namespace MedyxHMS.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ApplicationDbContext _context;
         private readonly IAuditService _auditService;
         private readonly IConcurrentSessionService _concurrentSessionService;
@@ -20,15 +21,94 @@ namespace MedyxHMS.Controllers
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
+            RoleManager<IdentityRole> roleManager,
             ApplicationDbContext context,
             IAuditService auditService,
             IConcurrentSessionService concurrentSessionService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _roleManager = roleManager;
             _context = context;
             _auditService = auditService;
             _concurrentSessionService = concurrentSessionService;
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            return View(new RegisterViewModel());
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            var allowedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Staff", "Doctor", "Nurse", "Receptionist", "Accountant", "Pharmacist", "LabTechnician", "Radiologist", "Patient"
+            };
+
+            if (!allowedRoles.Contains(model.RequestedRole ?? string.Empty))
+            {
+                ModelState.AddModelError(nameof(model.RequestedRole), "Invalid role selection.");
+            }
+
+            if (await _userManager.FindByEmailAsync(model.Email) != null)
+            {
+                ModelState.AddModelError(nameof(model.Email), "Email is already in use.");
+            }
+
+            if (await _userManager.Users.AnyAsync(u => u.EmployeeId == model.EmployeeId))
+            {
+                ModelState.AddModelError(nameof(model.EmployeeId), "Employee ID is already in use.");
+            }
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email,
+                EmployeeId = model.EmployeeId,
+                FirstName = model.FirstName,
+                LastName = model.LastName,
+                IsActive = false,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            var createResult = await _userManager.CreateAsync(user, model.Password);
+            if (!createResult.Succeeded)
+            {
+                foreach (var error in createResult.Errors)
+                    ModelState.AddModelError(string.Empty, error.Description);
+
+                return View(model);
+            }
+
+            if (!await _roleManager.RoleExistsAsync(model.RequestedRole))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(model.RequestedRole));
+            }
+
+            await _userManager.AddToRoleAsync(user, model.RequestedRole);
+
+            _context.AccountApprovalRequests.Add(new AccountApprovalRequest
+            {
+                RequestedUserId = user.Id,
+                RequestedRole = model.RequestedRole,
+                Status = "Pending",
+                RequestedAtUtc = DateTime.UtcNow,
+                Notes = "Signup request awaiting Admin/SuperAdmin approval."
+            });
+            await _context.SaveChangesAsync();
+
+            await _auditService.LogActivityAsync(user.Id, "SIGNUP_REQUEST_CREATED", "AccountApprovalRequest", user.Id, null, model.RequestedRole);
+            TempData["SuccessMessage"] = "Signup submitted. Your account will be activated after Admin or SuperAdmin approval.";
+            return RedirectToAction(nameof(Login));
         }
 
         [HttpGet]
@@ -55,8 +135,24 @@ namespace MedyxHMS.Controllers
             var user = await _userManager.FindByEmailAsync(email)
                     ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == email);
 
-            if (user == null || !user.IsActive)
+            if (user == null)
                 return Json(new { success = false, message = "Invalid credentials." });
+
+            if (!user.IsActive)
+            {
+                var approvalStatus = await _context.AccountApprovalRequests
+                    .Where(r => r.RequestedUserId == user.Id)
+                    .Select(r => r.Status)
+                    .FirstOrDefaultAsync();
+
+                var inactiveMessage = approvalStatus == "Pending"
+                    ? "Your account is pending approval. Please wait for Admin/SuperAdmin activation."
+                    : approvalStatus == "Rejected"
+                        ? "Your account request was rejected. Please contact Admin or SuperAdmin."
+                        : "Your account is inactive. Please contact Admin or SuperAdmin.";
+
+                return Json(new { success = false, message = inactiveMessage });
+            }
 
             // Check password without signing in
             var passwordValid = await _userManager.CheckPasswordAsync(user, password);
@@ -91,6 +187,23 @@ namespace MedyxHMS.Controllers
 
             if (user != null)
             {
+                if (!user.IsActive)
+                {
+                    var approvalStatus = await _context.AccountApprovalRequests
+                        .Where(r => r.RequestedUserId == user.Id)
+                        .Select(r => r.Status)
+                        .FirstOrDefaultAsync();
+
+                    var inactiveMessage = approvalStatus == "Pending"
+                        ? "Your account is pending approval. Please wait for Admin/SuperAdmin activation."
+                        : approvalStatus == "Rejected"
+                            ? "Your account request was rejected. Please contact Admin or SuperAdmin."
+                            : "Your account is inactive. Please contact Admin or SuperAdmin.";
+
+                    ModelState.AddModelError("", inactiveMessage);
+                    return View(model);
+                }
+
                 var result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
 
                 if (result.IsLockedOut)

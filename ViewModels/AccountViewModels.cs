@@ -53,6 +53,68 @@ namespace MedyxHMS.ViewModels
         [Required]
         [Display(Name = "Last Name")]
         public string LastName { get; set; }
+
+        [Required]
+        [Display(Name = "Requested Role")]
+        public string RequestedRole { get; set; } = "Staff";
+    }
+
+    public class AccountApprovalListItemViewModel
+    {
+        public int RequestId { get; set; }
+        public string UserId { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string EmployeeId { get; set; } = string.Empty;
+        public string RequestedRole { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public DateTime RequestedAtUtc { get; set; }
+        public DateTime? ApprovedAtUtc { get; set; }
+        public string? ApprovedBy { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class AccountsApprovalIndexViewModel
+    {
+        public string StatusFilter { get; set; } = "Pending";
+        public List<AccountApprovalListItemViewModel> Requests { get; set; } = new();
+    }
+
+    public class PasswordManagementListItemViewModel
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string EmployeeId { get; set; } = string.Empty;
+        public bool IsActive { get; set; }
+        public List<string> Roles { get; set; } = new();
+        public bool CanResetPassword { get; set; }
+    }
+
+    public class PasswordManagementIndexViewModel
+    {
+        public string SearchTerm { get; set; } = string.Empty;
+        public List<PasswordManagementListItemViewModel> Users { get; set; } = new();
+    }
+
+    public class AdminPasswordResetViewModel
+    {
+        public string UserId { get; set; } = string.Empty;
+        public string DisplayName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string RolesText { get; set; } = string.Empty;
+
+        [Required]
+        [StringLength(100, ErrorMessage = "The {0} must be at least {2} characters long.", MinimumLength = 8)]
+        [DataType(DataType.Password)]
+        [Display(Name = "New password")]
+        public string NewPassword { get; set; } = string.Empty;
+
+        [Required]
+        [DataType(DataType.Password)]
+        [Display(Name = "Confirm password")]
+        [Compare("NewPassword", ErrorMessage = "The password and confirmation password do not match.")]
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     public class ChangePasswordViewModel

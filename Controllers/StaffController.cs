@@ -628,6 +628,11 @@ namespace MedyxHMS.Controllers
                 return NotFound();
             }
 
+            if (!await CanManagePasswordForTargetAsync(staff.Id))
+            {
+                return Forbid();
+            }
+
             var viewModel = new StaffPasswordChangeViewModel
             {
                 PasswordChange = new StaffPasswordChangeDto { StaffId = id },
@@ -646,6 +651,11 @@ namespace MedyxHMS.Controllers
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!await _authorizationService.HasPermissionAsync(userId, "ManageUsers"))
+            {
+                return Forbid();
+            }
+
+            if (!await CanManagePasswordForTargetAsync(viewModel.PasswordChange.StaffId))
             {
                 return Forbid();
             }
@@ -681,6 +691,32 @@ namespace MedyxHMS.Controllers
             }
 
             return View(viewModel);
+        }
+
+        private async Task<bool> CanManagePasswordForTargetAsync(string targetUserId)
+        {
+            var actor = await _userManager.GetUserAsync(User);
+            if (actor == null)
+                return false;
+
+            var targetUser = await _userManager.FindByIdAsync(targetUserId);
+            if (targetUser == null)
+                return false;
+
+            var actorRoles = await _userManager.GetRolesAsync(actor);
+            var targetRoles = await _userManager.GetRolesAsync(targetUser);
+
+            var actorIsSuperAdmin = actorRoles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase);
+            var actorIsAdmin = actorRoles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+            var targetIsSuperAdmin = targetRoles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase);
+
+            if (actorIsSuperAdmin)
+                return true;
+
+            if (actorIsAdmin && !targetIsSuperAdmin)
+                return true;
+
+            return false;
         }
 
         // GET: Staff/Dashboard

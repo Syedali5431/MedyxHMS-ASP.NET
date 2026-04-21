@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MedyxHMS.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1ae9fb1eace4f7f6ade6ba0d688c388f0ad28e8d")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6dd462455f0283e5e5c0eb8922153f95330eaaf7")]
 [assembly: System.Reflection.AssemblyProductAttribute("MedyxHMS.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MedyxHMS.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
