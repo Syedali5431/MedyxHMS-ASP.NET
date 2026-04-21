@@ -1,1 +1,35 @@
-# intentionally empty - track all files
+# Build artifacts
+[Bb]in/
+[Oo]bj/
+out/
+publish/
+artifacts/
+
+# Test artifacts
+TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Rider / VS / VSCode
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+logs/
+*.log
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+
+# Generated local build output folders in this repo
+temp_build_output/
+smoke_build.log
+build.log
+build_*.log
