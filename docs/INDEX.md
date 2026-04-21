@@ -135,6 +135,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
   - feature-toggle aligned chatbot global enablement path
 - **Status:** Completed (finalized 2026-04-21)
 - **Validation Evidence:** Full regression run complete (`tests/MedyxHMS.Tests`): 69 passed, 0 failed, 0 skipped.
+- **Post-Closure Delta:** Additional hardening completed on 2026-04-21 for explicit usage audit events, dedicated prompt-injection tests (`tests/MedyxHMS.Chatbot.Security.Tests`), restored async chatbot UI script, and tightened configurable CORS method/header policy.
 - **Closure:** Stage 7.4 is formally closed.
 - **Kickoff:** Continue with PH14+ backlog items under the established authorization and operational hardening track.
 - Read this for the final Step 7.4 implementation snapshot and hardening outcomes.

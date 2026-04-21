@@ -19,6 +19,7 @@ namespace MedyxHMS.Services.Implementations
         private readonly IChatbotPiiRedactionService _piiRedactionService;
         private readonly IChatbotPromptBuilder _promptBuilder;
         private readonly IChatbotKnowledgeService _knowledgeService;
+        private readonly IAuditService _auditService;
         private readonly ILogger<OpenAiChatbotService> _logger;
 
         public OpenAiChatbotService(
@@ -30,6 +31,7 @@ namespace MedyxHMS.Services.Implementations
             IChatbotPiiRedactionService piiRedactionService,
             IChatbotPromptBuilder promptBuilder,
             IChatbotKnowledgeService knowledgeService,
+            IAuditService auditService,
             ILogger<OpenAiChatbotService> logger)
         {
             _context = context;
@@ -40,13 +42,17 @@ namespace MedyxHMS.Services.Implementations
             _piiRedactionService = piiRedactionService;
             _promptBuilder = promptBuilder;
             _knowledgeService = knowledgeService;
+            _auditService = auditService;
             _logger = logger;
         }
 
         public async Task<ChatbotAskResponse> AskAsync(ClaimsPrincipal user, string message, string? sessionId = null, string? languageCode = null)
         {
+            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
+
             if (!await IsChatbotEnabledForUserAsync(user))
             {
+                await LogUsageAuditAsync(userId, "CHATBOT_DISABLED_REQUEST", sessionId ?? string.Empty, $"MessageLength={message?.Length ?? 0}");
                 return new ChatbotAskResponse
                 {
                     SessionId = sessionId ?? string.Empty,
@@ -58,7 +64,6 @@ namespace MedyxHMS.Services.Implementations
             }
 
             var moderation = _moderationService.Evaluate(message);
-            var userId = user.FindFirstValue(ClaimTypes.NameIdentifier);
             var role = ResolveRole(user);
             var session = await GetOrCreateSessionAsync(sessionId, userId, role);
             session.PreferredLanguage = NormalizeLanguage(languageCode);
@@ -70,6 +75,7 @@ namespace MedyxHMS.Services.Implementations
                 const string rateLimitMessage = "You have reached the hourly chatbot usage limit. Please try again after one hour or contact support for urgent assistance.";
                 await AddMessageAsync(session.Id, "Assistant", rateLimitMessage, "RateLimited", 0, "Safety");
                 await AddEventAsync(session.Id, null, "RateLimitExceeded", "Warning", $"UserId={userId}; HourlyCount={usageCount}; Limit={usageLimit}");
+                await LogUsageAuditAsync(userId, "CHATBOT_RATE_LIMITED", session.Id, $"HourlyCount={usageCount}; Limit={usageLimit}");
 
                 return new ChatbotAskResponse
                 {
@@ -94,6 +100,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 await AddMessageAsync(session.Id, "Assistant", moderation.SafeResponse, "SafeFallback", 0, "Safety");
                 await AddEventAsync(session.Id, null, "ModerationBlocked", "Warning", moderation.Reason);
+                await LogUsageAuditAsync(userId, "CHATBOT_PROMPT_BLOCKED", session.Id, moderation.Reason);
                 return new ChatbotAskResponse
                 {
                     SessionId = session.Id,
@@ -117,6 +124,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 await AddMessageAsync(session.Id, "Assistant", outputModeration.SafeResponse, "BlockedOutput", 0, "Safety");
                 await AddEventAsync(session.Id, null, "OutputModerationBlocked", "Warning", outputModeration.Reason);
+                await LogUsageAuditAsync(userId, "CHATBOT_OUTPUT_BLOCKED", session.Id, outputModeration.Reason);
 
                 return new ChatbotAskResponse
                 {
@@ -152,6 +160,13 @@ namespace MedyxHMS.Services.Implementations
                 await AddEventAsync(session.Id, null, "UnresolvedConversation", "Warning", $"Confidence={confidence:0.00}");
             }
 
+            var providerModel = _configuration["OpenAI:Model"] ?? "FallbackTemplate";
+            await LogUsageAuditAsync(
+                userId,
+                "CHATBOT_RESPONSE_SERVED",
+                session.Id,
+                $"Category={knowledgeContext.DetectedCategory}; Confidence={confidence:0.00}; Sources={knowledgeContext.Sources.Count}; HourlyCount={usageCount}; HourlyLimit={usageLimit}; Provider={providerModel}");
+
             return new ChatbotAskResponse
             {
                 SessionId = session.Id,
@@ -159,7 +174,7 @@ namespace MedyxHMS.Services.Implementations
                 EscalationSuggested = confidence <= threshold,
                 ConfidenceScore = confidence,
                 Sources = knowledgeContext.Sources,
-                ProviderModel = _configuration["OpenAI:Model"] ?? "FallbackTemplate",
+                ProviderModel = providerModel,
                 DetectedCategory = knowledgeContext.DetectedCategory,
                 DetectedLanguage = knowledgeContext.LanguageCode,
                 EscalationId = escalationId
@@ -738,6 +753,18 @@ namespace MedyxHMS.Services.Implementations
         private static decimal ParseDecimal(IReadOnlyDictionary<string, string> values, string key, decimal fallback)
         {
             return values.TryGetValue(key, out var value) && decimal.TryParse(value, out var parsed) ? parsed : fallback;
+        }
+
+        private async Task LogUsageAuditAsync(string? userId, string action, string sessionId, string details)
+        {
+            try
+            {
+                await _auditService.LogActivityAsync(userId, action, "ChatSession", string.IsNullOrWhiteSpace(sessionId) ? "N/A" : sessionId, null, details);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to write chatbot usage audit action {Action}", action);
+            }
         }
     }
 }

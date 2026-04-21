@@ -53,6 +53,18 @@ Validation completed for Step 7.4:
 - full regression test pass on `tests/MedyxHMS.Tests`: 69 passed, 0 failed, 0 skipped (2026-04-21)
 - Step 7.4 closure confirmed and ready for PH14 continuation work
 
+Post-closure hardening delta (2026-04-21):
+
+- explicit usage-audit actions are now emitted from chatbot orchestration for key outcomes:
+	- `CHATBOT_DISABLED_REQUEST`
+	- `CHATBOT_RATE_LIMITED`
+	- `CHATBOT_PROMPT_BLOCKED`
+	- `CHATBOT_OUTPUT_BLOCKED`
+	- `CHATBOT_RESPONSE_SERVED`
+- dedicated prompt-injection unit tests were added in `tests/MedyxHMS.Chatbot.Security.Tests`
+- chatbot async UI script (`wwwroot/js/chatbot-ui.js`) restored with anti-forgery form posting, retry/unresolved/escalation actions, and safe HTML escaping for dynamic content
+- CORS policy was tightened to explicit configured methods/headers with optional credentials and preflight max-age control
+
 ---
 
 ## Recommended Product Scope

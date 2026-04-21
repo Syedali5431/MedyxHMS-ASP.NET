@@ -160,6 +160,23 @@ Latest baseline execution (LocalDB):
 - Closure:
   - Stage 7.4 is closed and the codebase is ready to continue with PH14 and later hardening phases
 
+### 8.1) Phase 7.4 post-closure deltas (2026-04-21)
+- Added:
+  - `tests/MedyxHMS.Chatbot.Security.Tests/MedyxHMS.Chatbot.Security.Tests.csproj`
+  - `tests/MedyxHMS.Chatbot.Security.Tests/ChatbotModerationServiceTests.cs`
+  - `wwwroot/js/chatbot-ui.js`
+- Updated:
+  - `Services/Implementations/OpenAiChatbotService.cs`
+  - `Program.cs`
+  - `appsettings.json`
+  - `appsettings.Development.json`
+  - `docs/OPENAI-CHATBOT-DESIGN.md`
+- Coverage:
+  - explicit chatbot usage audit actions for disabled, rate-limited, blocked, and served outcomes
+  - dedicated prompt-injection hardening tests for moderation logic
+  - restored async chatbot UI behavior (ask/retry/escalation/feedback/unresolved) with anti-forgery posting
+  - tightened CORS policy to configured methods/headers and optional credentials (default disabled)
+
 ### 8) Phase 7.2 core chat experience and knowledge grounding
 - Added:
   - `docs/PH12.md`

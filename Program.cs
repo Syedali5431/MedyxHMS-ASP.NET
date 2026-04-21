@@ -134,18 +134,38 @@ builder.Services.AddCors(options =>
             .Get<string[]>()
             ?? Array.Empty<string>();
 
+        var allowedMethods = builder.Configuration
+            .GetSection("Security:Cors:AllowedMethods")
+            .Get<string[]>()
+            ?? new[] { "GET", "POST", "OPTIONS" };
+
+        var allowedHeaders = builder.Configuration
+            .GetSection("Security:Cors:AllowedHeaders")
+            .Get<string[]>()
+            ?? new[] { "Content-Type", "X-Requested-With", "RequestVerificationToken" };
+
+        var allowCredentials = builder.Configuration.GetValue<bool>("Security:Cors:AllowCredentials");
+
         if (allowedOrigins.Length > 0)
         {
             policy.WithOrigins(allowedOrigins)
-                  .AllowAnyMethod()
-                  .AllowAnyHeader();
+                  .WithMethods(allowedMethods)
+                  .WithHeaders(allowedHeaders)
+                  .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
+
+            if (allowCredentials)
+            {
+                policy.AllowCredentials();
+            }
+
             return;
         }
 
         // If no origins are configured, block cross-origin calls by default.
         policy.SetIsOriginAllowed(_ => false)
-              .AllowAnyMethod()
-              .AllowAnyHeader();
+              .WithMethods(allowedMethods)
+              .WithHeaders(allowedHeaders)
+              .SetPreflightMaxAge(TimeSpan.FromMinutes(10));
     });
 });
 
