@@ -9,11 +9,16 @@ namespace MedyxHMS.Controllers
     public class ReportController : Controller
     {
         private readonly IReportService _reportService;
+        private readonly IReportTemplateService _reportTemplateService;
         private readonly ILogger<ReportController> _logger;
 
-        public ReportController(IReportService reportService, ILogger<ReportController> logger)
+        public ReportController(
+            IReportService reportService,
+            IReportTemplateService reportTemplateService,
+            ILogger<ReportController> logger)
         {
             _reportService = reportService;
+            _reportTemplateService = reportTemplateService;
             _logger = logger;
         }
 
@@ -239,6 +244,143 @@ namespace MedyxHMS.Controllers
                 _logger.LogError(ex, "Error deleting report schedule");
                 return BadRequest("Error deleting report schedule");
             }
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpGet]
+        public async Task<IActionResult> Builder(string? reportType)
+        {
+            var templates = string.IsNullOrWhiteSpace(reportType)
+                ? await _reportTemplateService.GetAllTemplatesAsync()
+                : await _reportTemplateService.GetTemplatesByTypeAsync(reportType);
+
+            ViewData["ReportType"] = reportType;
+            ViewData["AvailableTypes"] = await _reportTemplateService.GetAvailableReportTypesAsync();
+            return View(templates);
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateTemplate(string name, string reportType, string description)
+        {
+            if (string.IsNullOrWhiteSpace(name) || string.IsNullOrWhiteSpace(reportType))
+            {
+                return RedirectToAction(nameof(Builder)).WithSuccessMessage("Template name and report type are required");
+            }
+
+            var template = new ReportTemplate
+            {
+                Name = name.Trim(),
+                ReportType = reportType.Trim(),
+                Description = description?.Trim() ?? string.Empty,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                CreatedBy = User.Identity?.Name ?? "System"
+            };
+
+            var created = await _reportTemplateService.CreateTemplateAsync(template);
+            return RedirectToAction(nameof(Design), new { id = created.Id });
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpGet]
+        public async Task<IActionResult> Design(int id)
+        {
+            var template = await _reportTemplateService.GetTemplateByIdAsync(id);
+            if (template == null)
+            {
+                return RedirectToAction(nameof(Builder)).WithSuccessMessage("Template not found");
+            }
+
+            return View(template);
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SaveTemplate(ReportTemplate formTemplate)
+        {
+            var existing = await _reportTemplateService.GetTemplateByIdAsync(formTemplate.Id);
+            if (existing == null)
+            {
+                return RedirectToAction(nameof(Builder)).WithSuccessMessage("Template not found");
+            }
+
+            existing.Name = formTemplate.Name;
+            existing.ReportType = formTemplate.ReportType;
+            existing.Description = formTemplate.Description;
+            existing.IsActive = formTemplate.IsActive;
+            existing.IsDefault = formTemplate.IsDefault;
+            existing.ModifiedDate = DateTime.UtcNow;
+            existing.ModifiedBy = User.Identity?.Name;
+
+            await _reportTemplateService.UpdateTemplateAsync(existing);
+            return RedirectToAction(nameof(Design), new { id = existing.Id }).WithSuccessMessage("Template updated successfully");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddField(int templateId, ReportField field)
+        {
+            if (string.IsNullOrWhiteSpace(field.FieldName))
+            {
+                return RedirectToAction(nameof(Design), new { id = templateId }).WithSuccessMessage("Field name is required");
+            }
+
+            field.ColumnName = string.IsNullOrWhiteSpace(field.ColumnName) ? field.FieldName : field.ColumnName;
+
+            await _reportTemplateService.AddFieldAsync(templateId, field);
+            return RedirectToAction(nameof(Design), new { id = templateId }).WithSuccessMessage("Field added successfully");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemoveField(int templateId, int fieldId)
+        {
+            await _reportTemplateService.RemoveFieldAsync(fieldId);
+            return RedirectToAction(nameof(Design), new { id = templateId }).WithSuccessMessage("Field removed successfully");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CloneTemplate(int id, string newName)
+        {
+            if (string.IsNullOrWhiteSpace(newName))
+            {
+                return RedirectToAction(nameof(Builder)).WithSuccessMessage("New template name is required");
+            }
+
+            await _reportTemplateService.CloneTemplateAsync(id, newName.Trim());
+            return RedirectToAction(nameof(Builder)).WithSuccessMessage("Template cloned successfully");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteTemplate(int id)
+        {
+            var deleted = await _reportTemplateService.DeleteTemplateAsync(id);
+            return RedirectToAction(nameof(Builder))
+                .WithSuccessMessage(deleted ? "Template deleted successfully" : "Template not found");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpGet]
+        public async Task<IActionResult> Preview(int id)
+        {
+            var template = await _reportTemplateService.GetTemplateByIdAsync(id);
+            if (template == null)
+            {
+                return RedirectToAction(nameof(Builder)).WithSuccessMessage("Template not found");
+            }
+
+            var result = await _reportTemplateService.ExecuteSavedReportAsync(id);
+            ViewData["Template"] = template;
+            return View(result);
         }
     }
 

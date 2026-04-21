@@ -2,7 +2,9 @@ using MedyxHMS.Data;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace MedyxHMS.Services.Implementations
 {
@@ -11,15 +13,21 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly IWebHostEnvironment _environment;
+        private readonly ILogger<DatabaseInitializer> _logger;
 
         public DatabaseInitializer(
             ApplicationDbContext context,
             UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+            RoleManager<IdentityRole> roleManager,
+            IWebHostEnvironment environment,
+            ILogger<DatabaseInitializer> logger)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
+            _environment = environment;
+            _logger = logger;
         }
 
         public async Task InitializeAsync()
@@ -35,6 +43,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureModuleTablesAsync();
             await EnsureAccountApprovalTableAsync();
             await EnsureUserIdentityConstraintsAsync();
+            await EnsureReportStoredProceduresAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
@@ -46,6 +55,34 @@ namespace MedyxHMS.Services.Implementations
 
             // Seed SuperAdmin user
             await SeedSuperAdminUserAsync();
+        }
+
+        private async Task EnsureReportStoredProceduresAsync()
+        {
+            var scriptPath = Path.Combine(_environment.ContentRootPath, "scripts", "StoredProcedures_Reports.sql");
+            if (!File.Exists(scriptPath))
+            {
+                _logger.LogWarning("Stored procedure script not found at {Path}", scriptPath);
+                return;
+            }
+
+            try
+            {
+                var script = await File.ReadAllTextAsync(scriptPath);
+                var batches = Regex.Split(script, @"^\s*GO\s*$", RegexOptions.Multiline | RegexOptions.IgnoreCase)
+                    .Where(b => !string.IsNullOrWhiteSpace(b));
+
+                foreach (var batch in batches)
+                {
+                    await _context.Database.ExecuteSqlRawAsync(batch);
+                }
+
+                _logger.LogInformation("Report stored procedures and indexes ensured from {Path}", scriptPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to deploy report stored procedures from {Path}", scriptPath);
+            }
         }
 
         private async Task SeedStep42DefaultsAsync()

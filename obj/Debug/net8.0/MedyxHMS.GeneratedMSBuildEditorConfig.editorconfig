@@ -414,12 +414,24 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVmZXJyYWxcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[E:/HMS/MedyxHMS-ASPNET/Views/Report/Builder.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEJ1aWxkZXIuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Report/Design.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XERlc2lnbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [E:/HMS/MedyxHMS-ASPNET/Views/Report/FinancialReport.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEZpbmFuY2lhbFJlcG9ydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [E:/HMS/MedyxHMS-ASPNET/Views/Report/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Report/Preview.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFByZXZpZXcuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [E:/HMS/MedyxHMS-ASPNET/Views/Shared/Error.cshtml]

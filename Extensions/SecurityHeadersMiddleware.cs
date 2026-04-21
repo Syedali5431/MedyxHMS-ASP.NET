@@ -28,14 +28,14 @@ namespace MedyxHMS.Extensions
                 response.Headers.Remove("X-AspNet-Version");
 
                 // Prevent clickjacking attacks
-                response.Headers.Add("X-Frame-Options", "SAMEORIGIN");
-                response.Headers.Add("X-Content-Type-Options", "nosniff");
+                response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+                response.Headers["X-Content-Type-Options"] = "nosniff";
 
                 // XSS Protection
-                response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                response.Headers["X-XSS-Protection"] = "1; mode=block";
 
                 // Content Security Policy - Strict but functional
-                response.Headers.Add("Content-Security-Policy",
+                response.Headers["Content-Security-Policy"] =
                     "default-src 'self'; " +
                     "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com; " +
                     "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com; " +
@@ -44,20 +44,20 @@ namespace MedyxHMS.Extensions
                     "connect-src 'self'; " +
                     "frame-ancestors 'self'; " +
                     "form-action 'self'; " +
-                    "upgrade-insecure-requests;");
+                    "upgrade-insecure-requests;";
 
                 // Referrer Policy
-                response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+                response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
 
                 // Feature Policy / Permissions Policy
-                response.Headers.Add("Permissions-Policy",
-                    "geolocation=(), microphone=(), camera=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()");
+                response.Headers["Permissions-Policy"] =
+                    "geolocation=(), microphone=(), camera=(), usb=(), accelerometer=(), gyroscope=(), magnetometer=()";
 
                 // Enable HSTS in production
                 if (!context.Request.IsHttps && context.Request.Host.Host != "localhost")
                 {
-                    response.Headers.Add("Strict-Transport-Security",
-                        "max-age=31536000; includeSubDomains; preload");
+                    response.Headers["Strict-Transport-Security"] =
+                        "max-age=31536000; includeSubDomains; preload";
                 }
 
                 // Cross-Origin policies
@@ -114,7 +114,7 @@ namespace MedyxHMS.Extensions
                         {
                             _logger.LogWarning("Rate limit exceeded for IP: {ClientIp}", clientIp);
                             context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                            context.Response.Headers.Add("Retry-After", "60");
+                            context.Response.Headers["Retry-After"] = "60";
                             return;
                         }
 

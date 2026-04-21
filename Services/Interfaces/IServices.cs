@@ -663,4 +663,24 @@ namespace MedyxHMS.Services.Interfaces
 
         /// <summary>Invalidates all cache entries matching a prefix.</summary>
         Task InvalidatePrefixAsync(string prefix);
-    }}
+    }
+
+    /// <summary>
+    /// Service for managing custom report templates (STEP 5.4 - Custom Reports).
+    /// Enables creation, editing, and execution of customizable report templates.
+    /// </summary>
+    public interface IReportTemplateService
+    {
+        Task<List<ReportTemplate>> GetAllTemplatesAsync();
+        Task<ReportTemplate?> GetTemplateByIdAsync(int templateId);
+        Task<List<ReportTemplate>> GetTemplatesByTypeAsync(string reportType);
+        Task<ReportTemplate> CreateTemplateAsync(ReportTemplate template);
+        Task<ReportTemplate> UpdateTemplateAsync(ReportTemplate template);
+        Task<bool> DeleteTemplateAsync(int templateId);
+        Task<ReportField> AddFieldAsync(int templateId, ReportField field);
+        Task<bool> RemoveFieldAsync(int fieldId);
+        Task<ReportExecutionResult> ExecuteSavedReportAsync(int templateId, Dictionary<string, object>? parameters = null);
+        Task<List<string>> GetAvailableReportTypesAsync();
+        Task<ReportTemplate> CloneTemplateAsync(int templateId, string newName);
+    }
+}

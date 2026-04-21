@@ -1,0 +1,132 @@
+@model MedyxHMS.Models.ReportTemplate
+@{
+    ViewData["Title"] = "Design Template";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 class="mb-0"><i class="fas fa-pencil-ruler"></i> Template Designer</h3>
+        <a href="@Url.Action("Builder")" class="btn btn-outline-secondary btn-sm">Back to Builder</a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-5 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-dark text-white">Template Settings</div>
+                <div class="card-body">
+                    <form asp-action="SaveTemplate" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <div class="mb-2">
+                            <label class="form-label">Name</label>
+                            <input asp-for="Name" class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Report Type</label>
+                            <input asp-for="ReportType" class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Description</label>
+                            <textarea asp-for="Description" rows="3" class="form-control"></textarea>
+                        </div>
+                        <div class="form-check">
+                            <input asp-for="IsActive" class="form-check-input" />
+                            <label asp-for="IsActive" class="form-check-label">Active</label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input asp-for="IsDefault" class="form-check-input" />
+                            <label asp-for="IsDefault" class="form-check-label">Default template</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save Template</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 mb-4">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">Report Fields</div>
+                <div class="card-body">
+                    <form asp-action="AddField" method="post" class="row g-2 mb-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="templateId" value="@Model.Id" />
+                        <div class="col-md-4">
+                            <input class="form-control" name="FieldName" placeholder="Field name" required />
+                        </div>
+                        <div class="col-md-4">
+                            <input class="form-control" name="ColumnName" placeholder="DB column" />
+                        </div>
+                        <div class="col-md-4">
+                            <input class="form-control" name="DisplayFormat" placeholder="Display format (optional)" />
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="DataType">
+                                <option value="string">string</option>
+                                <option value="int">int</option>
+                                <option value="decimal">decimal</option>
+                                <option value="datetime">datetime</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input class="form-control" type="number" name="SortOrder" placeholder="Sort" value="0" />
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" name="Alignment">
+                                <option value="left">left</option>
+                                <option value="center">center</option>
+                                <option value="right">right</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-success w-100" type="submit">Add Field</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Field</th>
+                                    <th>Column</th>
+                                    <th>Type</th>
+                                    <th>Sort</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @if (Model.Fields != null && Model.Fields.Any())
+                            {
+                                foreach (var field in Model.Fields.OrderBy(f => f.SortOrder))
+                                {
+                                    <tr>
+                                        <td>@field.FieldName</td>
+                                        <td>@field.ColumnName</td>
+                                        <td>@field.DataType</td>
+                                        <td>@field.SortOrder</td>
+                                        <td>
+                                            <form asp-action="RemoveField" method="post">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="templateId" value="@Model.Id" />
+                                                <input type="hidden" name="fieldId" value="@field.Id" />
+                                                <button class="btn btn-sm btn-outline-danger" type="submit">Remove</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="5" class="text-center">No fields configured.</td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <a class="btn btn-outline-info" href="@Url.Action("Preview", new { id = Model.Id })">Preview Report</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -91,6 +91,7 @@ builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
 // Using MemoryCache for distributed caching support
 // For production, configure Redis by installing: dotnet add package StackExchange.Redis
 builder.Services.AddMemoryCache();
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddScoped<ICacheService, CacheService>();
 
 // Clinical Module Services (STEP 3.1)
@@ -116,6 +117,7 @@ builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IFrontOfficeService, FrontOfficeService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 
 builder.Services.AddScoped<DatabaseInitializer>();
 

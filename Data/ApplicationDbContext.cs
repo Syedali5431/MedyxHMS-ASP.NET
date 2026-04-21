@@ -98,6 +98,14 @@ namespace MedyxHMS.Data
         public DbSet<UserModuleAccess> UserModuleAccesses { get; set; }
         public DbSet<AccountApprovalRequest> AccountApprovalRequests { get; set; }
 
+            // Report Templates & Customization (STEP 5.3)
+            public DbSet<ReportTemplate> ReportTemplates { get; set; }
+            public DbSet<ReportField> ReportFields { get; set; }
+            public DbSet<ReportFilter> ReportFilters { get; set; }
+            public DbSet<ReportDesign> ReportDesigns { get; set; }
+            public DbSet<ReportChart> ReportCharts { get; set; }
+            public DbSet<SavedReport> SavedReports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
