@@ -227,6 +227,48 @@ namespace MedyxHMS.Controllers
         }
 
         [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpGet]
+        public async Task<IActionResult> EditReport(int id)
+        {
+            var report = await _reportService.GetGeneratedReportByIdAsync(id);
+            if (report == null)
+            {
+                return RedirectToAction(nameof(GeneratedReports)).WithSuccessMessage("Report not found");
+            }
+
+            return View(report);
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditReport(GeneratedReport formReport)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(formReport);
+            }
+
+            var existing = await _reportService.GetGeneratedReportByIdAsync(formReport.Id);
+            if (existing == null)
+            {
+                return RedirectToAction(nameof(GeneratedReports)).WithSuccessMessage("Report not found");
+            }
+
+            existing.ReportName = formReport.ReportName;
+            existing.ReportType = formReport.ReportType;
+            existing.Description = formReport.Description;
+            existing.FromDate = formReport.FromDate;
+            existing.ToDate = formReport.ToDate;
+            existing.DepartmentId = formReport.DepartmentId;
+            existing.FileFormat = formReport.FileFormat;
+            existing.Status = formReport.Status;
+
+            await _reportService.SaveReportAsync(existing);
+            return RedirectToAction(nameof(GeneratedReports)).WithSuccessMessage("Report updated successfully");
+        }
+
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPost]
         public async Task<IActionResult> DeleteSchedule(int id)
         {

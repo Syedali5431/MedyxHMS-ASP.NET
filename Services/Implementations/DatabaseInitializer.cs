@@ -622,9 +622,11 @@ END");
             await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[UserSessions]', N'U') IS NULL
 BEGIN
+    DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+    DECLARE @sql NVARCHAR(MAX) = N'
     CREATE TABLE [dbo].[UserSessions] (
         [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [UserId] NVARCHAR(450) NOT NULL,
+        [UserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
         [SessionId] NVARCHAR(128) NOT NULL,
         [ActiveRole] NVARCHAR(50) NOT NULL,
         [IpAddress] NVARCHAR(64) NULL,
@@ -639,7 +641,9 @@ BEGIN
 
     CREATE UNIQUE INDEX [UX_UserSessions_SessionId] ON [dbo].[UserSessions]([SessionId]);
     CREATE INDEX [IX_UserSessions_IsActive_LastActivityUtc_ActiveRole] ON [dbo].[UserSessions]([IsActive], [LastActivityUtc], [ActiveRole]);
-    CREATE INDEX [IX_UserSessions_UserId_IsActive_LastActivityUtc] ON [dbo].[UserSessions]([UserId], [IsActive], [LastActivityUtc]);
+    CREATE INDEX [IX_UserSessions_UserId_IsActive_LastActivityUtc] ON [dbo].[UserSessions]([UserId], [IsActive], [LastActivityUtc]);';
+
+    EXEC sp_executesql @sql;
 END");
         }
 
@@ -881,21 +885,25 @@ END");
             await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[UserModuleAccesses]', N'U') IS NULL
 BEGIN
+    DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+    DECLARE @sql NVARCHAR(MAX) = N'
     CREATE TABLE [dbo].[UserModuleAccesses] (
         [Id]              INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [UserId]          NVARCHAR(450) NOT NULL,
+        [UserId]          NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
         [ModuleId]        INT NOT NULL,
         [IsEnabled]       BIT NOT NULL DEFAULT(1),
         [CreatedAtUtc]    DATETIME2 NOT NULL,
         [UpdatedAtUtc]    DATETIME2 NOT NULL,
-        [UpdatedByUserId] NVARCHAR(450) NULL,
+        [UpdatedByUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NULL,
         CONSTRAINT [FK_UserModuleAccesses_AspNetUsers_UserId]
             FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE,
         CONSTRAINT [FK_UserModuleAccesses_SystemModules_ModuleId]
             FOREIGN KEY ([ModuleId]) REFERENCES [dbo].[SystemModules]([Id]) ON DELETE CASCADE
     );
     CREATE UNIQUE INDEX [UX_UserModuleAccesses_UserId_ModuleId]
-        ON [dbo].[UserModuleAccesses]([UserId], [ModuleId]);
+        ON [dbo].[UserModuleAccesses]([UserId], [ModuleId]);';
+
+    EXEC sp_executesql @sql;
 END");
         }
 
@@ -904,14 +912,16 @@ END");
             await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[AccountApprovalRequests]', N'U') IS NULL
 BEGIN
+    DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+    DECLARE @sql NVARCHAR(MAX) = N'
     CREATE TABLE [dbo].[AccountApprovalRequests] (
         [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [RequestedUserId] NVARCHAR(450) NOT NULL,
+        [RequestedUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
         [RequestedRole] NVARCHAR(100) NOT NULL,
         [Status] NVARCHAR(30) NOT NULL,
         [RequestedAtUtc] DATETIME2 NOT NULL,
         [Notes] NVARCHAR(1000) NULL,
-        [ApprovedByUserId] NVARCHAR(450) NULL,
+        [ApprovedByUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NULL,
         [ApprovedAtUtc] DATETIME2 NULL,
         CONSTRAINT [FK_AccountApprovalRequests_AspNetUsers_RequestedUserId]
             FOREIGN KEY ([RequestedUserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE
@@ -921,7 +931,9 @@ BEGIN
         ON [dbo].[AccountApprovalRequests]([RequestedUserId]);
 
     CREATE INDEX [IX_AccountApprovalRequests_Status_RequestedAtUtc]
-        ON [dbo].[AccountApprovalRequests]([Status], [RequestedAtUtc]);
+        ON [dbo].[AccountApprovalRequests]([Status], [RequestedAtUtc]);';
+
+    EXEC sp_executesql @sql;
 END");
         }
 
@@ -1079,24 +1091,28 @@ END
 
 IF OBJECT_ID(N'[dbo].[SystemNotifications]', N'U') IS NULL
 BEGIN
+    DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+    DECLARE @sql NVARCHAR(MAX) = N'
     CREATE TABLE [dbo].[SystemNotifications] (
         [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [UserId] NVARCHAR(450) NOT NULL,
+        [UserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
         [PatientId] INT NULL,
-        [Title] NVARCHAR(200) NOT NULL DEFAULT(''),
-        [Message] NVARCHAR(2000) NOT NULL DEFAULT(''),
-        [Type] NVARCHAR(50) NOT NULL DEFAULT('General'),
-        [RelatedEntityType] NVARCHAR(100) NOT NULL DEFAULT(''),
-        [RelatedEntityId] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [Title] NVARCHAR(200) NOT NULL DEFAULT(''''),
+        [Message] NVARCHAR(2000) NOT NULL DEFAULT(''''),
+        [Type] NVARCHAR(50) NOT NULL DEFAULT(''General''),
+        [RelatedEntityType] NVARCHAR(100) NOT NULL DEFAULT(''''),
+        [RelatedEntityId] NVARCHAR(100) NOT NULL DEFAULT(''''),
         [IsRead] BIT NOT NULL DEFAULT(0),
         [CreatedAtUtc] DATETIME2 NOT NULL,
         [ReadAtUtc] DATETIME2 NULL,
         CONSTRAINT [FK_SystemNotifications_AspNetUsers_UserId] FOREIGN KEY([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE,
-        CONSTRAINT [FK_SystemNotifications_Patients_PatientId] FOREIGN KEY([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE SET NULL
+        CONSTRAINT [FK_SystemNotifications_Patients_PatientId] FOREIGN KEY([PatientId]) REFERENCES [dbo].[Patients]([Id])
     );
 
     CREATE INDEX [IX_SystemNotifications_UserId_IsRead_CreatedAtUtc]
-        ON [dbo].[SystemNotifications]([UserId], [IsRead], [CreatedAtUtc]);
+        ON [dbo].[SystemNotifications]([UserId], [IsRead], [CreatedAtUtc]);';
+
+    EXEC sp_executesql @sql;
 END");
         }
 
@@ -1368,6 +1384,14 @@ BEGIN
     INNER JOIN Dupes d ON d.[Id] = u.[Id]
     WHERE d.rn > 1;
 
+    IF EXISTS (
+        SELECT 1
+        FROM sys.indexes
+        WHERE [name] = N'UserNameIndex'
+          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
+    )
+        DROP INDEX [UserNameIndex] ON [dbo].[AspNetUsers];
+
     IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'UserName') IS NOT NULL
         ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [UserName] NVARCHAR(256) NOT NULL;
 
@@ -1387,6 +1411,13 @@ BEGIN
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
         CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE [name] = N'UserNameIndex'
+          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
+    )
+        CREATE UNIQUE INDEX [UserNameIndex] ON [dbo].[AspNetUsers]([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
 END");
         }
 

@@ -233,25 +233,28 @@ GO
 -- ====================
 
 -- Create indexes for better report performance
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StaffAttendance_DateRange')
-    CREATE NONCLUSTERED INDEX IX_StaffAttendance_DateRange 
-    ON StaffAttendance(StaffId, AttendanceDate, Status);
+IF OBJECT_ID(N'dbo.StaffAttendances', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StaffAttendance_DateRange')
+    CREATE NONCLUSTERED INDEX IX_StaffAttendance_DateRange
+    ON StaffAttendances(StaffId, AttendanceDate);
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LeaveRequest_DateRange')
-    CREATE NONCLUSTERED INDEX IX_LeaveRequest_DateRange 
-    ON LeaveRequest(StaffId, StartDate, EndDate, Status);
+IF OBJECT_ID(N'dbo.LeaveRequests', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LeaveRequest_DateRange')
+    CREATE NONCLUSTERED INDEX IX_LeaveRequest_DateRange
+    ON LeaveRequests(StaffId, StartDate, EndDate);
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Bills_DateRange')
     CREATE NONCLUSTERED INDEX IX_Bills_DateRange 
-    ON Bills(BillDate, Status);
+    ON Bills(BillDate);
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Payments_DateRange')
     CREATE NONCLUSTERED INDEX IX_Payments_DateRange 
-    ON Payments(PaymentDate, Status);
+    ON Payments(PaymentDate);
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Appointment_DateRange')
-    CREATE NONCLUSTERED INDEX IX_Appointment_DateRange 
-    ON Appointment(AppointmentDate, Status);
+IF OBJECT_ID(N'dbo.Appointments', N'U') IS NOT NULL
+   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Appointment_DateRange')
+    CREATE NONCLUSTERED INDEX IX_Appointment_DateRange
+    ON Appointments(AppointmentDate);
 
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_IPDAdmissions_DateRange')
     CREATE NONCLUSTERED INDEX IX_IPDAdmissions_DateRange 

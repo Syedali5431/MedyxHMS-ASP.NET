@@ -590,6 +590,7 @@ namespace MedyxHMS.Services.Interfaces
 
         // General Report Management
         Task<GeneratedReport> SaveReportAsync(GeneratedReport report);
+        Task<GeneratedReport?> GetGeneratedReportByIdAsync(int reportId);
         Task<IEnumerable<GeneratedReport>> GetGeneratedReportsAsync(string? reportType = null, DateTime? startDate = null, DateTime? endDate = null);
         Task<bool> DeleteGeneratedReportAsync(int reportId);
 

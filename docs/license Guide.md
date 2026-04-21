@@ -1,5 +1,10 @@
 # License Guide
 
+
+> Last Updated: 2026-04-22
+> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
+> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+
 ## Purpose
 This guide explains how licensing is implemented in MedyxHMS and how to renew/update license expiry securely so clients cannot change expiry from the UI or browser side.
 

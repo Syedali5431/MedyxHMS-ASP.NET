@@ -466,20 +466,48 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEJ1aWxkZXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/DepartmentReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XERlcGFydG1lbnRSZXBvcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/Design.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XERlc2lnbi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/EditReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEVkaXRSZXBvcnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/FinancialReport.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEZpbmFuY2lhbFJlcG9ydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/GeneratedReports.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEdlbmVyYXRlZFJlcG9ydHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/OccupancyReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XE9jY3VwYW5jeVJlcG9ydC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/PayrollReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFBheXJvbGxSZXBvcnQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/Preview.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFByZXZpZXcuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/ScheduleReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFNjaGVkdWxlUmVwb3J0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/StaffReport.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFN0YWZmUmVwb3J0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Shared/Error.cshtml]

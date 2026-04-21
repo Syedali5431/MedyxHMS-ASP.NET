@@ -1,0 +1,73 @@
+@model List<dynamic>
+
+@{
+    ViewData["Title"] = "Staff Report";
+    var staffId = ViewData["StaffId"] as string;
+    var startDate = ViewData["StartDate"] as DateTime?;
+    var endDate = ViewData["EndDate"] as DateTime?;
+}
+
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h4 class="mb-0"><i class="fas fa-users me-2"></i>Staff Attendance Report</h4>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-2 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Staff ID</label>
+                    <input type="text" name="staffId" class="form-control" value="@staffId" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Start Date</label>
+                    <input type="date" name="startDate" class="form-control" value="@startDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">End Date</label>
+                    <input type="date" name="endDate" class="form-control" value="@endDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info text-white w-100">Generate</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-bordered">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Total Days</th>
+                            <th>Present</th>
+                            <th>Absent</th>
+                            <th>Half Days</th>
+                            <th>Attendance %</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var row in Model)
+                            {
+                                var rowType = ((object)row).GetType();
+                                <tr>
+                                    <td>@(rowType.GetProperty("TotalDays")?.GetValue(row)?.ToString() ?? "0")</td>
+                                    <td>@(rowType.GetProperty("PresentDays")?.GetValue(row)?.ToString() ?? "0")</td>
+                                    <td>@(rowType.GetProperty("AbsentDays")?.GetValue(row)?.ToString() ?? "0")</td>
+                                    <td>@(rowType.GetProperty("HalfDays")?.GetValue(row)?.ToString() ?? "0")</td>
+                                    <td>@(rowType.GetProperty("AttendancePercentage")?.GetValue(row)?.ToString() ?? "0")</td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No staff report data available.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <a asp-action="Index" class="btn btn-outline-secondary">Back to Reports</a>
+        </div>
+    </div>
+</div>

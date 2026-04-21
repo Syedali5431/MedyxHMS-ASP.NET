@@ -1,4 +1,9 @@
-# Pharmacist Guide
+# Pharmacist
+
+
+> Last Updated: 2026-04-22
+> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
+> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
 
 ## Login and Dashboard
 - Login with Pharmacist role.

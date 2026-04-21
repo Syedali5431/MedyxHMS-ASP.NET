@@ -1,0 +1,109 @@
+@model IEnumerable<MedyxHMS.Models.ReportSchedule>
+
+@{
+    ViewData["Title"] = "Schedule Reports";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-calendar-plus me-2"></i>New Schedule</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="ScheduleReport" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-2">
+                            <label class="form-label">Report Name</label>
+                            <input name="ReportName" class="form-control" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Report Type</label>
+                            <select name="ReportType" class="form-select" required>
+                                <option>Department</option>
+                                <option>Financial</option>
+                                <option>Occupancy</option>
+                                <option>Staff</option>
+                                <option>Payroll</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Recurrence</label>
+                            <select name="RecurrencePattern" class="form-select" required>
+                                <option>Daily</option>
+                                <option>Weekly</option>
+                                <option>Monthly</option>
+                                <option>Quarterly</option>
+                                <option>Yearly</option>
+                            </select>
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Time of Day</label>
+                            <input name="TimeOfDay" type="time" value="08:00" class="form-control" required />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Email Recipients</label>
+                            <input name="EmailRecipients" class="form-control" placeholder="a@x.com,b@y.com" />
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="IsActive" value="true" checked />
+                            <label class="form-check-label">Active</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Create Schedule</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Active Schedules</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Pattern</th>
+                                    <th>Next Run</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model != null && Model.Any())
+                                {
+                                    foreach (var schedule in Model)
+                                    {
+                                        <tr>
+                                            <td>@schedule.ReportName</td>
+                                            <td>@schedule.ReportType</td>
+                                            <td>@schedule.RecurrencePattern</td>
+                                            <td>@schedule.NextRunDate?.ToString("yyyy-MM-dd HH:mm")</td>
+                                            <td>
+                                                <form asp-action="DeleteSchedule" method="post" class="d-inline">
+                                                    <input type="hidden" name="id" value="@schedule.Id" />
+                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete this schedule?');">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted">No schedules found.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <a asp-action="Index" class="btn btn-outline-secondary mt-3">Back to Reports</a>
+        </div>
+    </div>
+</div>

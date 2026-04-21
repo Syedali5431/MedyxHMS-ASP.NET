@@ -354,7 +354,7 @@ namespace MedyxHMS.Data
                 .HasOne(n => n.Patient)
                 .WithMany(p => p.Notifications)
                 .HasForeignKey(n => n.PatientId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<SystemNotification>()
                 .HasIndex(n => new { n.UserId, n.IsRead, n.CreatedAtUtc });

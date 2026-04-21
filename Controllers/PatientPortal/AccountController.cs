@@ -86,7 +86,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         [AllowAnonymous]
         public IActionResult Register()
         {
-            return View(new PatientPortalRegisterViewModel());
+            return View("~/Views/PatientPortal/Account/Register.cshtml", new PatientPortalRegisterViewModel());
         }
 
         // POST: /PatientPortal/Account/Register
@@ -102,7 +102,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
                 {
                     ModelState.AddModelError("Register.UserName", "User name is already in use");
-                    return View(viewModel);
+                    return View("~/Views/PatientPortal/Account/Register.cshtml", viewModel);
                 }
 
                 try
@@ -174,7 +174,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 }
             }
 
-            return View(viewModel);
+            return View("~/Views/PatientPortal/Account/Register.cshtml", viewModel);
         }
 
         // POST: /PatientPortal/Account/Logout

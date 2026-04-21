@@ -3,6 +3,17 @@
 ## Purpose
 This index provides a phase-by-phase navigation map for the remediation, stabilization, and hardening work completed in the ASP.NET application.
 
+## Latest Operational Docs (2026-04-22)
+
+- UAT checklist: [UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md](UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md)
+- UAT execution evidence: [UAT-EXECUTION-EVIDENCE-2026-04-22.md](UAT-EXECUTION-EVIDENCE-2026-04-22.md)
+- Updated PRD: [UPDATED-PRD-2026-04-22.md](UPDATED-PRD-2026-04-22.md)
+- Updated checklist: [UPDATED-CHECKLIST-2026-04-22.md](UPDATED-CHECKLIST-2026-04-22.md)
+- Updated TODO list: [UPDATED-TODO-LIST-2026-04-22.md](UPDATED-TODO-LIST-2026-04-22.md)
+- SQL script validation: [SQL-SCRIPT-VALIDATION-2026-04-22.md](SQL-SCRIPT-VALIDATION-2026-04-22.md)
+- Warning triage plan: [NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md](NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md)
+- Final stabilization status: [IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md](IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md)
+
 ## Phase Map
 
 ### PH1 - Baseline Audit and Build Recovery Plan

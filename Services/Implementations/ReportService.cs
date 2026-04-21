@@ -347,6 +347,13 @@ namespace MedyxHMS.Services.Implementations
             return report;
         }
 
+        public async Task<GeneratedReport?> GetGeneratedReportByIdAsync(int reportId)
+        {
+            return await _context.GeneratedReports
+                .Include(gr => gr.StaffGenerated)
+                .FirstOrDefaultAsync(gr => gr.Id == reportId);
+        }
+
         public async Task<IEnumerable<GeneratedReport>> GetGeneratedReportsAsync(string reportType = null, DateTime? startDate = null, DateTime? endDate = null)
         {
             var cacheKey = $"report:generated:{reportType ?? "all"}:{startDate?.ToString("yyyyMMdd") ?? "na"}:{endDate?.ToString("yyyyMMdd") ?? "na"}";

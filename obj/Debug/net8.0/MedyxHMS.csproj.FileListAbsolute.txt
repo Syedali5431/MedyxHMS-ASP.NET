@@ -768,8 +768,10 @@ e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Drawing.
 e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Runtime.Caching.dll
 e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
+E:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\appsettings.Development.json
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\appsettings.json
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\MedyxHMS.staticwebassets.runtime.json
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\MedyxHMS.staticwebassets.endpoints.json
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\LatoFont\Lato-Black.ttf
@@ -945,5 +947,3 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\refint\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.pdb
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.genruntimeconfig.cache
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\ref\MedyxHMS.dll
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json
-E:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json

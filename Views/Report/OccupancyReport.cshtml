@@ -1,0 +1,45 @@
+@model Dictionary<string, int>
+
+@{
+    ViewData["Title"] = "Occupancy Report";
+    var reportDate = ViewData["Date"] as DateTime?;
+    var avgRate = ViewData["AverageOccupancyRate"] as double?;
+    var totalBeds = Model != null && Model.TryGetValue("TotalBeds", out var t) ? t : 0;
+    var occupiedBeds = Model != null && Model.TryGetValue("OccupiedBeds", out var o) ? o : 0;
+    var availableBeds = Model != null && Model.TryGetValue("AvailableBeds", out var a) ? a : 0;
+    var percentage = totalBeds > 0 ? (occupiedBeds * 100.0 / totalBeds) : 0;
+}
+
+<div class="container-fluid mt-4">
+    <div class="card">
+        <div class="card-header bg-warning">
+            <h4 class="mb-0"><i class="fas fa-bed me-2"></i>Occupancy Report</h4>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-2 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Report Date</label>
+                    <input type="date" name="date" class="form-control" value="@reportDate?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-warning w-100">Generate</button>
+                </div>
+            </form>
+
+            <div class="row mb-3">
+                <div class="col-md-3"><div class="alert alert-primary mb-0">Total Beds: <strong>@totalBeds</strong></div></div>
+                <div class="col-md-3"><div class="alert alert-danger mb-0">Occupied: <strong>@occupiedBeds</strong></div></div>
+                <div class="col-md-3"><div class="alert alert-success mb-0">Available: <strong>@availableBeds</strong></div></div>
+                <div class="col-md-3"><div class="alert alert-info mb-0">Average Rate: <strong>@((avgRate ?? 0).ToString("F2"))%</strong></div></div>
+            </div>
+
+            <div class="progress mb-3" style="height: 24px;">
+                <div class="progress-bar bg-danger" role="progressbar" style="width: @percentage.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)%">
+                    @percentage.ToString("F1")%
+                </div>
+            </div>
+
+            <a asp-action="Index" class="btn btn-outline-secondary">Back to Reports</a>
+        </div>
+    </div>
+</div>

@@ -317,7 +317,7 @@ namespace MedyxHMS.Services.Implementations
 
         private bool IsExemptRequest(ClaimsPrincipal user, string requestPath)
         {
-            if (user.IsInRole("SuperAdmin") || user.IsInRole("Patient"))
+            if (user.IsInRole("SuperAdmin") || user.IsInRole("Admin") || user.IsInRole("Patient"))
                 return true;
 
             if (string.IsNullOrWhiteSpace(requestPath))
