@@ -184,6 +184,26 @@ namespace MedyxHMS.ViewModels
         [Display(Name = "Enable Twilio Live Send")]
         public bool TwilioEnableLiveSend { get; set; }
 
+        [Display(Name = "SMS Provider")]
+        [MaxLength(30)]
+        public string SmsProvider { get; set; }
+
+        [Display(Name = "Africa's Talking Username")]
+        [MaxLength(100)]
+        public string AfricaTalkingUsername { get; set; }
+
+        [Display(Name = "Africa's Talking API Key")]
+        [DataType(DataType.Password)]
+        [MaxLength(200)]
+        public string AfricaTalkingApiKey { get; set; }
+
+        [Display(Name = "Africa's Talking Sender ID")]
+        [MaxLength(30)]
+        public string AfricaTalkingSenderId { get; set; }
+
+        [Display(Name = "Enable Africa's Talking Live Send")]
+        public bool AfricaTalkingEnableLiveSend { get; set; }
+
         [Display(Name = "Test SMS Phone")]
         [MaxLength(30)]
         public string TestSmsPhone { get; set; }
@@ -193,7 +213,25 @@ namespace MedyxHMS.ViewModels
         [MaxLength(200)]
         public string TestEmailTo { get; set; }
 
+        [Display(Name = "Appointment Email Subject Template")]
+        [MaxLength(300)]
+        public string AppointmentConfirmedEmailSubjectTemplate { get; set; }
+
+        [Display(Name = "Appointment Email Body Template")]
+        public string AppointmentConfirmedEmailBodyTemplate { get; set; }
+
+        [Display(Name = "Appointment SMS Body Template")]
+        [MaxLength(500)]
+        public string AppointmentConfirmedSmsBodyTemplate { get; set; }
+
+        [Display(Name = "Email Opt-Out List")]
+        public string EmailOptOutList { get; set; }
+
+        [Display(Name = "SMS Opt-Out List")]
+        public string SmsOptOutList { get; set; }
+
         public bool HasSavedTwilioAuthToken { get; set; }
+        public bool HasSavedAfricaTalkingApiKey { get; set; }
 
         public string LastSmsTestStatus { get; set; }
         public string LastSmsTestMessage { get; set; }

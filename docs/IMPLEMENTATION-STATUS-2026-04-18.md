@@ -177,6 +177,41 @@ Latest baseline execution (LocalDB):
   - restored async chatbot UI behavior (ask/retry/escalation/feedback/unresolved) with anti-forgery posting
   - tightened CORS policy to configured methods/headers and optional credentials (default disabled)
 
+### 11) Phase 5.1 mobile API compatibility closure (2026-04-21)
+- Added:
+  - `Controllers/AppController.cs`
+  - `DTOs/MobileApiDtos.cs`
+  - `docs/MOBILE-API-COMPATIBILITY.md`
+- Updated:
+  - `Services/Implementations/DatabaseInitializer.cs`
+- Coverage:
+  - preserved legacy mobile bootstrap contract at `POST /App/Index`
+  - added versioned compatibility endpoint at `POST /api/v1/app`
+  - added expanded config endpoint at `GET/POST /api/v2/app/config`
+  - gated mobile API behind `MobileAPI` feature toggle with seeded default enablement
+  - documented settings and compatibility behavior for mobile clients
+
+### 11.1) Phase 5.1 notification integration closure (2026-04-21)
+- Added:
+  - `Services/Implementations/AfricaTalkingSmsNotificationProvider.cs`
+  - `Services/Implementations/SmsNotificationProviderRouter.cs`
+- Updated:
+  - `Program.cs`
+  - `Controllers/CmsController.cs`
+  - `ViewModels/CmsViewModels.cs`
+  - `Views/Cms/NotificationSettings.cshtml`
+  - `Services/Implementations/SmtpEmailNotificationProvider.cs`
+  - `Services/Implementations/DatabaseInitializer.cs`
+  - `appsettings.json`
+- Coverage:
+  - SMS provider routing via `Notification:Sms:Provider` with Twilio and Africa's Talking support
+  - CMS management for active provider, provider credentials, and live-send toggles
+  - recipient-level email/SMS opt-out lists in CMS with enforcement in send pipeline
+  - audit logging for opt-out skips and provider-specific dispatch outcomes
+  - seeded defaults for provider selection, provider credentials, and opt-out settings
+- Closure:
+  - remaining Step 5.1 integration items are completed and closed
+
 ### 8) Phase 7.2 core chat experience and knowledge grounding
 - Added:
   - `docs/PH12.md`

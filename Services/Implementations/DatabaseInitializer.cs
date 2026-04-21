@@ -193,6 +193,25 @@ namespace MedyxHMS.Services.Implementations
             await EnsureSystemSettingAsync("PublicSiteThemePreset", "Custom", "string", "PublicSite", "Optional style preset key selected in style studio.");
             await EnsureSystemSettingAsync("PublicSiteHeadingStyle", "Normal", "string", "PublicSite", "Heading text transform style: Normal, Uppercase, Capitalize.");
             await EnsureSystemSettingAsync("PublicSiteButtonStyle", "Rounded", "string", "PublicSite", "Button shape style: Rounded, Pill, Square.");
+            await EnsureSystemSettingAsync("MobileAppLogo", "", "string", "PublicSite", "Optional logo path returned to mobile clients for app bootstrap.");
+            await EnsureSystemSettingAsync("MobileApiBaseUrl", "", "string", "PublicSite", "Optional override for the public mobile API base URL.");
+            await EnsureSystemSettingAsync("MobileAPI", "true", "bool", "Features", "Enable the versioned mobile API compatibility layer.");
+            await EnsureSystemSettingAsync("Notification:Sms:Provider", "Twilio", "string", "Notification", "Active SMS provider key (Twilio or AfricaTalking).");
+            await EnsureSystemSettingAsync("Notification:Sms:Twilio:EnableLiveSend", "false", "bool", "Notification", "Enable live Twilio API SMS sends.");
+            await EnsureSystemSettingAsync("Notification:Sms:AfricaTalking:Username", "", "string", "Notification", "Africa's Talking username for SMS provider.");
+            await EnsureSystemSettingAsync("Notification:Sms:AfricaTalking:ApiKey", "", "string", "Notification", "Africa's Talking API key for SMS provider.");
+            await EnsureSystemSettingAsync("Notification:Sms:AfricaTalking:SenderId", "", "string", "Notification", "Africa's Talking sender ID for outbound SMS.");
+            await EnsureSystemSettingAsync("Notification:Sms:AfricaTalking:EnableLiveSend", "false", "bool", "Notification", "Enable live Africa's Talking API SMS sends.");
+            await EnsureSystemSettingAsync("Notification:Smtp:RetryEnabled", "true", "bool", "Notification", "Enable retry attempts for SMTP email delivery.");
+            await EnsureSystemSettingAsync("Notification:Smtp:RetryCount", "2", "int", "Notification", "Number of SMTP retries after the first failed attempt.");
+            await EnsureSystemSettingAsync("Notification:Smtp:RetryDelayMilliseconds", "800", "int", "Notification", "Base delay in milliseconds between SMTP retry attempts.");
+            await EnsureSystemSettingAsync("Notification:OptOut:EnableEmailOptOut", "true", "bool", "Notification", "Enable recipient-level email opt-out enforcement.");
+            await EnsureSystemSettingAsync("Notification:OptOut:EnableSmsOptOut", "true", "bool", "Notification", "Enable recipient-level SMS opt-out enforcement.");
+            await EnsureSystemSettingAsync("Notification:OptOut:EmailRecipients", "", "string", "Notification", "Comma or newline separated email recipients opted out from outbound notifications.");
+            await EnsureSystemSettingAsync("Notification:OptOut:PhoneRecipients", "", "string", "Notification", "Comma or newline separated phone recipients opted out from outbound notifications.");
+            await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:EmailSubject", "Appointment Request Confirmed", "string", "Notification", "Template subject for appointment confirmation emails.");
+            await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:EmailBody", "Hello {{PatientName}},\n\nYour appointment request has been confirmed.\nDoctor: {{DoctorName}}\nDate: {{Date}}\nTime: {{Time}}\n\nPlease arrive 15 minutes before your scheduled time.\nIf you need to reschedule, contact the hospital front desk at {{SupportPhone}}.\n\nRegards,\n{{HospitalName}}", "string", "Notification", "Template body for appointment confirmation emails.");
+            await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:SmsBody", "Medyx: Appointment confirmed for {{PatientName}} with {{DoctorName}} on {{Date}} at {{Time}}.", "string", "Notification", "Template body for appointment confirmation SMS messages.");
         }
 
         private async Task EnsureStep42TablesAsync()

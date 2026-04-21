@@ -499,10 +499,23 @@ namespace MedyxHMS.Controllers
             {
                 EnableEmailNotifications = hospitalSettings.EnableEmailNotifications,
                 EnableSMSNotifications = hospitalSettings.EnableSMSNotifications,
+                SmsProvider = (await GetSettingValueAsync("Notification:Sms:Provider") ?? "Twilio").Trim(),
                 TwilioAccountSid = (await GetSettingValueAsync("Notification:Sms:Twilio:AccountSid"))?.Trim(),
                 TwilioFromPhone = (await GetSettingValueAsync("Notification:Sms:Twilio:FromPhone"))?.Trim(),
                 TwilioEnableLiveSend = bool.TryParse(await GetSettingValueAsync("Notification:Sms:Twilio:EnableLiveSend"), out var liveSend) && liveSend,
                 HasSavedTwilioAuthToken = !string.IsNullOrWhiteSpace(await GetSettingValueAsync("Notification:Sms:Twilio:AuthToken")),
+                AfricaTalkingUsername = (await GetSettingValueAsync("Notification:Sms:AfricaTalking:Username"))?.Trim(),
+                AfricaTalkingSenderId = (await GetSettingValueAsync("Notification:Sms:AfricaTalking:SenderId"))?.Trim(),
+                AfricaTalkingEnableLiveSend = bool.TryParse(await GetSettingValueAsync("Notification:Sms:AfricaTalking:EnableLiveSend"), out var africaLiveSend) && africaLiveSend,
+                HasSavedAfricaTalkingApiKey = !string.IsNullOrWhiteSpace(await GetSettingValueAsync("Notification:Sms:AfricaTalking:ApiKey")),
+                EmailOptOutList = (await GetSettingValueAsync("Notification:OptOut:EmailRecipients"))?.Trim(),
+                SmsOptOutList = (await GetSettingValueAsync("Notification:OptOut:PhoneRecipients"))?.Trim(),
+                AppointmentConfirmedEmailSubjectTemplate = await GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:EmailSubject")
+                    ?? "Appointment Request Confirmed",
+                AppointmentConfirmedEmailBodyTemplate = await GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:EmailBody")
+                    ?? "Hello {{PatientName}},\n\nYour appointment request has been confirmed.\nDoctor: {{DoctorName}}\nDate: {{Date}}\nTime: {{Time}}\n\nPlease arrive 15 minutes before your scheduled time.\nIf you need to reschedule, contact the hospital front desk at {{SupportPhone}}.\n\nRegards,\n{{HospitalName}}",
+                AppointmentConfirmedSmsBodyTemplate = await GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:SmsBody")
+                    ?? "Medyx: Appointment confirmed for {{PatientName}} with {{DoctorName}} on {{Date}} at {{Time}}.",
                 LastSmsTestStatus = await GetSettingValueAsync("Notification:Test:Sms:LastStatus"),
                 LastSmsTestMessage = await GetSettingValueAsync("Notification:Test:Sms:LastMessage"),
                 LastSmsTestTarget = await GetSettingValueAsync("Notification:Test:Sms:LastTarget"),
@@ -530,19 +543,36 @@ namespace MedyxHMS.Controllers
             if (!ModelState.IsValid)
             {
                 vm.HasSavedTwilioAuthToken = !string.IsNullOrWhiteSpace(await GetSettingValueAsync("Notification:Sms:Twilio:AuthToken"));
+                vm.HasSavedAfricaTalkingApiKey = !string.IsNullOrWhiteSpace(await GetSettingValueAsync("Notification:Sms:AfricaTalking:ApiKey"));
                 return View(vm);
             }
 
             await UpsertSettingAsync("EnableEmailNotifications", vm.EnableEmailNotifications ? "true" : "false", "bool", "Hospital", "Enable/disable outbound email notifications.");
             await UpsertSettingAsync("EnableSMSNotifications", vm.EnableSMSNotifications ? "true" : "false", "bool", "Hospital", "Enable/disable outbound SMS notifications.");
 
+            await UpsertSettingAsync("Notification:Sms:Provider", (vm.SmsProvider ?? "Twilio").Trim(), "string", "Notification", "Active SMS provider (Twilio or AfricaTalking).");
             await UpsertSettingAsync("Notification:Sms:Twilio:AccountSid", (vm.TwilioAccountSid ?? string.Empty).Trim(), "string", "Notification", "Twilio account SID for SMS provider.");
             await UpsertSettingAsync("Notification:Sms:Twilio:FromPhone", (vm.TwilioFromPhone ?? string.Empty).Trim(), "string", "Notification", "Twilio source phone number used for outbound SMS.");
             await UpsertSettingAsync("Notification:Sms:Twilio:EnableLiveSend", vm.TwilioEnableLiveSend ? "true" : "false", "bool", "Notification", "Enable live Twilio API SMS sends.");
+            await UpsertSettingAsync("Notification:Sms:AfricaTalking:Username", (vm.AfricaTalkingUsername ?? string.Empty).Trim(), "string", "Notification", "Africa's Talking username for SMS provider.");
+            await UpsertSettingAsync("Notification:Sms:AfricaTalking:SenderId", (vm.AfricaTalkingSenderId ?? string.Empty).Trim(), "string", "Notification", "Africa's Talking sender ID used for outbound SMS.");
+            await UpsertSettingAsync("Notification:Sms:AfricaTalking:EnableLiveSend", vm.AfricaTalkingEnableLiveSend ? "true" : "false", "bool", "Notification", "Enable live Africa's Talking API SMS sends.");
+            await UpsertSettingAsync("Notification:OptOut:EnableEmailOptOut", "true", "bool", "Notification", "Enable recipient-level email opt-out enforcement.");
+            await UpsertSettingAsync("Notification:OptOut:EnableSmsOptOut", "true", "bool", "Notification", "Enable recipient-level SMS opt-out enforcement.");
+            await UpsertSettingAsync("Notification:OptOut:EmailRecipients", (vm.EmailOptOutList ?? string.Empty).Trim(), "string", "Notification", "Comma or newline separated email recipients opted out from notifications.");
+            await UpsertSettingAsync("Notification:OptOut:PhoneRecipients", (vm.SmsOptOutList ?? string.Empty).Trim(), "string", "Notification", "Comma or newline separated phone recipients opted out from notifications.");
+            await UpsertSettingAsync("Notification:Templates:AppointmentConfirmed:EmailSubject", (vm.AppointmentConfirmedEmailSubjectTemplate ?? string.Empty).Trim(), "string", "Notification", "Template subject for appointment confirmation emails.");
+            await UpsertSettingAsync("Notification:Templates:AppointmentConfirmed:EmailBody", (vm.AppointmentConfirmedEmailBodyTemplate ?? string.Empty).Trim(), "string", "Notification", "Template body for appointment confirmation emails.");
+            await UpsertSettingAsync("Notification:Templates:AppointmentConfirmed:SmsBody", (vm.AppointmentConfirmedSmsBodyTemplate ?? string.Empty).Trim(), "string", "Notification", "Template body for appointment confirmation SMS messages.");
 
             if (!string.IsNullOrWhiteSpace(vm.TwilioAuthToken))
             {
                 await UpsertSettingAsync("Notification:Sms:Twilio:AuthToken", vm.TwilioAuthToken.Trim(), "string", "Notification", "Twilio auth token for SMS provider.");
+            }
+
+            if (!string.IsNullOrWhiteSpace(vm.AfricaTalkingApiKey))
+            {
+                await UpsertSettingAsync("Notification:Sms:AfricaTalking:ApiKey", vm.AfricaTalkingApiKey.Trim(), "string", "Notification", "Africa's Talking API key for SMS provider.");
             }
 
             TempData["Success"] = "Notification settings saved.";

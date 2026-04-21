@@ -125,8 +125,19 @@
 
             <hr />
 
-            <h5 class="mb-3">Twilio SMS Provider</h5>
+            <h5 class="mb-3">SMS Provider</h5>
             <div class="row g-3">
+                <div class="col-md-4">
+                    <label asp-for="SmsProvider" class="form-label"></label>
+                    <select asp-for="SmsProvider" class="form-select">
+                        <option value="Twilio">Twilio</option>
+                        <option value="AfricaTalking">Africa's Talking</option>
+                    </select>
+                </div>
+
+                <div class="col-12">
+                    <h6 class="mb-2">Twilio Configuration</h6>
+                </div>
                 <div class="col-md-6">
                     <label asp-for="TwilioAccountSid" class="form-label"></label>
                     <input asp-for="TwilioAccountSid" class="form-control" autocomplete="off" />
@@ -152,6 +163,78 @@
                         <label asp-for="TwilioEnableLiveSend" class="form-check-label"></label>
                     </div>
                 </div>
+
+                <div class="col-12 mt-2">
+                    <h6 class="mb-2">Africa's Talking Configuration</h6>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AfricaTalkingUsername" class="form-label"></label>
+                    <input asp-for="AfricaTalkingUsername" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="AfricaTalkingUsername" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AfricaTalkingSenderId" class="form-label"></label>
+                    <input asp-for="AfricaTalkingSenderId" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="AfricaTalkingSenderId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="AfricaTalkingApiKey" class="form-label"></label>
+                    <input asp-for="AfricaTalkingApiKey" type="password" class="form-control" autocomplete="new-password" placeholder="Enter new API key to update" />
+                    <span asp-validation-for="AfricaTalkingApiKey" class="text-danger small"></span>
+                    @if (Model.HasSavedAfricaTalkingApiKey)
+                    {
+                        <div class="form-text text-success">An Africa's Talking API key is already saved. Leave blank to keep existing key.</div>
+                    }
+                </div>
+                <div class="col-md-6 d-flex align-items-end">
+                    <div class="form-check form-switch mb-2">
+                        <input asp-for="AfricaTalkingEnableLiveSend" class="form-check-input" />
+                        <label asp-for="AfricaTalkingEnableLiveSend" class="form-check-label"></label>
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <h5 class="mb-3">Recipient Opt-Out Lists</h5>
+            <p class="text-muted small mb-3">
+                Add one recipient per line or comma-separated values.
+            </p>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="EmailOptOutList" class="form-label"></label>
+                    <textarea asp-for="EmailOptOutList" class="form-control" rows="4" placeholder="user1@example.com&#10;user2@example.com"></textarea>
+                    <span asp-validation-for="EmailOptOutList" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="SmsOptOutList" class="form-label"></label>
+                    <textarea asp-for="SmsOptOutList" class="form-control" rows="4" placeholder="+254700000001&#10;+254700000002"></textarea>
+                    <span asp-validation-for="SmsOptOutList" class="text-danger small"></span>
+                </div>
+            </div>
+
+            <hr />
+
+            <h5 class="mb-3">Notification Templates</h5>
+            <p class="text-muted small mb-3">
+                Available tokens: <code>{{PatientName}}</code>, <code>{{DoctorName}}</code>, <code>{{Date}}</code>, <code>{{Time}}</code>, <code>{{HospitalName}}</code>, <code>{{SupportPhone}}</code>.
+            </p>
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <label asp-for="AppointmentConfirmedEmailSubjectTemplate" class="form-label"></label>
+                    <input asp-for="AppointmentConfirmedEmailSubjectTemplate" class="form-control" autocomplete="off" />
+                    <span asp-validation-for="AppointmentConfirmedEmailSubjectTemplate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="AppointmentConfirmedEmailBodyTemplate" class="form-label"></label>
+                    <textarea asp-for="AppointmentConfirmedEmailBodyTemplate" class="form-control" rows="6"></textarea>
+                    <span asp-validation-for="AppointmentConfirmedEmailBodyTemplate" class="text-danger small"></span>
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="AppointmentConfirmedSmsBodyTemplate" class="form-label"></label>
+                    <textarea asp-for="AppointmentConfirmedSmsBodyTemplate" class="form-control" rows="3"></textarea>
+                    <span asp-validation-for="AppointmentConfirmedSmsBodyTemplate" class="text-danger small"></span>
+                </div>
             </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-end gap-2">
@@ -165,7 +248,7 @@
         <div class="card-body">
             <h5 class="mb-3">Send Test SMS</h5>
             <p class="text-muted small mb-3">
-                Uses the current Twilio settings. Live send must be enabled to send to Twilio.
+                Uses the currently selected SMS provider and its live-send flag.
             </p>
             <div class="row g-3 align-items-end">
                 <div class="col-md-6">

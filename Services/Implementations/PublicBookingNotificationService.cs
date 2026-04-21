@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -32,22 +33,30 @@ namespace MedyxHMS.Services.Implementations
                 throw new ArgumentNullException(nameof(request));
 
             var hospitalSettings = await _settingService.GetHospitalSettingsAsync();
-            var subject = "Appointment Request Confirmed";
             var dateText = request.PreferredDate.ToString("dd MMM yyyy");
             var timeText = request.PreferredTime.ToString(@"hh\\:mm");
+            var supportPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000";
 
-            var emailBody =
-                $"Hello {request.PatientName},\n\n" +
-                $"Your appointment request has been confirmed.\n" +
-                $"Doctor: {doctorDisplayName}\n" +
-                $"Date: {dateText}\n" +
-                $"Time: {timeText}\n\n" +
-                "Please arrive 15 minutes before your scheduled time.\n" +
-                "If you need to reschedule, contact the hospital front desk.\n\n" +
-                "Regards,\nMedyx Hospital";
+            var subjectTemplate = await _settingService.GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:EmailSubject")
+                ?? "Appointment Request Confirmed";
+            var emailBodyTemplate = await _settingService.GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:EmailBody")
+                ?? "Hello {{PatientName}},\n\nYour appointment request has been confirmed.\nDoctor: {{DoctorName}}\nDate: {{Date}}\nTime: {{Time}}\n\nPlease arrive 15 minutes before your scheduled time.\nIf you need to reschedule, contact the hospital front desk at {{SupportPhone}}.\n\nRegards,\n{{HospitalName}}";
+            var smsTemplate = await _settingService.GetSettingValueAsync("Notification:Templates:AppointmentConfirmed:SmsBody")
+                ?? "Medyx: Appointment confirmed for {{PatientName}} with {{DoctorName}} on {{Date}} at {{Time}}.";
 
-            var smsMessage =
-                $"Medyx: Appointment confirmed for {request.PatientName} with {doctorDisplayName} on {dateText} at {timeText}.";
+            var tokens = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["PatientName"] = request.PatientName ?? string.Empty,
+                ["DoctorName"] = doctorDisplayName ?? string.Empty,
+                ["Date"] = dateText,
+                ["Time"] = timeText,
+                ["HospitalName"] = hospitalSettings.Name ?? "Medyx Hospital",
+                ["SupportPhone"] = supportPhone
+            };
+
+            var subject = ApplyTemplate(subjectTemplate, tokens);
+            var emailBody = ApplyTemplate(emailBodyTemplate, tokens);
+            var smsMessage = ApplyTemplate(smsTemplate, tokens);
 
             if (hospitalSettings.EnableEmailNotifications && !string.IsNullOrWhiteSpace(request.Email))
             {
@@ -70,6 +79,22 @@ namespace MedyxHMS.Services.Implementations
                 doctorDisplayName,
                 request.PreferredDate.ToString("yyyy-MM-dd"),
                 request.PreferredTime.ToString(@"hh\\:mm"));
+        }
+
+        private static string ApplyTemplate(string template, IReadOnlyDictionary<string, string> tokens)
+        {
+            if (string.IsNullOrWhiteSpace(template))
+            {
+                return string.Empty;
+            }
+
+            var result = template;
+            foreach (var token in tokens)
+            {
+                result = result.Replace($"{{{{{token.Key}}}}}", token.Value ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return result;
         }
     }
 }

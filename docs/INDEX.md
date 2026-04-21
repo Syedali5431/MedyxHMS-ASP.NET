@@ -302,6 +302,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 
 ### Deployment and Cutover
 - Document: [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md)
+- Mobile API: [MOBILE-API-COMPATIBILITY.md](MOBILE-API-COMPATIBILITY.md)
 - Checklist: [MIGRATION-COUNT-COMPARISON-CHECKLIST.md](MIGRATION-COUNT-COMPARISON-CHECKLIST.md)
 - Scripts Guide: [../scripts/README.md](../scripts/README.md)
 - Deployment Checklist: [../scripts/DEPLOYMENT_CHECKLIST.md](../scripts/DEPLOYMENT_CHECKLIST.md)
