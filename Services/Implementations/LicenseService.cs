@@ -10,30 +10,73 @@ namespace MedyxHMS.Services.Implementations
 {
     public class LicenseService : ILicenseService
     {
-        private static readonly HashSet<int> AllowedRenewalTerms = new() { 1, 2, 3 };
         private const string DefaultSuperAdminContact = "superadmin@hospital.com";
 
         private readonly ApplicationDbContext _context;
         private readonly IEmailNotificationProvider _emailNotificationProvider;
         private readonly ISettingService _settingService;
+        private readonly ILicenseFileService _licenseFileService;
         private readonly ILogger<LicenseService> _logger;
 
         public LicenseService(
             ApplicationDbContext context,
             IEmailNotificationProvider emailNotificationProvider,
             ISettingService settingService,
+            ILicenseFileService licenseFileService,
             ILogger<LicenseService> logger)
         {
             _context = context;
             _emailNotificationProvider = emailNotificationProvider;
             _settingService = settingService;
+            _licenseFileService = licenseFileService;
             _logger = logger;
         }
 
         public async Task<LicenseSnapshot> GetCurrentSnapshotAsync()
         {
-            var license = await GetOrCreateActiveLicenseAsync();
+            var license = await GetActiveLicenseAsync();
+            if (license == null)
+            {
+                var missing = new LicenseRecord
+                {
+                    LicenseReference = "UNLICENSED",
+                    ProductName = "MedyxHMS",
+                    TenantId = "UNCONFIGURED",
+                    LicenseGuid = Guid.Empty,
+                    IssuedAtUtc = DateTime.UtcNow,
+                    ExpiresAtUtc = DateTime.UtcNow.AddDays(-1),
+                    MaxConcurrentUsers = 0,
+                    VerificationKey = string.Empty,
+                    LicensedModulesCsv = string.Empty,
+                    PublicKeyModulusHex = string.Empty,
+                    PublicKeyExponentHex = string.Empty,
+                    Nonce = "N/A",
+                    SignatureAlgorithm = "RSA-SHA256",
+                    SignatureHex = string.Empty,
+                    EncodedLicenseFile = string.Empty,
+                    CanonicalPayloadJson = string.Empty,
+                    PayloadSha256Hex = string.Empty,
+                    IsSignatureValid = false,
+                    Status = LicenseState.Expired.ToString(),
+                    IsActive = false
+                };
+
+                return new LicenseSnapshot
+                {
+                    License = missing,
+                    State = LicenseState.Expired,
+                    DaysRemaining = -1,
+                    ReminderDue = false,
+                    SuperAdminContact = await GetSuperAdminContactAsync(),
+                    BillingContact = await GetBillingContactAsync()
+                };
+            }
+
+            var signatureValid = await _licenseFileService.IsCurrentLicenseCryptographicallyValidAsync();
             var state = DetermineState(license.ExpiresAtUtc, DateTime.UtcNow);
+            if (!signatureValid)
+                state = LicenseState.Expired;
+
             var daysRemaining = (license.ExpiresAtUtc.Date - DateTime.UtcNow.Date).Days;
 
             if (!string.Equals(license.Status, state.ToString(), StringComparison.Ordinal))
@@ -58,7 +101,9 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<IReadOnlyList<LicenseAuditLog>> GetAuditHistoryAsync(int take = 20)
         {
-            var license = await GetOrCreateActiveLicenseAsync();
+            var license = await GetActiveLicenseAsync();
+            if (license == null)
+                return Array.Empty<LicenseAuditLog>();
 
             return await _context.LicenseAuditLogs
                 .Where(a => a.LicenseRecordId == license.Id)
@@ -69,7 +114,9 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<IReadOnlyList<LicenseReminderLog>> GetReminderHistoryAsync(int take = 20)
         {
-            var license = await GetOrCreateActiveLicenseAsync();
+            var license = await GetActiveLicenseAsync();
+            if (license == null)
+                return Array.Empty<LicenseReminderLog>();
 
             return await _context.LicenseReminderLogs
                 .Where(r => r.LicenseRecordId == license.Id)
@@ -80,42 +127,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<LicenseRecord> RenewAsync(int termYears, string performedByUserId, string? notes = null, string? ipAddress = null)
         {
-            if (!AllowedRenewalTerms.Contains(termYears))
-                throw new ArgumentOutOfRangeException(nameof(termYears), "Renewal term must be exactly 1, 2, or 3 years.");
-
-            var now = DateTime.UtcNow;
-            var license = await GetOrCreateActiveLicenseAsync();
-            var oldExpiry = license.ExpiresAtUtc;
-            var baseDate = oldExpiry.Date >= now.Date ? oldExpiry.Date : now.Date;
-            var newExpiry = baseDate.AddYears(termYears);
-
-            license.ExpiresAtUtc = newExpiry;
-            license.Status = DetermineState(newExpiry, now).ToString();
-            license.RenewedByUserId = performedByUserId;
-            license.RenewedAtUtc = now;
-            license.RenewalTermYears = termYears;
-            license.LastReminderSentAtUtc = null;
-            license.LastReminderCycleExpiryUtc = null;
-            license.Notes = string.IsNullOrWhiteSpace(notes) ? license.Notes : notes.Trim();
-            license.UpdatedAtUtc = now;
-
-            _context.LicenseAuditLogs.Add(new LicenseAuditLog
-            {
-                LicenseRecordId = license.Id,
-                ActionType = "Renewed",
-                PerformedByUserId = performedByUserId,
-                PerformedAtUtc = now,
-                OldExpiresAtUtc = oldExpiry,
-                NewExpiresAtUtc = newExpiry,
-                RenewalTermYears = termYears,
-                Details = string.IsNullOrWhiteSpace(notes)
-                    ? "License renewed via SuperAdmin workflow."
-                    : notes.Trim(),
-                IpAddress = ipAddress
-            });
-
-            await _context.SaveChangesAsync();
-            return license;
+            throw new InvalidOperationException("Manual renewal is disabled. Upload a digitally signed .lic file from MedyxHMS-Lic.");
         }
 
         public async Task<ReminderDispatchResult> SendReminderAsync(bool force, string? performedByUserId = null, string? ipAddress = null)
@@ -123,6 +135,15 @@ namespace MedyxHMS.Services.Implementations
             var now = DateTime.UtcNow;
             var snapshot = await GetCurrentSnapshotAsync();
             var license = snapshot.License;
+
+            if (license.Id <= 0)
+            {
+                return new ReminderDispatchResult
+                {
+                    Status = "Skipped",
+                    ErrorMessage = "No active signed license is available."
+                };
+            }
 
             if (snapshot.State == LicenseState.Expired)
             {
@@ -242,45 +263,36 @@ namespace MedyxHMS.Services.Implementations
                 return false;
 
             var snapshot = await GetCurrentSnapshotAsync();
-            return snapshot.State == LicenseState.Expired;
+            return snapshot.State == LicenseState.Expired || !snapshot.License.IsSignatureValid;
         }
 
-        private async Task<LicenseRecord> GetOrCreateActiveLicenseAsync()
+        public async Task<bool> IsModuleLicensedForCurrentLicenseAsync(string moduleKey)
+        {
+            if (string.IsNullOrWhiteSpace(moduleKey))
+                return false;
+
+            var license = await GetActiveLicenseAsync();
+            if (license == null || !license.IsActive || !license.IsSignatureValid || license.ExpiresAtUtc < DateTime.UtcNow)
+                return false;
+
+            var raw = license.LicensedModulesCsv ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(raw))
+                return true; // Backward-compatible: old licenses without module list are treated as full access.
+
+            var allowed = raw
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => x.ToUpperInvariant())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            return allowed.Contains(moduleKey.Trim());
+        }
+
+        private async Task<LicenseRecord?> GetActiveLicenseAsync()
         {
             var license = await _context.LicenseRecords
                 .OrderByDescending(l => l.IsActive)
                 .ThenByDescending(l => l.CreatedAtUtc)
                 .FirstOrDefaultAsync(l => l.IsActive);
-
-            if (license != null)
-                return license;
-
-            var now = DateTime.UtcNow;
-            license = new LicenseRecord
-            {
-                LicenseReference = $"BOOTSTRAP-{now:yyyyMMddHHmmss}",
-                IssuedAtUtc = now,
-                ExpiresAtUtc = now.Date.AddYears(1),
-                Status = LicenseState.Active.ToString(),
-                IsActive = true,
-                CreatedAtUtc = now,
-                UpdatedAtUtc = now,
-                Notes = "Bootstrap license created automatically because no active license was found."
-            };
-
-            _context.LicenseRecords.Add(license);
-            await _context.SaveChangesAsync();
-
-            _context.LicenseAuditLogs.Add(new LicenseAuditLog
-            {
-                LicenseRecordId = license.Id,
-                ActionType = "Initialized",
-                PerformedAtUtc = now,
-                NewExpiresAtUtc = license.ExpiresAtUtc,
-                Details = license.Notes
-            });
-            await _context.SaveChangesAsync();
-
             return license;
         }
 

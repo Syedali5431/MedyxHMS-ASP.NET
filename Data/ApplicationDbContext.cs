@@ -67,6 +67,7 @@ namespace MedyxHMS.Data
         public DbSet<LicenseRecord> LicenseRecords { get; set; }
         public DbSet<LicenseAuditLog> LicenseAuditLogs { get; set; }
         public DbSet<LicenseReminderLog> LicenseReminderLogs { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatFeedback> ChatFeedback { get; set; }
@@ -284,6 +285,22 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<LicenseReminderLog>()
                 .HasIndex(r => new { r.LicenseRecordId, r.TargetExpiryUtc, r.TriggeredAtUtc });
+
+            modelBuilder.Entity<UserSession>()
+                .HasOne(s => s.User)
+                .WithMany()
+                .HasForeignKey(s => s.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => s.SessionId)
+                .IsUnique();
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => new { s.IsActive, s.LastActivityUtc, s.ActiveRole });
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => new { s.UserId, s.IsActive, s.LastActivityUtc });
 
             modelBuilder.Entity<ChatSession>()
                 .HasMany(s => s.Messages)

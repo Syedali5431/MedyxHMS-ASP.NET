@@ -1,6 +1,11 @@
 @model MedyxHMS.ViewModels.LicenseManagementViewModel
 @{
     ViewData["Title"] = "License Management";
+    var hasModulus = !string.IsNullOrWhiteSpace(Model.PublicKeyModulusHex);
+    var hasExponent = !string.IsNullOrWhiteSpace(Model.PublicKeyExponentHex);
+    var hasVerificationKey = !string.IsNullOrWhiteSpace(Model.VerificationKey);
+    var keyState = hasModulus && hasExponent && hasVerificationKey ? "Ready" : "Consumed / Missing";
+    var keyStateClass = hasModulus && hasExponent && hasVerificationKey ? "bg-success" : "bg-secondary";
 }
 
 <div class="row mb-4">
@@ -37,6 +42,10 @@
                     <dd class="col-sm-7">@Model.Snapshot.License.ExpiresAtUtc.ToString("yyyy-MM-dd")</dd>
                     <dt class="col-sm-5">Days Remaining</dt>
                     <dd class="col-sm-7">@Model.Snapshot.DaysRemaining</dd>
+                    <dt class="col-sm-5">Max Concurrent Users</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.License.MaxConcurrentUsers</dd>
+                    <dt class="col-sm-5">Signature Valid</dt>
+                    <dd class="col-sm-7">@(Model.Snapshot.License.IsSignatureValid ? "Yes" : "No")</dd>
                     <dt class="col-sm-5">Reminder Due</dt>
                     <dd class="col-sm-7">@(Model.Snapshot.ReminderDue ? "Yes" : "No")</dd>
                     <dt class="col-sm-5">SuperAdmin Contact</dt>
@@ -51,25 +60,51 @@
     <div class="col-lg-7">
         <div class="card shadow-sm h-100">
             <div class="card-body">
-                <h2 class="h5">Renew License</h2>
-                <form asp-action="Renew" method="post" class="mt-3">
+                <h2 class="h5">Public Key Verification Settings</h2>
+                <p class="mb-2">
+                    <span class="badge @keyStateClass">Upload Key State: @keyState</span>
+                </p>
+                <form asp-action="SavePublicKey" method="post" class="mt-3">
                     @Html.AntiForgeryToken()
                     <div class="mb-3">
-                        <label asp-for="SelectedRenewalTermYears" class="form-label">Renewal Term</label>
-                        <select asp-for="SelectedRenewalTermYears" class="form-select">
-                            <option value="1">1 year</option>
-                            <option value="2">2 years</option>
-                            <option value="3">3 years</option>
-                        </select>
+                        <label asp-for="PublicKeyModulusHex" class="form-label"></label>
+                        <textarea asp-for="PublicKeyModulusHex" class="form-control" rows="4" spellcheck="false" placeholder="Paste RSA modulus hex from MedyxHMS-Lic public key file."></textarea>
                     </div>
                     <div class="mb-3">
-                        <label asp-for="Notes" class="form-label">Notes</label>
-                        <textarea asp-for="Notes" class="form-control" rows="3" placeholder="Optional renewal notes for audit history."></textarea>
+                        <label asp-for="PublicKeyExponentHex" class="form-label"></label>
+                        <input asp-for="PublicKeyExponentHex" class="form-control" spellcheck="false" placeholder="Usually 010001" />
                     </div>
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-primary">Apply Renewal</button>
+                    <div class="mb-3">
+                        <label asp-for="VerificationKey" class="form-label"></label>
+                        <input asp-for="VerificationKey" class="form-control" readonly />
+                        <div class="form-text">Generated from modulus and exponent. Signed license files must carry this exact key.</div>
                     </div>
+                    <button type="submit" class="btn btn-outline-primary">Save Verification Key</button>
                 </form>
+
+                <p class="text-muted small mt-2 mb-0">
+                    Only vendor-side MedyxHMS-Lic should hold the private key. This application stores only public key components for signature verification.
+                </p>
+
+                <hr />
+
+                <h2 class="h5">Upload Signed License (.lic)</h2>
+                <form asp-action="Upload" method="post" enctype="multipart/form-data" class="mt-3">
+                    @Html.AntiForgeryToken()
+                    <div class="mb-3">
+                        <label for="licenseFile" class="form-label">Signed License File</label>
+                        <input type="file" id="licenseFile" name="licenseFile" class="form-control" accept=".lic" required />
+                    </div>
+                    <button type="submit" class="btn btn-success">Validate and Activate</button>
+                </form>
+
+                <hr />
+
+                <h2 class="h5">Security Policy</h2>
+                <p class="text-muted mb-3">
+                    Manual renewal is disabled. Only digitally signed <code>.lic</code> files generated by the vendor-side
+                    MedyxHMS-Lic application can activate or update licensing entitlements.
+                </p>
 
                 <hr />
 
@@ -83,6 +118,61 @@
 </div>
 
 <div class="row g-4 mt-1">
+    <div class="col-lg-12">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <h2 class="h5 mb-0">Active License Entitlement Matrix</h2>
+                    <div class="d-flex gap-2 align-items-center">
+                        @if (Model.IsLegacyFullAccessLicense)
+                        {
+                            <span class="badge bg-info text-dark">Legacy mode: all modules treated as licensed</span>
+                        }
+                        <a asp-action="ExportEntitlementMatrix" class="btn btn-sm btn-outline-primary">Export CSV</a>
+                    </div>
+                </div>
+
+                @if (Model.ModuleEntitlements.Count == 0)
+                {
+                    <p class="text-muted mb-0">No modules are available to display.</p>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Module</th>
+                                    <th>Key</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                            @foreach (var item in Model.ModuleEntitlements)
+                            {
+                                <tr>
+                                    <td>@item.DisplayName</td>
+                                    <td>@item.Key</td>
+                                    <td>
+                                        @if (item.IsLicensed)
+                                        {
+                                            <span class="badge bg-success">Licensed</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Locked (Please buy this feature to use it)</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
     <div class="col-lg-6">
         <div class="card shadow-sm">
             <div class="card-body">

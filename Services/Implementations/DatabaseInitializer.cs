@@ -350,8 +350,24 @@ BEGIN
     CREATE TABLE [dbo].[LicenseRecords] (
         [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
         [LicenseReference] NVARCHAR(100) NOT NULL,
+        [ProductName] NVARCHAR(100) NOT NULL CONSTRAINT [DF_LicenseRecords_ProductName] DEFAULT('MedyxHMS'),
+        [TenantId] NVARCHAR(150) NOT NULL CONSTRAINT [DF_LicenseRecords_TenantId] DEFAULT('UNCONFIGURED'),
+        [LicenseGuid] UNIQUEIDENTIFIER NOT NULL CONSTRAINT [DF_LicenseRecords_LicenseGuid] DEFAULT('00000000-0000-0000-0000-000000000000'),
         [IssuedAtUtc] DATETIME2 NOT NULL,
         [ExpiresAtUtc] DATETIME2 NOT NULL,
+        [MaxConcurrentUsers] INT NOT NULL CONSTRAINT [DF_LicenseRecords_MaxConcurrentUsers] DEFAULT(0),
+        [VerificationKey] NVARCHAR(64) NOT NULL CONSTRAINT [DF_LicenseRecords_VerificationKey] DEFAULT(''),
+        [LicensedModulesCsv] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_LicensedModulesCsv] DEFAULT(''),
+        [PublicKeyModulusHex] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_PublicKeyModulusHex] DEFAULT(''),
+        [PublicKeyExponentHex] NVARCHAR(40) NOT NULL CONSTRAINT [DF_LicenseRecords_PublicKeyExponentHex] DEFAULT(''),
+        [Nonce] NVARCHAR(120) NOT NULL CONSTRAINT [DF_LicenseRecords_Nonce] DEFAULT('N/A'),
+        [SignatureAlgorithm] NVARCHAR(40) NOT NULL CONSTRAINT [DF_LicenseRecords_SignatureAlgorithm] DEFAULT('RSA-SHA256'),
+        [SignatureHex] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_SignatureHex] DEFAULT(''),
+        [EncodedLicenseFile] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_EncodedLicenseFile] DEFAULT(''),
+        [CanonicalPayloadJson] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_CanonicalPayloadJson] DEFAULT(''),
+        [PayloadSha256Hex] NVARCHAR(64) NOT NULL CONSTRAINT [DF_LicenseRecords_PayloadSha256Hex] DEFAULT(''),
+        [IsSignatureValid] BIT NOT NULL CONSTRAINT [DF_LicenseRecords_IsSignatureValid] DEFAULT(0),
+        [LastValidatedAtUtc] DATETIME2 NULL,
         [Status] NVARCHAR(30) NOT NULL,
         [LastReminderSentAtUtc] DATETIME2 NULL,
         [LastReminderCycleExpiryUtc] DATETIME2 NULL,
@@ -408,6 +424,81 @@ BEGIN
 
     CREATE INDEX [IX_LicenseReminderLogs_LicenseRecordId_TargetExpiryUtc_TriggeredAtUtc]
         ON [dbo].[LicenseReminderLogs]([LicenseRecordId], [TargetExpiryUtc], [TriggeredAtUtc]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[LicenseRecords]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'ProductName') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [ProductName] NVARCHAR(100) NOT NULL CONSTRAINT [DF_LicenseRecords_ProductName_Mig] DEFAULT('MedyxHMS');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'TenantId') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [TenantId] NVARCHAR(150) NOT NULL CONSTRAINT [DF_LicenseRecords_TenantId_Mig] DEFAULT('UNCONFIGURED');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'LicenseGuid') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [LicenseGuid] UNIQUEIDENTIFIER NOT NULL CONSTRAINT [DF_LicenseRecords_LicenseGuid_Mig] DEFAULT('00000000-0000-0000-0000-000000000000');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'MaxConcurrentUsers') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [MaxConcurrentUsers] INT NOT NULL CONSTRAINT [DF_LicenseRecords_MaxConcurrentUsers_Mig] DEFAULT(0);
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'VerificationKey') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [VerificationKey] NVARCHAR(64) NOT NULL CONSTRAINT [DF_LicenseRecords_VerificationKey_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'LicensedModulesCsv') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [LicensedModulesCsv] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_LicensedModulesCsv_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'PublicKeyModulusHex') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [PublicKeyModulusHex] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_PublicKeyModulusHex_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'PublicKeyExponentHex') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [PublicKeyExponentHex] NVARCHAR(40) NOT NULL CONSTRAINT [DF_LicenseRecords_PublicKeyExponentHex_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'Nonce') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [Nonce] NVARCHAR(120) NOT NULL CONSTRAINT [DF_LicenseRecords_Nonce_Mig] DEFAULT('N/A');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'SignatureAlgorithm') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [SignatureAlgorithm] NVARCHAR(40) NOT NULL CONSTRAINT [DF_LicenseRecords_SignatureAlgorithm_Mig] DEFAULT('RSA-SHA256');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'SignatureHex') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [SignatureHex] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_SignatureHex_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'EncodedLicenseFile') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [EncodedLicenseFile] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_EncodedLicenseFile_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'CanonicalPayloadJson') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [CanonicalPayloadJson] NVARCHAR(MAX) NOT NULL CONSTRAINT [DF_LicenseRecords_CanonicalPayloadJson_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'PayloadSha256Hex') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [PayloadSha256Hex] NVARCHAR(64) NOT NULL CONSTRAINT [DF_LicenseRecords_PayloadSha256Hex_Mig] DEFAULT('');
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'IsSignatureValid') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [IsSignatureValid] BIT NOT NULL CONSTRAINT [DF_LicenseRecords_IsSignatureValid_Mig] DEFAULT(0);
+
+    IF COL_LENGTH(N'[dbo].[LicenseRecords]', N'LastValidatedAtUtc') IS NULL
+        ALTER TABLE [dbo].[LicenseRecords] ADD [LastValidatedAtUtc] DATETIME2 NULL;
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[UserSessions]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[UserSessions] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [UserId] NVARCHAR(450) NOT NULL,
+        [SessionId] NVARCHAR(128) NOT NULL,
+        [ActiveRole] NVARCHAR(50) NOT NULL,
+        [IpAddress] NVARCHAR(64) NULL,
+        [UserAgent] NVARCHAR(512) NULL,
+        [LoginAtUtc] DATETIME2 NOT NULL,
+        [LastActivityUtc] DATETIME2 NOT NULL,
+        [LogoutAtUtc] DATETIME2 NULL,
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        CONSTRAINT [FK_UserSessions_AspNetUsers_UserId]
+            FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE UNIQUE INDEX [UX_UserSessions_SessionId] ON [dbo].[UserSessions]([SessionId]);
+    CREATE INDEX [IX_UserSessions_IsActive_LastActivityUtc_ActiveRole] ON [dbo].[UserSessions]([IsActive], [LastActivityUtc], [ActiveRole]);
+    CREATE INDEX [IX_UserSessions_UserId_IsActive_LastActivityUtc] ON [dbo].[UserSessions]([UserId], [IsActive], [LastActivityUtc]);
 END");
         }
 
@@ -557,35 +648,6 @@ END");
 
         private async Task SeedLicenseDefaultsAsync()
         {
-            var now = DateTime.UtcNow;
-
-            if (!await _context.LicenseRecords.AnyAsync())
-            {
-                var license = new LicenseRecord
-                {
-                    LicenseReference = $"INITIAL-{now:yyyyMMdd}",
-                    IssuedAtUtc = now,
-                    ExpiresAtUtc = now.Date.AddYears(1),
-                    Status = LicenseState.Active.ToString(),
-                    IsActive = true,
-                    Notes = "Initial application bootstrap license.",
-                    CreatedAtUtc = now,
-                    UpdatedAtUtc = now
-                };
-                _context.LicenseRecords.Add(license);
-                await _context.SaveChangesAsync();
-
-                _context.LicenseAuditLogs.Add(new LicenseAuditLog
-                {
-                    LicenseRecordId = license.Id,
-                    ActionType = "Initialized",
-                    PerformedAtUtc = now,
-                    NewExpiresAtUtc = license.ExpiresAtUtc,
-                    Details = license.Notes
-                });
-                await _context.SaveChangesAsync();
-            }
-
             await EnsureSystemSettingAsync(
                 "LicenseReminderSubject",
                 "MedyxHMS license expires in {DaysRemaining} days",
@@ -613,6 +675,41 @@ END");
                 "string",
                 "Licensing",
                 "Billing contact guidance displayed on license reminders and expired screens.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseExpectedProductName",
+                "MedyxHMS",
+                "string",
+                "Licensing",
+                "Expected ProductName in signed license payload.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseTenantId",
+                "UNCONFIGURED",
+                "string",
+                "Licensing",
+                "Expected TenantId in signed license payload.");
+
+            await EnsureSystemSettingAsync(
+                "LicensePublicKeyModulusHex",
+                string.Empty,
+                "string",
+                "Licensing",
+                "Vendor RSA public modulus (hex) used to verify license signatures.");
+
+            await EnsureSystemSettingAsync(
+                "LicensePublicKeyExponentHex",
+                string.Empty,
+                "string",
+                "Licensing",
+                "Vendor RSA public exponent (hex) used to verify license signatures.");
+
+            await EnsureSystemSettingAsync(
+                "LicenseVerificationKey",
+                string.Empty,
+                "string",
+                "Licensing",
+                "Derived verification key fingerprint from configured public key used to bind signed licenses.");
         }
 
         private async Task EnsureModuleTablesAsync()

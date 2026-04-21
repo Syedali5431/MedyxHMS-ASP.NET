@@ -224,6 +224,20 @@ namespace MedyxHMS.Services.Interfaces
         Task<LicenseRecord> RenewAsync(int termYears, string performedByUserId, string? notes = null, string? ipAddress = null);
         Task<ReminderDispatchResult> SendReminderAsync(bool force, string? performedByUserId = null, string? ipAddress = null);
         Task<bool> ShouldRestrictAccessAsync(ClaimsPrincipal user, string requestPath);
+        Task<bool> IsModuleLicensedForCurrentLicenseAsync(string moduleKey);
+    }
+
+    public interface ILicenseFileService
+    {
+        Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string performedByUserId, string? ipAddress = null);
+        Task<bool> IsCurrentLicenseCryptographicallyValidAsync();
+    }
+
+    public interface IConcurrentSessionService
+    {
+        Task<ConcurrentLoginDecision> TryRegisterLoginAsync(string userId, string activeRole, string sessionId, string? ipAddress, string? userAgent);
+        Task EndSessionAsync(string sessionId);
+        Task MarkActivityAsync(string sessionId);
     }
 
     public class DoctorAvailability

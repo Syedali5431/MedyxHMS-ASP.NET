@@ -16,9 +16,53 @@ namespace MedyxHMS.Models
         [Required, MaxLength(100)]
         public string LicenseReference { get; set; } = string.Empty;
 
+        [MaxLength(100)]
+        public string ProductName { get; set; } = "MedyxHMS";
+
+        [MaxLength(150)]
+        public string TenantId { get; set; } = string.Empty;
+
+        public Guid LicenseGuid { get; set; }
+
         public DateTime IssuedAtUtc { get; set; } = DateTime.UtcNow;
 
         public DateTime ExpiresAtUtc { get; set; }
+
+        public int MaxConcurrentUsers { get; set; }
+
+        [Required, MaxLength(64)]
+        public string VerificationKey { get; set; } = string.Empty;
+
+        [Required]
+        public string LicensedModulesCsv { get; set; } = string.Empty;
+
+        [Required]
+        public string PublicKeyModulusHex { get; set; } = string.Empty;
+
+        [Required, MaxLength(40)]
+        public string PublicKeyExponentHex { get; set; } = string.Empty;
+
+        [Required, MaxLength(120)]
+        public string Nonce { get; set; } = string.Empty;
+
+        [Required, MaxLength(40)]
+        public string SignatureAlgorithm { get; set; } = "RSA-SHA256";
+
+        [Required]
+        public string SignatureHex { get; set; } = string.Empty;
+
+        [Required]
+        public string EncodedLicenseFile { get; set; } = string.Empty;
+
+        [Required]
+        public string CanonicalPayloadJson { get; set; } = string.Empty;
+
+        [Required, MaxLength(64)]
+        public string PayloadSha256Hex { get; set; } = string.Empty;
+
+        public bool IsSignatureValid { get; set; }
+
+        public DateTime? LastValidatedAtUtc { get; set; }
 
         [Required, MaxLength(30)]
         public string Status { get; set; } = LicenseState.Active.ToString();
@@ -129,5 +173,46 @@ namespace MedyxHMS.Models
         public string Status { get; set; } = string.Empty;
 
         public string? ErrorMessage { get; set; }
+    }
+
+    public class SignedLicenseFile
+    {
+        public LicensePayload Payload { get; set; } = new();
+
+        public string SignatureHex { get; set; } = string.Empty;
+
+        public string Algorithm { get; set; } = "RSA-SHA256";
+    }
+
+    public class LicensePayload
+    {
+        public string ProductName { get; set; } = string.Empty;
+
+        public string TenantId { get; set; } = string.Empty;
+
+        public Guid LicenseId { get; set; }
+
+        public DateTime IssuedAt { get; set; }
+
+        public DateTime ExpiresAt { get; set; }
+
+        public int MaxConcurrentUsers { get; set; }
+
+        public string VerificationKey { get; set; } = string.Empty;
+
+        public List<string> LicensedModules { get; set; } = new();
+
+        public string Nonce { get; set; } = string.Empty;
+    }
+
+    public class ConcurrentLoginDecision
+    {
+        public bool IsAllowed { get; set; }
+
+        public string? DenyReason { get; set; }
+
+        public int ActiveUsers { get; set; }
+
+        public int MaxConcurrentUsers { get; set; }
     }
 }

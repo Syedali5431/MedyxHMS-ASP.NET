@@ -14,6 +14,40 @@ Add a secure, auditable licensing system that:
 
 The design must keep all enforcement server-side and avoid any client-controlled license state.
 
+## April 21, 2026 Security Update
+
+- Added a deterministic Verification Key fingerprint generated from RSA public key components in the vendor tool.
+- Each generated .lic now embeds VerificationKey inside the signed payload.
+- ASP.NET license import rejects any license where payload VerificationKey does not match the configured key fingerprint.
+- ASP.NET runtime validation also verifies the active license record is bound to the currently configured verification key.
+- Outcome: editing license content outside MedyxHMS-Lic invalidates signature or verification-key binding and is rejected.
+
+### One-Time Key Consumption Policy
+
+- A Verification Key can be used for only one successful license upload.
+- After successful upload, ASP.NET clears upload-key settings (`LicensePublicKeyModulusHex`, `LicensePublicKeyExponentHex`, `LicenseVerificationKey`).
+- Future uploads with the same Verification Key are rejected.
+- Runtime verification stays stable because the active license record stores the public key used for that imported license.
+
+### Unique-Key Availability
+
+- MedyxHMS-Lic now generates 256-bit random key identities and unique output key files per generation.
+- Practical key-space exhaustion is infeasible; operators can generate fresh keys indefinitely.
+
+### Module Entitlement Licensing
+
+- MedyxHMS-Lic now prompts a module checklist during license creation.
+- Selected module keys are embedded as `LicensedModules` inside the signed payload and covered by signature validation.
+- Runtime middleware enforces module entitlements for authenticated non-SuperAdmin users.
+- If a module is not licensed, users are redirected to a locked-feature page with purchase guidance.
+- SuperAdmin users remain exempt and can still access locked modules for administration.
+
+### Encoded License Data At Rest
+
+- Imported `.lic` content and signature/canonical payload values are now protected before DB storage.
+- `LicenseRecords` stores encoded-at-rest values (`EncodedLicenseFile`, protected `SignatureHex`, protected `CanonicalPayloadJson`) to reduce license-pattern exposure in raw DB reads.
+- Runtime verification transparently unprotects values and preserves backward compatibility with older plain records.
+
 ## Implementation Notes
 
 The current implementation applies these product decisions:

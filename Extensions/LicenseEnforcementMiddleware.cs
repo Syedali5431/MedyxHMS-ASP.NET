@@ -11,8 +11,13 @@ namespace MedyxHMS.Extensions
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, ILicenseService licenseService)
+        public async Task InvokeAsync(HttpContext context, ILicenseService licenseService, IConcurrentSessionService concurrentSessionService)
         {
+            if (context.User.Identity?.IsAuthenticated == true)
+            {
+                await concurrentSessionService.MarkActivityAsync(context.Session.Id);
+            }
+
             var path = context.Request.Path.Value ?? string.Empty;
             if (!await licenseService.ShouldRestrictAccessAsync(context.User, path))
             {

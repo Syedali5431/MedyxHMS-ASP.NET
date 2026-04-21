@@ -1,0 +1,24 @@
+@model MedyxHMS.ViewModels.FeatureLockedViewModel
+@{
+    ViewData["Title"] = "Feature Locked";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-warning shadow-sm">
+                <div class="card-header bg-warning-subtle">
+                    <h4 class="mb-0 text-warning-emphasis">Feature Locked</h4>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrWhiteSpace(Model.ModuleKey))
+                    {
+                        <p class="mb-2"><strong>Module:</strong> @Model.ModuleKey</p>
+                    }
+                    <p class="mb-3">@Model.Message</p>
+                    <a class="btn btn-primary" href="@(!string.IsNullOrWhiteSpace(Model.ReturnUrl) ? Model.ReturnUrl : Url.Action("Index", "Dashboard"))">Go Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

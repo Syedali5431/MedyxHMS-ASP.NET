@@ -73,6 +73,8 @@ builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotif
 builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ILicenseService, LicenseService>();
+builder.Services.AddScoped<ILicenseFileService, LicenseFileService>();
+builder.Services.AddScoped<IConcurrentSessionService, ConcurrentSessionService>();
 builder.Services.AddScoped<IModuleService, ModuleService>();
 builder.Services.AddScoped<IChatbotModerationService, ChatbotModerationService>();
 builder.Services.AddScoped<IChatbotPromptBuilder, ChatbotPromptBuilder>();
@@ -170,6 +172,7 @@ app.UseSession();
 
 app.UseAuthentication();
 app.UseMiddleware<LicenseEnforcementMiddleware>();
+app.UseMiddleware<ModuleEntitlementMiddleware>();
 app.UseAuthorization();
 
 // Enable Response Caching

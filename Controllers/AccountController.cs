@@ -15,17 +15,20 @@ namespace MedyxHMS.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
         private readonly IAuditService _auditService;
+        private readonly IConcurrentSessionService _concurrentSessionService;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             ApplicationDbContext context,
-            IAuditService auditService)
+            IAuditService auditService,
+            IConcurrentSessionService concurrentSessionService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _context = context;
             _auditService = auditService;
+            _concurrentSessionService = concurrentSessionService;
         }
 
         [HttpGet]
@@ -110,15 +113,43 @@ namespace MedyxHMS.Controllers
                     await _userManager.UpdateAsync(user);
 
                     // Validate the selected role actually belongs to the user
+                    var userRoles = await _userManager.GetRolesAsync(user);
                     if (!string.IsNullOrWhiteSpace(model.SelectedRole))
                     {
-                        var userRoles = await _userManager.GetRolesAsync(user);
                         if (!userRoles.Contains(model.SelectedRole, StringComparer.OrdinalIgnoreCase))
                         {
                             // Submitted a role they don't have – ignore it silently and use normal precedence
                             model.SelectedRole = null;
                         }
                     }
+
+                    var activeRole = string.IsNullOrWhiteSpace(model.SelectedRole)
+                        ? PickPrimaryRole(userRoles)
+                        : model.SelectedRole;
+
+                    var sessionDecision = await _concurrentSessionService.TryRegisterLoginAsync(
+                        user.Id,
+                        activeRole,
+                        HttpContext.Session.Id,
+                        HttpContext.Connection.RemoteIpAddress?.ToString(),
+                        Request.Headers.UserAgent.ToString());
+
+                    if (!sessionDecision.IsAllowed)
+                    {
+                        await _signInManager.SignOutAsync();
+                        await _auditService.LogActivityAsync(
+                            user.Id,
+                            "LOGIN_BLOCKED_CONCURRENT_LIMIT",
+                            "User",
+                            user.Id,
+                            null,
+                            sessionDecision.DenyReason);
+
+                        ModelState.AddModelError(string.Empty, sessionDecision.DenyReason ?? "Concurrent user limit reached.");
+                        return View(model);
+                    }
+
+                    model.SelectedRole = activeRole;
 
                     // Persist the active role for this session so the navigation can use it
                     if (!string.IsNullOrWhiteSpace(model.SelectedRole))
@@ -147,6 +178,7 @@ namespace MedyxHMS.Controllers
             if (user != null)
                 await _auditService.LogActivityAsync(user.Id, "LOGOUT", "User", user.Id);
 
+            await _concurrentSessionService.EndSessionAsync(HttpContext.Session.Id);
             HttpContext.Session.Remove("ActiveRole");
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");

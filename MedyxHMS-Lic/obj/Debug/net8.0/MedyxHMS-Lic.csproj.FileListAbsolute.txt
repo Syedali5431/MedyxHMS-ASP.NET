@@ -1,0 +1,15 @@
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.GeneratedMSBuildEditorConfig.editorconfig
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.AssemblyInfoInputs.cache
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.AssemblyInfo.cs
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.csproj.CoreCompileInputs.cache
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.sourcelink.json
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\bin\Debug\net8.0\MedyxHMS-Lic.exe
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\bin\Debug\net8.0\MedyxHMS-Lic.deps.json
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\bin\Debug\net8.0\MedyxHMS-Lic.runtimeconfig.json
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\bin\Debug\net8.0\MedyxHMS-Lic.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\bin\Debug\net8.0\MedyxHMS-Lic.pdb
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\refint\MedyxHMS-Lic.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.pdb
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\MedyxHMS-Lic.genruntimeconfig.cache
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-Lic\obj\Debug\net8.0\ref\MedyxHMS-Lic.dll
