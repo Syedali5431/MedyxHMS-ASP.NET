@@ -584,3 +584,4 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\tests\MedyxHMS.Tests\bin\Debug\net8.0\Med
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\tests\MedyxHMS.Tests\obj\Debug\net8.0\MedyxHMS.7DE7F5E7.Up2Date
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\tests\MedyxHMS.Tests\obj\Debug\net8.0\MedyxHMS.Tests.genruntimeconfig.cache
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\tests\MedyxHMS.Tests\obj\Debug\net8.0\ref\MedyxHMS.Tests.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\tests\MedyxHMS.Tests\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json

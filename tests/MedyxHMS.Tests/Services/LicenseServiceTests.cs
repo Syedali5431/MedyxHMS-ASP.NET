@@ -34,7 +34,7 @@ public class LicenseServiceTests
     }
 
     [Fact]
-    public async Task RenewAsync_ShouldRejectInvalidRenewalTerms()
+    public async Task RenewAsync_ShouldRejectManualRenewalWorkflow()
     {
         var dbName = Guid.NewGuid().ToString("N");
         await using var context = TestDbContextFactory.Create(dbName);
@@ -49,7 +49,8 @@ public class LicenseServiceTests
 
         var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.RenewAsync(4, "superadmin-user-id"));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.RenewAsync(4, "superadmin-user-id"));
+        Assert.Contains("Manual renewal is disabled", exception.Message);
     }
 
     [Fact]
