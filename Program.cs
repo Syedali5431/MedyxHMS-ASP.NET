@@ -86,8 +86,12 @@ builder.Services.AddScoped<IChatbotService, OpenAiChatbotService>();
 builder.Services.AddScoped<IChatbotConsentService, ChatbotConsentService>();
 builder.Services.AddScoped<IChatbotDataCleanupService, ChatbotDataCleanupService>();
 builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
-builder.Services.AddHostedService<LicenseReminderHostedService>();
-builder.Services.AddHostedService<ChatbotDataCleanupHostedService>();
+
+// Performance & Caching Services (STEP 5.3 - Fast & Efficient System)
+// Using MemoryCache for distributed caching support
+// For production, configure Redis by installing: dotnet add package StackExchange.Redis
+builder.Services.AddMemoryCache();
+builder.Services.AddScoped<ICacheService, CacheService>();
 
 // Clinical Module Services (STEP 3.1)
 builder.Services.AddScoped<IOPDService, OPDService>();
@@ -200,6 +204,10 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+// Enhanced Security Middleware (STEP 5.5 - Enhanced Security)
+app.UseEnhancedSecurity();
+
 app.UseStaticFiles();
 
 app.UseRouting();

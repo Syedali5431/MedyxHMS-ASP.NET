@@ -637,4 +637,30 @@ namespace MedyxHMS.Services.Interfaces
         public bool EffectivelyEnabled { get; set; }
         public int SortOrder { get; set; }
     }
-}
+    /// <summary>
+    /// Caching service for performance optimization (STEP 5.3 - Fast & Efficient System).
+    /// Supports distributed caching with configurable TTL and cache invalidation.
+    /// </summary>
+    public interface ICacheService
+    {
+        /// <summary>Gets a cached value by key.</summary>
+        Task<T?> GetAsync<T>(string key) where T : class;
+
+        /// <summary>Sets a cached value with default TTL (30 minutes).</summary>
+        Task SetAsync<T>(string key, T value) where T : class;
+
+        /// <summary>Sets a cached value with custom TTL in minutes.</summary>
+        Task SetAsync<T>(string key, T value, int durationMinutes) where T : class;
+
+        /// <summary>Removes a cached value.</summary>
+        Task RemoveAsync(string key);
+
+        /// <summary>Gets or creates a cached value using a factory function with default TTL.</summary>
+        Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory) where T : class;
+
+        /// <summary>Gets or creates a cached value with custom TTL.</summary>
+        Task<T> GetOrSetAsync<T>(string key, Func<Task<T>> factory, int durationMinutes) where T : class;
+
+        /// <summary>Invalidates all cache entries matching a prefix.</summary>
+        Task InvalidatePrefixAsync(string prefix);
+    }}
