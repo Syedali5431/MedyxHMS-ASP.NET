@@ -83,7 +83,7 @@
                     </div>
 
                     <input type="hidden" name="returnUrl" value="@ViewData["ReturnUrl"]" />
-                    {{!-- Email + password are also re-submitted in hidden fields so the POST action receives them --}}
+                    @* Email + password are re-submitted in hidden fields so the POST action receives them. *@
                     <input type="hidden" id="hiddenEmail"    name="Email"    value="" />
                     <input type="hidden" id="hiddenPassword" name="Password" value="" />
                 </form>

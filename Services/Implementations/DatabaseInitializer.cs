@@ -745,7 +745,7 @@ BEGIN
         [CreatedAtUtc] DATETIME2 NOT NULL,
         [ResolvedAtUtc] DATETIME2 NULL,
         CONSTRAINT [FK_ChatEscalations_ChatSessions_SessionId]
-            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE CASCADE,
+            FOREIGN KEY ([SessionId]) REFERENCES [dbo].[ChatSessions]([Id]) ON DELETE NO ACTION,
         CONSTRAINT [FK_ChatEscalations_ChatMessages_MessageId]
             FOREIGN KEY ([MessageId]) REFERENCES [dbo].[ChatMessages]([Id]) ON DELETE NO ACTION
     );

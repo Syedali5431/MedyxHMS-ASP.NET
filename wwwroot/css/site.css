@@ -1,0 +1,82 @@
+/* Global theme baseline */
+:root {
+    --hms-primary: #0b5ed7;
+    --hms-primary-dark: #0a4eb4;
+    --hms-accent: #20c997;
+    --hms-bg: #f5f7fb;
+    --hms-text: #1f2937;
+}
+
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    background: linear-gradient(180deg, #ffffff 0%, var(--hms-bg) 100%);
+    color: var(--hms-text);
+    min-height: 100vh;
+}
+
+.navbar {
+    backdrop-filter: blur(6px);
+}
+
+.card {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.9rem;
+}
+
+.card-header {
+    border-top-left-radius: 0.9rem !important;
+    border-top-right-radius: 0.9rem !important;
+}
+
+.btn-primary {
+    background-color: var(--hms-primary);
+    border-color: var(--hms-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--hms-primary-dark);
+    border-color: var(--hms-primary-dark);
+}
+
+.btn-success {
+    background-color: var(--hms-accent);
+    border-color: var(--hms-accent);
+}
+
+.footer {
+    background-color: #ffffff;
+}
+
+/* Floating chatbot button used by layouts */
+.chatbot-fab {
+    position: fixed;
+    right: 1rem;
+    bottom: 1rem;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--hms-primary), #7c3aed);
+    color: #fff;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    box-shadow: 0 12px 30px rgba(11, 94, 215, 0.3);
+    z-index: 1050;
+}
+
+.chatbot-fab:hover {
+    color: #fff;
+    transform: translateY(-1px);
+}

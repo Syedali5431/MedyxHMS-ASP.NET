@@ -387,7 +387,7 @@ namespace MedyxHMS.Data
                 .HasOne(e => e.Session)
                 .WithMany(s => s.Escalations)
                 .HasForeignKey(e => e.SessionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ChatEscalation>()
                 .HasOne(e => e.Message)
