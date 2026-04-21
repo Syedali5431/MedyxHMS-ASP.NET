@@ -82,6 +82,31 @@
                 <label asp-for="DefaultLanguage" class="form-label">Default Language</label>
                 <input asp-for="DefaultLanguage" class="form-control" />
             </div>
+
+            <div class="col-md-2">
+                <label asp-for="RetentionDays" class="form-label">Transcript Retention (days)</label>
+                <input asp-for="RetentionDays" class="form-control" min="7" />
+            </div>
+            <div class="col-md-2">
+                <label asp-for="EventLogRetentionDays" class="form-label">Event Log Retention (days)</label>
+                <input asp-for="EventLogRetentionDays" class="form-control" min="7" />
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="EnablePiiRedaction" class="form-check-input" />
+                <label asp-for="EnablePiiRedaction" class="form-check-label">Enable PII Redaction</label>
+            </div>
+            <div class="col-md-2">
+                <label asp-for="RedactionLevel" class="form-label">Redaction Level</label>
+                <select asp-for="RedactionLevel" class="form-select">
+                    <option value="Minimal">Minimal</option>
+                    <option value="Standard">Standard</option>
+                    <option value="Strict">Strict</option>
+                </select>
+            </div>
+            <div class="col-md-4 form-check">
+                <input asp-for="DeleteUnconsentedData" class="form-check-input" />
+                <label asp-for="DeleteUnconsentedData" class="form-check-label">Delete Data When Consent Is Revoked</label>
+            </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-end">
             <button class="btn btn-primary" type="submit">Save Settings</button>

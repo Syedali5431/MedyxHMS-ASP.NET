@@ -124,6 +124,21 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Phase 7.3 implemented and validated
 - Read this for the completion snapshot of Step 7.3 before Step 7.4 hardening.
 
+### Phase 7.4 Startup - Security, Privacy, and QA Hardening
+- Document: [OPENAI-CHATBOT-DESIGN.md](OPENAI-CHATBOT-DESIGN.md)
+- Focus:
+  - consent capture and audit trail enforcement before chatbot usage
+  - hourly chatbot usage throttling using admin-configured setting
+  - event logging for rate-limit blocks and consent decisions
+  - transcript/event retention and consent-based data cleanup
+  - PII redaction controls, output moderation, prompt-injection hardening, and disclosure UI upgrades
+  - feature-toggle aligned chatbot global enablement path
+- **Status:** Completed (finalized 2026-04-21)
+- **Validation Evidence:** Full regression run complete (`tests/MedyxHMS.Tests`): 69 passed, 0 failed, 0 skipped.
+- **Closure:** Stage 7.4 is formally closed.
+- **Kickoff:** Continue with PH14+ backlog items under the established authorization and operational hardening track.
+- Read this for the final Step 7.4 implementation snapshot and hardening outcomes.
+
 ### PH14 - Authentication and Dashboard Routing Audit
 - Document: [PH14.md](PH14.md)
 - Focus:

@@ -123,7 +123,9 @@ public class ChatbotOperationsStep73Tests
             db,
             new FakeHttpClientFactory(),
             config,
+            new FakeSettingService(),
             new ChatbotModerationService(),
+            new ChatbotPiiRedactionService(),
             new ChatbotPromptBuilder(),
             new ChatbotKnowledgeService(db, new FakeSettingService()),
             NullLogger<OpenAiChatbotService>.Instance);

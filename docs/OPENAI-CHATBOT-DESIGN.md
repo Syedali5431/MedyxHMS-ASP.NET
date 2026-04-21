@@ -1,6 +1,6 @@
 # OpenAI Chatbot Technical Design
 
-**Status:** Phase 7.3 Complete | **Target Phase:** Phase 7 | **Date:** April 2026
+**Status:** Phase 7.4 Complete (security, privacy, QA hardening finalized) | **Target Phase:** Phase 7 | **Date:** April 2026
 
 ## Objective
 
@@ -28,6 +28,30 @@ Implemented foundation, core experience, and operational controls:
 Operational companion work completed in the same delivery:
 
 - SMTP operational health check service and CMS settings health-check action/UI
+
+## Phase 7.4 Completion Snapshot (2026-04-21)
+
+Implemented at start of Step 7.4 hardening:
+
+- chatbot consent domain model and audit trail entities (`ChatbotConsent`, `ChatbotConsentAudit`)
+- consent enforcement in chatbot entry points for authenticated users
+- consent request/accept/reject flow in chatbot controller and UI
+- hourly user usage limit enforcement using `ChatbotHourlyUsageLimit` setting
+- rate-limit block response and event logging (`RateLimitExceeded`)
+- transcript retention policy with daily background cleanup for sessions and event logs
+- auto-cleanup of chat data when data-retention consent is revoked
+- configurable PII redaction pipeline for chatbot event details (`Minimal`/`Standard`/`Strict`)
+- output moderation guardrail with low-confidence/unsafe-output blocking and safe fallback response
+- prompt-injection detection for instruction override, jailbreak, and system prompt extraction attempts
+- feature-toggle integration path for chatbot global enablement via `FeatureToggles.ChatbotEnabled`
+- enhanced chatbot disclosure UI with explicit OpenAI usage notice and privacy-policy links
+
+Validation completed for Step 7.4:
+
+- build succeeded after hardening changes
+- targeted moderation and prompt-injection tests passed
+- full regression test pass on `tests/MedyxHMS.Tests`: 69 passed, 0 failed, 0 skipped (2026-04-21)
+- Step 7.4 closure confirmed and ready for PH14 continuation work
 
 ---
 

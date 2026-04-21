@@ -2,6 +2,7 @@ using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
@@ -9,10 +10,15 @@ namespace MedyxHMS.Controllers
     public class ChatbotController : Controller
     {
         private readonly IChatbotService _chatbotService;
+        private readonly IChatbotConsentService _consentService;
+        private readonly ILogger<ChatbotController> _logger;
 
-        public ChatbotController(IChatbotService chatbotService)
+        public ChatbotController(IChatbotService chatbotService, IChatbotConsentService consentService, 
+            ILogger<ChatbotController> logger)
         {
             _chatbotService = chatbotService;
+            _consentService = consentService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -21,6 +27,19 @@ namespace MedyxHMS.Controllers
             if (!await _chatbotService.IsChatbotEnabledForUserAsync(User))
             {
                 return Forbid();
+            }
+
+            // Check if authenticated user requires consent
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var requiresConsent = await _consentService.RequiresConsentRenewalAsync(userId);
+
+                if (requiresConsent)
+                {
+                    // Redirect to consent modal/page
+                    return RedirectToAction(nameof(RequestConsent));
+                }
             }
 
             var vm = new ChatbotPageViewModel
@@ -39,6 +58,112 @@ namespace MedyxHMS.Controllers
             return View(vm);
         }
 
+        /// <summary>
+        /// Display consent request form/modal for authenticated users.
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> RequestConsent()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var terms = await _consentService.GetConsentTermsAsync("1.0");
+            var currentConsent = await _consentService.GetCurrentConsentAsync(userId);
+
+            var vm = new ChatbotConsentViewModel
+            {
+                ConsentTerms = terms,
+                ConsentVersion = "1.0",
+                IsRenewal = currentConsent != null && currentConsent.RevokedAtUtc.HasValue
+            };
+
+            return View(vm);
+        }
+
+        /// <summary>
+        /// Accept consent terms.
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> AcceptConsent([FromForm] ChatbotConsentAcceptViewModel vm)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(new { error = "Invalid consent submission." });
+            }
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+
+            try
+            {
+                await _consentService.AcceptConsentAsync(
+                    userId,
+                    vm.ConsentedToAiProcessing,
+                    vm.ConsentedToDataRetention,
+                    vm.ConsentedToThirdPartyProcessing,
+                    "1.0",
+                    ipAddress,
+                    userAgent
+                );
+
+                _logger.LogInformation($"User {userId} accepted chatbot consent");
+                return RedirectToAction(nameof(Index));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error accepting consent for user {userId}");
+                return StatusCode(500, new { error = "Failed to record consent." });
+            }
+        }
+
+        /// <summary>
+        /// Reject consent terms (prevents chatbot use).
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> RejectConsent()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var userAgent = Request.Headers["User-Agent"].ToString();
+
+            try
+            {
+                await _consentService.RejectConsentAsync(userId, "1.0", ipAddress, userAgent);
+                _logger.LogInformation($"User {userId} rejected chatbot consent");
+                
+                // Redirect to denied page or back to dashboard
+                return RedirectToAction("Index", "Home");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error rejecting consent for user {userId}");
+                return StatusCode(500, new { error = "Failed to record rejection." });
+            }
+        }
+
+        /// <summary>
+        /// Get consent status and terms (for AJAX calls).
+        /// </summary>
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> GetConsentStatus()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var hasConsent = await _consentService.HasActiveConsentAsync(userId);
+            var requiresRenewal = await _consentService.RequiresConsentRenewalAsync(userId);
+
+            return Json(new
+            {
+                hasConsent,
+                requiresRenewal,
+                consentVersion = "1.0"
+            });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Ask(ChatbotPageViewModel vm)
@@ -47,6 +172,25 @@ namespace MedyxHMS.Controllers
             {
                 TempData["ErrorMessage"] = "Please enter a message for the assistant.";
                 return RedirectToAction(nameof(Index), new { sessionId = vm.SessionId });
+            }
+
+            // Check chatbot enabled
+            if (!await _chatbotService.IsChatbotEnabledForUserAsync(User))
+            {
+                TempData["ErrorMessage"] = "Chatbot access is disabled for your role.";
+                return RedirectToAction("Index", "Home");
+            }
+
+            // Check consent for authenticated users
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var hasConsent = await _consentService.HasActiveConsentAsync(userId);
+                
+                if (!hasConsent)
+                {
+                    return RedirectToAction(nameof(RequestConsent));
+                }
             }
 
             var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId);
@@ -83,6 +227,18 @@ namespace MedyxHMS.Controllers
             if (!await _chatbotService.IsChatbotEnabledForUserAsync(User))
             {
                 return StatusCode(403, new { error = "Chatbot access is disabled for your role." });
+            }
+
+            // Check consent for authenticated users
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                var hasConsent = await _consentService.HasActiveConsentAsync(userId);
+
+                if (!hasConsent)
+                {
+                    return StatusCode(403, new { error = "Consent required to use chatbot.", requiresConsent = true });
+                }
             }
 
             var response = await _chatbotService.AskAsync(User, vm.Prompt.Trim(), vm.SessionId, vm.LanguageCode);

@@ -118,10 +118,47 @@ Latest baseline execution (LocalDB):
   - `appsettings.Development.json`
 - Coverage:
   - backend-only OpenAI integration with safe fallback behavior
+
+### 8) Phase 7.4 startup: chatbot security and privacy hardening
+- Added:
+  - `Services/Implementations/ChatbotConsentService.cs`
+  - `Views/Chatbot/RequestConsent.cshtml`
+- Updated:
+  - `Models/Chatbot.cs`
+  - `Data/ApplicationDbContext.cs`
+  - `Services/Interfaces/IServices.cs`
+  - `Controllers/ChatbotController.cs`
+  - `Services/Implementations/OpenAiChatbotService.cs`
+  - `Services/Implementations/ChatbotPiiRedactionService.cs`
+  - `Services/Implementations/ChatbotDataCleanupService.cs`
+  - `Services/Implementations/ChatbotDataCleanupHostedService.cs`
+  - `Services/Implementations/DatabaseInitializer.cs`
+  - `Views/ChatbotAdmin/Settings.cshtml`
+  - `Controllers/ChatbotAdminController.cs`
+  - `ViewModels/ChatbotViewModels.cs`
+  - `Program.cs`
+  - `docs/OPENAI-CHATBOT-DESIGN.md`
+  - `docs/INDEX.md`
+- Coverage:
+  - explicit consent capture and revocation/audit tracking for authenticated chatbot users
+  - consent-gated chatbot usage flow (request, accept, reject)
+  - hourly per-user chatbot message rate limiting based on `ChatbotHourlyUsageLimit`
+  - rate-limit event logging and safe blocked response behavior
+  - transcript retention policy (sessions/messages) and event-log retention with daily hosted cleanup
+  - user-data cleanup when data-retention consent is revoked
+  - configurable PII redaction for chatbot event details with level-based behavior
+  - output moderation guardrail for low-confidence/unsafe responses with safe fallback
+  - prompt-injection detection for instruction override and hidden prompt extraction attempts
+  - feature-toggle aligned chatbot global enablement via `FeatureToggles.ChatbotEnabled`
+  - enhanced chatbot disclosure UI with OpenAI usage notice and privacy links
   - emergency/unsafe medical prompt moderation baseline
   - role-aware prompt construction and session/message persistence
   - initial chatbot page routing for authenticated usage
   - SMTP config/connectivity health checks exposed in CMS notification settings
+- Validation:
+  - full regression suite passed on 2026-04-21 (`tests/MedyxHMS.Tests`): 69 passed, 0 failed, 0 skipped
+- Closure:
+  - Stage 7.4 is closed and the codebase is ready to continue with PH14 and later hardening phases
 
 ### 8) Phase 7.2 core chat experience and knowledge grounding
 - Added:

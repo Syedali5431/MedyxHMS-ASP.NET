@@ -36,7 +36,12 @@ namespace MedyxHMS.Controllers
                 UnresolvedThreshold = settings.UnresolvedThreshold,
                 HourlyUsageLimit = settings.HourlyUsageLimit,
                 SupportedLanguagesCsv = settings.SupportedLanguagesCsv,
-                DefaultLanguage = settings.DefaultLanguage
+                DefaultLanguage = settings.DefaultLanguage,
+                RetentionDays = settings.RetentionDays,
+                EventLogRetentionDays = settings.EventLogRetentionDays,
+                EnablePiiRedaction = settings.EnablePiiRedaction,
+                RedactionLevel = settings.RedactionLevel,
+                DeleteUnconsentedData = settings.DeleteUnconsentedData
             };
 
             return View(vm);
@@ -68,7 +73,12 @@ namespace MedyxHMS.Controllers
                 UnresolvedThreshold = vm.UnresolvedThreshold,
                 HourlyUsageLimit = vm.HourlyUsageLimit,
                 SupportedLanguagesCsv = vm.SupportedLanguagesCsv,
-                DefaultLanguage = vm.DefaultLanguage
+                DefaultLanguage = vm.DefaultLanguage,
+                RetentionDays = vm.RetentionDays,
+                EventLogRetentionDays = vm.EventLogRetentionDays,
+                EnablePiiRedaction = vm.EnablePiiRedaction,
+                RedactionLevel = vm.RedactionLevel,
+                DeleteUnconsentedData = vm.DeleteUnconsentedData
             }, userId);
 
             TempData[updated ? "SuccessMessage" : "ErrorMessage"] = updated

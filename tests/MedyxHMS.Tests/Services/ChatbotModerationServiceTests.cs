@@ -39,4 +39,26 @@ public class ChatbotModerationServiceTests
         Assert.False(result.IsBlocked);
         Assert.Equal("Allowed", result.Reason);
     }
+
+    [Fact]
+    public void EvaluateOutput_ShouldBlockLowConfidenceOutput()
+    {
+        var service = new ChatbotModerationService();
+
+        var result = service.EvaluateOutput("You should take antibiotics now.", 1, 0.20m);
+
+        Assert.True(result.IsBlocked);
+        Assert.Equal("LowConfidenceOutput", result.Reason);
+    }
+
+    [Fact]
+    public void EvaluateOutput_ShouldAllowGroundedOperationalOutput()
+    {
+        var service = new ChatbotModerationService();
+
+        var result = service.EvaluateOutput("You can review pending bills in the Billing module. Source: Billing Help", 1, 0.85m);
+
+        Assert.False(result.IsBlocked);
+        Assert.Equal("Allowed", result.Reason);
+    }
 }

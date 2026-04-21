@@ -69,6 +69,7 @@ namespace MedyxHMS.Models
 
     public class FeatureToggles
     {
+        public bool ChatbotEnabled { get; set; }
         public bool PatientPortal { get; set; }
         public bool AppointmentSystem { get; set; }
         public bool BillingModule { get; set; }

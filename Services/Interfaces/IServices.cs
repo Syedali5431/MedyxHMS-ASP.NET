@@ -184,6 +184,7 @@ namespace MedyxHMS.Services.Interfaces
     public interface IChatbotModerationService
     {
         ChatModerationResult Evaluate(string input);
+        ChatModerationResult EvaluateOutput(string output, int sourceCount, decimal confidenceScore);
     }
 
     public interface IChatbotPromptBuilder
@@ -209,6 +210,70 @@ namespace MedyxHMS.Services.Interfaces
         Task<ChatbotAnalyticsSnapshot> GetAnalyticsAsync(int days = 30);
         Task<ChatbotAdminSettings> GetAdminSettingsAsync();
         Task<bool> UpdateAdminSettingsAsync(ChatbotAdminSettings settings, string modifiedByUserId);
+    }
+
+    public interface IChatbotConsentService
+    {
+        /// <summary>
+        /// Get the current consent status for a user.
+        /// Returns null if user has never provided consent.
+        /// </summary>
+        Task<ChatbotConsent?> GetCurrentConsentAsync(string? userId);
+
+        /// <summary>
+        /// Check if user has active consent for chatbot use.
+        /// </summary>
+        Task<bool> HasActiveConsentAsync(string? userId);
+
+        /// <summary>
+        /// Record user acceptance of consent terms.
+        /// </summary>
+        Task<ChatbotConsent> AcceptConsentAsync(string? userId, bool aiProcessing, bool dataRetention, 
+            bool thirdPartyProcessing, string consentVersion, string? ipAddress = null, string? userAgent = null);
+
+        /// <summary>
+        /// Record user rejection of consent terms.
+        /// </summary>
+        Task<ChatbotConsentAudit> RejectConsentAsync(string? userId, string consentVersion, 
+            string? ipAddress = null, string? userAgent = null);
+
+        /// <summary>
+        /// Revoke existing consent for a user.
+        /// </summary>
+        Task<bool> RevokeConsentAsync(string? userId, string? reason = null);
+
+        /// <summary>
+        /// Renew consent with the latest version.
+        /// </summary>
+        Task<ChatbotConsent> RenewConsentAsync(string? userId, bool aiProcessing, bool dataRetention, 
+            bool thirdPartyProcessing, string? ipAddress = null, string? userAgent = null);
+
+        /// <summary>
+        /// Get consent audit trail for a user.
+        /// </summary>
+        Task<IReadOnlyList<ChatbotConsentAudit>> GetConsentAuditAsync(string? userId, int take = 50);
+
+        /// <summary>
+        /// Get consent version text/terms.
+        /// </summary>
+        Task<string> GetConsentTermsAsync(string version);
+
+        /// <summary>
+        /// Check if user must provide/renew consent (based on version/policy changes).
+        /// </summary>
+        Task<bool> RequiresConsentRenewalAsync(string? userId);
+    }
+
+    public interface IChatbotPiiRedactionService
+    {
+        string RedactEventDetails(string details, string eventType, string redactionLevel);
+    }
+
+    public interface IChatbotDataCleanupService
+    {
+        Task<ChatbotCleanupResult> CleanupExpiredSessionsAsync(CancellationToken cancellationToken);
+        Task<ChatbotCleanupResult> CleanupExpiredEventLogsAsync(CancellationToken cancellationToken);
+        Task<ChatbotCleanupResult> CleanupUnconsentedDataAsync(CancellationToken cancellationToken);
     }
 
     public interface ISmtpHealthService

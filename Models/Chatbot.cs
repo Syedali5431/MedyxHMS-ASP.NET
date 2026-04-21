@@ -195,6 +195,11 @@ namespace MedyxHMS.Models
         public int HourlyUsageLimit { get; set; } = 100;
         public string SupportedLanguagesCsv { get; set; } = "en";
         public string DefaultLanguage { get; set; } = "en";
+        public int RetentionDays { get; set; } = 90;
+        public int EventLogRetentionDays { get; set; } = 30;
+        public bool EnablePiiRedaction { get; set; } = true;
+        public string RedactionLevel { get; set; } = "Standard";
+        public bool DeleteUnconsentedData { get; set; } = true;
     }
 
     public class ChatbotAnalyticsSnapshot
@@ -228,5 +233,95 @@ namespace MedyxHMS.Models
         public string SourcePath { get; set; } = string.Empty;
 
         public string Excerpt { get; set; } = string.Empty;
+    }
+
+    public class ChatbotCleanupResult
+    {
+        public string Category { get; set; } = string.Empty;
+
+        public int DeletedCount { get; set; }
+
+        public DateTime ExecutedAtUtc { get; set; } = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Tracks user consent for AI-powered chatbot functionality.
+    /// Supports GDPR compliance, audit trails, and version tracking.
+    /// </summary>
+    public class ChatbotConsent
+    {
+        public long Id { get; set; }
+
+        [MaxLength(450)]
+        public string? UserId { get; set; }
+
+        /// <summary>Version of consent terms accepted (e.g., "1.0", "2.0")</summary>
+        [Required, MaxLength(10)]
+        public string ConsentVersion { get; set; } = "1.0";
+
+        /// <summary>Whether user explicitly accepted AI processing</summary>
+        public bool ConsentedToAiProcessing { get; set; }
+
+        /// <summary>Whether user consented to data retention (for transcript history)</summary>
+        public bool ConsentedToDataRetention { get; set; }
+
+        /// <summary>Whether user consented to OpenAI API processing</summary>
+        public bool ConsentedToThirdPartyProcessing { get; set; }
+
+        /// <summary>User IP address at time of consent</summary>
+        [MaxLength(50)]
+        public string? UserIpAddress { get; set; }
+
+        /// <summary>User agent/browser info at time of consent</summary>
+        [MaxLength(500)]
+        public string? UserAgent { get; set; }
+
+        /// <summary>Timestamp when consent was given</summary>
+        public DateTime ConsentedAtUtc { get; set; } = DateTime.UtcNow;
+
+        /// <summary>Timestamp when consent was revoked (if applicable)</summary>
+        public DateTime? RevokedAtUtc { get; set; }
+
+        /// <summary>Whether consent is currently active</summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>Optional reason for revocation</summary>
+        [MaxLength(500)]
+        public string? RevocationReason { get; set; }
+    }
+
+    /// <summary>
+    /// Audit trail for consent modifications and rejections.
+    /// Supports compliance audits and user dispute resolution.
+    /// </summary>
+    public class ChatbotConsentAudit
+    {
+        public long Id { get; set; }
+
+        public long? ConsentId { get; set; }
+
+        [MaxLength(450)]
+        public string? UserId { get; set; }
+
+        [Required, MaxLength(30)]
+        public string Action { get; set; } = string.Empty; // Accepted | Rejected | Revoked | Renewed
+
+        [Required, MaxLength(10)]
+        public string ConsentVersion { get; set; } = "1.0";
+
+        /// <summary>JSON payload of consent flags at time of action</summary>
+        [Required]
+        public string ConsentStateJson { get; set; } = "{}";
+
+        [MaxLength(500)]
+        public string? UserIpAddress { get; set; }
+
+        [MaxLength(500)]
+        public string? UserAgent { get; set; }
+
+        [MaxLength(500)]
+        public string? Notes { get; set; }
+
+        public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     }
 }

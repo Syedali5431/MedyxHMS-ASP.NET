@@ -1,0 +1,131 @@
+@model MedyxHMS.ViewModels.ChatbotConsentViewModel
+@{
+    ViewData["Title"] = "AI Assistant - Consent Required";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-lg">
+                <!-- Header -->
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">
+                        <i class="bi bi-info-circle"></i>
+                        @(Model.IsRenewal ? "Consent Terms Updated" : "Before Using the AI Assistant")
+                    </h3>
+                </div>
+
+                <!-- Body -->
+                <div class="card-body">
+                    <p class="lead mb-3">
+                        @(Model.IsRenewal ? "The consent terms have been updated. Please review and accept to continue." : "Please read and accept our terms to use the MedyxHMS AI Assistant.")
+                    </p>
+
+                    <!-- Consent Terms Display -->
+                    <div class="alert alert-light border rounded p-4 mb-4" style="background: #f8f9fa; max-height: 300px; overflow-y: auto;">
+                        <div style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.5;">@Html.Raw(Model.ConsentTerms)</div>
+                    </div>
+
+                    <!-- Consent Checkboxes -->
+                    <form asp-action="AcceptConsent" method="post" class="needs-validation">
+                        @Html.AntiForgeryToken()
+
+                        <div class="mb-4">
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="aiProcessing" name="ConsentedToAiProcessing" required>
+                                <label class="form-check-label" for="aiProcessing">
+                                    <strong>I consent to AI processing</strong><br>
+                                    <small class="text-muted">My messages will be processed by OpenAI's GPT model for responses.</small>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="dataRetention" name="ConsentedToDataRetention" required>
+                                <label class="form-check-label" for="dataRetention">
+                                    <strong>I consent to data retention</strong><br>
+                                    <small class="text-muted">Conversation history will be kept for up to 30 days for compliance and improvements.</small>
+                                </label>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="thirdParty" name="ConsentedToThirdPartyProcessing" required>
+                                <label class="form-check-label" for="thirdParty">
+                                    <strong>I consent to third-party processing</strong><br>
+                                    <small class="text-muted">OpenAI will process my data according to their <a href="https://openai.com/privacy" target="_blank" class="text-primary">Privacy Policy</a>. This chatbot uses OpenAI GPT models for response generation.</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Important Notes -->
+                        <div class="alert alert-warning mb-4" role="alert">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Important:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>The AI Assistant <strong>cannot provide medical advice or diagnosis</strong></li>
+                                <li>Medical emergencies will be escalated to hospital staff</li>
+                                <li>Contact a licensed clinician for medical concerns</li>
+                                <li>You can revoke this consent at any time</li>
+                            </ul>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 d-sm-flex justify-content-sm-between">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">
+                                Decline & Return Home
+                            </a>
+                            <button type="submit" formaction="@Url.Action("RejectConsent", "Chatbot")" class="btn btn-outline-danger me-sm-2">
+                                Reject Consent
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i>
+                                Accept & Continue
+                            </button>
+                        </div>
+
+                        <!-- Version Info -->
+                        <div class="small text-muted text-center mt-4">
+                            <p>Consent Version: <code>@Model.ConsentVersion</code></p>
+                            <p>Last Updated: April 2026</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Additional Info Card -->
+            <div class="card mt-4 border-0 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-shield-lock"></i> Your Privacy</h5>
+                    <p class="card-text">
+                        Your consent and conversation history are stored securely. We comply with healthcare privacy regulations
+                        and your data is protected. <a href="@Url.Action("Privacy", "Home")" class="text-primary">Read our full privacy policy</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .needs-validation .form-check-input:checked {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .form-check-label {
+        cursor: pointer;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Client-side validation
+        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                const allChecked = document.querySelectorAll('input[type="checkbox"]:checked').length === 3;
+                document.querySelector('button[type="submit"]').disabled = !allChecked;
+            });
+        });
+
+        // Initial button state
+        document.querySelector('button[type="submit"]').disabled = true;
+    </script>
+}

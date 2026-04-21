@@ -14,7 +14,9 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
+        private readonly ISettingService _settingService;
         private readonly IChatbotModerationService _moderationService;
+        private readonly IChatbotPiiRedactionService _piiRedactionService;
         private readonly IChatbotPromptBuilder _promptBuilder;
         private readonly IChatbotKnowledgeService _knowledgeService;
         private readonly ILogger<OpenAiChatbotService> _logger;
@@ -23,7 +25,9 @@ namespace MedyxHMS.Services.Implementations
             ApplicationDbContext context,
             IHttpClientFactory httpClientFactory,
             IConfiguration configuration,
+            ISettingService settingService,
             IChatbotModerationService moderationService,
+            IChatbotPiiRedactionService piiRedactionService,
             IChatbotPromptBuilder promptBuilder,
             IChatbotKnowledgeService knowledgeService,
             ILogger<OpenAiChatbotService> logger)
@@ -31,7 +35,9 @@ namespace MedyxHMS.Services.Implementations
             _context = context;
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
+            _settingService = settingService;
             _moderationService = moderationService;
+            _piiRedactionService = piiRedactionService;
             _promptBuilder = promptBuilder;
             _knowledgeService = knowledgeService;
             _logger = logger;
@@ -57,6 +63,28 @@ namespace MedyxHMS.Services.Implementations
             var session = await GetOrCreateSessionAsync(sessionId, userId, role);
             session.PreferredLanguage = NormalizeLanguage(languageCode);
             await _context.SaveChangesAsync();
+
+            var (isRateLimited, usageCount, usageLimit) = await CheckHourlyUsageLimitAsync(userId);
+            if (isRateLimited)
+            {
+                const string rateLimitMessage = "You have reached the hourly chatbot usage limit. Please try again after one hour or contact support for urgent assistance.";
+                await AddMessageAsync(session.Id, "Assistant", rateLimitMessage, "RateLimited", 0, "Safety");
+                await AddEventAsync(session.Id, null, "RateLimitExceeded", "Warning", $"UserId={userId}; HourlyCount={usageCount}; Limit={usageLimit}");
+
+                return new ChatbotAskResponse
+                {
+                    SessionId = session.Id,
+                    Answer = rateLimitMessage,
+                    IsBlocked = true,
+                    EscalationSuggested = false,
+                    ConfidenceScore = 0.10m,
+                    Reason = "RateLimitExceeded",
+                    ProviderModel = "RateLimiter",
+                    DetectedCategory = "Safety",
+                    DetectedLanguage = session.PreferredLanguage
+                };
+            }
+
             var category = DetectCategory(message);
 
             await AddMessageAsync(session.Id, "User", message, moderation.IsBlocked ? "Blocked" : "Allowed", 0, category);
@@ -84,6 +112,27 @@ namespace MedyxHMS.Services.Implementations
             var answer = await AskProviderAsync(user, message, knowledgeContext);
             answer = EnsureSourceLine(answer, knowledgeContext.Sources);
             var confidence = ComputeConfidence(answer, knowledgeContext.Sources.Count);
+            var outputModeration = _moderationService.EvaluateOutput(answer, knowledgeContext.Sources.Count, confidence);
+            if (outputModeration.IsBlocked)
+            {
+                await AddMessageAsync(session.Id, "Assistant", outputModeration.SafeResponse, "BlockedOutput", 0, "Safety");
+                await AddEventAsync(session.Id, null, "OutputModerationBlocked", "Warning", outputModeration.Reason);
+
+                return new ChatbotAskResponse
+                {
+                    SessionId = session.Id,
+                    Answer = outputModeration.SafeResponse,
+                    IsBlocked = true,
+                    EscalationSuggested = true,
+                    ConfidenceScore = 0.10m,
+                    Reason = outputModeration.Reason,
+                    ProviderModel = "OutputSafetyGuardrails",
+                    DetectedCategory = knowledgeContext.DetectedCategory,
+                    DetectedLanguage = knowledgeContext.LanguageCode,
+                    Sources = knowledgeContext.Sources
+                };
+            }
+
             var threshold = await GetDecimalSettingAsync("ChatbotUnresolvedThreshold", 0.45m);
 
             long? escalationId = null;
@@ -180,7 +229,8 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<bool> IsChatbotEnabledForUserAsync(ClaimsPrincipal user)
         {
-            var global = await GetBoolSettingAsync("ChatbotEnabled", true);
+            var featureToggles = await _settingService.GetFeatureTogglesAsync();
+            var global = featureToggles.ChatbotEnabled;
             if (!global) return false;
 
             if (user.Identity?.IsAuthenticated != true)
@@ -345,7 +395,12 @@ namespace MedyxHMS.Services.Implementations
                 UnresolvedThreshold = ParseDecimal(settings, "ChatbotUnresolvedThreshold", 0.45m),
                 HourlyUsageLimit = ParseInt(settings, "ChatbotHourlyUsageLimit", 100),
                 SupportedLanguagesCsv = settings.GetValueOrDefault("ChatbotSupportedLanguages", "en"),
-                DefaultLanguage = settings.GetValueOrDefault("ChatbotDefaultLanguage", "en")
+                DefaultLanguage = settings.GetValueOrDefault("ChatbotDefaultLanguage", "en"),
+                RetentionDays = ParseInt(settings, "ChatbotRetentionDays", 90),
+                EventLogRetentionDays = ParseInt(settings, "ChatbotEventLogRetentionDays", 30),
+                EnablePiiRedaction = ParseBool(settings, "ChatbotEnablePiiRedaction", true),
+                RedactionLevel = settings.GetValueOrDefault("ChatbotRedactionLevel", "Standard"),
+                DeleteUnconsentedData = ParseBool(settings, "ChatbotDeleteUnconsentedData", true)
             };
         }
 
@@ -367,7 +422,12 @@ namespace MedyxHMS.Services.Implementations
                 ["ChatbotUnresolvedThreshold"] = settings.UnresolvedThreshold.ToString("0.##"),
                 ["ChatbotHourlyUsageLimit"] = settings.HourlyUsageLimit.ToString(),
                 ["ChatbotSupportedLanguages"] = settings.SupportedLanguagesCsv,
-                ["ChatbotDefaultLanguage"] = settings.DefaultLanguage
+                ["ChatbotDefaultLanguage"] = settings.DefaultLanguage,
+                ["ChatbotRetentionDays"] = settings.RetentionDays.ToString(),
+                ["ChatbotEventLogRetentionDays"] = settings.EventLogRetentionDays.ToString(),
+                ["ChatbotEnablePiiRedaction"] = settings.EnablePiiRedaction.ToString().ToLowerInvariant(),
+                ["ChatbotRedactionLevel"] = settings.RedactionLevel,
+                ["ChatbotDeleteUnconsentedData"] = settings.DeleteUnconsentedData.ToString().ToLowerInvariant()
             };
 
             foreach (var entry in values)
@@ -513,13 +573,20 @@ namespace MedyxHMS.Services.Implementations
 
         private async Task AddEventAsync(string? sessionId, long? messageId, string eventType, string severity, string details)
         {
+            var piiRedactionEnabled = await GetBoolSettingAsync("ChatbotEnablePiiRedaction", true);
+            var redactionLevel = await GetStringSettingAsync("ChatbotRedactionLevel", "Standard");
+
+            var sanitizedDetails = piiRedactionEnabled
+                ? _piiRedactionService.RedactEventDetails(details, eventType, redactionLevel)
+                : details;
+
             _context.ChatbotEventLogs.Add(new ChatbotEventLog
             {
                 SessionId = sessionId,
                 MessageId = messageId,
                 EventType = eventType,
                 Severity = severity,
-                Details = details,
+                Details = sanitizedDetails,
                 CreatedAtUtc = DateTime.UtcNow
             });
             await _context.SaveChangesAsync();
@@ -617,6 +684,45 @@ namespace MedyxHMS.Services.Implementations
             var setting = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key);
             if (setting == null) return fallback;
             return int.TryParse(setting.Value, out var parsed) ? parsed : fallback;
+        }
+
+        private async Task<string> GetStringSettingAsync(string key, string fallback)
+        {
+            var setting = await _context.Settings.AsNoTracking().FirstOrDefaultAsync(s => s.Key == key);
+            if (setting == null) return fallback;
+
+            var value = setting.Value?.Trim();
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
+        }
+
+        private async Task<(bool IsRateLimited, int UsageCount, int UsageLimit)> CheckHourlyUsageLimitAsync(string? userId)
+        {
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return (false, 0, 0);
+            }
+
+            var usageLimit = await GetIntSettingAsync("ChatbotHourlyUsageLimit", 100);
+            if (usageLimit <= 0)
+            {
+                return (false, 0, usageLimit);
+            }
+
+            var windowStartUtc = DateTime.UtcNow.AddHours(-1);
+
+            var usageCount = await _context.ChatMessages
+                .AsNoTracking()
+                .Join(
+                    _context.ChatSessions.AsNoTracking(),
+                    m => m.SessionId,
+                    s => s.Id,
+                    (m, s) => new { Message = m, Session = s })
+                .Where(x => x.Session.UserId == userId
+                    && x.Message.SenderType == "User"
+                    && x.Message.CreatedAtUtc >= windowStartUtc)
+                .CountAsync();
+
+            return (usageCount >= usageLimit, usageCount, usageLimit);
         }
 
         private static bool ParseBool(IReadOnlyDictionary<string, string> values, string key, bool fallback)

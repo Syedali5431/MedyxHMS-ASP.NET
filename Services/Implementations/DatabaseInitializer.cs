@@ -677,6 +677,11 @@ END");
             await EnsureSystemSettingAsync("ChatbotHourlyUsageLimit", "100", "int", "Chatbot", "Per-user per-hour chatbot request cap.");
             await EnsureSystemSettingAsync("ChatbotUnresolvedThreshold", "0.45", "decimal", "Chatbot", "Confidence threshold under which escalation is suggested.");
             await EnsureSystemSettingAsync("ChatbotSupportContact", "support@hospital.com", "string", "Chatbot", "Support contact for chatbot handoff.");
+            await EnsureSystemSettingAsync("ChatbotRetentionDays", "90", "int", "Chatbot", "Retention window for chat sessions and messages.");
+            await EnsureSystemSettingAsync("ChatbotEventLogRetentionDays", "30", "int", "Chatbot", "Retention window for chatbot event logs.");
+            await EnsureSystemSettingAsync("ChatbotEnablePiiRedaction", "true", "bool", "Chatbot", "Enable PII redaction for chatbot event log details.");
+            await EnsureSystemSettingAsync("ChatbotRedactionLevel", "Standard", "string", "Chatbot", "PII redaction level: Minimal, Standard, Strict.");
+            await EnsureSystemSettingAsync("ChatbotDeleteUnconsentedData", "true", "bool", "Chatbot", "Delete retained chat data when data-retention consent is revoked.");
             await EnsureSystemSettingAsync("ChatbotAppointmentGuidance.en", "To book: open Appointment module, choose doctor, date, and confirm slot.", "string", "Chatbot", "English appointment guidance template.");
             await EnsureSystemSettingAsync("ChatbotBillingGuidance.en", "To pay bills: open Billing module, review invoice, choose method, and submit payment.", "string", "Chatbot", "English billing guidance template.");
         }

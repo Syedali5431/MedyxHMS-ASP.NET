@@ -77,11 +77,15 @@ builder.Services.AddScoped<ILicenseFileService, LicenseFileService>();
 builder.Services.AddScoped<IConcurrentSessionService, ConcurrentSessionService>();
 builder.Services.AddScoped<IModuleService, ModuleService>();
 builder.Services.AddScoped<IChatbotModerationService, ChatbotModerationService>();
+builder.Services.AddScoped<IChatbotPiiRedactionService, ChatbotPiiRedactionService>();
 builder.Services.AddScoped<IChatbotPromptBuilder, ChatbotPromptBuilder>();
 builder.Services.AddScoped<IChatbotKnowledgeService, ChatbotKnowledgeService>();
 builder.Services.AddScoped<IChatbotService, OpenAiChatbotService>();
+builder.Services.AddScoped<IChatbotConsentService, ChatbotConsentService>();
+builder.Services.AddScoped<IChatbotDataCleanupService, ChatbotDataCleanupService>();
 builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
 builder.Services.AddHostedService<LicenseReminderHostedService>();
+builder.Services.AddHostedService<ChatbotDataCleanupHostedService>();
 
 // Clinical Module Services (STEP 3.1)
 builder.Services.AddScoped<IOPDService, OPDService>();

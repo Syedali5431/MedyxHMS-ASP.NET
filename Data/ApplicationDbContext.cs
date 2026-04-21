@@ -73,6 +73,8 @@ namespace MedyxHMS.Data
         public DbSet<ChatFeedback> ChatFeedback { get; set; }
         public DbSet<ChatEscalation> ChatEscalations { get; set; }
         public DbSet<ChatbotEventLog> ChatbotEventLogs { get; set; }
+        public DbSet<ChatbotConsent> ChatbotConsents { get; set; }
+        public DbSet<ChatbotConsentAudit> ChatbotConsentAudits { get; set; }
 
         // Settings & Configuration
         public DbSet<Setting> Settings { get; set; }

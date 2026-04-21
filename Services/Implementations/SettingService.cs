@@ -41,11 +41,12 @@ namespace MedyxHMS.Services.Implementations
         public async Task<FeatureToggles> GetFeatureTogglesAsync()
         {
             var settings = await _context.Settings
-                .Where(s => s.Category == "Features")
+                .Where(s => s.Category == "Features" || s.Key == "ChatbotEnabled")
                 .ToDictionaryAsync(s => s.Key, s => s.Value);
 
             return new FeatureToggles
             {
+                ChatbotEnabled = bool.Parse(settings.GetValueOrDefault("ChatbotEnabled", "true")),
                 PatientPortal = bool.Parse(settings.GetValueOrDefault("PatientPortal", "true")),
                 AppointmentSystem = bool.Parse(settings.GetValueOrDefault("AppointmentSystem", "true")),
                 BillingModule = bool.Parse(settings.GetValueOrDefault("BillingModule", "true")),
