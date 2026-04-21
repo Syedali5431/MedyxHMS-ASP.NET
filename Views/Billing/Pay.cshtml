@@ -46,13 +46,22 @@
                     </div>
                     <div class="mb-3">
                         <label asp-for="PaymentMethod" class="form-label"></label>
-                        <select asp-for="PaymentMethod" class="form-select">
+                        <select asp-for="PaymentMethod" class="form-select" id="PaymentMethodSelect">
                             @foreach (var method in Model.PaymentMethods)
                             {
                                 <option value="@method">@method</option>
                             }
                         </select>
                         <span asp-validation-for="PaymentMethod" class="text-danger"></span>
+                    </div>
+
+                    <!-- Active Gateway Display (shown when "Online" is selected) -->
+                    <div id="GatewayInfoBox" class="mb-3 p-3 bg-light border rounded d-none">
+                        <small class="text-muted">Payment will be processed through:</small>
+                        <div class="text-center mt-2">
+                            <img id="GatewayLogo" src="" alt="Gateway" class="img-fluid" style="max-height: 60px;" />
+                            <p id="GatewayName" class="mt-2 mb-0 fw-bold"></p>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label asp-for="Notes" class="form-label"></label>
@@ -85,7 +94,55 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const gatewayMapping = {
+            paypal: { name: 'PayPal', logo: '/images/gateways/paypal.png' },
+            stripe: { name: 'Stripe', logo: '/images/gateways/stripe.png' },
+            payu: { name: 'PayU', logo: '/images/gateways/payu.png' },
+            ccavenue: { name: 'CCAvenue', logo: '/images/gateways/ccavenue.png' },
+            instamojo: { name: 'Instamojo', logo: '/images/gateways/instamojo.png' },
+            paystack: { name: 'Paystack', logo: '/images/gateways/paystack.png' },
+            razorpay: { name: 'Razorpay', logo: '/images/gateways/razorpay.jpg' },
+            paytm: { name: 'Paytm', logo: '/images/gateways/paytm.jpg' },
+            midtrans: { name: 'Midtrans', logo: '/images/gateways/midtrans.jpg' },
+            pesapal: { name: 'Pesapal', logo: '/images/gateways/pesapal.jpg' },
+            flutterwave: { name: 'Flutterwave', logo: '/images/gateways/flutterwave.png' },
+            ipayafrica: { name: 'iPay Africa', logo: '/images/gateways/ipayafrica.png' },
+            jazzcash: { name: 'JazzCash', logo: '/images/gateways/jazzcash.jpg' },
+            billplz: { name: 'Billplz', logo: '/images/gateways/billplz.jpg' },
+            sslcommerz: { name: 'SSLCommerz', logo: '/images/gateways/sslcommerz.png' },
+            walkingm: { name: 'Walkingm', logo: '/images/gateways/walkingm.png' },
+            easypaisa: { name: 'EasyPaisa', logo: '/images/gateways/easypaisa.png' }
+        };
+
+        let activeGateway = '@Model.ActiveGateway?.ToLower() ?? "none"';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const select = document.getElementById('PaymentMethodSelect');
+            const infoBox = document.getElementById('GatewayInfoBox');
+            const logo = document.getElementById('GatewayLogo');
+            const name = document.getElementById('GatewayName');
+
+            function updateGatewayDisplay() {
+                const method = select.value;
+                if (method === 'Online' && activeGateway && activeGateway !== 'none') {
+                    const gateway = gatewayMapping[activeGateway];
+                    if (gateway) {
+                        logo.src = gateway.logo;
+                        name.textContent = gateway.name;
+                        infoBox.classList.remove('d-none');
+                    }
+                } else {
+                    infoBox.classList.add('d-none');
+                }
+            }
+
+            select.addEventListener('change', updateGatewayDisplay);
+            updateGatewayDisplay(); // Initial display
+        });
+    </script>
 }
+
 
 @section Styles {
     <style>

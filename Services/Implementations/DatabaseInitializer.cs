@@ -212,6 +212,55 @@ namespace MedyxHMS.Services.Implementations
             await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:EmailSubject", "Appointment Request Confirmed", "string", "Notification", "Template subject for appointment confirmation emails.");
             await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:EmailBody", "Hello {{PatientName}},\n\nYour appointment request has been confirmed.\nDoctor: {{DoctorName}}\nDate: {{Date}}\nTime: {{Time}}\n\nPlease arrive 15 minutes before your scheduled time.\nIf you need to reschedule, contact the hospital front desk at {{SupportPhone}}.\n\nRegards,\n{{HospitalName}}", "string", "Notification", "Template body for appointment confirmation emails.");
             await EnsureSystemSettingAsync("Notification:Templates:AppointmentConfirmed:SmsBody", "Medyx: Appointment confirmed for {{PatientName}} with {{DoctorName}} on {{Date}} at {{Time}}.", "string", "Notification", "Template body for appointment confirmation SMS messages.");
+
+            // Payment Gateway Settings
+            await EnsureSystemSettingAsync("Payment:ActiveGateway", "none", "string", "Payment", "Currently active payment gateway key (none, paypal, stripe, etc.)");
+            await EnsureSystemSettingAsync("Payment:PayPal:ClientId", "", "string", "Payment", "PayPal Client ID for API authentication.");
+            await EnsureSystemSettingAsync("Payment:PayPal:ClientSecret", "", "string", "Payment", "PayPal Client Secret for API authentication.");
+            await EnsureSystemSettingAsync("Payment:PayPal:TestMode", "true", "bool", "Payment", "PayPal test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Stripe:PublishableKey", "", "string", "Payment", "Stripe Publishable Key for client-side API calls.");
+            await EnsureSystemSettingAsync("Payment:Stripe:SecretKey", "", "string", "Payment", "Stripe Secret Key for server-side API calls.");
+            await EnsureSystemSettingAsync("Payment:Stripe:TestMode", "true", "bool", "Payment", "Stripe test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:PayU:MerchantKey", "", "string", "Payment", "PayU Merchant Key for API authentication.");
+            await EnsureSystemSettingAsync("Payment:PayU:Salt", "", "string", "Payment", "PayU Salt for security hash generation.");
+            await EnsureSystemSettingAsync("Payment:CCAvenue:MerchantId", "", "string", "Payment", "CCAvenue Merchant ID.");
+            await EnsureSystemSettingAsync("Payment:CCAvenue:AccessCode", "", "string", "Payment", "CCAvenue Access Code for transactions.");
+            await EnsureSystemSettingAsync("Payment:CCAvenue:WorkingKey", "", "string", "Payment", "CCAvenue Working Key for encryption.");
+            await EnsureSystemSettingAsync("Payment:Instamojo:ApiKey", "", "string", "Payment", "Instamojo API Key for authentication.");
+            await EnsureSystemSettingAsync("Payment:Instamojo:AuthToken", "", "string", "Payment", "Instamojo Auth Token for API access.");
+            await EnsureSystemSettingAsync("Payment:Instamojo:TestMode", "true", "bool", "Payment", "Instamojo test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Paystack:PublicKey", "", "string", "Payment", "Paystack Public Key for client-side validation.");
+            await EnsureSystemSettingAsync("Payment:Paystack:SecretKey", "", "string", "Payment", "Paystack Secret Key for server-side verification.");
+            await EnsureSystemSettingAsync("Payment:Razorpay:KeyId", "", "string", "Payment", "Razorpay Key ID for API authentication.");
+            await EnsureSystemSettingAsync("Payment:Razorpay:KeySecret", "", "string", "Payment", "Razorpay Key Secret for API authentication.");
+            await EnsureSystemSettingAsync("Payment:Razorpay:TestMode", "true", "bool", "Payment", "Razorpay test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Paytm:MerchantId", "", "string", "Payment", "Paytm Merchant ID for transactions.");
+            await EnsureSystemSettingAsync("Payment:Paytm:MerchantKey", "", "string", "Payment", "Paytm Merchant Key for security verification.");
+            await EnsureSystemSettingAsync("Payment:Paytm:TestMode", "true", "bool", "Payment", "Paytm test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Midtrans:ClientKey", "", "string", "Payment", "Midtrans Client Key for client-side requests.");
+            await EnsureSystemSettingAsync("Payment:Midtrans:ServerKey", "", "string", "Payment", "Midtrans Server Key for server-side requests.");
+            await EnsureSystemSettingAsync("Payment:Midtrans:TestMode", "true", "bool", "Payment", "Midtrans test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Pesapal:ConsumerKey", "", "string", "Payment", "Pesapal Consumer Key for API authentication.");
+            await EnsureSystemSettingAsync("Payment:Pesapal:ConsumerSecret", "", "string", "Payment", "Pesapal Consumer Secret for API authentication.");
+            await EnsureSystemSettingAsync("Payment:Pesapal:TestMode", "true", "bool", "Payment", "Pesapal test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Flutterwave:PublicKey", "", "string", "Payment", "Flutterwave Public Key for transactions.");
+            await EnsureSystemSettingAsync("Payment:Flutterwave:SecretKey", "", "string", "Payment", "Flutterwave Secret Key for API verification.");
+            await EnsureSystemSettingAsync("Payment:Flutterwave:TestMode", "true", "bool", "Payment", "Flutterwave test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:IPayAfrica:MerchantId", "", "string", "Payment", "iPay Africa Merchant ID for transactions.");
+            await EnsureSystemSettingAsync("Payment:IPayAfrica:HashKey", "", "string", "Payment", "iPay Africa Hash Key for security verification.");
+            await EnsureSystemSettingAsync("Payment:JazzCash:MerchantId", "", "string", "Payment", "JazzCash Merchant ID for transactions.");
+            await EnsureSystemSettingAsync("Payment:JazzCash:Password", "", "string", "Payment", "JazzCash Password for authentication.");
+            await EnsureSystemSettingAsync("Payment:JazzCash:TestMode", "true", "bool", "Payment", "JazzCash test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Billplz:CollectionId", "", "string", "Payment", "Billplz Collection ID for invoicing.");
+            await EnsureSystemSettingAsync("Payment:Billplz:ApiKey", "", "string", "Payment", "Billplz API Key for authentication.");
+            await EnsureSystemSettingAsync("Payment:SSLCommerz:StoreId", "", "string", "Payment", "SSLCommerz Store ID for transactions.");
+            await EnsureSystemSettingAsync("Payment:SSLCommerz:StorePassword", "", "string", "Payment", "SSLCommerz Store Password for authentication.");
+            await EnsureSystemSettingAsync("Payment:SSLCommerz:TestMode", "true", "bool", "Payment", "SSLCommerz test mode enabled flag.");
+            await EnsureSystemSettingAsync("Payment:Walkingm:ClientId", "", "string", "Payment", "Walkingm Client ID for API authentication.");
+            await EnsureSystemSettingAsync("Payment:Walkingm:ClientSecret", "", "string", "Payment", "Walkingm Client Secret for API authentication.");
+            await EnsureSystemSettingAsync("Payment:EasyPaisa:MerchantId", "", "string", "Payment", "EasyPaisa Merchant ID for transactions.");
+            await EnsureSystemSettingAsync("Payment:EasyPaisa:HashKey", "", "string", "Payment", "EasyPaisa Hash Key for security verification.");
+            await EnsureSystemSettingAsync("Payment:EasyPaisa:TestMode", "true", "bool", "Payment", "EasyPaisa test mode enabled flag.");
         }
 
         private async Task EnsureStep42TablesAsync()

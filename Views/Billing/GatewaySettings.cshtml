@@ -1,0 +1,365 @@
+@model MedyxHMS.ViewModels.PaymentGatewaySettingsViewModel
+@{
+    ViewData["Title"] = "Payment Gateway Settings";
+}
+
+<style>
+    .gateway-logo { max-width: 100%; height: auto; max-height: 120px; margin-bottom: 1rem; }
+    .gateway-info { font-size: 0.875rem; color: #6c757d; }
+    .nav-scroll { overflow-x: auto; flex-wrap: nowrap; }
+</style>
+
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold mb-0">Payment Gateway Settings</h2>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Back to Billing</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <form asp-action="GatewaySettings" asp-controller="Billing" method="post" class="form-horizontal">
+        @Html.AntiForgeryToken()
+
+        <!-- Active Gateway Selection -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-body">
+                <h6 class="mb-3">Active Gateway</h6>
+                <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="ActiveGateway" id="gateway_none" value="none" 
+                        @(Model.ActiveGateway == "none" ? "checked" : "") />
+                    <label class="btn btn-outline-secondary" for="gateway_none">None (Internal Only)</label>
+
+                    @foreach (var gw in PaymentGatewaySettingsViewModel.AllGateways)
+                    {
+                        <input type="radio" class="btn-check" name="ActiveGateway" id="gateway_@gw.Key" value="@gw.Key"
+                            @(Model.ActiveGateway == gw.Key ? "checked" : "") />
+                        <label class="btn btn-outline-primary" for="gateway_@gw.Key">@gw.DisplayName</label>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabbed Gateway Settings -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light">
+                <ul class="nav nav-tabs card-header-tabs nav-scroll" role="tablist">
+                    @foreach (var gw in PaymentGatewaySettingsViewModel.AllGateways)
+                    {
+                        var isFirstTab = PaymentGatewaySettingsViewModel.AllGateways.IndexOf(gw) == 0;
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link @(isFirstTab ? "active" : "")" id="tab_@gw.Key" 
+                                data-bs-toggle="tab" data-bs-target="#pane_@gw.Key" type="button" role="tab">
+                                @gw.DisplayName
+                            </button>
+                        </li>
+                    }
+                </ul>
+            </div>
+
+            <div class="card-body">
+                <div class="tab-content">
+                    @foreach (var gw in PaymentGatewaySettingsViewModel.AllGateways)
+                    {
+                        var isFirstTab = PaymentGatewaySettingsViewModel.AllGateways.IndexOf(gw) == 0;
+                        <div class="tab-pane fade @(isFirstTab ? "show active" : "")" id="pane_@gw.Key" role="tabpanel">
+                            <div class="row">
+                                <!-- Left: Credential Fields -->
+                                <div class="col-md-8">
+                                    @if (gw.Key == "paypal")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="PayPalClientId" class="form-label">Client ID</label>
+                                            <input type="text" class="form-control" id="PayPalClientId" name="PayPalClientId" value="@Model.PayPalClientId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="PayPalClientSecret" class="form-label">Client Secret</label>
+                                            <input type="password" class="form-control" id="PayPalClientSecret" name="PayPalClientSecret" 
+                                                placeholder="@(Model.HasSavedPayPalClientSecret ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="PayPalTestMode" name="PayPalTestMode" 
+                                                @(Model.PayPalTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="PayPalTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "stripe")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="StripePublishableKey" class="form-label">Publishable Key</label>
+                                            <input type="text" class="form-control" id="StripePublishableKey" name="StripePublishableKey" value="@Model.StripePublishableKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="StripeSecretKey" class="form-label">Secret Key</label>
+                                            <input type="password" class="form-control" id="StripeSecretKey" name="StripeSecretKey"
+                                                placeholder="@(Model.HasSavedStripeSecretKey ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="StripeTestMode" name="StripeTestMode"
+                                                @(Model.StripeTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="StripeTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "payu")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="PayUMerchantKey" class="form-label">Merchant Key</label>
+                                            <input type="text" class="form-control" id="PayUMerchantKey" name="PayUMerchantKey" value="@Model.PayUMerchantKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="PayUSalt" class="form-label">Salt</label>
+                                            <input type="password" class="form-control" id="PayUSalt" name="PayUSalt"
+                                                placeholder="@(Model.HasSavedPayUSalt ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "ccavenue")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="CCAvenueMerchantId" class="form-label">Merchant ID</label>
+                                            <input type="text" class="form-control" id="CCAvenueMerchantId" name="CCAvenueMerchantId" value="@Model.CCAvenueMerchantId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="CCAvenueAccessCode" class="form-label">Access Code</label>
+                                            <input type="text" class="form-control" id="CCAvenueAccessCode" name="CCAvenueAccessCode" value="@Model.CCAvenueAccessCode" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="CCAvenueWorkingKey" class="form-label">Working Key</label>
+                                            <input type="password" class="form-control" id="CCAvenueWorkingKey" name="CCAvenueWorkingKey"
+                                                placeholder="@(Model.HasSavedCCAvenueWorkingKey ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "instamojo")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="InstamojoApiKey" class="form-label">API Key</label>
+                                            <input type="text" class="form-control" id="InstamojoApiKey" name="InstamojoApiKey" value="@Model.InstamojoApiKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="InstamojoAuthToken" class="form-label">Auth Token</label>
+                                            <input type="password" class="form-control" id="InstamojoAuthToken" name="InstamojoAuthToken"
+                                                placeholder="@(Model.HasSavedInstamojoAuthToken ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="InstamojoTestMode" name="InstamojoTestMode"
+                                                @(Model.InstamojoTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="InstamojoTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "paystack")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="PaystackPublicKey" class="form-label">Public Key</label>
+                                            <input type="text" class="form-control" id="PaystackPublicKey" name="PaystackPublicKey" value="@Model.PaystackPublicKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="PaystackSecretKey" class="form-label">Secret Key</label>
+                                            <input type="password" class="form-control" id="PaystackSecretKey" name="PaystackSecretKey"
+                                                placeholder="@(Model.HasSavedPaystackSecretKey ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "razorpay")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="RazorpayKeyId" class="form-label">Key ID</label>
+                                            <input type="text" class="form-control" id="RazorpayKeyId" name="RazorpayKeyId" value="@Model.RazorpayKeyId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="RazorpayKeySecret" class="form-label">Key Secret</label>
+                                            <input type="password" class="form-control" id="RazorpayKeySecret" name="RazorpayKeySecret"
+                                                placeholder="@(Model.HasSavedRazorpayKeySecret ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="RazorpayTestMode" name="RazorpayTestMode"
+                                                @(Model.RazorpayTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="RazorpayTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "paytm")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="PaytmMerchantId" class="form-label">Merchant ID</label>
+                                            <input type="text" class="form-control" id="PaytmMerchantId" name="PaytmMerchantId" value="@Model.PaytmMerchantId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="PaytmMerchantKey" class="form-label">Merchant Key</label>
+                                            <input type="password" class="form-control" id="PaytmMerchantKey" name="PaytmMerchantKey"
+                                                placeholder="@(Model.HasSavedPaytmMerchantKey ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="PaytmTestMode" name="PaytmTestMode"
+                                                @(Model.PaytmTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="PaytmTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "midtrans")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="MidtransClientKey" class="form-label">Client Key</label>
+                                            <input type="text" class="form-control" id="MidtransClientKey" name="MidtransClientKey" value="@Model.MidtransClientKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="MidtransServerKey" class="form-label">Server Key</label>
+                                            <input type="password" class="form-control" id="MidtransServerKey" name="MidtransServerKey"
+                                                placeholder="@(Model.HasSavedMidtransServerKey ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="MidtransTestMode" name="MidtransTestMode"
+                                                @(Model.MidtransTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="MidtransTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "pesapal")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="PesapalConsumerKey" class="form-label">Consumer Key</label>
+                                            <input type="text" class="form-control" id="PesapalConsumerKey" name="PesapalConsumerKey" value="@Model.PesapalConsumerKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="PesapalConsumerSecret" class="form-label">Consumer Secret</label>
+                                            <input type="password" class="form-control" id="PesapalConsumerSecret" name="PesapalConsumerSecret"
+                                                placeholder="@(Model.HasSavedPesapalConsumerSecret ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="PesapalTestMode" name="PesapalTestMode"
+                                                @(Model.PesapalTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="PesapalTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "flutterwave")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="FlutterwavePublicKey" class="form-label">Public Key</label>
+                                            <input type="text" class="form-control" id="FlutterwavePublicKey" name="FlutterwavePublicKey" value="@Model.FlutterwavePublicKey" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="FlutterwaveSecretKey" class="form-label">Secret Key</label>
+                                            <input type="password" class="form-control" id="FlutterwaveSecretKey" name="FlutterwaveSecretKey"
+                                                placeholder="@(Model.HasSavedFlutterwaveSecretKey ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="FlutterwaveTestMode" name="FlutterwaveTestMode"
+                                                @(Model.FlutterwaveTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="FlutterwaveTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "ipayafrica")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="IPayAfricaMerchantId" class="form-label">Merchant ID</label>
+                                            <input type="text" class="form-control" id="IPayAfricaMerchantId" name="IPayAfricaMerchantId" value="@Model.IPayAfricaMerchantId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="IPayAfricaHashKey" class="form-label">Hash Key</label>
+                                            <input type="password" class="form-control" id="IPayAfricaHashKey" name="IPayAfricaHashKey"
+                                                placeholder="@(Model.HasSavedIPayAfricaHashKey ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "jazzcash")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="JazzCashMerchantId" class="form-label">Merchant ID</label>
+                                            <input type="text" class="form-control" id="JazzCashMerchantId" name="JazzCashMerchantId" value="@Model.JazzCashMerchantId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="JazzCashPassword" class="form-label">Password</label>
+                                            <input type="password" class="form-control" id="JazzCashPassword" name="JazzCashPassword"
+                                                placeholder="@(Model.HasSavedJazzCashPassword ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="JazzCashTestMode" name="JazzCashTestMode"
+                                                @(Model.JazzCashTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="JazzCashTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "billplz")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="BillplzCollectionId" class="form-label">Collection ID</label>
+                                            <input type="text" class="form-control" id="BillplzCollectionId" name="BillplzCollectionId" value="@Model.BillplzCollectionId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="BillplzApiKey" class="form-label">API Key</label>
+                                            <input type="password" class="form-control" id="BillplzApiKey" name="BillplzApiKey"
+                                                placeholder="@(Model.HasSavedBillplzApiKey ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "sslcommerz")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="SSLCommerzStoreId" class="form-label">Store ID</label>
+                                            <input type="text" class="form-control" id="SSLCommerzStoreId" name="SSLCommerzStoreId" value="@Model.SSLCommerzStoreId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="SSLCommerzStorePassword" class="form-label">Store Password</label>
+                                            <input type="password" class="form-control" id="SSLCommerzStorePassword" name="SSLCommerzStorePassword"
+                                                placeholder="@(Model.HasSavedSSLCommerzStorePassword ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="SSLCommerzTestMode" name="SSLCommerzTestMode"
+                                                @(Model.SSLCommerzTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="SSLCommerzTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                    else if (gw.Key == "walkingm")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="WalkingmClientId" class="form-label">Client ID</label>
+                                            <input type="text" class="form-control" id="WalkingmClientId" name="WalkingmClientId" value="@Model.WalkingmClientId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="WalkingmClientSecret" class="form-label">Client Secret</label>
+                                            <input type="password" class="form-control" id="WalkingmClientSecret" name="WalkingmClientSecret"
+                                                placeholder="@(Model.HasSavedWalkingmClientSecret ? "(Saved)" : "")" />
+                                        </div>
+                                    }
+                                    else if (gw.Key == "easypaisa")
+                                    {
+                                        <div class="mb-3">
+                                            <label for="EasyPaisaMerchantId" class="form-label">Merchant ID</label>
+                                            <input type="text" class="form-control" id="EasyPaisaMerchantId" name="EasyPaisaMerchantId" value="@Model.EasyPaisaMerchantId" />
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="EasyPaisaHashKey" class="form-label">Hash Key</label>
+                                            <input type="password" class="form-control" id="EasyPaisaHashKey" name="EasyPaisaHashKey"
+                                                placeholder="@(Model.HasSavedEasyPaisaHashKey ? "(Saved)" : "")" />
+                                        </div>
+                                        <div class="form-check mb-3">
+                                            <input type="checkbox" class="form-check-input" id="EasyPaisaTestMode" name="EasyPaisaTestMode"
+                                                @(Model.EasyPaisaTestMode ? "checked" : "") />
+                                            <label class="form-check-label" for="EasyPaisaTestMode">Test Mode</label>
+                                        </div>
+                                    }
+                                </div>
+
+                                <!-- Right: Logo & Info -->
+                                <div class="col-md-4 text-center">
+                                    <img src="/images/gateways/@gw.Logo" alt="@gw.DisplayName" class="gateway-logo" />
+                                    <div class="gateway-info">
+                                        <p class="mb-1"><strong>@gw.DisplayName</strong></p>
+                                        <p class="mb-1"><small>@gw.Region</small></p>
+                                        <a href="@gw.Website" target="_blank" class="btn btn-sm btn-outline-primary">Visit Website</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> Save Settings
+                </button>
+                <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+            </div>
+        </div>
+    </form>
+</div>

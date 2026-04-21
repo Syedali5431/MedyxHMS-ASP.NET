@@ -62,6 +62,7 @@ namespace MedyxHMS.ViewModels
         public string BillNumber { get; set; } = string.Empty;
         public string PatientName { get; set; } = string.Empty;
         public List<string> PaymentMethods { get; set; } = new() { "Cash", "Card", "Check", "Online", "Insurance" };
+        public string ActiveGateway { get; set; } = string.Empty;
     }
 
     public class OnlinePaymentViewModel
@@ -174,5 +175,123 @@ namespace MedyxHMS.ViewModels
         public decimal SixtyPlusAmount { get; set; }
         public decimal NinetyPlusAmount { get; set; }
         public DateTime AsOfDate { get; set; }
+    }
+
+    public class GatewayInfo
+    {
+        public string Key { get; set; } = string.Empty;          // e.g. "paypal"
+        public string DisplayName { get; set; } = string.Empty;  // e.g. "PayPal"
+        public string Logo { get; set; } = string.Empty;         // e.g. "paypal.png"
+        public string Website { get; set; } = string.Empty;
+        public string Region { get; set; } = string.Empty;       // e.g. "Global", "Pakistan"
+    }
+
+    public class PaymentGatewaySettingsViewModel
+    {
+        public string ActiveGateway { get; set; } = "none";
+
+        // Per-gateway credential fields
+        public string PayPalClientId { get; set; } = string.Empty;
+        public string PayPalClientSecret { get; set; } = string.Empty;
+        public bool PayPalTestMode { get; set; } = true;
+
+        public string StripePublishableKey { get; set; } = string.Empty;
+        public string StripeSecretKey { get; set; } = string.Empty;
+        public bool StripeTestMode { get; set; } = true;
+
+        public string PayUMerchantKey { get; set; } = string.Empty;
+        public string PayUSalt { get; set; } = string.Empty;
+
+        public string CCAvenueMerchantId { get; set; } = string.Empty;
+        public string CCAvenueAccessCode { get; set; } = string.Empty;
+        public string CCAvenueWorkingKey { get; set; } = string.Empty;
+
+        public string InstamojoApiKey { get; set; } = string.Empty;
+        public string InstamojoAuthToken { get; set; } = string.Empty;
+        public bool InstamojoTestMode { get; set; } = true;
+
+        public string PaystackPublicKey { get; set; } = string.Empty;
+        public string PaystackSecretKey { get; set; } = string.Empty;
+
+        public string RazorpayKeyId { get; set; } = string.Empty;
+        public string RazorpayKeySecret { get; set; } = string.Empty;
+        public bool RazorpayTestMode { get; set; } = true;
+
+        public string PaytmMerchantId { get; set; } = string.Empty;
+        public string PaytmMerchantKey { get; set; } = string.Empty;
+        public bool PaytmTestMode { get; set; } = true;
+
+        public string MidtransClientKey { get; set; } = string.Empty;
+        public string MidtransServerKey { get; set; } = string.Empty;
+        public bool MidtransTestMode { get; set; } = true;
+
+        public string PesapalConsumerKey { get; set; } = string.Empty;
+        public string PesapalConsumerSecret { get; set; } = string.Empty;
+        public bool PesapalTestMode { get; set; } = true;
+
+        public string FlutterwavePublicKey { get; set; } = string.Empty;
+        public string FlutterwaveSecretKey { get; set; } = string.Empty;
+        public bool FlutterwaveTestMode { get; set; } = true;
+
+        public string IPayAfricaMerchantId { get; set; } = string.Empty;
+        public string IPayAfricaHashKey { get; set; } = string.Empty;
+
+        public string JazzCashMerchantId { get; set; } = string.Empty;
+        public string JazzCashPassword { get; set; } = string.Empty;
+        public bool JazzCashTestMode { get; set; } = true;
+
+        public string BillplzCollectionId { get; set; } = string.Empty;
+        public string BillplzApiKey { get; set; } = string.Empty;
+
+        public string SSLCommerzStoreId { get; set; } = string.Empty;
+        public string SSLCommerzStorePassword { get; set; } = string.Empty;
+        public bool SSLCommerzTestMode { get; set; } = true;
+
+        public string WalkingmClientId { get; set; } = string.Empty;
+        public string WalkingmClientSecret { get; set; } = string.Empty;
+
+        public string EasyPaisaMerchantId { get; set; } = string.Empty;
+        public string EasyPaisaHashKey { get; set; } = string.Empty;
+        public bool EasyPaisaTestMode { get; set; } = true;
+
+        // Secret-preservation flags (don't overwrite with empty on save)
+        public bool HasSavedPayPalClientSecret { get; set; }
+        public bool HasSavedStripeSecretKey { get; set; }
+        public bool HasSavedPayUSalt { get; set; }
+        public bool HasSavedCCAvenueWorkingKey { get; set; }
+        public bool HasSavedInstamojoAuthToken { get; set; }
+        public bool HasSavedPaystackSecretKey { get; set; }
+        public bool HasSavedRazorpayKeySecret { get; set; }
+        public bool HasSavedPaytmMerchantKey { get; set; }
+        public bool HasSavedMidtransServerKey { get; set; }
+        public bool HasSavedPesapalConsumerSecret { get; set; }
+        public bool HasSavedFlutterwaveSecretKey { get; set; }
+        public bool HasSavedIPayAfricaHashKey { get; set; }
+        public bool HasSavedJazzCashPassword { get; set; }
+        public bool HasSavedBillplzApiKey { get; set; }
+        public bool HasSavedSSLCommerzStorePassword { get; set; }
+        public bool HasSavedWalkingmClientSecret { get; set; }
+        public bool HasSavedEasyPaisaHashKey { get; set; }
+
+        public static readonly List<GatewayInfo> AllGateways = new()
+        {
+            new() { Key = "paypal",      DisplayName = "PayPal",       Logo = "paypal.png",      Website = "https://www.paypal.com",              Region = "Global" },
+            new() { Key = "stripe",      DisplayName = "Stripe",       Logo = "stripe.png",      Website = "https://stripe.com",                  Region = "Global" },
+            new() { Key = "payu",        DisplayName = "PayU",         Logo = "payu.png",         Website = "https://www.payu.in",                 Region = "India" },
+            new() { Key = "ccavenue",    DisplayName = "CCAvenue",     Logo = "ccavenue.png",    Website = "https://www.ccavenue.com",            Region = "India" },
+            new() { Key = "instamojo",   DisplayName = "Instamojo",    Logo = "instamojo.png",   Website = "https://www.instamojo.com",           Region = "India" },
+            new() { Key = "paystack",    DisplayName = "Paystack",     Logo = "paystack.png",    Website = "https://paystack.com",                Region = "Africa" },
+            new() { Key = "razorpay",    DisplayName = "Razorpay",     Logo = "razorpay.jpg",    Website = "https://razorpay.com",                Region = "India" },
+            new() { Key = "paytm",       DisplayName = "Paytm",        Logo = "paytm.jpg",       Website = "https://www.paytm.com",               Region = "India" },
+            new() { Key = "midtrans",    DisplayName = "Midtrans",     Logo = "midtrans.jpg",    Website = "https://midtrans.com",                Region = "Indonesia" },
+            new() { Key = "pesapal",     DisplayName = "Pesapal",      Logo = "pesapal.jpg",     Website = "https://pesapal.com",                 Region = "Africa" },
+            new() { Key = "flutterwave", DisplayName = "Flutterwave",  Logo = "flutterwave.png", Website = "https://flutterwave.com",             Region = "Africa" },
+            new() { Key = "ipayafrica",  DisplayName = "iPay Africa",  Logo = "ipayafrica.png",  Website = "https://www.ipayafrica.com",          Region = "Africa" },
+            new() { Key = "jazzcash",    DisplayName = "JazzCash",     Logo = "jazzcash.jpg",    Website = "https://www.jazzcash.com.pk",         Region = "Pakistan" },
+            new() { Key = "billplz",     DisplayName = "Billplz",      Logo = "billplz.jpg",     Website = "https://www.billplz.com",             Region = "Malaysia" },
+            new() { Key = "sslcommerz",  DisplayName = "SSLCommerz",   Logo = "sslcommerz.png",  Website = "https://www.sslcommerz.com",          Region = "Bangladesh" },
+            new() { Key = "walkingm",    DisplayName = "Walkingm",     Logo = "walkingm.png",    Website = "https://walkingm.com",                Region = "Liberia" },
+            new() { Key = "easypaisa",   DisplayName = "EasyPaisa",    Logo = "easypaisa.png",   Website = "https://www.easypaisa.com.pk",        Region = "Pakistan" },
+        };
     }
 }
