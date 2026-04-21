@@ -123,9 +123,23 @@ builder.Services.AddSession(options =>
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
+    options.AddPolicy("AllowConfiguredOrigins", policy =>
     {
-        policy.AllowAnyOrigin()
+        var allowedOrigins = builder.Configuration
+            .GetSection("Security:Cors:AllowedOrigins")
+            .Get<string[]>()
+            ?? Array.Empty<string>();
+
+        if (allowedOrigins.Length > 0)
+        {
+            policy.WithOrigins(allowedOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+            return;
+        }
+
+        // If no origins are configured, block cross-origin calls by default.
+        policy.SetIsOriginAllowed(_ => false)
               .AllowAnyMethod()
               .AllowAnyHeader();
     });
@@ -165,7 +179,7 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // Enable CORS
-app.UseCors("AllowAll");
+app.UseCors("AllowConfiguredOrigins");
 
 // Enable Session
 app.UseSession();

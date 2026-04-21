@@ -140,12 +140,44 @@ namespace MedyxHMS.Extensions
 
     public static class ClaimsPrincipalExtensions
     {
+        private static readonly Dictionary<string, Dictionary<string, string[]>> PermissionMatrix =
+            new(StringComparer.OrdinalIgnoreCase)
+            {
+                ["ManageUsers"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["View"] = new[] { "Admin", "SuperAdmin" },
+                    ["Add"] = new[] { "Admin", "SuperAdmin" },
+                    ["Edit"] = new[] { "Admin", "SuperAdmin" },
+                    ["Delete"] = new[] { "Admin", "SuperAdmin" }
+                },
+                ["Appointment"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["View"] = new[] { "Admin", "SuperAdmin", "Doctor", "Nurse", "Staff", "Receptionist" },
+                    ["Add"] = new[] { "Admin", "SuperAdmin", "Doctor", "Staff", "Receptionist" },
+                    ["Edit"] = new[] { "Admin", "SuperAdmin", "Doctor", "Staff", "Receptionist" },
+                    ["Delete"] = new[] { "Admin", "SuperAdmin" }
+                },
+                ["Patient"] = new(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["View"] = new[] { "Admin", "SuperAdmin", "Doctor", "Nurse", "Staff", "Accountant", "Receptionist", "Pharmacist", "LabTechnician", "Radiologist" },
+                    ["Add"] = new[] { "Admin", "SuperAdmin", "Doctor", "Nurse", "Staff", "Accountant", "Receptionist", "Pharmacist", "LabTechnician", "Radiologist" },
+                    ["Edit"] = new[] { "Admin", "SuperAdmin", "Doctor", "Nurse", "Staff", "Accountant", "Receptionist", "Pharmacist", "LabTechnician", "Radiologist" },
+                    ["Delete"] = new[] { "Admin", "SuperAdmin" }
+                }
+            };
+
         public static bool HasPermission(this ClaimsPrincipal user, string module, string action)
         {
-            // For synchronous checks in views, we'll check if user is authenticated
-            // In a production system, you'd want to cache permissions or use a different approach
-            // For now, this provides basic functionality
-            return user.Identity?.IsAuthenticated == true;
+            if (user.Identity?.IsAuthenticated != true)
+                return false;
+
+            if (!PermissionMatrix.TryGetValue(module ?? string.Empty, out var actionMap))
+                return user.IsInRole("SuperAdmin") || user.IsInRole("Admin");
+
+            if (!actionMap.TryGetValue(action ?? string.Empty, out var allowedRoles))
+                return false;
+
+            return allowedRoles.Any(user.IsInRole);
         }
     }
 }

@@ -10,6 +10,7 @@ This document closes the Step 5.2 security-testing and performance-testing plann
 
 - Verify no production secrets are hard-coded in source-controlled configuration.
 - Verify environment-specific configuration is used for connection strings and provider credentials.
+- Verify CORS is restricted to configured origins only.
 - Verify anti-forgery protection remains enabled on state-changing MVC forms.
 - Verify authorization attributes/protected routes are applied to admin/staff controllers.
 - Verify exported documents and reports require authenticated access.
@@ -20,6 +21,8 @@ This document closes the Step 5.2 security-testing and performance-testing plann
 - Patient login rejects invalid credentials.
 - Unauthorized users are redirected or forbidden on protected routes.
 - Privileged actions remain limited to intended roles.
+- Patient users cannot access staff create/edit workflows.
+- Report schedule/delete/edit operations remain limited to Admin and SuperAdmin.
 - Audit logging records create/update/delete actions for critical modules.
 
 ### Data Handling Checks

@@ -54,6 +54,21 @@ internal sealed class FakeEmailNotificationProvider : IEmailNotificationProvider
     }
 }
 
+internal sealed class FakeLicenseFileService : ILicenseFileService
+{
+    public bool IsCryptographicallyValid { get; set; } = true;
+
+    public Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string performedByUserId, string? ipAddress = null)
+    {
+        throw new NotSupportedException();
+    }
+
+    public Task<bool> IsCurrentLicenseCryptographicallyValidAsync()
+    {
+        return Task.FromResult(IsCryptographicallyValid);
+    }
+}
+
 internal sealed class FakeSmsNotificationProvider : ISmsNotificationProvider
 {
     public readonly List<string> SentTo = new();

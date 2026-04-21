@@ -53,3 +53,23 @@ If SQL authentication is required, replace `-E` with `-U <username> -P <password
 - `data-migration-validation.sql`: record and integrity checks.
 - `compare-migration-counts.ps1`: source vs target count comparison.
 - `source-count-snapshot.template.csv`: source count template.
+
+## UAT Smoke Automation
+
+- `Invoke-UatSmoke.ps1`
+  - Builds the ASP.NET project and MedyxHMS-Lic desktop tool.
+  - Runs the automated test suite.
+  - Optionally generates a smoke-test `.lic` file.
+  - Optionally checks HTTP reachability for `/`, `/Account/Login`, `/Chatbot`, and `/health`.
+
+- `Invoke-LicenseToolAutomation.ps1`
+  - Automates the interactive MedyxHMS-Lic console workflow for key generation and license creation.
+
+- `UAT-Smoke.config.template.json`
+  - Template configuration for `Invoke-UatSmoke.ps1`.
+
+### Example
+
+```powershell
+pwsh .\scripts\Invoke-UatSmoke.ps1 -BaseUrl "https://localhost:5001"
+```

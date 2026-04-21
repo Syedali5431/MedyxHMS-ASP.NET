@@ -859,10 +859,12 @@ END");
                 "Doctor",
                 "Nurse",
                 "Staff",
+                "Accountant",
                 "Receptionist",
                 "Pharmacist",
                 "LabTechnician",
-                "Radiologist"
+                "Radiologist",
+                "Patient"
             };
 
             // Define features/permissions
@@ -986,15 +988,20 @@ END");
                     "ViewLabTests", "AddLabTests", "ViewRadiologyTests", "AddRadiologyTests"
                 },
                 "Nurse" => new[] {
-                    "ViewPatients",
+                    "ViewPatients", "AddPatients", "EditPatients",
                     "ViewAppointments",
                     "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
                     "ViewMedicines", "DispenseMedicines"
                 },
                 "Staff" => new[] {
-                    "ViewPatients",
-                    "ViewAppointments", "AddAppointments",
-                    "ViewBills"
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments",
+                    "ViewBills", "AddBills"
+                },
+                "Accountant" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewBills", "AddBills", "EditBills", "ProcessPayments",
+                    "ViewReports"
                 },
                 "Receptionist" => new[] {
                     "ViewPatients", "AddPatients", "EditPatients",
@@ -1002,17 +1009,18 @@ END");
                     "ViewBills", "AddBills"
                 },
                 "Pharmacist" => new[] {
-                    "ViewPatients",
+                    "ViewPatients", "AddPatients", "EditPatients",
                     "ViewMedicines", "AddMedicines", "DispenseMedicines"
                 },
                 "LabTechnician" => new[] {
-                    "ViewPatients",
+                    "ViewPatients", "AddPatients", "EditPatients",
                     "ViewLabTests", "AddLabTests"
                 },
                 "Radiologist" => new[] {
-                    "ViewPatients",
+                    "ViewPatients", "AddPatients", "EditPatients",
                     "ViewRadiologyTests", "AddRadiologyTests"
                 },
+                "Patient" => Array.Empty<string>(),
                 _ => Array.Empty<string>()
             };
 

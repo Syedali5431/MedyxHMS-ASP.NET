@@ -4,6 +4,11 @@
 
 Front-desk staff, clinicians, billing staff, and patient-facing operational users.
 
+## Role-Specific Guides
+
+- Detailed role-wise guides are available in [user guides/README.md](user%20guides/README.md).
+- Use [user guides/TEST-READINESS-CHECKLIST.md](user%20guides/TEST-READINESS-CHECKLIST.md) for structured UAT.
+
 ## Core Daily Workflows
 
 ### Patients

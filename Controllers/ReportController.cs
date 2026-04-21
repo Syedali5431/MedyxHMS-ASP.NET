@@ -164,7 +164,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpGet]
         public async Task<IActionResult> ScheduleReport()
         {
@@ -180,7 +180,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPost]
         public async Task<IActionResult> ScheduleReport(ReportSchedule schedule)
         {
@@ -201,7 +201,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPost]
         public async Task<IActionResult> DeleteReport(int id)
         {
@@ -221,7 +221,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpPost]
         public async Task<IActionResult> DeleteSchedule(int id)
         {

@@ -20,3 +20,27 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.chatbot-fab {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fff;
+  background: linear-gradient(135deg, #0d6efd, #0a58ca);
+  box-shadow: 0 10px 24px rgba(13, 110, 253, 0.35);
+  z-index: 1200;
+}
+
+.chatbot-fab:hover {
+  color: #fff;
+  transform: translateY(-1px);
+}

@@ -25,7 +25,7 @@ public class LicenseServiceTests
         await context.SaveChangesAsync();
 
         var settings = new FakeSettingService();
-        var service = new LicenseService(context, new FakeEmailNotificationProvider(), settings, NullLogger<LicenseService>.Instance);
+        var service = new LicenseService(context, new FakeEmailNotificationProvider(), settings, new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
         var snapshot = await service.GetCurrentSnapshotAsync();
 
@@ -47,7 +47,7 @@ public class LicenseServiceTests
         });
         await context.SaveChangesAsync();
 
-        var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), NullLogger<LicenseService>.Instance);
+        var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => service.RenewAsync(4, "superadmin-user-id"));
     }
@@ -74,7 +74,7 @@ public class LicenseServiceTests
 
         var emailProvider = new FakeEmailNotificationProvider();
         var settings = new FakeSettingService();
-        var service = new LicenseService(context, emailProvider, settings, NullLogger<LicenseService>.Instance);
+        var service = new LicenseService(context, emailProvider, settings, new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
         var first = await service.SendReminderAsync(force: false, performedByUserId: "u1");
         var second = await service.SendReminderAsync(force: false, performedByUserId: "u1");
@@ -100,7 +100,7 @@ public class LicenseServiceTests
         });
         await context.SaveChangesAsync();
 
-        var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), NullLogger<LicenseService>.Instance);
+        var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
         var staffPrincipal = CreatePrincipal("staff-1", "Staff");
         var superAdminPrincipal = CreatePrincipal("admin-1", "SuperAdmin");

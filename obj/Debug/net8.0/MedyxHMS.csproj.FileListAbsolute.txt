@@ -1485,3 +1485,4 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\refint\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.pdb
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.genruntimeconfig.cache
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\ref\MedyxHMS.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json

@@ -147,6 +147,16 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Implemented and validated (build clean, 0 errors)
 - Read this for the dynamic login role selection and module visibility control implementation.
 
+### PH16 - Role Enforcement Hardening and UAT Automation
+- Document: [PH16.md](PH16.md)
+- Focus:
+  - role-permission seed alignment for Accountant and Patient
+  - view-layer permission hardening for staff-only actions
+  - Admin and SuperAdmin-only report editing guardrails
+  - automated UAT smoke scripts for build, tests, license generation, and HTTP reachability
+- **Status:** Implemented for test readiness and operational validation
+- Read this for the final role-security and smoke-test automation pass.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -163,6 +173,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 13. [PH13.md](PH13.md)
 14. [PH14.md](PH14.md)
 15. [PH15.md](PH15.md)
+16. [PH16.md](PH16.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -178,6 +189,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Chatbot operational controls, escalation, and analytics: [PH13.md](PH13.md)
 - Authentication redirect assurance and dashboard routing: [PH14.md](PH14.md)
 - Dynamic role selection login and module management system: [PH15.md](PH15.md)
+- Role enforcement hardening and smoke automation: [PH16.md](PH16.md)
 
 ## Planned Design Docs
 
@@ -198,8 +210,15 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 ### Security and Performance Validation
 - Document: [SECURITY-PERFORMANCE-VALIDATION.md](SECURITY-PERFORMANCE-VALIDATION.md)
 
+### UAT Automation
+- Script Folder: [../scripts/README.md](../scripts/README.md)
+- Smoke Runner: [../scripts/Invoke-UatSmoke.ps1](../scripts/Invoke-UatSmoke.ps1)
+- License Automation: [../scripts/Invoke-LicenseToolAutomation.ps1](../scripts/Invoke-LicenseToolAutomation.ps1)
+
 ### User Guidance
 - Document: [USER-GUIDE.md](USER-GUIDE.md)
+- Role Guides Folder: [user guides/README.md](user%20guides/README.md)
+- Test Checklist: [user guides/TEST-READINESS-CHECKLIST.md](user%20guides/TEST-READINESS-CHECKLIST.md)
 
 ### Admin Guidance
 - Document: [ADMIN-GUIDE.md](ADMIN-GUIDE.md)
