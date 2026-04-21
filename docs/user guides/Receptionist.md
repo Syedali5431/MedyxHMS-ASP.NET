@@ -21,3 +21,7 @@
 
 ## AI Assistant
 - Use floating AI launcher for guidance on booking and front-office operations.
+
+## Account Notes
+- Receptionist accounts require unique `user_name` values during creation.
+- New signup-based accounts stay inactive until approved by Admin/SuperAdmin.

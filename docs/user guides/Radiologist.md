@@ -16,3 +16,7 @@
 
 ## AI Assistant
 - Use bottom-right AI launcher for process help.
+
+## Account Notes
+- Radiologist accounts require unique `user_name` values during creation.
+- Signup-created accounts are activated only after Admin/SuperAdmin approval.

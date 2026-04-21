@@ -78,6 +78,25 @@ Rollback steps:
 - Review billing and appointment creation during the first live hour.
 - Confirm support desk has escalation contacts and issue templates.
 
+## License Deployment Quick Checklist (MedyxHMS-Lic)
+
+Use this checklist when applying or refreshing the production license file.
+
+1. Sign in as SuperAdmin.
+2. Run MedyxHMS-Lic and generate a new RSA key pair.
+3. Copy public key modulus, exponent, and verification key from MedyxHMS-Lic.
+4. In ASP.NET License page, paste the upload key values and save.
+5. In MedyxHMS-Lic, select term and licensed modules, then generate MedyxHMS.lic.
+6. Upload MedyxHMS.lic from ASP.NET License page.
+7. Verify import success, updated expiry, and entitlement matrix accuracy.
+8. Export entitlement matrix CSV for deployment evidence.
+9. Confirm upload key fields are cleared after successful upload (one-time key usage behavior).
+
+Reference:
+
+- `docs/user guides/MedyxHMS-Lic-Operator-Guide.md`
+- `docs/license Guide.md`
+
 ## Windows Clone and Checkout Recovery
 
 If clone/check-out fails with `Filename too long` on Windows, apply the following recovery steps:

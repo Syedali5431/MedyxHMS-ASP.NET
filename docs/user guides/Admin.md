@@ -11,6 +11,21 @@
 ## Core Modules
 - Patient, Appointment, OPD/IPD, Billing, Pharmacy, Lab/Radiology, Reports, CMS.
 
+## Accounts Approval and Activation
+- Use Accounts Approval in admin navigation to process new signup requests.
+- Approve requests to activate accounts.
+- Reject requests with a mandatory reason.
+
+## Password Governance
+- Use Password Management to reset user passwords.
+- Admin can reset non-SuperAdmin accounts.
+- Admin cannot reset SuperAdmin account passwords.
+
+## Identity Policy
+- New accounts must include a unique `user_name`.
+- Duplicate usernames are blocked during creation.
+- Newly created users are assigned numeric user IDs in identity records.
+
 ## Patient Operations
 - Add/edit patient details from Patient module.
 - Track admission, bed assignment, and discharge workflow.

@@ -4,6 +4,12 @@
 - Login with Patient role.
 - Redirect opens Patient Portal dashboard.
 
+## Signup and Account Activation
+- Patient signup requires a unique `user_name`.
+- New signup requests are sent to Admin/SuperAdmin Accounts Approval.
+- Dashboard access is enabled only after approval.
+- If rejected, contact Admin/SuperAdmin for next steps.
+
 ## Core Modules
 - My Appointments, Medical Records, Bills, Profile.
 

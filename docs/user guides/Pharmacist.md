@@ -17,3 +17,7 @@
 
 ## AI Assistant
 - Use floating AI launcher for medication workflow help and navigation.
+
+## Account Notes
+- Pharmacist accounts require unique `user_name` values during creation.
+- Signup-created accounts are activated only after Admin/SuperAdmin approval.

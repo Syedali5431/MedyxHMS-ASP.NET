@@ -48,3 +48,11 @@ Patients can:
 - Do not share accounts.
 - Use export/download features only for authorized operational work.
 - Report incorrect patient, billing, or appointment data immediately.
+
+## Account and Access Updates (April 2026)
+
+- Self-signup is now approval-based: newly registered accounts remain inactive until approved by Admin or SuperAdmin.
+- Admin and SuperAdmin can process account requests from the Accounts Approval module.
+- Account rejection now requires a reason and records it for traceability.
+- New account creation requires a unique `user_name`; duplicate usernames are blocked.
+- Identity records for newly created users use numeric user IDs.

@@ -12,11 +12,29 @@
 ## Core Modules
 - Dashboard, Users/Roles, Settings, License, Reports, Audit, CMS, Chatbot Admin.
 
+## Accounts Approval and Activation
+- Open Accounts Approval from the admin navigation.
+- Review pending signup requests and approve or reject.
+- Rejection requires a reason and is logged for auditability.
+- Approved accounts are activated immediately.
+
+## Password Governance
+- SuperAdmin can reset passwords for all users, including SuperAdmin accounts.
+- Use Password Management under account governance screens for reset operations.
+
+## Identity Policy
+- New accounts must include a unique `user_name`.
+- Duplicate usernames are blocked during account creation and signup.
+- Newly created identity records use numeric user IDs.
+
 ## License Workflow
 - Go to License page.
 - Upload signed MedyxHMS.lic generated from the MedyxHMS-Lic desktop tool.
 - Review module entitlement matrix.
 - Use Export CSV to download entitlement snapshot.
+
+Detailed runbook:
+- [MedyxHMS-Lic-Operator-Guide.md](MedyxHMS-Lic-Operator-Guide.md)
 
 ## Reports and Exports
 - Open Reports module and generate required report.

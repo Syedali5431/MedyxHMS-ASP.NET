@@ -17,3 +17,7 @@
 
 ## AI Assistant
 - Use floating AI button for operational guidance.
+
+## Account Notes
+- Lab technician accounts require unique `user_name` values.
+- New signup accounts remain inactive until approved by Admin/SuperAdmin.

@@ -23,3 +23,7 @@
 
 ## AI Assistant
 - Use floating AI button to get help with module navigation and process guidance.
+
+## Account Notes
+- Doctor accounts created by Admin/SuperAdmin now require unique `user_name` values.
+- New doctor accounts created via signup remain inactive until approved.

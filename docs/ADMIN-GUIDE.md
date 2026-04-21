@@ -10,6 +10,9 @@ Administrators, SuperAdmin users, and system operators.
 - review audit logs and notification delivery logs
 - manage public booking approval flow
 - verify backup, deployment, and validation procedures are followed
+- manage account approval queue (approve/reject with reason)
+- enforce password governance boundaries (Admin vs SuperAdmin target restrictions)
+- coordinate SuperAdmin-driven license file upload workflow
 
 ## Admin Validation Checklist
 
@@ -18,6 +21,24 @@ Administrators, SuperAdmin users, and system operators.
 - Confirm staff roles/permissions exist as expected.
 - Confirm key modules load: patients, appointments, billing, CMS, diagnostics.
 - Confirm exports and PDF downloads work for authorized users.
+- Confirm pending signup requests appear in Accounts Approval.
+- Confirm rejected requests require a reason and are tracked.
+- Confirm username uniqueness validation blocks duplicate `user_name` values.
+
+## Account Governance Operations
+
+- Use Accounts Approval to process signup requests.
+- Approval activates accounts immediately.
+- Rejection requires a reason and is audit logged.
+- Password resets must follow role boundaries:
+	- Admin can reset non-SuperAdmin users.
+	- SuperAdmin can reset all users.
+
+## Licensing Operations
+
+- Only SuperAdmin uploads/updates license files.
+- Use the license operator guide for MedyxHMS-Lic usage and upload sequence:
+	- [user guides/MedyxHMS-Lic-Operator-Guide.md](user%20guides/MedyxHMS-Lic-Operator-Guide.md)
 
 ## Audit and Support Expectations
 

@@ -18,3 +18,7 @@
 
 ## AI Assistant
 - Use bottom-right AI button for billing workflow guidance.
+
+## Account Notes
+- Billing staff accounts require unique `user_name` values.
+- Account access through signup begins only after Admin/SuperAdmin approval.

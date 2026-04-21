@@ -17,3 +17,7 @@
 
 ## AI Assistant
 - Use bottom-right AI button for quick workflow/navigation guidance.
+
+## Account Notes
+- Nurse accounts require unique `user_name` values during creation.
+- If registered through signup, access remains pending until Admin/SuperAdmin approval.

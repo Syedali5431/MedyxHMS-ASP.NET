@@ -36,6 +36,25 @@ This document covers the remaining Step 5.2 non-code operational tasks:
 - deployment/rollback awareness
 - incident reporting path
 
+### Session 5: Account Governance (Admin/SuperAdmin)
+
+- Accounts Approval workflow for signup requests
+- approve vs reject decision path
+- mandatory reject reason behavior
+- password reset authority boundaries by role
+- duplicate `user_name` handling during account creation
+
+### Session 6: License Operations (SuperAdmin)
+
+- run MedyxHMS-Lic tool and generate key pair
+- generate signed MedyxHMS.lic with module entitlements
+- upload/import license into ASP.NET license screen
+- verify entitlement matrix and export CSV snapshot
+- understand one-time verification key consumption policy
+
+Reference guide:
+- [user guides/MedyxHMS-Lic-Operator-Guide.md](user%20guides/MedyxHMS-Lic-Operator-Guide.md)
+
 ## Support Escalation Model
 
 1. First line: operational user or department lead
@@ -57,6 +76,8 @@ This document covers the remaining Step 5.2 non-code operational tasks:
 - monitor failed notification deliveries
 - monitor appointment creation and payment processing success
 - monitor export/report failures
+- monitor account approval backlog and rejection trends
+- monitor license import/verification failures and entitlement lock events
 
 ## Feedback Collection
 
