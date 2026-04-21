@@ -51,20 +51,31 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             if (ModelState.IsValid)
             {
+                var user = await _userManager.FindByEmailAsync(viewModel.Email)
+                    ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == viewModel.Email);
+
+                if (user == null)
+                {
+                    ModelState.AddModelError(string.Empty, "Invalid email or password");
+                    return View("~/Views/Account/Login.cshtml", viewModel);
+                }
+
+                if (!user.IsActive)
+                {
+                    ModelState.AddModelError(string.Empty, "Your account is inactive. Please contact Admin or SuperAdmin.");
+                    return View("~/Views/Account/Login.cshtml", viewModel);
+                }
+
                 var result = await _signInManager.PasswordSignInAsync(
-                    viewModel.Email,
+                    user.UserName ?? user.Email ?? viewModel.Email,
                     viewModel.Password,
                     viewModel.RememberMe,
                     lockoutOnFailure: true);
 
                 if (result.Succeeded)
                 {
-                    var user = await _userManager.FindByEmailAsync(viewModel.Email);
-                    if (user != null)
-                    {
-                        user.LastLoginDate = DateTime.UtcNow;
-                        await _userManager.UpdateAsync(user);
-                    }
+                    user.LastLoginDate = DateTime.UtcNow;
+                    await _userManager.UpdateAsync(user);
 
                     return LocalRedirect(returnUrl ?? Url.Content("~/PatientPortal/Dashboard"));
                 }

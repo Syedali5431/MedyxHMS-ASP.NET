@@ -19,7 +19,8 @@
                         <i class="fas fa-ban me-1"></i>Your license has expired. Please contact your administrator.
                     </div>
                 }
-                <form asp-action="Login" method="post" id="loginForm">
+                <form action="/Account/Login" method="post" id="loginForm">
+                    @Html.AntiForgeryToken()
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" id="serverErrors"></div>
 
                     @* Step 1: credentials *@
@@ -90,7 +91,7 @@
 
                 <hr />
                 <div class="text-center small">
-                    New staff/admin user? <a asp-action="Register" class="fw-semibold">Sign up for approval</a>
+                    New staff/admin user? <a href="/Account/Register" class="fw-semibold">Sign up for approval</a>
                 </div>
                 <div class="text-center small mt-1">
                     Patient? <a href="/PatientPortal/Account/Register" class="fw-semibold text-success">Patient sign up</a>
