@@ -1,0 +1,80 @@
+@model IEnumerable<MedyxHMS.Models.PatientInsurance>
+@{
+    ViewData["Title"] = "Insurance — " + ViewBag.PatientName;
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4><i class="fas fa-shield-alt"></i> Insurance — @ViewBag.PatientName</h4>
+        <a asp-action="InsuranceCreate" asp-route-patientId="@ViewBag.PatientId" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add Insurance
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info">No insurance records on file.</div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">
+                <thead class="table-light">
+                    <tr>
+                        <th>Provider</th>
+                        <th>Policy #</th>
+                        <th>Plan</th>
+                        <th>Holder</th>
+                        <th>Valid From</th>
+                        <th>Valid To</th>
+                        <th>Active</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var ins in Model)
+                    {
+                        <tr>
+                            <td>@ins.ProviderName</td>
+                            <td>@ins.PolicyNumber</td>
+                            <td>@ins.InsurancePlan</td>
+                            <td>@ins.HolderName</td>
+                            <td>@ins.ValidFrom?.ToString("MMM dd, yyyy")</td>
+                            <td>@ins.ValidTo?.ToString("MMM dd, yyyy")</td>
+                            <td>
+                                @if (ins.IsActive)
+                                {
+                                    <span class="badge bg-success">Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Inactive</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="InsuranceEdit" asp-route-id="@ins.Id" class="btn btn-sm btn-outline-primary">Edit</a>
+                                @if (User.IsInRole("Receptionist") || User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                                {
+                                    <form asp-action="InsuranceDelete" method="post" class="d-inline" onsubmit="return confirm('Delete this insurance record?')">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@ins.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <a asp-action="Details" asp-route-id="@ViewBag.PatientId" class="btn btn-outline-secondary btn-sm mt-2">
+        <i class="fas fa-arrow-left"></i> Back to Patient
+    </a>
+</div>

@@ -137,11 +137,33 @@ namespace MedyxHMS.Controllers.PatientPortal
 
                     if (registeredPatient != null)
                     {
-                        // Sign in the user
-                        await _signInManager.SignInAsync(registeredPatient.User, isPersistent: false);
+                        // Create approval request instead of signing in immediately
+                        var existingRequest = await _context.AccountApprovalRequests
+                            .AnyAsync(r => r.RequestedUserId == registeredPatient.UserId);
 
-                        TempData["SuccessMessage"] = "Patient registration successful!";
-                        return RedirectToAction("Index", "Dashboard", new { area = "PatientPortal" });
+                        if (!existingRequest && registeredPatient.UserId != null)
+                        {
+                            // Ensure account is inactive until approved
+                            var appUser = await _userManager.FindByIdAsync(registeredPatient.UserId);
+                            if (appUser != null)
+                            {
+                                appUser.IsActive = false;
+                                await _userManager.UpdateAsync(appUser);
+                            }
+
+                            _context.AccountApprovalRequests.Add(new MedyxHMS.Models.AccountApprovalRequest
+                            {
+                                RequestedUserId = registeredPatient.UserId,
+                                RequestedRole = "Patient",
+                                Status = "Pending",
+                                RequestedAtUtc = DateTime.UtcNow,
+                                Notes = "Patient self-registration awaiting Admin/SuperAdmin approval."
+                            });
+                            await _context.SaveChangesAsync();
+                        }
+
+                        TempData["SuccessMessage"] = "Registration submitted successfully. Your account will be activated after Admin or SuperAdmin approval. You will receive a notification once approved.";
+                        return RedirectToAction("Login");
                     }
 
                     ModelState.AddModelError(string.Empty, "Patient registration failed");

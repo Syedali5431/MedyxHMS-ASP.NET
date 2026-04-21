@@ -45,6 +45,7 @@ namespace MedyxHMS.ViewModels
         public OPDVisitDto CurrentVisit { get; set; }
         public PatientPortalDto Patient { get; set; }
         public StaffDto Doctor { get; set; }
+        public List<MedyxHMS.Models.VisitNoteHistory> NoteHistory { get; set; } = new();
     }
 
     public class IPDAdmissionViewModel

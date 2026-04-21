@@ -1,7 +1,9 @@
+using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
@@ -12,12 +14,16 @@ namespace MedyxHMS.Controllers
         private readonly ILabService _labService;
         private readonly IPatientService _patientService;
         private readonly IAuditService _auditService;
+        private readonly ApplicationDbContext _context;
+        private readonly ISystemNotificationService _notificationService;
 
-        public LabController(ILabService labService, IPatientService patientService, IAuditService auditService)
+        public LabController(ILabService labService, IPatientService patientService, IAuditService auditService, ApplicationDbContext context, ISystemNotificationService notificationService)
         {
             _labService = labService;
             _patientService = patientService;
             _auditService = auditService;
+            _context = context;
+            _notificationService = notificationService;
         }
 
         // ======== Lab Test Management ========
@@ -206,6 +212,12 @@ namespace MedyxHMS.Controllers
             if (result == null)
                 return NotFound();
 
+            ViewBag.NoteHistory = await _context.LabNoteHistories
+                .Where(h => h.LabResultId == id)
+                .OrderByDescending(h => h.UpdatedAtUtc)
+                .Take(20)
+                .ToListAsync();
+
             return View(result);
         }
 
@@ -222,6 +234,37 @@ namespace MedyxHMS.Controllers
             {
                 var existingResult = await _labService.GetLabResultByIdAsync(id);
                 var oldValues = $"Status: {existingResult.Status}, Value: {existingResult.ResultValue}";
+
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+                var oldNotes = existingResult.Notes ?? "";
+                var newNotes = model.Notes ?? "";
+
+                // Save note history if notes changed
+                if (!string.Equals(oldNotes, newNotes, StringComparison.Ordinal))
+                {
+                    _context.LabNoteHistories.Add(new LabNoteHistory
+                    {
+                        LabResultId = existingResult.Id,
+                        Notes = newNotes,
+                        UpdatedBy = currentUserId,
+                        UpdatedAtUtc = DateTime.UtcNow
+                    });
+
+                    // Notify patient
+                    var patient = await _patientService.GetPatientByIdAsync(existingResult.PatientId);
+                    if (patient?.UserId != null)
+                    {
+                        await _notificationService.CreateForUserAsync(
+                            patient.UserId,
+                            "Lab report notes updated",
+                            $"Notes for your lab order #{existingResult.OrderNumber} have been updated by the lab.",
+                            "LabNote",
+                            nameof(LabResult),
+                            existingResult.Id.ToString());
+                    }
+
+                    await _context.SaveChangesAsync();
+                }
 
                 var updatedResult = await _labService.UpdateLabResultAsync(model);
                 var newValues = $"Status: {updatedResult.Status}, Value: {updatedResult.ResultValue}";

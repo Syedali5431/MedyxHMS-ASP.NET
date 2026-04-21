@@ -73,6 +73,7 @@ builder.Services.AddScoped<AfricaTalkingSmsNotificationProvider>();
 builder.Services.AddScoped<ISmsNotificationProvider, SmsNotificationProviderRouter>();
 builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotificationService>();
 builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
+builder.Services.AddScoped<ISystemNotificationService, SystemNotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.AddScoped<ILicenseFileService, LicenseFileService>();

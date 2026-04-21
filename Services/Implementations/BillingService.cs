@@ -8,10 +8,12 @@ namespace MedyxHMS.Services.Implementations
     public class BillingService : IBillingService
     {
         private readonly ApplicationDbContext _context;
+        private readonly ISystemNotificationService _systemNotificationService;
 
-        public BillingService(ApplicationDbContext context)
+        public BillingService(ApplicationDbContext context, ISystemNotificationService systemNotificationService)
         {
             _context = context;
+            _systemNotificationService = systemNotificationService;
         }
 
         public async Task<IEnumerable<Bill>> GetAllBillsAsync()
@@ -43,6 +45,8 @@ namespace MedyxHMS.Services.Implementations
             _context.Bills.Add(bill);
             await _context.SaveChangesAsync();
 
+            await NotifyInvoiceChangeAsync(bill, "Invoice generated", "InvoiceCreated");
+
             return bill;
         }
 
@@ -59,7 +63,41 @@ namespace MedyxHMS.Services.Implementations
             existingBill.Notes = bill.Notes;
 
             await _context.SaveChangesAsync();
+
+            await NotifyInvoiceChangeAsync(existingBill, "Invoice updated", "InvoiceUpdated");
             return existingBill;
+        }
+
+        private async Task NotifyInvoiceChangeAsync(Bill bill, string title, string notificationType)
+        {
+            var persistedBill = await _context.Bills
+                .Include(b => b.Patient)
+                .FirstOrDefaultAsync(b => b.Id == bill.Id);
+
+            if (persistedBill == null)
+                return;
+
+            var message = $"{title}: {persistedBill.BillNumber} for patient {persistedBill.Patient?.FirstName} {persistedBill.Patient?.LastName}.";
+
+            if (persistedBill.Patient?.UserId != null)
+            {
+                await _systemNotificationService.CreateForUserAsync(
+                    persistedBill.Patient.UserId,
+                    title,
+                    message,
+                    notificationType,
+                    "Bill",
+                    persistedBill.Id.ToString(),
+                    persistedBill.PatientId);
+            }
+
+            await _systemNotificationService.NotifyRolesAsync(
+                new[] { "Admin", "SuperAdmin", "Receptionist", "Accountant" },
+                title,
+                message,
+                notificationType,
+                "Bill",
+                persistedBill.Id.ToString());
         }
 
         public async Task<bool> DeleteBillAsync(int id)

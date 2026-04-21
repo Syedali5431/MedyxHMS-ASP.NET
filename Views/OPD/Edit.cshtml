@@ -45,6 +45,26 @@
                             <textarea name="Visit.Notes" id="Visit_Notes" class="form-control" rows="2">@Model.Visit.Notes</textarea>
                         </div>
 
+                        @if (Model.NoteHistory.Any())
+                        {
+                            <div class="mb-3">
+                                <a class="btn btn-link btn-sm p-0" data-bs-toggle="collapse" href="#noteHistory">
+                                    <i class="fas fa-history"></i> View previous notes (@Model.NoteHistory.Count)
+                                </a>
+                                <div class="collapse mt-2" id="noteHistory">
+                                    <div class="timeline ps-2 border-start border-2 border-secondary">
+                                        @foreach (var h in Model.NoteHistory)
+                                        {
+                                            <div class="mb-3">
+                                                <small class="text-muted">@h.UpdatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")</small>
+                                                <p class="mb-0 fst-italic text-secondary">@h.Notes</p>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
                         <div class="mb-3">
                             <label for="Visit_PaymentStatus" class="form-label">Payment Status</label>
                             <select name="Visit.PaymentStatus" id="Visit_PaymentStatus" class="form-select">

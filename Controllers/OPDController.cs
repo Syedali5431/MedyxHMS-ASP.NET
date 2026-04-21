@@ -1,3 +1,4 @@
+using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -5,6 +6,8 @@ using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using PatientDto = MedyxHMS.DTOs.PatientDto;
 
 namespace MedyxHMS.Controllers
@@ -16,13 +19,17 @@ namespace MedyxHMS.Controllers
         private readonly IPatientService _patientService;
         private readonly IStaffService _staffService;
         private readonly IBillingService _billingService;
+        private readonly ApplicationDbContext _context;
+        private readonly ISystemNotificationService _notificationService;
 
-        public OPDController(IOPDService opdService, IPatientService patientService, IStaffService staffService, IBillingService billingService)
+        public OPDController(IOPDService opdService, IPatientService patientService, IStaffService staffService, IBillingService billingService, ApplicationDbContext context, ISystemNotificationService notificationService)
         {
             _opdService = opdService;
             _patientService = patientService;
             _staffService = staffService;
             _billingService = billingService;
+            _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<IActionResult> Index(string filter = "all", int page = 1, int pageSize = 10,
@@ -344,6 +351,13 @@ namespace MedyxHMS.Controllers
                 } : new StaffDto()
             };
 
+            // Load note history
+            viewModel.NoteHistory = await _context.VisitNoteHistories
+                .Where(h => h.OPDVisitId == id)
+                .OrderByDescending(h => h.UpdatedAtUtc)
+                .Take(20)
+                .ToListAsync();
+
             return View(viewModel);
         }
 
@@ -359,6 +373,35 @@ namespace MedyxHMS.Controllers
                     return NotFound();
                 }
 
+                var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "";
+                var oldNotes = existingVisit.Notes ?? "";
+                var newNotes = model.Visit.Notes ?? "";
+
+                // Save note history if notes changed
+                if (!string.Equals(oldNotes, newNotes, StringComparison.Ordinal))
+                {
+                    _context.VisitNoteHistories.Add(new VisitNoteHistory
+                    {
+                        OPDVisitId = existingVisit.Id,
+                        Notes = newNotes,
+                        UpdatedBy = currentUserId,
+                        UpdatedAtUtc = DateTime.UtcNow
+                    });
+
+                    // Notify patient
+                    var patient = await _patientService.GetPatientByIdAsync(existingVisit.PatientId);
+                    if (patient?.UserId != null)
+                    {
+                        await _notificationService.CreateForUserAsync(
+                            patient.UserId,
+                            "Doctor updated your visit notes",
+                            $"Notes for your OPD visit on {existingVisit.VisitDate:MMM dd, yyyy} have been updated.",
+                            "DoctorNote",
+                            nameof(OPDVisit),
+                            existingVisit.Id.ToString());
+                    }
+                }
+
                 existingVisit.Diagnosis = model.Visit.Diagnosis;
                 existingVisit.Treatment = model.Visit.Treatment;
                 existingVisit.Prescription = model.Visit.Prescription;
@@ -366,6 +409,7 @@ namespace MedyxHMS.Controllers
                 existingVisit.PaymentStatus = model.Visit.PaymentStatus;
 
                 await _opdService.UpdateOPDVisitAsync(existingVisit);
+                await _context.SaveChangesAsync();
                 TempData["Success"] = "OPD visit updated successfully.";
                 return RedirectToAction(nameof(Index));
             }

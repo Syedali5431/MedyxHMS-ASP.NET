@@ -42,6 +42,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureChatbotTablesAsync();
             await EnsureModuleTablesAsync();
             await EnsureAccountApprovalTableAsync();
+            await EnsureClinicalEnhancementTablesAsync();
             await EnsureUserIdentityConstraintsAsync();
             await EnsureReportStoredProceduresAsync();
 
@@ -1017,6 +1018,85 @@ BEGIN
 
     CREATE INDEX [IX_NotificationDeliveryLogs_CreatedAt_Channel_Status]
         ON [dbo].[NotificationDeliveryLogs]([CreatedAt], [Channel], [Status]);
+END");
+        }
+
+        private async Task EnsureClinicalEnhancementTablesAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PatientInsurances]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PatientInsurances] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [PatientId] INT NOT NULL,
+        [ProviderName] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [PolicyNumber] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [InsurancePlan] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [HolderName] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [ValidFrom] DATETIME2 NULL,
+        [ValidTo] DATETIME2 NULL,
+        [ContactNumber] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [Notes] NVARCHAR(1000) NOT NULL DEFAULT(''),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        [UpdatedAtUtc] DATETIME2 NULL,
+        CONSTRAINT [FK_PatientInsurances_Patients_PatientId] FOREIGN KEY([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_PatientInsurances_PatientId_IsActive_ValidTo]
+        ON [dbo].[PatientInsurances]([PatientId], [IsActive], [ValidTo]);
+END
+
+IF OBJECT_ID(N'[dbo].[VisitNoteHistories]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[VisitNoteHistories] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [OPDVisitId] INT NOT NULL,
+        [Notes] NVARCHAR(4000) NOT NULL DEFAULT(''),
+        [UpdatedBy] NVARCHAR(256) NOT NULL DEFAULT(''),
+        [UpdatedAtUtc] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_VisitNoteHistories_OPDVisits_OPDVisitId] FOREIGN KEY([OPDVisitId]) REFERENCES [dbo].[OPDVisits]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_VisitNoteHistories_OPDVisitId_UpdatedAtUtc]
+        ON [dbo].[VisitNoteHistories]([OPDVisitId], [UpdatedAtUtc]);
+END
+
+IF OBJECT_ID(N'[dbo].[LabNoteHistories]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[LabNoteHistories] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [LabResultId] INT NOT NULL,
+        [Notes] NVARCHAR(4000) NOT NULL DEFAULT(''),
+        [UpdatedBy] NVARCHAR(256) NOT NULL DEFAULT(''),
+        [UpdatedAtUtc] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_LabNoteHistories_LabResults_LabResultId] FOREIGN KEY([LabResultId]) REFERENCES [dbo].[LabResults]([Id]) ON DELETE CASCADE
+    );
+
+    CREATE INDEX [IX_LabNoteHistories_LabResultId_UpdatedAtUtc]
+        ON [dbo].[LabNoteHistories]([LabResultId], [UpdatedAtUtc]);
+END
+
+IF OBJECT_ID(N'[dbo].[SystemNotifications]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SystemNotifications] (
+        [Id] BIGINT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [UserId] NVARCHAR(450) NOT NULL,
+        [PatientId] INT NULL,
+        [Title] NVARCHAR(200) NOT NULL DEFAULT(''),
+        [Message] NVARCHAR(2000) NOT NULL DEFAULT(''),
+        [Type] NVARCHAR(50) NOT NULL DEFAULT('General'),
+        [RelatedEntityType] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [RelatedEntityId] NVARCHAR(100) NOT NULL DEFAULT(''),
+        [IsRead] BIT NOT NULL DEFAULT(0),
+        [CreatedAtUtc] DATETIME2 NOT NULL,
+        [ReadAtUtc] DATETIME2 NULL,
+        CONSTRAINT [FK_SystemNotifications_AspNetUsers_UserId] FOREIGN KEY([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_SystemNotifications_Patients_PatientId] FOREIGN KEY([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE SET NULL
+    );
+
+    CREATE INDEX [IX_SystemNotifications_UserId_IsRead_CreatedAtUtc]
+        ON [dbo].[SystemNotifications]([UserId], [IsRead], [CreatedAtUtc]);
 END");
         }
 

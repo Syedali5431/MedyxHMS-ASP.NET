@@ -1,9 +1,11 @@
+using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,17 +22,20 @@ namespace MedyxHMS.Controllers
         private readonly AuthService _authorizationService;
         private readonly IAuditService _auditService;
         private readonly IExportService _exportService;
+        private readonly ApplicationDbContext _context;
 
         public PatientController(
             IPatientService patientService,
             AuthService authorizationService,
             IAuditService auditService,
-            IExportService exportService)
+            IExportService exportService,
+            ApplicationDbContext context)
         {
             _patientService = patientService;
             _authorizationService = authorizationService;
             _auditService = auditService;
             _exportService = exportService;
+            _context = context;
         }
 
         // GET: Patient
@@ -510,6 +515,99 @@ namespace MedyxHMS.Controllers
             }
 
             return await _authorizationService.HasPermissionAsync(userId, $"{module}.{action}");
+        }
+
+        // ======== Insurance Management ========
+
+        private static bool CanManageInsurance(System.Security.Principal.IPrincipal user) =>
+            user.IsInRole("Patient") || user.IsInRole("Receptionist") ||
+            user.IsInRole("Admin") || user.IsInRole("SuperAdmin");
+
+        [HttpGet]
+        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceList(int patientId)
+        {
+            var patient = await _patientService.GetPatientByIdAsync(patientId);
+            if (patient == null) return NotFound();
+
+            var insurances = await _context.PatientInsurances
+                .Where(i => i.PatientId == patientId)
+                .OrderByDescending(i => i.IsActive)
+                .ThenByDescending(i => i.ValidTo)
+                .ToListAsync();
+
+            ViewBag.PatientName = $"{patient.FirstName} {patient.LastName}";
+            ViewBag.PatientId = patientId;
+            return View(insurances);
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceCreate(int patientId)
+        {
+            var patient = await _patientService.GetPatientByIdAsync(patientId);
+            if (patient == null) return NotFound();
+
+            var ins = new PatientInsurance { PatientId = patientId, IsActive = true };
+            ViewBag.PatientName = $"{patient.FirstName} {patient.LastName}";
+            return View(ins);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceCreate(PatientInsurance model)
+        {
+            ModelState.Remove("Patient");
+            if (!ModelState.IsValid)
+                return View(model);
+
+            _context.PatientInsurances.Add(model);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Insurance details added.";
+            return RedirectToAction(nameof(InsuranceList), new { patientId = model.PatientId });
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceEdit(int id)
+        {
+            var ins = await _context.PatientInsurances.FindAsync(id);
+            if (ins == null) return NotFound();
+
+            var patient = await _patientService.GetPatientByIdAsync(ins.PatientId);
+            ViewBag.PatientName = patient != null ? $"{patient.FirstName} {patient.LastName}" : "";
+            return View(ins);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceEdit(PatientInsurance model)
+        {
+            ModelState.Remove("Patient");
+            if (!ModelState.IsValid)
+                return View(model);
+
+            _context.PatientInsurances.Update(model);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Insurance details updated.";
+            return RedirectToAction(nameof(InsuranceList), new { patientId = model.PatientId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
+        public async Task<IActionResult> InsuranceDelete(int id)
+        {
+            var ins = await _context.PatientInsurances.FindAsync(id);
+            if (ins == null) return NotFound();
+
+            var patientId = ins.PatientId;
+            _context.PatientInsurances.Remove(ins);
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Insurance record deleted.";
+            return RedirectToAction(nameof(InsuranceList), new { patientId });
         }
     }
 }

@@ -28,6 +28,7 @@ namespace MedyxHMS.Models
         public string UserId { get; set; } = string.Empty;
         public string ProfileImagePath { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public bool HasInsurance { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
         public DateTime? LastVisitDate { get; set; }
 
@@ -36,6 +37,8 @@ namespace MedyxHMS.Models
         public ICollection<OPDVisit> OPDVisits { get; set; } = new List<OPDVisit>();
         public ICollection<IPDAdmission> IPDAdmissions { get; set; } = new List<IPDAdmission>();
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
+        public ICollection<PatientInsurance> Insurances { get; set; } = new List<PatientInsurance>();
+        public ICollection<SystemNotification> Notifications { get; set; } = new List<SystemNotification>();
         public ApplicationUser User { get; set; } = null!;
     }
 

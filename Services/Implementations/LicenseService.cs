@@ -16,6 +16,7 @@ namespace MedyxHMS.Services.Implementations
         private readonly IEmailNotificationProvider _emailNotificationProvider;
         private readonly ISettingService _settingService;
         private readonly ILicenseFileService _licenseFileService;
+        private readonly ISystemNotificationService _systemNotificationService;
         private readonly ILogger<LicenseService> _logger;
 
         public LicenseService(
@@ -23,12 +24,14 @@ namespace MedyxHMS.Services.Implementations
             IEmailNotificationProvider emailNotificationProvider,
             ISettingService settingService,
             ILicenseFileService licenseFileService,
+            ISystemNotificationService systemNotificationService,
             ILogger<LicenseService> logger)
         {
             _context = context;
             _emailNotificationProvider = emailNotificationProvider;
             _settingService = settingService;
             _licenseFileService = licenseFileService;
+            _systemNotificationService = systemNotificationService;
             _logger = logger;
         }
 
@@ -240,6 +243,13 @@ namespace MedyxHMS.Services.Implementations
                 license.LastReminderSentAtUtc = now;
                 license.LastReminderCycleExpiryUtc = license.ExpiresAtUtc;
                 license.UpdatedAtUtc = now;
+
+                await _systemNotificationService.NotifyAllNonPatientsAsync(
+                    "License expiry reminder",
+                    $"System license expires on {license.ExpiresAtUtc:yyyy-MM-dd}. Please renew before expiry.",
+                    "LicenseReminder",
+                    "LicenseRecord",
+                    license.Id.ToString());
             }
 
             await _context.SaveChangesAsync();

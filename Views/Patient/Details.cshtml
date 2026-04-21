@@ -26,6 +26,12 @@
                             <i class="fas fa-trash"></i> Delete
                         </a>
                     }
+                    @if (User.IsInRole("Patient") || User.IsInRole("Receptionist") || User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
+                    {
+                        <a href="@Url.Action("InsuranceList", "Patient", new { patientId = Model.Patient.Id })" class="btn btn-outline-info ml-2">
+                            <i class="fas fa-shield-alt"></i> Insurance
+                        </a>
+                    }
                     <a href="@Url.Action("Index", "Patient")" class="btn btn-secondary ml-2">
                         <i class="fas fa-arrow-left"></i> Back to Patients
                     </a>

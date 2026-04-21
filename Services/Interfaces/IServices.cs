@@ -175,6 +175,18 @@ namespace MedyxHMS.Services.Interfaces
             bool isTest = false);
     }
 
+    public interface ISystemNotificationService
+    {
+        Task CreateForUserAsync(string userId, string title, string message, string type, string relatedEntityType, string relatedEntityId, int? patientId = null);
+        Task<int> NotifyRolesAsync(IEnumerable<string> roles, string title, string message, string type, string relatedEntityType, string relatedEntityId);
+        Task<int> NotifyAllNonPatientsAsync(string title, string message, string type, string relatedEntityType, string relatedEntityId);
+        Task<IEnumerable<SystemNotification>> GetUserNotificationsAsync(string userId, int take = 50);
+        Task<int> GetUnreadCountAsync(string userId);
+        Task<bool> MarkAsReadAsync(long notificationId, string userId);
+        Task<bool> DeleteAsync(long notificationId, string userId);
+        Task<int> MarkAllAsReadAsync(string userId);
+    }
+
     public interface IExportService
     {
         byte[] BuildCsv(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);

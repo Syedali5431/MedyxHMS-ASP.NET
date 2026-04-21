@@ -57,6 +57,9 @@ namespace MedyxHMS.Data
         public DbSet<DispatchReceiveRecord> DispatchReceiveRecords { get; set; }
         public DbSet<CertificateRecord> CertificateRecords { get; set; }
         public DbSet<IdCardRecord> IdCardRecords { get; set; }
+        public DbSet<PatientInsurance> PatientInsurances { get; set; }
+        public DbSet<VisitNoteHistory> VisitNoteHistories { get; set; }
+        public DbSet<LabNoteHistory> LabNoteHistories { get; set; }
 
         // Audit & Reporting
         public DbSet<AuditLog> AuditLogs { get; set; }
@@ -68,6 +71,7 @@ namespace MedyxHMS.Data
         public DbSet<LicenseAuditLog> LicenseAuditLogs { get; set; }
         public DbSet<LicenseReminderLog> LicenseReminderLogs { get; set; }
         public DbSet<UserSession> UserSessions { get; set; }
+        public DbSet<SystemNotification> SystemNotifications { get; set; }
         public DbSet<ChatSession> ChatSessions { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
         public DbSet<ChatFeedback> ChatFeedback { get; set; }
@@ -128,6 +132,15 @@ namespace MedyxHMS.Data
                 .WithOne(a => a.Patient)
                 .HasForeignKey(a => a.PatientId);
 
+            modelBuilder.Entity<Patient>()
+                .HasMany(p => p.Insurances)
+                .WithOne(i => i.Patient)
+                .HasForeignKey(i => i.PatientId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PatientInsurance>()
+                .HasIndex(i => new { i.PatientId, i.IsActive, i.ValidTo });
+
             // Appointment relationships
             modelBuilder.Entity<Appointment>()
                 .HasOne(a => a.Doctor)
@@ -139,6 +152,24 @@ namespace MedyxHMS.Data
                 .HasOne(o => o.Patient)
                 .WithMany(p => p.OPDVisits)
                 .HasForeignKey(o => o.PatientId);
+
+            modelBuilder.Entity<VisitNoteHistory>()
+                .HasOne(h => h.OPDVisit)
+                .WithMany(v => v.NoteHistory)
+                .HasForeignKey(h => h.OPDVisitId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VisitNoteHistory>()
+                .HasIndex(h => new { h.OPDVisitId, h.UpdatedAtUtc });
+
+            modelBuilder.Entity<LabNoteHistory>()
+                .HasOne(h => h.LabResult)
+                .WithMany(r => r.NoteHistory)
+                .HasForeignKey(h => h.LabResultId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<LabNoteHistory>()
+                .HasIndex(h => new { h.LabResultId, h.UpdatedAtUtc });
 
             modelBuilder.Entity<IPDAdmission>()
                 .HasOne(i => i.Patient)
@@ -312,6 +343,21 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<UserSession>()
                 .HasIndex(s => new { s.UserId, s.IsActive, s.LastActivityUtc });
+
+            modelBuilder.Entity<SystemNotification>()
+                .HasOne(n => n.User)
+                .WithMany()
+                .HasForeignKey(n => n.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SystemNotification>()
+                .HasOne(n => n.Patient)
+                .WithMany(p => p.Notifications)
+                .HasForeignKey(n => n.PatientId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<SystemNotification>()
+                .HasIndex(n => new { n.UserId, n.IsRead, n.CreatedAtUtc });
 
             modelBuilder.Entity<ChatSession>()
                 .HasMany(s => s.Messages)

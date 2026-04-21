@@ -488,20 +488,60 @@ namespace MedyxHMS.Services.Implementations
         }
 
         // Patient Notifications
-        public Task<IEnumerable<Notification>> GetPatientNotificationsAsync(string patientId)
+        public async Task<IEnumerable<Notification>> GetPatientNotificationsAsync(string patientId)
         {
-            // This would be implemented when notifications table is added to the database
-            throw new NotImplementedException("Notifications feature not yet implemented");
+            var patient = await GetPatientByIdAsync(patientId);
+            if (patient?.UserId == null)
+            {
+                return Enumerable.Empty<Notification>();
+            }
+
+            var notifications = await _context.SystemNotifications
+                .Where(n => n.UserId == patient.UserId)
+                .OrderByDescending(n => n.CreatedAtUtc)
+                .Take(50)
+                .ToListAsync();
+
+            return notifications.Select(n => new Notification
+            {
+                Id = n.Id.ToString(),
+                PatientId = patientId,
+                Title = n.Title,
+                Message = n.Message,
+                Type = n.Type,
+                IsRead = n.IsRead,
+                CreatedDate = n.CreatedAtUtc,
+                RelatedEntityId = n.RelatedEntityId
+            });
         }
 
-        public Task<bool> MarkNotificationAsReadAsync(string notificationId)
+        public async Task<bool> MarkNotificationAsReadAsync(string notificationId)
         {
-            throw new NotImplementedException("Notifications feature not yet implemented");
+            if (!long.TryParse(notificationId, out var id))
+                return false;
+
+            var notification = await _context.SystemNotifications.FirstOrDefaultAsync(n => n.Id == id);
+            if (notification == null)
+                return false;
+
+            notification.IsRead = true;
+            notification.ReadAtUtc = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+            return true;
         }
 
-        public Task<bool> DeleteNotificationAsync(string notificationId)
+        public async Task<bool> DeleteNotificationAsync(string notificationId)
         {
-            throw new NotImplementedException("Notifications feature not yet implemented");
+            if (!long.TryParse(notificationId, out var id))
+                return false;
+
+            var notification = await _context.SystemNotifications.FirstOrDefaultAsync(n => n.Id == id);
+            if (notification == null)
+                return false;
+
+            _context.SystemNotifications.Remove(notification);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

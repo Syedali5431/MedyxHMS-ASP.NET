@@ -36,5 +36,6 @@ namespace MedyxHMS.Models
         // Navigation properties
         public Patient Patient { get; set; } = null!;
         public LabTest LabTest { get; set; } = null!;
+        public ICollection<LabNoteHistory> NoteHistory { get; set; } = new List<LabNoteHistory>();
     }
 }

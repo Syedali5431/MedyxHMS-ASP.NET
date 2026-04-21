@@ -1,0 +1,92 @@
+@model MedyxHMS.Models.LabResult
+@{
+    ViewData["Title"] = "Edit Lab Result";
+    var noteHistory = ViewBag.NoteHistory as IEnumerable<MedyxHMS.Models.LabNoteHistory> ?? Enumerable.Empty<MedyxHMS.Models.LabNoteHistory>();
+}
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-flask"></i> Edit Lab Result — Order #@Model.OrderNumber</h5>
+                </div>
+                <div class="card-body">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+                    }
+
+                    <form asp-action="EditResult" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="Id" />
+                        <input type="hidden" asp-for="OrderNumber" />
+                        <input type="hidden" asp-for="PatientId" />
+                        <input type="hidden" asp-for="LabTestId" />
+                        <input type="hidden" asp-for="OrderDate" />
+
+                        <div class="mb-3">
+                            <label asp-for="ResultValue" class="form-label"></label>
+                            <input asp-for="ResultValue" class="form-control" />
+                            <span asp-validation-for="ResultValue" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Status" class="form-label"></label>
+                            <select asp-for="Status" class="form-select">
+                                <option value="Pending">Pending</option>
+                                <option value="InProgress">In Progress</option>
+                                <option value="Completed">Completed</option>
+                                <option value="Cancelled">Cancelled</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="ResultDate" class="form-label"></label>
+                            <input asp-for="ResultDate" type="datetime-local" class="form-control" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Interpretation" class="form-label"></label>
+                            <textarea asp-for="Interpretation" class="form-control" rows="2"></textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Notes" class="form-label">Notes</label>
+                            <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
+
+                            @if (noteHistory.Any())
+                            {
+                                <div class="mt-2">
+                                    <a class="btn btn-link btn-sm p-0" data-bs-toggle="collapse" href="#noteHistory">
+                                        <i class="fas fa-history"></i> View previous notes (@noteHistory.Count())
+                                    </a>
+                                    <div class="collapse mt-2" id="noteHistory">
+                                        <div class="ps-2 border-start border-2 border-secondary">
+                                            @foreach (var h in noteHistory)
+                                            {
+                                                <div class="mb-3">
+                                                    <small class="text-muted">@h.UpdatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")</small>
+                                                    <p class="mb-0 fst-italic text-secondary">@h.Notes</p>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a asp-action="ResultDetails" asp-route-id="@Model.Id" class="btn btn-secondary">Cancel</a>
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

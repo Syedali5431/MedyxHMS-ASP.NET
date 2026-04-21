@@ -238,6 +238,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGFiXENyZWF0ZVRlc3QuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[E:/HMS/MedyxHMS-ASPNET/Views/Lab/EditResult.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGFiXEVkaXRSZXN1bHQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [E:/HMS/MedyxHMS-ASPNET/Views/Lab/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGFiXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -290,6 +294,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTW9kdWxlTWFuYWdlbWVudFxVc2Vycy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[E:/HMS/MedyxHMS-ASPNET/Views/Notifications/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTm90aWZpY2F0aW9uc1xJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [E:/HMS/MedyxHMS-ASPNET/Views/OPD/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT1BEXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -312,6 +320,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [E:/HMS/MedyxHMS-ASPNET/Views/OperationTheatre/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcT3BlcmF0aW9uVGhlYXRyZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/PatientPortal/Account/Register.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFBvcnRhbFxBY2NvdW50XFJlZ2lzdGVyLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [E:/HMS/MedyxHMS-ASPNET/Views/PatientPortal/Appointments/Book.cshtml]
@@ -368,6 +380,22 @@ build_metadata.AdditionalFiles.CssScope =
 
 [E:/HMS/MedyxHMS-ASPNET/Views/Patient/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Patient/InsuranceCreate.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFxJbnN1cmFuY2VDcmVhdGUuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Patient/InsuranceEdit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFxJbnN1cmFuY2VFZGl0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Patient/InsuranceForm.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFxJbnN1cmFuY2VGb3JtLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[E:/HMS/MedyxHMS-ASPNET/Views/Patient/InsuranceList.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUGF0aWVudFxJbnN1cmFuY2VMaXN0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [E:/HMS/MedyxHMS-ASPNET/Views/Payroll/Generate.cshtml]
