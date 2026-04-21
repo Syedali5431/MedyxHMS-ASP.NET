@@ -13,6 +13,12 @@
                 <h4 class="mb-0"><i class="fas fa-hospital-alt me-2"></i>MedyxHMS Login</h4>
             </div>
             <div class="card-body p-4">
+                @if (ViewBag.ExpiredLicense == true || Context.Request.Query["expiredLicense"] == "True")
+                {
+                    <div class="alert alert-danger py-2 small">
+                        <i class="fas fa-ban me-1"></i>Your license has expired. Please contact your administrator.
+                    </div>
+                }
                 <form asp-action="Login" method="post" id="loginForm">
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" id="serverErrors"></div>
 

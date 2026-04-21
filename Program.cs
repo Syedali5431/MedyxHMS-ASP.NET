@@ -18,7 +18,11 @@ builder.Host.UseSerilog((context, configuration) =>
 });
 
 // Add services to the container.
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
+});
+builder.Services.AddTransient<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
 builder.Services.AddHttpClient();
 
 // Configure Database Context

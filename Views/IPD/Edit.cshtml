@@ -1,0 +1,163 @@
+@model MedyxHMS.ViewModels.EditIPDAdmissionViewModel
+
+@{
+    ViewData["Title"] = "Edit IPD Admission";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-3">
+        <div class="col">
+            <h3><i class="fas fa-edit me-2"></i>Edit IPD Admission</h3>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a asp-action="Index">IPD Admissions</a></li>
+                    <li class="breadcrumb-item"><a asp-action="Details" asp-route-id="@Model.AdmissionId">Details</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row">
+        <!-- Patient & Doctor Info -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0"><i class="fas fa-user me-2"></i>Patient</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>@Model.Patient?.FirstName @Model.Patient?.LastName</strong></p>
+                    <p class="mb-1 text-muted small">@Model.Patient?.Phone</p>
+                    <p class="mb-0 text-muted small">@Model.Patient?.Gender</p>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0"><i class="fas fa-user-md me-2"></i>Doctor</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Dr. @Model.Doctor?.FirstName @Model.Doctor?.LastName</strong></p>
+                    <p class="mb-0 text-muted small">@Model.Doctor?.Department</p>
+                </div>
+            </div>
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0">Current Admission Info</h6>
+                </div>
+                <div class="card-body small">
+                    <p class="mb-1"><strong>Admitted:</strong> @Model.CurrentAdmission?.AdmissionDate.ToString("MMM dd, yyyy")</p>
+                    <p class="mb-1"><strong>Type:</strong> @Model.CurrentAdmission?.AdmissionType</p>
+                    <p class="mb-1"><strong>Daily Rate:</strong> @Model.CurrentAdmission?.DailyCharges.ToString("C")</p>
+                    <p class="mb-0"><strong>Status:</strong>
+                        <span class="badge @Model.CurrentAdmission?.StatusBadgeClass">@Model.CurrentAdmission?.Status</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Form -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Update Admission Details</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" asp-for="AdmissionId" />
+                        <input type="hidden" asp-for="Admission.Id" />
+
+                        <!-- Bed Assignment -->
+                        <div class="mb-3">
+                            <label asp-for="Admission.BedId" class="form-label">Bed Assignment</label>
+                            <select asp-for="Admission.BedId" class="form-select">
+                                <option value="">-- No Bed / Unassign --</option>
+                                @foreach (var bed in Model.AvailableBeds)
+                                {
+                                    var ward = Model.Wards.FirstOrDefault(w => w.Id == bed.WardId);
+                                    <option value="@bed.Id">
+                                        @bed.BedNumber - @(ward?.Name ?? "Ward")
+                                    </option>
+                                }
+                                @if (Model.CurrentAdmission?.BedId.HasValue == true &&
+                                     !Model.AvailableBeds.Any(b => b.Id == Model.CurrentAdmission.BedId))
+                                {
+                                    <option value="@Model.CurrentAdmission.BedId">(Current bed - @Model.CurrentAdmission.BedId)</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Status -->
+                        <div class="mb-3">
+                            <label asp-for="Admission.Status" class="form-label">Status</label>
+                            <select asp-for="Admission.Status" class="form-select">
+                                <option value="Admitted">Admitted</option>
+                                <option value="Transferred">Transferred</option>
+                                <option value="Discharged">Discharged</option>
+                            </select>
+                            <span asp-validation-for="Admission.Status" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Discharge Date (show when status changed) -->
+                        <div class="mb-3" id="dischargeDateGroup">
+                            <label asp-for="Admission.DischargeDate" class="form-label">Discharge Date</label>
+                            <input asp-for="Admission.DischargeDate" type="date" class="form-control" />
+                        </div>
+
+                        <!-- Diagnosis -->
+                        <div class="mb-3">
+                            <label asp-for="Admission.Diagnosis" class="form-label">Diagnosis</label>
+                            <textarea asp-for="Admission.Diagnosis" class="form-control" rows="3" placeholder="Enter diagnosis..."></textarea>
+                            <span asp-validation-for="Admission.Diagnosis" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Treatment -->
+                        <div class="mb-3">
+                            <label asp-for="Admission.Treatment" class="form-label">Treatment Plan</label>
+                            <textarea asp-for="Admission.Treatment" class="form-control" rows="3" placeholder="Enter treatment plan..."></textarea>
+                            <span asp-validation-for="Admission.Treatment" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Notes -->
+                        <div class="mb-3">
+                            <label asp-for="Admission.Notes" class="form-label">Notes</label>
+                            <textarea asp-for="Admission.Notes" class="form-control" rows="3" placeholder="Additional notes..."></textarea>
+                            <span asp-validation-for="Admission.Notes" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-between mt-4">
+                            <a asp-action="Details" asp-route-id="@Model.AdmissionId" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-1"></i> Cancel
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        // Show/hide discharge date based on status
+        const statusSelect = document.querySelector('[name="Admission.Status"]');
+        const dischargeDateGroup = document.getElementById('dischargeDateGroup');
+        function toggleDischargeDate() {
+            dischargeDateGroup.style.display = statusSelect.value === 'Discharged' ? 'block' : 'none';
+        }
+        statusSelect?.addEventListener('change', toggleDischargeDate);
+        toggleDischargeDate();
+    </script>
+}

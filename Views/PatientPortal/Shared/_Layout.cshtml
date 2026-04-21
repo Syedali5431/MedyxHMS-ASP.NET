@@ -40,6 +40,12 @@
                             <i class="fas fa-receipt"></i> Bills
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="/Notifications/Index" title="Notifications">
+                            <i class="fas fa-bell"></i>
+                            <span id="pp-notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;font-size:.65rem;"></span>
+                        </a>
+                    </li>
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user-circle"></i> My Account
@@ -112,6 +118,13 @@
                                 <i class="fas fa-sliders-h"></i> Settings
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Notifications" ? "active" : "")"
+                               href="/Notifications/Index">
+                                <i class="fas fa-bell"></i> Notifications
+                                <span id="pp-sidebar-notif-badge" class="badge bg-danger ms-1" style="display:none;"></span>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </nav>
@@ -176,5 +189,36 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
+    <script>
+        // Poll for unread notification count every 60s
+        function updatePPNotifBadge() {
+            fetch('/Notifications/UnreadCount')
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    var badge = document.getElementById('pp-notif-badge');
+                    var sidebarBadge = document.getElementById('pp-sidebar-notif-badge');
+                    if (data && data.count > 0) {
+                        var value = data.count > 99 ? '99+' : data.count;
+                        if (badge) {
+                            badge.textContent = value;
+                            badge.style.display = '';
+                        }
+                        if (sidebarBadge) {
+                            sidebarBadge.textContent = value;
+                            sidebarBadge.style.display = '';
+                        }
+                    } else {
+                        if (badge) {
+                            badge.style.display = 'none';
+                        }
+                        if (sidebarBadge) {
+                            sidebarBadge.style.display = 'none';
+                        }
+                    }
+                }).catch(() => {});
+        }
+        updatePPNotifBadge();
+        setInterval(updatePPNotifBadge, 60000);
+    </script>
 </body>
 </html>

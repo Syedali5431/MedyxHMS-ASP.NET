@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "License Expired";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger shadow">
+                <div class="card-header bg-danger text-white text-center py-3">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                    <h4 class="mb-0">License Expired</h4>
+                </div>
+                <div class="card-body text-center py-4">
+                    @if (TempData["SuccessMessage"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show">
+                            @TempData["SuccessMessage"]
+                            <button class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <p class="lead text-danger fw-semibold">Your system license has expired.</p>
+                    <p class="text-muted">
+                        System access for most users has been suspended until the license is renewed.
+                        As an administrator, you can request a new license file from the SuperAdmin.
+                    </p>
+
+                    <hr />
+
+                    <form asp-action="RequestLicenseFile" method="post" class="mt-3">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="fas fa-envelope me-2"></i>Request License File
+                        </button>
+                        <p class="text-muted mt-2 small">
+                            This will send an email notification to all SuperAdmin(s) to generate and upload a new license.
+                        </p>
+                    </form>
+
+                    @if (User.IsInRole("SuperAdmin"))
+                    {
+                        <hr />
+                        <a asp-controller="License" asp-action="Index" class="btn btn-primary">
+                            <i class="fas fa-key me-1"></i>Go to License Management
+                        </a>
+                    }
+
+                    <hr />
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">
+                            <i class="fas fa-sign-out-alt me-1"></i>Sign Out
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

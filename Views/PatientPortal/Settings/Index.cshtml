@@ -1,0 +1,107 @@
+@model MedyxHMS.ViewModels.PatientPortalSettingsViewModel
+@{
+    ViewData["Title"] = "Settings";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+<div class="py-4">
+    <h3 class="mb-4"><i class="fas fa-sliders-h me-2"></i>Account Settings</h3>
+
+    <form asp-action="Update" method="post">
+        @Html.AntiForgeryToken()
+
+        <!-- Contact Info -->
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0"><i class="fas fa-user me-2"></i>Contact Information</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" value="@Model.Patient.Email" readonly />
+                        <small class="text-muted">Contact administrator to change email.</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="Patient.Phone" class="form-label">Phone</label>
+                        <input asp-for="Patient.Phone" type="tel" class="form-control" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Preferences -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0"><i class="fas fa-bell me-2"></i>Notification Preferences</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.EmailNotifications" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.EmailNotifications" class="form-check-label">Email Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.SMSNotifications" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.SMSNotifications" class="form-check-label">SMS Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.AppointmentReminders" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.AppointmentReminders" class="form-check-label">Appointment Reminders</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.BillNotifications" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.BillNotifications" class="form-check-label">Billing Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.TestResultNotifications" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.TestResultNotifications" class="form-check-label">Test Result Notifications</label>
+                        </div>
+                        <div class="form-check form-switch mb-3">
+                            <input asp-for="NotificationPreferences.NewsletterSubscription" class="form-check-input" type="checkbox" />
+                            <label asp-for="NotificationPreferences.NewsletterSubscription" class="form-check-label">Newsletter</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-globe me-2"></i>Preferences</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PreferredLanguage" class="form-label">Language</label>
+                        <select asp-for="PreferredLanguage" class="form-select">
+                            @foreach (var lang in Model.AvailableLanguages)
+                            {
+                                <option value="@lang">@lang.ToUpper()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label asp-for="PreferredTimezone" class="form-label">Timezone</label>
+                        <select asp-for="PreferredTimezone" class="form-select">
+                            @foreach (var tz in Model.AvailableTimeZones)
+                            {
+                                <option value="@tz">@tz</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Settings</button>
+            <a asp-action="Security" class="btn btn-outline-secondary"><i class="fas fa-lock me-1"></i>Security Settings</a>
+            <a asp-action="Privacy" class="btn btn-outline-secondary"><i class="fas fa-shield-alt me-1"></i>Privacy</a>
+        </div>
+    </form>
+</div>

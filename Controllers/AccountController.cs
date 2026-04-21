@@ -17,6 +17,8 @@ namespace MedyxHMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IAuditService _auditService;
         private readonly IConcurrentSessionService _concurrentSessionService;
+        private readonly ILicenseService _licenseService;
+        private readonly IEmailNotificationProvider _emailProvider;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
@@ -24,7 +26,9 @@ namespace MedyxHMS.Controllers
             RoleManager<IdentityRole> roleManager,
             ApplicationDbContext context,
             IAuditService auditService,
-            IConcurrentSessionService concurrentSessionService)
+            IConcurrentSessionService concurrentSessionService,
+            ILicenseService licenseService,
+            IEmailNotificationProvider emailProvider)
         {
             _userManager = userManager;
             _signInManager = signInManager;
@@ -32,6 +36,8 @@ namespace MedyxHMS.Controllers
             _context = context;
             _auditService = auditService;
             _concurrentSessionService = concurrentSessionService;
+            _licenseService = licenseService;
+            _emailProvider = emailProvider;
         }
 
         [HttpGet]
@@ -48,10 +54,23 @@ namespace MedyxHMS.Controllers
         {
             model.UserName = (model.UserName ?? string.Empty).Trim();
 
+            var isSuperAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("SuperAdmin");
+
             var allowedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "Staff", "Doctor", "Nurse", "Receptionist", "Accountant", "Pharmacist", "LabTechnician", "Radiologist", "Patient"
             };
+
+            // Only SuperAdmin can assign Admin or SuperAdmin roles
+            if ((model.RequestedRole == "Admin" || model.RequestedRole == "SuperAdmin") && !isSuperAdmin)
+            {
+                ModelState.AddModelError(nameof(model.RequestedRole), "Only a SuperAdmin can create Admin or SuperAdmin accounts.");
+            }
+            else if (model.RequestedRole == "Admin" || model.RequestedRole == "SuperAdmin")
+            {
+                allowedRoles.Add("Admin");
+                allowedRoles.Add("SuperAdmin");
+            }
 
             if (!allowedRoles.Contains(model.RequestedRole ?? string.Empty))
             {
@@ -295,6 +314,30 @@ namespace MedyxHMS.Controllers
                     if (!string.IsNullOrWhiteSpace(model.SelectedRole))
                         HttpContext.Session.SetString("ActiveRole", model.SelectedRole);
 
+                    // ── License expiry gate ──────────────────────────────────────────────
+                    var snapshot = await _licenseService.GetCurrentSnapshotAsync();
+                    if (snapshot.State == LicenseState.Expired)
+                    {
+                        var isPrivileged = model.SelectedRole == "SuperAdmin" || model.SelectedRole == "Patient";
+                        if (!isPrivileged)
+                        {
+                            if (model.SelectedRole == "Admin")
+                            {
+                                // Admin may log in but is limited to the license-expired page
+                                return RedirectToAction(nameof(LicenseExpired));
+                            }
+                            else
+                            {
+                                // All other roles cannot log in when license is expired
+                                await _signInManager.SignOutAsync();
+                                await _concurrentSessionService.EndSessionAsync(HttpContext.Session.Id);
+                                HttpContext.Session.Remove("ActiveRole");
+                                ModelState.AddModelError(string.Empty, "Your license has expired. Please contact your administrator.");
+                                return View(model);
+                            }
+                        }
+                    }
+
                     return await RedirectToLocalAsync(user, model.SelectedRole, returnUrl);
                 }
 
@@ -322,6 +365,66 @@ namespace MedyxHMS.Controllers
             HttpContext.Session.Remove("ActiveRole");
             await _signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public IActionResult LicenseExpired()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,SuperAdmin")]
+        public async Task<IActionResult> RequestLicenseFile()
+        {
+            var requestingUser = await _userManager.GetUserAsync(User);
+            var requestingName = requestingUser != null
+                ? $"{requestingUser.FirstName} {requestingUser.LastName} ({requestingUser.Email})"
+                : User.Identity?.Name ?? "Admin";
+
+            // Get all SuperAdmin emails
+            var superAdminRoleId = await _context.Set<IdentityRole>()
+                .Where(r => r.Name == "SuperAdmin")
+                .Select(r => r.Id)
+                .FirstOrDefaultAsync();
+
+            var superAdminEmails = new List<string>();
+            if (!string.IsNullOrWhiteSpace(superAdminRoleId))
+            {
+                superAdminEmails = await _context.UserRoles
+                    .Where(ur => ur.RoleId == superAdminRoleId)
+                    .Join(_context.Users, ur => ur.UserId, u => u.Id, (ur, u) => u)
+                    .Where(u => u.IsActive && !string.IsNullOrWhiteSpace(u.Email))
+                    .Select(u => u.Email!)
+                    .ToListAsync();
+            }
+
+            var sentCount = 0;
+            foreach (var email in superAdminEmails)
+            {
+                try
+                {
+                    await _emailProvider.SendAsync(
+                        email,
+                        "License File Request — MedyxHMS",
+                        $"<p>A license renewal request has been submitted by <strong>{System.Net.WebUtility.HtmlEncode(requestingName)}</strong>.</p>" +
+                        $"<p>The current license has expired. Please generate and upload a new license file at your earliest convenience.</p>" +
+                        $"<p>Requested at: {DateTime.UtcNow:f} UTC</p>");
+                    sentCount++;
+                }
+                catch { /* best-effort */ }
+            }
+
+            await _auditService.LogActivityAsync(requestingUser?.Id, "LICENSE_REQUEST_SENT", "License", null, null,
+                $"License request emailed to {sentCount} SuperAdmin(s).");
+
+            TempData["SuccessMessage"] = sentCount > 0
+                ? $"License renewal request sent to {sentCount} SuperAdmin(s)."
+                : "No active SuperAdmin email found. Please contact your system administrator directly.";
+
+            return RedirectToAction(nameof(LicenseExpired));
         }
 
         [HttpGet]
