@@ -38,8 +38,8 @@ CREATE TABLE [AspNetUsers] (
     [FirstLoginDate] datetime2 NULL,
     [LastLoginDate] datetime2 NULL,
     [ProfileImage] nvarchar(max) NULL,
-    [UserName] nvarchar(256) NULL,
-    [NormalizedUserName] nvarchar(256) NULL,
+    [UserName] nvarchar(256) NOT NULL,
+    [NormalizedUserName] nvarchar(256) NOT NULL,
     [Email] nvarchar(256) NULL,
     [NormalizedEmail] nvarchar(256) NULL,
     [EmailConfirmed] bit NOT NULL,
@@ -1229,6 +1229,14 @@ CREATE UNIQUE INDEX [UserNameIndex] ON [AspNetUsers] ([NormalizedUserName]) WHER
 GO
 
 
+CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [AspNetUsers] ([UserName]);
+GO
+
+
+CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [AspNetUsers] ([Id], [UserName]);
+GO
+
+
 CREATE INDEX [IX_AuditLogs_UserId] ON [AuditLogs] ([UserId]);
 GO
 
@@ -1738,8 +1746,8 @@ BEGIN
         [PhoneNumber], [PhoneNumberConfirmed], [TwoFactorEnabled], [LockoutEnd], [LockoutEnabled], [AccessFailedCount]
     )
     VALUES (
-        N'superadmin-user-id', N'SUPER001', N'Super', N'Admin', 1, @UtcNow,
-        N'superadmin@hospital.com', N'SUPERADMIN@HOSPITAL.COM', N'superadmin@hospital.com', N'SUPERADMIN@HOSPITAL.COM', 1,
+        N'1', N'SUPER001', N'Super', N'Admin', 1, @UtcNow,
+        N'superadmin', N'SUPERADMIN', N'superadmin@hospital.com', N'SUPERADMIN@HOSPITAL.COM', 1,
         N'AQAAAAIAAYagAAAAENmHyolAF/zZx5gv7PnxwRPXwKYJ6dA+0y562EPe7kUseYbGGAsFnGRJGAHxPhaUFw==', N'QHPBKFIVA5XXBP4VFMJV66ZU2JAKU7S7', N'26885701-f8ad-4c53-bde0-398cad55a639',
         NULL, 0, 0, NULL, 1, 0
     );
@@ -1751,8 +1759,8 @@ BEGIN
         [FirstName] = COALESCE(NULLIF([FirstName], N''), N'Super'),
         [LastName] = COALESCE(NULLIF([LastName], N''), N'Admin'),
         [IsActive] = 1,
-        [UserName] = N'superadmin@hospital.com',
-        [NormalizedUserName] = N'SUPERADMIN@HOSPITAL.COM',
+        [UserName] = N'superadmin',
+        [NormalizedUserName] = N'SUPERADMIN',
         [Email] = N'superadmin@hospital.com',
         [NormalizedEmail] = N'SUPERADMIN@HOSPITAL.COM',
         [EmailConfirmed] = 1,

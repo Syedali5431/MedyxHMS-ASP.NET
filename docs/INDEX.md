@@ -221,6 +221,15 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Implemented for account lifecycle governance and credential control
 - Read this for approval pipeline and password authority model details.
 
+### PH24 - Mandatory Unique User Name and Numeric User ID Policy
+- Document: [PH24.md](PH24.md)
+- Focus:
+  - mandatory and unique `user_name` across all user-creation paths
+  - numeric user ID allocation strategy for new users (`1`, `2`, `3`, ...)
+  - SQL/bootstrap alignment for required username constraints and unique indexes
+- **Status:** Implemented for identity consistency and duplicate prevention
+- Read this for account identity policy enforcement and schema/script alignment.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -245,6 +254,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 21. [PH21.md](PH21.md)
 22. [PH22.md](PH22.md)
 23. [PH23.md](PH23.md)
+24. [PH24.md](PH24.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -258,6 +268,7 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Chatbot foundation, moderation baseline, and SMTP health checks: [PH11.md](PH11.md)
 - Chatbot grounded UX, source attribution, and feedback workflow: [PH12.md](PH12.md)
 - Chatbot operational controls, escalation, and analytics: [PH13.md](PH13.md)
+- Username/ID identity policy and uniqueness enforcement: [PH24.md](PH24.md)
 - Authentication redirect assurance and dashboard routing: [PH14.md](PH14.md)
 - Dynamic role selection login and module management system: [PH15.md](PH15.md)
 - Role enforcement hardening and smoke automation: [PH16.md](PH16.md)

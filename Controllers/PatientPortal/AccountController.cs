@@ -7,6 +7,7 @@ using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace MedyxHMS.Controllers.PatientPortal
@@ -96,6 +97,14 @@ namespace MedyxHMS.Controllers.PatientPortal
         {
             if (ModelState.IsValid)
             {
+                var normalizedUserName = _userManager.NormalizeName(viewModel.Register.UserName);
+                if (!string.IsNullOrWhiteSpace(normalizedUserName) &&
+                    await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
+                {
+                    ModelState.AddModelError("Register.UserName", "User name is already in use");
+                    return View(viewModel);
+                }
+
                 try
                 {
                     // Generate Patient ID
@@ -115,6 +124,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                         Gender = viewModel.Register.Gender,
                         User = new ApplicationUser
                         {
+                            UserName = viewModel.Register.UserName,
                             Email = viewModel.Register.Email,
                             PhoneNumber = viewModel.Register.Phone
                         }

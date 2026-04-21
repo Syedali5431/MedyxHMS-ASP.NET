@@ -38,8 +38,8 @@ CREATE TABLE [AspNetUsers] (
     [FirstLoginDate] datetime2 NULL,
     [LastLoginDate] datetime2 NULL,
     [ProfileImage] nvarchar(max) NULL,
-    [UserName] nvarchar(256) NULL,
-    [NormalizedUserName] nvarchar(256) NULL,
+    [UserName] nvarchar(256) NOT NULL,
+    [NormalizedUserName] nvarchar(256) NOT NULL,
     [Email] nvarchar(256) NULL,
     [NormalizedEmail] nvarchar(256) NULL,
     [EmailConfirmed] bit NOT NULL,
@@ -1217,6 +1217,14 @@ GO
 
 
 CREATE UNIQUE INDEX [UserNameIndex] ON [AspNetUsers] ([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
+GO
+
+
+CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [AspNetUsers] ([UserName]);
+GO
+
+
+CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [AspNetUsers] ([Id], [UserName]);
 GO
 
 

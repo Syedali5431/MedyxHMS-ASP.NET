@@ -31,6 +31,11 @@ namespace MedyxHMS.DTOs
 
     public class StaffCreateDto
     {
+        [Required(ErrorMessage = "User name is required")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "User name must be between 3 and 50 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9._-]+$", ErrorMessage = "User name can contain letters, numbers, dot, underscore, and hyphen only")]
+        public string UserName { get; set; }
+
         [Required(ErrorMessage = "Employee ID is required")]
         [StringLength(20, ErrorMessage = "Employee ID cannot exceed 20 characters")]
         public string EmployeeId { get; set; }

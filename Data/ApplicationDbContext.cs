@@ -443,6 +443,18 @@ namespace MedyxHMS.Data
                 .WithMany()
                 .HasForeignKey(r => r.PatientId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ApplicationUser>()
+                .Property(u => u.UserName)
+                .IsRequired();
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(u => u.NormalizedUserName)
+                .IsUnique();
+
+            modelBuilder.Entity<ApplicationUser>()
+                .HasIndex(u => new { u.Id, u.NormalizedUserName })
+                .IsUnique();
         }
 
         private static void ConfigureDecimalPrecision(ModelBuilder modelBuilder)
@@ -487,12 +499,12 @@ namespace MedyxHMS.Data
         private void SeedInitialData(ModelBuilder modelBuilder)
         {
             // Seed SuperAdmin user (from migration analysis)
-            var superAdminId = "superadmin-user-id";
+            var superAdminId = "1";
             modelBuilder.Entity<ApplicationUser>().HasData(
                 new ApplicationUser
                 {
                     Id = superAdminId,
-                    UserName = "superadmin@hospital.com",
+                    UserName = "superadmin",
                     Email = "superadmin@hospital.com",
                     EmailConfirmed = true,
                     EmployeeId = "SUPER001",

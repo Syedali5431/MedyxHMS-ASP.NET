@@ -61,10 +61,23 @@ namespace MedyxHMS.Services.Implementations
 
             try
             {
+                if (staff.User == null || string.IsNullOrWhiteSpace(staff.User.UserName))
+                {
+                    throw new Exception("User name is required.");
+                }
+
                 // Create ApplicationUser first
+                var normalizedUserName = _userManager.NormalizeName(staff.User.UserName);
+                if (!string.IsNullOrWhiteSpace(normalizedUserName) &&
+                    await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
+                {
+                    throw new Exception("User name already exists.");
+                }
+
                 var user = new ApplicationUser
                 {
-                    UserName = staff.User.Email,
+                    Id = await GetNextNumericUserIdAsync(),
+                    UserName = staff.User.UserName,
                     Email = staff.User.Email,
                     EmailConfirmed = true,
                     EmployeeId = staff.EmployeeId,
@@ -122,6 +135,23 @@ namespace MedyxHMS.Services.Implementations
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        private async Task<string> GetNextNumericUserIdAsync()
+        {
+            var maxId = await _userManager.Users
+                .Select(u => (int?)ConvertToNumericUserId(u.Id))
+                .MaxAsync() ?? 0;
+
+            return (maxId + 1).ToString();
+        }
+
+        private static int ConvertToNumericUserId(string? rawId)
+        {
+            if (string.IsNullOrWhiteSpace(rawId))
+                return 0;
+
+            return int.TryParse(rawId, out var numericId) ? numericId : 0;
         }
 
         public async Task<Staff> UpdateStaffAsync(Staff staff, List<int> roleIds)

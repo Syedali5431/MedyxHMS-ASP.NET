@@ -157,6 +157,11 @@ namespace MedyxHMS.DTOs
 
     public class PatientPortalRegisterDto
     {
+        [Required(ErrorMessage = "User name is required")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "User name must be between 3 and 50 characters")]
+        [RegularExpression(@"^[a-zA-Z0-9._-]+$", ErrorMessage = "User name can contain letters, numbers, dot, underscore, and hyphen only")]
+        public string UserName { get; set; }
+
         [Required(ErrorMessage = "First name is required")]
         [StringLength(50, ErrorMessage = "First name cannot exceed 50 characters")]
         public string FirstName { get; set; }

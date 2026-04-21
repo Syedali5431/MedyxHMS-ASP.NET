@@ -35,12 +35,23 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
+                                    <label for="Staff_UserName" class="form-label">User Name <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control @Html.ValidationCssClassFor(m => m.Staff.UserName)"
+                                           id="Staff_UserName" name="Staff.UserName" value="@Model.Staff.UserName" required>
+                                    @Html.ValidationMessageFor(m => m.Staff.UserName, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
                                     <label for="Staff_EmployeeId" class="form-label">Employee ID <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control @Html.ValidationCssClassFor(m => m.Staff.EmployeeId)"
                                            id="Staff_EmployeeId" name="Staff.EmployeeId" value="@Model.Staff.EmployeeId" required>
                                     @Html.ValidationMessageFor(m => m.Staff.EmployeeId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="Staff_Email" class="form-label">Email Address <span class="text-danger">*</span></label>
@@ -49,6 +60,7 @@
                                     @Html.ValidationMessageFor(m => m.Staff.Email, "", new { @class = "text-danger" })
                                 </div>
                             </div>
+                            <div class="col-md-6"></div>
                         </div>
 
                         <div class="row">

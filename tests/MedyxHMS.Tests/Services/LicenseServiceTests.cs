@@ -49,7 +49,7 @@ public class LicenseServiceTests
 
         var service = new LicenseService(context, new FakeEmailNotificationProvider(), new FakeSettingService(), new FakeLicenseFileService(), NullLogger<LicenseService>.Instance);
 
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.RenewAsync(4, "superadmin-user-id"));
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => service.RenewAsync(4, "1"));
         Assert.Contains("Manual renewal is disabled", exception.Message);
     }
 

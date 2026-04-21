@@ -34,6 +34,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureChatbotTablesAsync();
             await EnsureModuleTablesAsync();
             await EnsureAccountApprovalTableAsync();
+            await EnsureUserIdentityConstraintsAsync();
 
             // Seed initial public website and booking data for Step 4.2
             await SeedStep42DefaultsAsync();
@@ -1109,6 +1110,7 @@ END");
         private async Task SeedSuperAdminUserAsync()
         {
             const string superAdminEmail = "superadmin@hospital.com";
+            const string superAdminUserName = "superadmin";
             const string superAdminEmployeeId = "SUPER001";
 
             var superAdminUser = await _userManager.FindByEmailAsync(superAdminEmail);
@@ -1116,7 +1118,8 @@ END");
             {
                 superAdminUser = new ApplicationUser
                 {
-                    UserName = superAdminEmail,
+                    Id = "1",
+                    UserName = superAdminUserName,
                     Email = superAdminEmail,
                     EmailConfirmed = true,
                     EmployeeId = superAdminEmployeeId,
@@ -1132,8 +1135,69 @@ END");
                     return;
                 }
             }
+            else if (!string.Equals(superAdminUser.UserName, superAdminUserName, StringComparison.OrdinalIgnoreCase))
+            {
+                var usernameExists = await _userManager.FindByNameAsync(superAdminUserName);
+                if (usernameExists == null)
+                {
+                    superAdminUser.UserName = superAdminUserName;
+                    await _userManager.UpdateAsync(superAdminUser);
+                }
+            }
 
             await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
+        }
+
+        private async Task EnsureUserIdentityConstraintsAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
+BEGIN
+    UPDATE [dbo].[AspNetUsers]
+    SET [UserName] = LOWER([Email])
+    WHERE [UserName] IS NULL AND [Email] IS NOT NULL;
+
+    UPDATE [dbo].[AspNetUsers]
+    SET [UserName] = CONCAT(N'user', [Id])
+    WHERE [UserName] IS NULL;
+
+    UPDATE [dbo].[AspNetUsers]
+    SET [NormalizedUserName] = UPPER([UserName])
+    WHERE [NormalizedUserName] IS NULL OR [NormalizedUserName] <> UPPER([UserName]);
+
+    ;WITH Dupes AS
+    (
+        SELECT [Id], [UserName],
+               ROW_NUMBER() OVER (PARTITION BY [NormalizedUserName] ORDER BY [Id]) AS rn
+        FROM [dbo].[AspNetUsers]
+    )
+    UPDATE u
+    SET [UserName] = CONCAT(u.[UserName], N'_', u.[Id]),
+        [NormalizedUserName] = UPPER(CONCAT(u.[UserName], N'_', u.[Id]))
+    FROM [dbo].[AspNetUsers] u
+    INNER JOIN Dupes d ON d.[Id] = u.[Id]
+    WHERE d.rn > 1;
+
+    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'UserName') IS NOT NULL
+        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [UserName] NVARCHAR(256) NOT NULL;
+
+    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'NormalizedUserName') IS NOT NULL
+        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [NormalizedUserName] NVARCHAR(256) NOT NULL;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE [name] = N'UX_AspNetUsers_UserName'
+          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
+    )
+        CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [dbo].[AspNetUsers]([UserName]);
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.indexes
+        WHERE [name] = N'UX_AspNetUsers_Id_UserName'
+          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
+    )
+        CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+END");
         }
 
         private async Task EnsureStaffAndSuperAdminRoleAsync(ApplicationUser superAdminUser, string superAdminEmployeeId)

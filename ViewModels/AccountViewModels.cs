@@ -27,6 +27,12 @@ namespace MedyxHMS.ViewModels
     public class RegisterViewModel
     {
         [Required]
+        [Display(Name = "User Name")]
+        [StringLength(50, MinimumLength = 3, ErrorMessage = "User name must be between 3 and 50 characters.")]
+        [RegularExpression(@"^[a-zA-Z0-9._-]+$", ErrorMessage = "User name can contain letters, numbers, dot, underscore, and hyphen only.")]
+        public string UserName { get; set; } = string.Empty;
+
+        [Required]
         [EmailAddress]
         [Display(Name = "Email")]
         public string Email { get; set; }

@@ -46,6 +46,8 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            model.UserName = (model.UserName ?? string.Empty).Trim();
+
             var allowedRoles = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "Staff", "Doctor", "Nurse", "Receptionist", "Accountant", "Pharmacist", "LabTechnician", "Radiologist", "Patient"
@@ -66,12 +68,20 @@ namespace MedyxHMS.Controllers
                 ModelState.AddModelError(nameof(model.EmployeeId), "Employee ID is already in use.");
             }
 
+            var normalizedUserName = _userManager.NormalizeName(model.UserName);
+            if (!string.IsNullOrWhiteSpace(normalizedUserName) &&
+                await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
+            {
+                ModelState.AddModelError(nameof(model.UserName), "User name is already in use.");
+            }
+
             if (!ModelState.IsValid)
                 return View(model);
 
             var user = new ApplicationUser
             {
-                UserName = model.Email,
+                Id = await GetNextNumericUserIdAsync(),
+                UserName = model.UserName,
                 Email = model.Email,
                 EmployeeId = model.EmployeeId,
                 FirstName = model.FirstName,
@@ -109,6 +119,23 @@ namespace MedyxHMS.Controllers
             await _auditService.LogActivityAsync(user.Id, "SIGNUP_REQUEST_CREATED", "AccountApprovalRequest", user.Id, null, model.RequestedRole);
             TempData["SuccessMessage"] = "Signup submitted. Your account will be activated after Admin or SuperAdmin approval.";
             return RedirectToAction(nameof(Login));
+        }
+
+        private async Task<string> GetNextNumericUserIdAsync()
+        {
+            var maxId = await _userManager.Users
+                .Select(u => (int?)ConvertToNumericUserId(u.Id))
+                .MaxAsync() ?? 0;
+
+            return (maxId + 1).ToString();
+        }
+
+        private static int ConvertToNumericUserId(string? rawId)
+        {
+            if (string.IsNullOrWhiteSpace(rawId))
+                return 0;
+
+            return int.TryParse(rawId, out var numericId) ? numericId : 0;
         }
 
         [HttpGet]

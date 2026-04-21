@@ -33,14 +33,27 @@ namespace MedyxHMS.Services.Implementations
             {
                 try
                 {
+                    if (patient.User == null || string.IsNullOrWhiteSpace(patient.User.UserName))
+                    {
+                        throw new Exception("User name is required.");
+                    }
+
                     // Create application user
                     var user = new ApplicationUser
                     {
+                        Id = await GetNextNumericUserIdAsync(),
                         Email = patient.User?.Email,
-                        UserName = patient.User?.Email,
+                        UserName = patient.User?.UserName,
                         PhoneNumber = patient.Phone,
                         FirstLoginDate = DateTime.UtcNow
                     };
+
+                    var normalizedUserName = _userManager.NormalizeName(user.UserName);
+                    if (!string.IsNullOrWhiteSpace(normalizedUserName) &&
+                        await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
+                    {
+                        throw new Exception("User name already exists.");
+                    }
 
                     var result = await _userManager.CreateAsync(user, password);
                     if (!result.Succeeded)
@@ -81,6 +94,23 @@ namespace MedyxHMS.Services.Implementations
             return await _context.Patients
                 .Include(p => p.User)
                 .FirstOrDefaultAsync(p => p.Id.ToString() == patientId || p.PatientId == patientId || p.UserId == patientId);
+        }
+
+        private async Task<string> GetNextNumericUserIdAsync()
+        {
+            var maxId = await _userManager.Users
+                .Select(u => (int?)ConvertToNumericUserId(u.Id))
+                .MaxAsync() ?? 0;
+
+            return (maxId + 1).ToString();
+        }
+
+        private static int ConvertToNumericUserId(string? rawId)
+        {
+            if (string.IsNullOrWhiteSpace(rawId))
+                return 0;
+
+            return int.TryParse(rawId, out var numericId) ? numericId : 0;
         }
 
         public async Task<Patient> UpdatePatientProfileAsync(Patient patient)

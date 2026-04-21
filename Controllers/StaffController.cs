@@ -259,6 +259,14 @@ namespace MedyxHMS.Controllers
                         return View(viewModel);
                     }
 
+                    var normalizedUserName = _userManager.NormalizeName(viewModel.Staff.UserName);
+                    if (!string.IsNullOrWhiteSpace(normalizedUserName) &&
+                        await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
+                    {
+                        ModelState.AddModelError("Staff.UserName", "User name already exists");
+                        return View(viewModel);
+                    }
+
                     // Create staff object
                     var staff = new Staff
                     {
@@ -274,6 +282,7 @@ namespace MedyxHMS.Controllers
                         IsActive = true,
                         User = new ApplicationUser
                         {
+                            UserName = viewModel.Staff.UserName,
                             Email = viewModel.Staff.Email,
                             PhoneNumber = viewModel.Staff.Phone
                         }
