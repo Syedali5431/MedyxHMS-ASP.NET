@@ -4898,23 +4898,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\malin\\.nuget\\packages\\": {},
+    "C:\\Users\\alin\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+      "projectUniqueName": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
       "projectName": "MedyxHMS",
-      "projectPath": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
-      "packagesPath": "C:\\Users\\malin\\.nuget\\packages\\",
-      "outputPath": "E:\\HMS\\MedyxHMS-ASPNET\\obj\\",
+      "projectPath": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+      "packagesPath": "C:\\Users\\alin\\.nuget\\packages\\",
+      "outputPath": "C:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\malin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\alin\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],
@@ -4982,24 +4982,6 @@
         ],
         "assetTargetFallback": true,
         "warn": true,
-        "downloadDependencies": [
-          {
-            "name": "Microsoft.AspNetCore.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Host.win-x64",
-            "version": "[8.0.26, 8.0.26]"
-          },
-          {
-            "name": "Microsoft.NETCore.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
-          },
-          {
-            "name": "Microsoft.WindowsDesktop.App.Ref",
-            "version": "[8.0.26, 8.0.26]"
-          }
-        ],
         "frameworkReferences": {
           "Microsoft.AspNetCore.App": {
             "privateAssets": "none"
