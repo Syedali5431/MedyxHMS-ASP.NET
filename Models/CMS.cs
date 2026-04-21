@@ -23,6 +23,15 @@ namespace MedyxHMS.Models
         [MaxLength(300)]
         public string? MetaDescription { get; set; }
 
+        [MaxLength(300)]
+        public string? FeaturedImage { get; set; }
+
+        [MaxLength(100)]
+        public string? FontFamily { get; set; }
+
+        [Range(12, 40)]
+        public int? FontSizePx { get; set; }
+
         [MaxLength(20)]
         public string Status { get; set; } = "Draft";  // Draft | Published
 

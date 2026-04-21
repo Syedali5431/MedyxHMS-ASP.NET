@@ -59,12 +59,15 @@ namespace MedyxHMS.Controllers
                     .ToListAsync(),
 
                 MenuItems = await GetActiveMenuItemsAsync(),
-                HospitalName = "Medyx Hospital",
-                HospitalTagline = "Compassionate Care, Advanced Medicine",
+                HospitalName = await _settingService.GetSettingValueAsync("PublicSiteHomeTitle") ?? "Medyx Hospital",
+                HospitalTagline = await _settingService.GetSettingValueAsync("PublicSiteHomeTagline") ?? "Compassionate Care, Advanced Medicine",
                 ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
                 ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
                 Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
-                MapEmbedUrl = await ResolveMapEmbedUrlAsync()
+                MapEmbedUrl = await ResolveMapEmbedUrlAsync(),
+                HeroImageUrl = await _settingService.GetSettingValueAsync("PublicSiteHomeHeroImage") ?? string.Empty,
+                HeroDescription = await _settingService.GetSettingValueAsync("PublicSiteHomeDescription") ?? string.Empty,
+                FontFamily = await _settingService.GetSettingValueAsync("PublicSiteHomeFontFamily") ?? string.Empty
             };
 
             return View(vm);
@@ -75,10 +78,14 @@ namespace MedyxHMS.Controllers
         {
             var vm = new SiteContactViewModel
             {
+                Title = "Contact Us",
                 ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
                 ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
                 Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
                 MapEmbedUrl = await ResolveMapEmbedUrlAsync(),
+                HeroImageUrl = await _settingService.GetSettingValueAsync("PublicSiteContactHeroImage") ?? string.Empty,
+                HeroDescription = await _settingService.GetSettingValueAsync("PublicSiteContactDescription") ?? string.Empty,
+                FontFamily = await _settingService.GetSettingValueAsync("PublicSiteContactFontFamily") ?? string.Empty,
                 MenuItems = await GetActiveMenuItemsAsync()
             };
 
@@ -104,10 +111,14 @@ namespace MedyxHMS.Controllers
         {
             var vm = new SiteContactViewModel
             {
+                Title = "Hospital Location",
                 ContactPhone = await _settingService.GetSettingValueAsync("PublicSitePhone") ?? "+000-000-0000",
                 ContactEmail = await _settingService.GetSettingValueAsync("PublicSiteEmail") ?? "info@medyxhospital.com",
                 Address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital, Main Road, Your City",
                 MapEmbedUrl = await ResolveMapEmbedUrlAsync(),
+                HeroImageUrl = await _settingService.GetSettingValueAsync("PublicSiteLocationHeroImage") ?? string.Empty,
+                HeroDescription = await _settingService.GetSettingValueAsync("PublicSiteLocationDescription") ?? string.Empty,
+                FontFamily = await _settingService.GetSettingValueAsync("PublicSiteLocationFontFamily") ?? string.Empty,
                 MenuItems = await GetActiveMenuItemsAsync()
             };
 

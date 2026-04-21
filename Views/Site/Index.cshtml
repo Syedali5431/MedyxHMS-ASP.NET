@@ -6,10 +6,20 @@
 }
 
 <!-- Hero -->
-<section class="site-hero text-center">
+<section class="site-hero text-center" style="@(string.IsNullOrWhiteSpace(Model.FontFamily) ? null : $"font-family:{Model.FontFamily};")">
+    @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+    {
+        <div class="container mb-4">
+            <img src="/@Model.HeroImageUrl" alt="Hospital" class="img-fluid rounded shadow" style="max-height:280px;" />
+        </div>
+    }
     <div class="container">
         <h1 class="display-5 fw-bold">@Model.HospitalName</h1>
         <p class="lead">@Model.HospitalTagline</p>
+        @if (!string.IsNullOrWhiteSpace(Model.HeroDescription))
+        {
+            <p class="mb-0">@Model.HeroDescription</p>
+        }
         <div class="d-flex gap-3 justify-content-center mt-4">
             <a asp-controller="Site" asp-action="BookAppointment" class="btn btn-warning btn-lg fw-bold">
                 📅 Book Appointment

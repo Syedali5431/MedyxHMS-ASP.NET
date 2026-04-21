@@ -15,7 +15,15 @@
 
     <h1 class="mb-4">@Model.Page.Title</h1>
 
-    <div class="card border-0 shadow-sm p-4">
+    @if (!string.IsNullOrWhiteSpace(Model.Page.FeaturedImage))
+    {
+        <div class="mb-4">
+            <img src="/@Model.Page.FeaturedImage" alt="@Model.Page.Title" class="img-fluid rounded shadow-sm" />
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm p-4"
+         style="@(string.IsNullOrWhiteSpace(Model.Page.FontFamily) ? null : $"font-family:{Model.Page.FontFamily};") @(Model.Page.FontSizePx.HasValue ? $"font-size:{Model.Page.FontSizePx.Value}px;" : null)">
         @Html.Raw(Model.Page.Content)
     </div>
 </div>

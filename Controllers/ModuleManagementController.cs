@@ -54,7 +54,7 @@ namespace MedyxHMS.Controllers
         /// <summary>
         /// Shows a searchable list of users so an admin can pick one to configure modules.
         /// </summary>
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> Users(string? search)
         {
             var query = _userManager.Users.Where(u => u.IsActive);
@@ -103,7 +103,7 @@ namespace MedyxHMS.Controllers
         /// Admin can configure access; SuperAdmin sees an additional note when
         /// a module is globally disabled.
         /// </summary>
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> UserAccess(string userId)
         {
             if (string.IsNullOrWhiteSpace(userId))
@@ -125,11 +125,11 @@ namespace MedyxHMS.Controllers
         }
 
         /// <summary>
-        /// Admin/SuperAdmin AJAX: set per-user module access.
+        /// SuperAdmin AJAX: set per-user module access.
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperAdmin,Admin")]
+        [Authorize(Roles = "SuperAdmin")]
         public async Task<IActionResult> SetUserAccess([FromBody] SetUserAccessRequest req)
         {
             if (string.IsNullOrWhiteSpace(req.UserId))

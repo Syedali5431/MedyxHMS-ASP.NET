@@ -11,7 +11,7 @@
         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
     }
 
-    <form method="post" class="card border-0 shadow-sm">
+    <form method="post" enctype="multipart/form-data" class="card border-0 shadow-sm">
         @Html.AntiForgeryToken()
         <div class="card-body row g-3">
             <div class="col-md-6">
@@ -34,9 +34,439 @@
                 <label asp-for="CareersContent" class="form-label">Careers Page Content</label>
                 <textarea asp-for="CareersContent" class="form-control" rows="6"></textarea>
             </div>
+
+            <div class="col-12"><hr /></div>
+            <div class="col-12">
+                <h5 class="mb-2">Home Page Customization</h5>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HomeTitle" class="form-label">Home Title</label>
+                <input asp-for="HomeTitle" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HomeTagline" class="form-label">Home Tagline</label>
+                <input asp-for="HomeTagline" class="form-control" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HomeFontFamily" class="form-label">Home Font Family</label>
+                <select asp-for="HomeFontFamily" class="form-select">
+                    <option value="">Default</option>
+                    <option value="Georgia, 'Times New Roman', serif">Serif (Georgia)</option>
+                    <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Sans (Trebuchet)</option>
+                    <option value="'Courier New', monospace">Monospace (Courier New)</option>
+                    <option value="'Lucida Sans', 'Segoe UI', sans-serif">Lucida Sans</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HomeHeroImageFile" class="form-label">Home Hero Image</label>
+                <input asp-for="HomeHeroImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+                <input type="hidden" asp-for="HomeHeroImage" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.HomeHeroImage))
+            {
+                <div class="col-12">
+                    <img src="/@Model.HomeHeroImage" alt="Home hero" class="img-fluid rounded border" style="max-height:140px;" />
+                </div>
+            }
+            <div class="col-12">
+                <label asp-for="HomeDescription" class="form-label">Home Description</label>
+                <textarea asp-for="HomeDescription" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="col-12"><hr /></div>
+            <div class="col-12">
+                <h5 class="mb-2">Contact Page Customization</h5>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ContactFontFamily" class="form-label">Contact Font Family</label>
+                <select asp-for="ContactFontFamily" class="form-select">
+                    <option value="">Default</option>
+                    <option value="Georgia, 'Times New Roman', serif">Serif (Georgia)</option>
+                    <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Sans (Trebuchet)</option>
+                    <option value="'Courier New', monospace">Monospace (Courier New)</option>
+                    <option value="'Lucida Sans', 'Segoe UI', sans-serif">Lucida Sans</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ContactHeroImageFile" class="form-label">Contact Hero Image</label>
+                <input asp-for="ContactHeroImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+                <input type="hidden" asp-for="ContactHeroImage" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.ContactHeroImage))
+            {
+                <div class="col-12">
+                    <img src="/@Model.ContactHeroImage" alt="Contact hero" class="img-fluid rounded border" style="max-height:140px;" />
+                </div>
+            }
+            <div class="col-12">
+                <label asp-for="ContactDescription" class="form-label">Contact Description</label>
+                <textarea asp-for="ContactDescription" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="col-12"><hr /></div>
+            <div class="col-12">
+                <h5 class="mb-2">Location Page Customization</h5>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="LocationFontFamily" class="form-label">Location Font Family</label>
+                <select asp-for="LocationFontFamily" class="form-select">
+                    <option value="">Default</option>
+                    <option value="Georgia, 'Times New Roman', serif">Serif (Georgia)</option>
+                    <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Sans (Trebuchet)</option>
+                    <option value="'Courier New', monospace">Monospace (Courier New)</option>
+                    <option value="'Lucida Sans', 'Segoe UI', sans-serif">Lucida Sans</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="LocationHeroImageFile" class="form-label">Location Hero Image</label>
+                <input asp-for="LocationHeroImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+                <input type="hidden" asp-for="LocationHeroImage" />
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.LocationHeroImage))
+            {
+                <div class="col-12">
+                    <img src="/@Model.LocationHeroImage" alt="Location hero" class="img-fluid rounded border" style="max-height:140px;" />
+                </div>
+            }
+            <div class="col-12">
+                <label asp-for="LocationDescription" class="form-label">Location Description</label>
+                <textarea asp-for="LocationDescription" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="col-12"><hr /></div>
+            <div class="col-12">
+                <h5 class="mb-2">Theme and Style Studio</h5>
+                <p class="text-muted small mb-0">These styles are applied to the public website (not dashboard pages).</p>
+            </div>
+            <div class="col-12">
+                <div class="row g-2" id="presetCardList">
+                    <div class="col-md-3">
+                        <button type="button" class="btn w-100 text-start border preset-card" data-preset="ClinicalBlue">
+                            <div class="fw-semibold mb-1">Clinical Blue</div>
+                            <div class="d-flex gap-1 mb-1">
+                                <span class="preset-swatch" style="background:#1a5276;"></span>
+                                <span class="preset-swatch" style="background:#2980b9;"></span>
+                                <span class="preset-swatch" style="background:#f4f8fb;"></span>
+                            </div>
+                            <small class="text-muted">Balanced clinical look</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn w-100 text-start border preset-card" data-preset="WarmCare">
+                            <div class="fw-semibold mb-1">Warm Care</div>
+                            <div class="d-flex gap-1 mb-1">
+                                <span class="preset-swatch" style="background:#8f3f2f;"></span>
+                                <span class="preset-swatch" style="background:#d67248;"></span>
+                                <span class="preset-swatch" style="background:#fff6ef;"></span>
+                            </div>
+                            <small class="text-muted">Friendly patient-first tone</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn w-100 text-start border preset-card" data-preset="HighContrast">
+                            <div class="fw-semibold mb-1">High Contrast</div>
+                            <div class="d-flex gap-1 mb-1">
+                                <span class="preset-swatch" style="background:#111111;"></span>
+                                <span class="preset-swatch" style="background:#ffcc00;"></span>
+                                <span class="preset-swatch" style="background:#ffffff;"></span>
+                            </div>
+                            <small class="text-muted">Accessibility-focused impact</small>
+                        </button>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn w-100 text-start border preset-card" data-preset="Custom">
+                            <div class="fw-semibold mb-1">Custom</div>
+                            <div class="d-flex gap-1 mb-1">
+                                <span class="preset-swatch" style="background:linear-gradient(135deg,#6c757d,#adb5bd);"></span>
+                                <span class="preset-swatch" style="background:#ced4da;"></span>
+                                <span class="preset-swatch" style="background:#f8f9fa;"></span>
+                            </div>
+                            <small class="text-muted">Use your own combination</small>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ThemePreset" class="form-label">Theme Preset</label>
+                <select asp-for="ThemePreset" class="form-select">
+                    <option value="Custom">Custom</option>
+                    <option value="ClinicalBlue">Clinical Blue</option>
+                    <option value="WarmCare">Warm Care</option>
+                    <option value="HighContrast">High Contrast</option>
+                </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+                <p class="text-muted small mb-0">Selecting a preset auto-fills colors and style choices. You can still edit any value after applying.</p>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="PrimaryColor" class="form-label">Primary Color</label>
+                <input asp-for="PrimaryColor" type="color" class="form-control form-control-color" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="AccentColor" class="form-label">Accent Color</label>
+                <input asp-for="AccentColor" type="color" class="form-control form-control-color" />
+            </div>
+            <div class="col-md-4">
+                <label asp-for="SurfaceColor" class="form-label">Surface Color</label>
+                <input asp-for="SurfaceColor" type="color" class="form-control form-control-color" />
+            </div>
+            <div class="col-md-6">
+                <label asp-for="HeadingStyle" class="form-label">Heading Style</label>
+                <select asp-for="HeadingStyle" class="form-select">
+                    <option value="Normal">Normal</option>
+                    <option value="Uppercase">Uppercase</option>
+                    <option value="Capitalize">Capitalize</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ButtonStyle" class="form-label">Button Style</label>
+                <select asp-for="ButtonStyle" class="form-select">
+                    <option value="Rounded">Rounded</option>
+                    <option value="Pill">Pill</option>
+                    <option value="Square">Square</option>
+                </select>
+            </div>
+
+            <div class="col-12 mt-2">
+                <div class="row g-3">
+                    <div class="col-lg-8">
+                        <div id="stylePreviewCardDesktop" class="card border-0 shadow-sm overflow-hidden">
+                            <div id="stylePreviewHeaderDesktop" class="p-3 text-white d-flex justify-content-between align-items-center">
+                                <strong>Medyx Public Site Preview (Desktop)</strong>
+                                <span class="badge bg-light text-dark">Live</span>
+                            </div>
+                            <div id="stylePreviewBodyDesktop" class="p-4">
+                                <h4 id="stylePreviewTitleDesktop" class="mb-2">Compassionate Care, Advanced Medicine</h4>
+                                <p class="mb-3">This desktop preview reflects your selected colors, heading style, and button style instantly.</p>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button id="previewPrimaryBtnDesktop" type="button" class="btn btn-primary">Primary Button</button>
+                                    <button id="previewAccentBtnDesktop" type="button" class="btn btn-outline-secondary">Accent Button</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="d-flex justify-content-center">
+                            <div id="stylePreviewCardMobile" class="card border-0 shadow-sm overflow-hidden" style="width: 290px;">
+                                <div id="stylePreviewHeaderMobile" class="p-2 text-white text-center small fw-semibold">
+                                    Mobile Preview
+                                </div>
+                                <div id="stylePreviewBodyMobile" class="p-3">
+                                    <h6 id="stylePreviewTitleMobile" class="mb-2">Care You Can Trust</h6>
+                                    <p class="small mb-2">Quick visual check for smaller screens.</p>
+                                    <div class="d-grid gap-2">
+                                        <button id="previewPrimaryBtnMobile" type="button" class="btn btn-sm btn-primary">Book Appointment</button>
+                                        <button id="previewAccentBtnMobile" type="button" class="btn btn-sm btn-outline-secondary">Contact Us</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="card-footer bg-white d-flex justify-content-end">
             <button type="submit" class="btn btn-primary">Save</button>
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <style>
+        .preset-swatch {
+            width: 18px;
+            height: 18px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            display: inline-block;
+        }
+
+        .preset-card {
+            min-height: 102px;
+            background: #fff;
+            transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+        }
+
+        .preset-card:hover {
+            transform: translateY(-1px);
+            border-color: #6c757d;
+        }
+
+        .preset-card.active {
+            border-color: #0d6efd;
+            box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+            background: #f8fbff;
+        }
+    </style>
+    <script>
+        (function () {
+            const primaryInput = document.getElementById('PrimaryColor');
+            const accentInput = document.getElementById('AccentColor');
+            const surfaceInput = document.getElementById('SurfaceColor');
+            const presetInput = document.getElementById('ThemePreset');
+            const headingInput = document.getElementById('HeadingStyle');
+            const buttonInput = document.getElementById('ButtonStyle');
+            const presetCards = Array.from(document.querySelectorAll('.preset-card'));
+
+            const previewHeaderDesktop = document.getElementById('stylePreviewHeaderDesktop');
+            const previewBodyDesktop = document.getElementById('stylePreviewBodyDesktop');
+            const previewTitleDesktop = document.getElementById('stylePreviewTitleDesktop');
+            const previewPrimaryBtnDesktop = document.getElementById('previewPrimaryBtnDesktop');
+            const previewAccentBtnDesktop = document.getElementById('previewAccentBtnDesktop');
+
+            const previewHeaderMobile = document.getElementById('stylePreviewHeaderMobile');
+            const previewBodyMobile = document.getElementById('stylePreviewBodyMobile');
+            const previewTitleMobile = document.getElementById('stylePreviewTitleMobile');
+            const previewPrimaryBtnMobile = document.getElementById('previewPrimaryBtnMobile');
+            const previewAccentBtnMobile = document.getElementById('previewAccentBtnMobile');
+
+            function normalizeColor(value, fallback) {
+                return /^#[0-9a-fA-F]{6}$/.test(value || '') ? value : fallback;
+            }
+
+            const presetMap = {
+                ClinicalBlue: {
+                    primary: '#1a5276',
+                    accent: '#2980b9',
+                    surface: '#f4f8fb',
+                    heading: 'Normal',
+                    button: 'Rounded'
+                },
+                WarmCare: {
+                    primary: '#8f3f2f',
+                    accent: '#d67248',
+                    surface: '#fff6ef',
+                    heading: 'Capitalize',
+                    button: 'Rounded'
+                },
+                HighContrast: {
+                    primary: '#111111',
+                    accent: '#ffcc00',
+                    surface: '#ffffff',
+                    heading: 'Uppercase',
+                    button: 'Square'
+                }
+            };
+
+            function applyPreset(presetKey) {
+                const selected = presetMap[presetKey];
+                if (!selected) {
+                    return;
+                }
+
+                primaryInput.value = selected.primary;
+                accentInput.value = selected.accent;
+                surfaceInput.value = selected.surface;
+                headingInput.value = selected.heading;
+                buttonInput.value = selected.button;
+            }
+
+            function syncPresetCards() {
+                if (!presetInput) return;
+                presetCards.forEach(function (card) {
+                    const isActive = card.getAttribute('data-preset') === presetInput.value;
+                    card.classList.toggle('active', isActive);
+                });
+            }
+
+            function applyPreview() {
+                const primary = normalizeColor(primaryInput?.value, '#1a5276');
+                const accent = normalizeColor(accentInput?.value, '#2980b9');
+                const surface = normalizeColor(surfaceInput?.value, '#f4f8fb');
+                const heading = headingInput?.value || 'Normal';
+                const button = buttonInput?.value || 'Rounded';
+
+                previewHeaderDesktop.style.background = `linear-gradient(135deg, ${primary}, ${accent})`;
+                previewBodyDesktop.style.backgroundColor = surface;
+
+                previewHeaderMobile.style.background = `linear-gradient(135deg, ${primary}, ${accent})`;
+                previewBodyMobile.style.backgroundColor = surface;
+
+                if (heading === 'Uppercase') {
+                    previewTitleDesktop.style.textTransform = 'uppercase';
+                    previewTitleMobile.style.textTransform = 'uppercase';
+                } else if (heading === 'Capitalize') {
+                    previewTitleDesktop.style.textTransform = 'capitalize';
+                    previewTitleMobile.style.textTransform = 'capitalize';
+                } else {
+                    previewTitleDesktop.style.textTransform = 'none';
+                    previewTitleMobile.style.textTransform = 'none';
+                }
+
+                const radius = button === 'Pill' ? '999px' : button === 'Square' ? '0px' : '0.5rem';
+
+                previewPrimaryBtnDesktop.style.backgroundColor = primary;
+                previewPrimaryBtnDesktop.style.borderColor = primary;
+                previewPrimaryBtnDesktop.style.borderRadius = radius;
+
+                previewAccentBtnDesktop.style.color = accent;
+                previewAccentBtnDesktop.style.borderColor = accent;
+                previewAccentBtnDesktop.style.borderRadius = radius;
+
+                previewPrimaryBtnMobile.style.backgroundColor = primary;
+                previewPrimaryBtnMobile.style.borderColor = primary;
+                previewPrimaryBtnMobile.style.borderRadius = radius;
+
+                previewAccentBtnMobile.style.color = accent;
+                previewAccentBtnMobile.style.borderColor = accent;
+                previewAccentBtnMobile.style.borderRadius = radius;
+            }
+
+            [primaryInput, accentInput, surfaceInput, headingInput, buttonInput].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('input', applyPreview);
+                el.addEventListener('change', applyPreview);
+            });
+
+            if (presetInput) {
+                presetInput.addEventListener('change', function () {
+                    applyPreset(presetInput.value);
+                    applyPreview();
+                    syncPresetCards();
+                });
+            }
+
+            presetCards.forEach(function (card) {
+                card.addEventListener('click', function () {
+                    if (!presetInput) return;
+                    const presetKey = card.getAttribute('data-preset') || 'Custom';
+                    presetInput.value = presetKey;
+
+                    if (presetKey !== 'Custom') {
+                        applyPreset(presetKey);
+                    }
+
+                    applyPreview();
+                    syncPresetCards();
+                });
+            });
+
+            [primaryInput, accentInput, surfaceInput, headingInput, buttonInput].forEach(function (el) {
+                if (!el) return;
+                el.addEventListener('change', function () {
+                    if (!presetInput) return;
+                    const selected = presetMap[presetInput.value];
+                    if (!selected) {
+                        presetInput.value = 'Custom';
+                        return;
+                    }
+
+                    const isPresetMatch =
+                        normalizeColor(primaryInput.value, '') === selected.primary &&
+                        normalizeColor(accentInput.value, '') === selected.accent &&
+                        normalizeColor(surfaceInput.value, '') === selected.surface &&
+                        headingInput.value === selected.heading &&
+                        buttonInput.value === selected.button;
+
+                    if (!isPresetMatch) {
+                        presetInput.value = 'Custom';
+                        syncPresetCards();
+                    }
+                });
+            });
+
+            applyPreview();
+            syncPresetCards();
+        })();
+    </script>
+}

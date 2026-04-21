@@ -6,8 +6,21 @@
 }
 
 <div class="container my-5">
-    <h1 class="mb-3">Hospital Location</h1>
-    <p class="text-muted">@Model.Address</p>
+    <h1 class="mb-3">@Model.Title</h1>
+
+    @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+    {
+        <div class="mb-4">
+            <img src="/@Model.HeroImageUrl" alt="Location" class="img-fluid rounded shadow-sm" style="max-height:220px;" />
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.HeroDescription))
+    {
+        <p class="text-muted" style="@(string.IsNullOrWhiteSpace(Model.FontFamily) ? null : $"font-family:{Model.FontFamily};")">@Model.HeroDescription</p>
+    }
+
+    <p class="text-muted" style="@(string.IsNullOrWhiteSpace(Model.FontFamily) ? null : $"font-family:{Model.FontFamily};")">@Model.Address</p>
     <div class="ratio ratio-16x9 shadow-sm rounded overflow-hidden">
         <iframe src="@Model.MapEmbedUrl" style="border:0;" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
     </div>

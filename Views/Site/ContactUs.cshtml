@@ -6,9 +6,21 @@
 }
 
 <div class="container my-5">
-    <h1 class="mb-4">Contact Us</h1>
+    <h1 class="mb-4">@Model.Title</h1>
 
-    <div class="row g-4">
+    @if (!string.IsNullOrWhiteSpace(Model.HeroImageUrl))
+    {
+        <div class="mb-4">
+            <img src="/@Model.HeroImageUrl" alt="Contact" class="img-fluid rounded shadow-sm" style="max-height:220px;" />
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Model.HeroDescription))
+    {
+        <p class="text-muted" style="@(string.IsNullOrWhiteSpace(Model.FontFamily) ? null : $"font-family:{Model.FontFamily};")">@Model.HeroDescription</p>
+    }
+
+    <div class="row g-4" style="@(string.IsNullOrWhiteSpace(Model.FontFamily) ? null : $"font-family:{Model.FontFamily};")">
         <div class="col-md-5">
             <div class="card shadow-sm border-0 h-100">
                 <div class="card-body">

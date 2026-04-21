@@ -80,6 +80,36 @@ internal sealed class FakeSmsNotificationProvider : ISmsNotificationProvider
     }
 }
 
+internal sealed class FakeFileService : IFileService
+{
+    public Task<string> UploadFileAsync(IFormFile file, string subDirectory = "")
+    {
+        return Task.FromResult(string.IsNullOrWhiteSpace(subDirectory)
+            ? "uploads/test-file.png"
+            : $"uploads/{subDirectory}/test-file.png");
+    }
+
+    public Task<bool> DeleteFileAsync(string filePath)
+    {
+        return Task.FromResult(true);
+    }
+
+    public Task<byte[]> GetFileAsync(string filePath)
+    {
+        return Task.FromResult(Array.Empty<byte>());
+    }
+
+    public Task<bool> FileExistsAsync(string filePath)
+    {
+        return Task.FromResult(true);
+    }
+
+    public string GetFileUrl(string filePath)
+    {
+        return filePath;
+    }
+}
+
 internal sealed class FakePublicBookingNotificationService : IPublicBookingNotificationService
 {
     public readonly List<int> ConfirmedRequestIds = new();

@@ -24,6 +24,7 @@ namespace MedyxHMS.Controllers
         private readonly ISmsNotificationProvider _smsNotificationProvider;
         private readonly IPublicBookingNotificationService _publicBookingNotificationService;
         private readonly IExportService _exportService;
+        private readonly IFileService _fileService;
         private readonly ISmtpHealthService? _smtpHealthService;
 
         public CmsController(
@@ -34,6 +35,7 @@ namespace MedyxHMS.Controllers
             ISmsNotificationProvider smsNotificationProvider,
             IPublicBookingNotificationService publicBookingNotificationService,
             IExportService exportService,
+            IFileService fileService,
             ISmtpHealthService? smtpHealthService = null)
         {
             _db = db;
@@ -43,6 +45,7 @@ namespace MedyxHMS.Controllers
             _smsNotificationProvider = smsNotificationProvider;
             _publicBookingNotificationService = publicBookingNotificationService;
             _exportService = exportService;
+            _fileService = fileService;
             _smtpHealthService = smtpHealthService;
         }
 
@@ -124,14 +127,24 @@ namespace MedyxHMS.Controllers
                 Slug = vm.Slug,
                 Content = vm.Content,
                 MetaDescription = vm.MetaDescription,
+                FeaturedImage = vm.FeaturedImage,
+                FontFamily = vm.FontFamily,
+                FontSizePx = vm.FontSizePx,
                 Status = vm.Status,
                 ShowInMenu = vm.ShowInMenu,
                 SortOrder = vm.SortOrder,
                 CreatedAt = DateTime.UtcNow,
                 CreatedBy = User.Identity.Name
             };
+
+            if (vm.FeaturedImageFile != null)
+            {
+                page.FeaturedImage = await _fileService.UploadFileAsync(vm.FeaturedImageFile, "cms-pages");
+            }
+
             _db.CmsPages.Add(page);
             await _db.SaveChangesAsync();
+            await EnsurePageMenuItemAsync(page);
             TempData["Success"] = "Page created successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -148,6 +161,9 @@ namespace MedyxHMS.Controllers
                 Slug = page.Slug,
                 Content = page.Content,
                 MetaDescription = page.MetaDescription,
+                FeaturedImage = page.FeaturedImage,
+                FontFamily = page.FontFamily,
+                FontSizePx = page.FontSizePx,
                 Status = page.Status,
                 ShowInMenu = page.ShowInMenu,
                 SortOrder = page.SortOrder
@@ -174,13 +190,25 @@ namespace MedyxHMS.Controllers
             page.Slug = vm.Slug;
             page.Content = vm.Content;
             page.MetaDescription = vm.MetaDescription;
+            page.FontFamily = vm.FontFamily;
+            page.FontSizePx = vm.FontSizePx;
             page.Status = vm.Status;
             page.ShowInMenu = vm.ShowInMenu;
             page.SortOrder = vm.SortOrder;
             page.UpdatedAt = DateTime.UtcNow;
             page.UpdatedBy = User.Identity.Name;
 
+            if (vm.FeaturedImageFile != null)
+            {
+                page.FeaturedImage = await _fileService.UploadFileAsync(vm.FeaturedImageFile, "cms-pages");
+            }
+            else
+            {
+                page.FeaturedImage = vm.FeaturedImage;
+            }
+
             await _db.SaveChangesAsync();
+            await EnsurePageMenuItemAsync(page);
             TempData["Success"] = "Page updated successfully.";
             return RedirectToAction(nameof(Index));
         }
@@ -191,10 +219,11 @@ namespace MedyxHMS.Controllers
             var page = await _db.CmsPages.FindAsync(id);
             if (page == null) return NotFound();
 
-            // Remove menu items linked to this page
-            var linkedMenuItems = _db.CmsMenuItems.Where(m => m.CmsPageId == id);
-            foreach (var item in linkedMenuItems)
-                item.CmsPageId = null;
+            var linkedMenuItems = await _db.CmsMenuItems.Where(m => m.CmsPageId == id).ToListAsync();
+            if (linkedMenuItems.Count > 0)
+            {
+                _db.CmsMenuItems.RemoveRange(linkedMenuItems);
+            }
 
             _db.CmsPages.Remove(page);
             await _db.SaveChangesAsync();
@@ -1085,6 +1114,39 @@ namespace MedyxHMS.Controllers
         private static string BuildDuplicateKey(string phone, int doctorId, DateTime preferredDate, TimeSpan preferredTime)
         {
             return string.Join("|", phone, doctorId, preferredDate.ToString("yyyy-MM-dd"), preferredTime.Ticks);
+        }
+
+        private async Task EnsurePageMenuItemAsync(CmsPage page)
+        {
+            var menuItem = await _db.CmsMenuItems.FirstOrDefaultAsync(m => m.CmsPageId == page.Id);
+            var shouldPublishToMenu = page.ShowInMenu && string.Equals(page.Status, "Published", StringComparison.OrdinalIgnoreCase);
+
+            if (!shouldPublishToMenu)
+            {
+                if (menuItem != null)
+                {
+                    _db.CmsMenuItems.Remove(menuItem);
+                    await _db.SaveChangesAsync();
+                }
+                return;
+            }
+
+            if (menuItem == null)
+            {
+                menuItem = new CmsMenuItem
+                {
+                    CmsPageId = page.Id
+                };
+                _db.CmsMenuItems.Add(menuItem);
+            }
+
+            menuItem.Label = page.Title;
+            menuItem.Url = $"/site/page/{page.Slug}";
+            menuItem.SortOrder = page.SortOrder;
+            menuItem.IsActive = true;
+            menuItem.OpenInNewTab = false;
+
+            await _db.SaveChangesAsync();
         }
 
         private async Task<string?> GetSettingValueAsync(string key)

@@ -70,7 +70,8 @@ public class PublicBookingApprovalBillingFlowTests
             new FakeEmailNotificationProvider(),
             new FakeSmsNotificationProvider(),
             fakeNotificationService,
-            new ExportService());
+            new ExportService(),
+            new FakeFileService());
         cmsController.TempData = new TempDataDictionary(new DefaultHttpContext(), new FakeTempDataProvider());
 
         var approvalResult = await cmsController.UpdateRequestStatus(request.Id, "Confirmed", "Approved for slot", false);

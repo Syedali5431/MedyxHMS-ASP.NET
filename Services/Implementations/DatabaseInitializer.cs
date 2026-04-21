@@ -174,6 +174,23 @@ namespace MedyxHMS.Services.Implementations
             await EnsureSystemSettingAsync("PublicSiteEmail", "info@medyxhospital.com", "string", "PublicSite", "Public website contact email address.");
             await EnsureSystemSettingAsync("PublicSiteMapEmbedUrl", "", "string", "PublicSite", "Optional Google map embed URL; when empty, map is generated from address.");
             await EnsureSystemSettingAsync("PublicSiteCareersContent", "We are hiring doctors, nurses, technicians, and support staff. Share your resume using the contact email.", "string", "PublicSite", "Public careers page content.");
+            await EnsureSystemSettingAsync("PublicSiteHomeTitle", "Medyx Hospital", "string", "PublicSite", "Home page title text.");
+            await EnsureSystemSettingAsync("PublicSiteHomeTagline", "Compassionate Care, Advanced Medicine", "string", "PublicSite", "Home page tagline text.");
+            await EnsureSystemSettingAsync("PublicSiteHomeDescription", "", "string", "PublicSite", "Optional home page supporting paragraph.");
+            await EnsureSystemSettingAsync("PublicSiteHomeFontFamily", "", "string", "PublicSite", "Optional home page font family style.");
+            await EnsureSystemSettingAsync("PublicSiteHomeHeroImage", "", "string", "PublicSite", "Optional home page hero image path.");
+            await EnsureSystemSettingAsync("PublicSiteContactDescription", "", "string", "PublicSite", "Optional contact page supporting paragraph.");
+            await EnsureSystemSettingAsync("PublicSiteContactFontFamily", "", "string", "PublicSite", "Optional contact page font family style.");
+            await EnsureSystemSettingAsync("PublicSiteContactHeroImage", "", "string", "PublicSite", "Optional contact page hero image path.");
+            await EnsureSystemSettingAsync("PublicSiteLocationDescription", "", "string", "PublicSite", "Optional location page supporting paragraph.");
+            await EnsureSystemSettingAsync("PublicSiteLocationFontFamily", "", "string", "PublicSite", "Optional location page font family style.");
+            await EnsureSystemSettingAsync("PublicSiteLocationHeroImage", "", "string", "PublicSite", "Optional location page hero image path.");
+            await EnsureSystemSettingAsync("PublicSitePrimaryColor", "#1a5276", "string", "PublicSite", "Primary theme color used on public-site header and buttons.");
+            await EnsureSystemSettingAsync("PublicSiteAccentColor", "#2980b9", "string", "PublicSite", "Accent theme color used on public-site highlights.");
+            await EnsureSystemSettingAsync("PublicSiteSurfaceColor", "#f4f8fb", "string", "PublicSite", "Background surface color for the public site.");
+            await EnsureSystemSettingAsync("PublicSiteThemePreset", "Custom", "string", "PublicSite", "Optional style preset key selected in style studio.");
+            await EnsureSystemSettingAsync("PublicSiteHeadingStyle", "Normal", "string", "PublicSite", "Heading text transform style: Normal, Uppercase, Capitalize.");
+            await EnsureSystemSettingAsync("PublicSiteButtonStyle", "Rounded", "string", "PublicSite", "Button shape style: Rounded, Pill, Square.");
         }
 
         private async Task EnsureStep42TablesAsync()
@@ -188,6 +205,9 @@ BEGIN
         [Slug] NVARCHAR(200) NOT NULL,
         [Content] NVARCHAR(MAX) NULL,
         [MetaDescription] NVARCHAR(300) NULL,
+        [FeaturedImage] NVARCHAR(300) NULL,
+        [FontFamily] NVARCHAR(100) NULL,
+        [FontSizePx] INT NULL,
         [Status] NVARCHAR(20) NOT NULL,
         [ShowInMenu] BIT NOT NULL DEFAULT(0),
         [SortOrder] INT NOT NULL DEFAULT(0),
@@ -197,6 +217,19 @@ BEGIN
         [UpdatedBy] NVARCHAR(100) NULL
     );
     CREATE UNIQUE INDEX [IX_CmsPages_Slug] ON [dbo].[CmsPages]([Slug]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[CmsPages]', N'U') IS NOT NULL
+BEGIN
+    IF COL_LENGTH(N'[dbo].[CmsPages]', N'FeaturedImage') IS NULL
+        ALTER TABLE [dbo].[CmsPages] ADD [FeaturedImage] NVARCHAR(300) NULL;
+
+    IF COL_LENGTH(N'[dbo].[CmsPages]', N'FontFamily') IS NULL
+        ALTER TABLE [dbo].[CmsPages] ADD [FontFamily] NVARCHAR(100) NULL;
+
+    IF COL_LENGTH(N'[dbo].[CmsPages]', N'FontSizePx') IS NULL
+        ALTER TABLE [dbo].[CmsPages] ADD [FontSizePx] INT NULL;
 END");
 
             // CmsNotices

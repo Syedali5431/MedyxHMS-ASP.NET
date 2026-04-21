@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MedyxHMS.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace MedyxHMS.ViewModels
 {
@@ -31,6 +32,20 @@ namespace MedyxHMS.ViewModels
 
         [MaxLength(300), Display(Name = "Meta Description")]
         public string MetaDescription { get; set; }
+
+        [Display(Name = "Featured Image")]
+        public string? FeaturedImage { get; set; }
+
+        [Display(Name = "Upload Featured Image")]
+        public IFormFile? FeaturedImageFile { get; set; }
+
+        [MaxLength(100)]
+        [Display(Name = "Font Family")]
+        public string? FontFamily { get; set; }
+
+        [Range(12, 40)]
+        [Display(Name = "Font Size (px)")]
+        public int? FontSizePx { get; set; }
 
         [Required]
         public string Status { get; set; } = "Draft";

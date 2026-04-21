@@ -157,6 +157,61 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - **Status:** Implemented for test readiness and operational validation
 - Read this for the final role-security and smoke-test automation pass.
 
+### PH17 - Public Site Content Studio and SuperAdmin Governance
+- Document: [PH17.md](PH17.md)
+- Focus:
+  - Admin/SuperAdmin management for Home, Contact, Location page content and presentation
+  - CMS page image and typography customization controls
+  - automatic publishing of new CMS pages into public site navigation
+  - SuperAdmin-only module/dashboard section enablement controls
+- **Status:** Implemented for public content operations and governance hardening
+- Read this for the current public-site content management and dashboard section authority model.
+
+### PH18 - Public Style Studio Extension
+- Document: [PH18.md](PH18.md)
+- Focus:
+  - public-site visual controls for colors, heading style, and button shape
+  - layout-level style variable application with safe fallbacks
+  - continuity of Admin/SuperAdmin public editing with SuperAdmin-only dashboard governance
+- **Status:** Implemented as an extension of public-site content controls
+- Read this for style customization coverage in the public website layer.
+
+### PH19 - Public Style Studio Live Preview
+- Document: [PH19.md](PH19.md)
+- Focus:
+  - live, in-form visual preview for public-site style settings
+  - immediate feedback for color, heading style, and button shape decisions
+  - no impact on dashboard styling scope or role boundaries
+- **Status:** Implemented as UX enhancement for Admin/SuperAdmin content management
+- Read this for authoring-time preview behavior in the public style flow.
+
+### PH20 - Dual Desktop and Mobile Style Preview
+- Document: [PH20.md](PH20.md)
+- Focus:
+  - simultaneous desktop and mobile live preview in style studio
+  - pre-save visual validation for responsive-facing choices
+  - preservation of existing role and persistence boundaries
+- **Status:** Implemented as responsive preview enhancement
+- Read this for dual-preview behavior in Public Site Settings.
+
+### PH21 - Theme Preset Selector for Style Studio
+- Document: [PH21.md](PH21.md)
+- Focus:
+  - one-click preset application for public-site visual settings
+  - automatic fallback to Custom when manual edits diverge from preset values
+  - persisted preset selection for consistent authoring continuity
+- **Status:** Implemented as productivity enhancement for Admin/SuperAdmin styling workflow
+- Read this for preset application behavior and persistence details.
+
+### PH22 - Visual Preset Swatch Cards
+- Document: [PH22.md](PH22.md)
+- Focus:
+  - clickable visual preset cards for faster selection
+  - active-state feedback and dropdown synchronization
+  - seamless custom override behavior after manual edits
+- **Status:** Implemented as UX acceleration for style preset application
+- Read this for visual preset card behavior and interaction rules.
+
 ## Suggested Reading Order
 1. [PH1.md](PH1.md)
 2. [PH2.md](PH2.md)
@@ -174,6 +229,12 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 14. [PH14.md](PH14.md)
 15. [PH15.md](PH15.md)
 16. [PH16.md](PH16.md)
+17. [PH17.md](PH17.md)
+18. [PH18.md](PH18.md)
+19. [PH19.md](PH19.md)
+20. [PH20.md](PH20.md)
+21. [PH21.md](PH21.md)
+22. [PH22.md](PH22.md)
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -190,6 +251,12 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Authentication redirect assurance and dashboard routing: [PH14.md](PH14.md)
 - Dynamic role selection login and module management system: [PH15.md](PH15.md)
 - Role enforcement hardening and smoke automation: [PH16.md](PH16.md)
+- Public site content studio and dashboard governance hardening: [PH17.md](PH17.md)
+- Public site style studio controls and theming: [PH18.md](PH18.md)
+- Public style studio live preview UX: [PH19.md](PH19.md)
+- Dual desktop/mobile live preview support: [PH20.md](PH20.md)
+- Theme preset selector and custom override behavior: [PH21.md](PH21.md)
+- Visual preset swatch card interactions: [PH22.md](PH22.md)
 
 ## Planned Design Docs
 

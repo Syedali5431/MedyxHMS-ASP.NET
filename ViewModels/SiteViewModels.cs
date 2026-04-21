@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MedyxHMS.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace MedyxHMS.ViewModels
 {
@@ -18,14 +19,21 @@ namespace MedyxHMS.ViewModels
         public string ContactEmail { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string MapEmbedUrl { get; set; } = string.Empty;
+        public string HeroImageUrl { get; set; } = string.Empty;
+        public string HeroDescription { get; set; } = string.Empty;
+        public string FontFamily { get; set; } = string.Empty;
     }
 
     public class SiteContactViewModel
     {
+        public string Title { get; set; } = string.Empty;
         public string ContactPhone { get; set; } = string.Empty;
         public string ContactEmail { get; set; } = string.Empty;
         public string Address { get; set; } = string.Empty;
         public string MapEmbedUrl { get; set; } = string.Empty;
+        public string HeroImageUrl { get; set; } = string.Empty;
+        public string HeroDescription { get; set; } = string.Empty;
+        public string FontFamily { get; set; } = string.Empty;
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
@@ -53,6 +61,63 @@ namespace MedyxHMS.ViewModels
 
         [MaxLength(4000)]
         public string CareersContent { get; set; } = string.Empty;
+
+        [MaxLength(200)]
+        public string HomeTitle { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string HomeTagline { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string HomeDescription { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string HomeFontFamily { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string ContactDescription { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string ContactFontFamily { get; set; } = string.Empty;
+
+        [MaxLength(500)]
+        public string LocationDescription { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string LocationFontFamily { get; set; } = string.Empty;
+
+        [MaxLength(300)]
+        public string HomeHeroImage { get; set; } = string.Empty;
+
+        public IFormFile? HomeHeroImageFile { get; set; }
+
+        [MaxLength(300)]
+        public string ContactHeroImage { get; set; } = string.Empty;
+
+        public IFormFile? ContactHeroImageFile { get; set; }
+
+        [MaxLength(300)]
+        public string LocationHeroImage { get; set; } = string.Empty;
+
+        public IFormFile? LocationHeroImageFile { get; set; }
+
+        [MaxLength(7)]
+        public string PrimaryColor { get; set; } = "#1a5276";
+
+        [MaxLength(7)]
+        public string AccentColor { get; set; } = "#2980b9";
+
+        [MaxLength(7)]
+        public string SurfaceColor { get; set; } = "#f4f8fb";
+
+        [MaxLength(50)]
+        public string ThemePreset { get; set; } = "Custom";
+
+        [MaxLength(20)]
+        public string HeadingStyle { get; set; } = "Normal";
+
+        [MaxLength(20)]
+        public string ButtonStyle { get; set; } = "Rounded";
     }
 
     // ─── Public CMS Page View ────────────────────────────────────────────────

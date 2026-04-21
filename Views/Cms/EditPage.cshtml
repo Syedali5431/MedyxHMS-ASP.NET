@@ -22,7 +22,8 @@
 
                     <form asp-action="@(isNew ? "CreatePage" : "EditPage")"
                           asp-route-id="@(isNew ? null : Model.Id.ToString())"
-                          method="post">
+                          method="post"
+                          enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         <input type="hidden" asp-for="Id" />
 
@@ -51,6 +52,36 @@
                             <input asp-for="MetaDescription" class="form-control" maxlength="300"
                                    placeholder="Brief description for search engines (up to 300 characters)" />
                             <span asp-validation-for="MetaDescription" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="FeaturedImageFile" class="form-label fw-semibold"></label>
+                            <input asp-for="FeaturedImageFile" type="file" class="form-control" accept=".jpg,.jpeg,.png" />
+                            @if (!string.IsNullOrWhiteSpace(Model.FeaturedImage))
+                            {
+                                <input type="hidden" asp-for="FeaturedImage" />
+                                <div class="mt-2">
+                                    <img src="/@Model.FeaturedImage" alt="Featured image" style="max-height:120px;" class="rounded border" />
+                                </div>
+                            }
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="FontFamily" class="form-label fw-semibold"></label>
+                                <select asp-for="FontFamily" class="form-select">
+                                    <option value="">Default</option>
+                                    <option value="Georgia, 'Times New Roman', serif">Serif (Georgia)</option>
+                                    <option value="'Trebuchet MS', 'Segoe UI', sans-serif">Sans (Trebuchet)</option>
+                                    <option value="'Courier New', monospace">Monospace (Courier New)</option>
+                                    <option value="'Lucida Sans', 'Segoe UI', sans-serif">Lucida Sans</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="FontSizePx" class="form-label fw-semibold"></label>
+                                <input asp-for="FontSizePx" type="number" class="form-control" min="12" max="40" />
+                                <span asp-validation-for="FontSizePx" class="text-danger small"></span>
+                            </div>
                         </div>
 
                         <div class="mb-3">
