@@ -15,6 +15,19 @@ body {
     font-size: 16px; /* Prevents auto-zoom on input focus in iOS */
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.footer {
+    position: static !important;
+    bottom: auto !important;
+    line-height: normal !important;
+    white-space: normal !important;
 }
 
 /* Touch-Friendly Buttons & Links */

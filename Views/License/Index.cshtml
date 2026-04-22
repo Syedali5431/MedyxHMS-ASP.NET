@@ -38,6 +38,8 @@
                 <dl class="row mb-0">
                     <dt class="col-sm-5">Reference</dt>
                     <dd class="col-sm-7">@Model.Snapshot.License.LicenseReference</dd>
+                    <dt class="col-sm-5">Tenant ID</dt>
+                    <dd class="col-sm-7">@Model.Snapshot.License.TenantId</dd>
                     <dt class="col-sm-5">Expiry</dt>
                     <dd class="col-sm-7">@Model.Snapshot.License.ExpiresAtUtc.ToString("yyyy-MM-dd")</dd>
                     <dt class="col-sm-5">Days Remaining</dt>
@@ -95,7 +97,23 @@
                         <label for="licenseFile" class="form-label">Signed License File</label>
                         <input type="file" id="licenseFile" name="licenseFile" class="form-control" accept=".lic" required />
                     </div>
+                    <div class="mb-3">
+                        <label for="publicKeyFile" class="form-label">Public Key File (.json) (Optional for key rotation)</label>
+                        <input type="file" id="publicKeyFile" name="publicKeyFile" class="form-control" accept=".json" />
+                        <div class="form-text">If this license was signed with a new keypair, upload the matching public key JSON to rotate keys automatically.</div>
+                    </div>
                     <button type="submit" class="btn btn-success">Validate and Activate</button>
+                </form>
+
+                <hr />
+
+                <h2 class="h5">Load License from Server File</h2>
+                <p class="text-muted small mb-2">
+                    Place <code>MedyxHMS.lic</code> in the application root directory, then click the button below to load it directly.
+                </p>
+                <form asp-action="LoadFromFile" method="post">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-secondary">Load from <code>MedyxHMS.lic</code></button>
                 </form>
 
                 <hr />

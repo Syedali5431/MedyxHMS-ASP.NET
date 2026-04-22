@@ -32,8 +32,19 @@ var availableModules = new (string Key, string Label)[]
     ("PatientPortal", "Patient Portal"),
     ("Ambulance", "Ambulance Management"),
     ("Chatbot", "Chatbot"),
-    ("CMS", "CMS and Public Website"),
-    ("License", "License Management")
+    ("CMS", "CMS and Public Website")
+};
+
+var basicModuleKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+{
+    "Dashboard",
+    "Patient",
+    "Appointment",
+    "Billing",
+    "FrontOffice",
+    "Referral",
+    "Report",
+    "PatientPortal"
 };
 
 while (true)
@@ -52,7 +63,7 @@ while (true)
                 GenerateKeyPair();
                 break;
             case "2":
-                CreateSignedLicense(availableModules);
+                CreateSignedLicense(availableModules, basicModuleKeys);
                 break;
             case "3":
                 return;
@@ -125,7 +136,7 @@ static void GenerateKeyPair()
     Console.WriteLine("Deploy ONLY the public key modulus/exponent to MedyxHMS settings.");
 }
 
-static void CreateSignedLicense((string Key, string Label)[] availableModules)
+static void CreateSignedLicense((string Key, string Label)[] availableModules, HashSet<string> basicModuleKeys)
 {
     Console.Write("Path to private key JSON: ");
     var privatePath = Console.ReadLine()?.Trim() ?? string.Empty;
@@ -134,6 +145,8 @@ static void CreateSignedLicense((string Key, string Label)[] availableModules)
 
     var privateKey = JsonSerializer.Deserialize<PrivateKeyFile>(File.ReadAllText(privatePath))
                      ?? throw new InvalidDataException("Private key file is invalid.");
+
+    ValidatePrivateKeyFile(privateKey, privatePath);
 
     Console.Write("TenantId: ");
     var tenantId = (Console.ReadLine() ?? string.Empty).Trim();
@@ -149,7 +162,7 @@ static void CreateSignedLicense((string Key, string Label)[] availableModules)
     if (!int.TryParse(maxUsersText, out var maxUsers) || maxUsers <= 0)
         throw new InvalidDataException("MaxConcurrentUsers must be a positive integer.");
 
-    var licensedModules = PromptModuleChecklist(availableModules);
+    var licensedModules = PromptModuleChecklist(availableModules, basicModuleKeys);
 
     var payload = new LicensePayload
     {
@@ -236,13 +249,25 @@ static DateTime SelectExpiryDateUtc(DateTime issuedAtUtc, DateTime minimumExpiry
     return DateTime.SpecifyKind(selectedDateUtc.AddDays(1).AddTicks(-1), DateTimeKind.Utc);
 }
 
-static List<string> PromptModuleChecklist((string Key, string Label)[] availableModules)
+static List<string> PromptModuleChecklist((string Key, string Label)[] availableModules, HashSet<string> basicModuleKeys)
 {
-    Console.WriteLine("Select licensed modules (Y = include, N = lock for non-SuperAdmin users):");
-    var selected = new List<string>(availableModules.Length);
+    var selected = availableModules
+        .Where(m => basicModuleKeys.Contains(m.Key))
+        .Select(m => m.Key)
+        .ToList();
+
+    Console.WriteLine("Basic modules are always included:");
+    foreach (var module in availableModules.Where(m => basicModuleKeys.Contains(m.Key)))
+        Console.WriteLine($"- {module.Label} ({module.Key}) [included]");
+
+    Console.WriteLine();
+    Console.WriteLine("Select optional modules (Y = include, N = lock for non-SuperAdmin users):");
 
     foreach (var (key, label) in availableModules)
     {
+        if (basicModuleKeys.Contains(key))
+            continue;
+
         Console.Write($"- {label} ({key}) [Y/n]: ");
         var answer = (Console.ReadLine() ?? string.Empty).Trim();
         if (string.IsNullOrWhiteSpace(answer) || answer.Equals("y", StringComparison.OrdinalIgnoreCase) || answer.Equals("yes", StringComparison.OrdinalIgnoreCase))
@@ -276,6 +301,21 @@ static string SignWithPrivateKey(PrivateKeyFile key, string canonicalPayload)
     var data = Encoding.UTF8.GetBytes(canonicalPayload);
     var signature = rsa.SignData(data, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
     return Convert.ToHexString(signature);
+}
+
+static void ValidatePrivateKeyFile(PrivateKeyFile key, string path)
+{
+    static bool Missing(string? value) => string.IsNullOrWhiteSpace(value);
+
+    if (Missing(key.ModulusHex) || Missing(key.ExponentHex))
+        throw new InvalidDataException($"Invalid private key JSON: missing ModulusHex/ExponentHex in '{path}'.");
+
+    if (Missing(key.DHex) || Missing(key.PHex) || Missing(key.QHex) || Missing(key.DPHex) || Missing(key.DQHex) || Missing(key.InverseQHex))
+    {
+        throw new InvalidDataException(
+            $"Invalid private key JSON: RSA private parameters are missing in '{path}'. " +
+            "You likely selected a public key JSON. Use medyxhms-private-key-*.json for license generation.");
+    }
 }
 
 static string BuildCanonicalPayloadJson(LicensePayload payload)

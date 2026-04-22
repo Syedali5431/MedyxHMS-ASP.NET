@@ -124,6 +124,15 @@
                         <a href="@Url.Action("ScheduleReport")" class="btn btn-outline-primary">
                             <i class="fas fa-calendar"></i> Schedule Automatic Reports
                         </a>
+                        @if (User.IsInRole("SuperAdmin"))
+                        {
+                            <form asp-action="ImportLegacyPhpReports" method="post" class="d-inline ms-2">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-outline-dark">
+                                    <i class="fas fa-file-import"></i> Import PHP Reports (Editable)
+                                </button>
+                            </form>
+                        }
                     </div>
                 </div>
             </div>

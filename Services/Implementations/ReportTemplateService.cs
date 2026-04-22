@@ -306,7 +306,8 @@ namespace MedyxHMS.Services.Implementations
                 "Attendance",
                 "Lab",
                 "Radiology",
-                "Pharmacy"
+                "Pharmacy",
+                "LegacyPHP"
             });
         }
 

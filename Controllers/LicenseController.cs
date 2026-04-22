@@ -1,10 +1,12 @@
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MedyxHMS.Controllers
@@ -17,19 +19,22 @@ namespace MedyxHMS.Controllers
         private readonly IModuleService _moduleService;
         private readonly ISettingService _settingService;
         private readonly ILogger<LicenseController> _logger;
+        private readonly IWebHostEnvironment _env;
 
         public LicenseController(
             ILicenseService licenseService,
             ILicenseFileService licenseFileService,
             IModuleService moduleService,
             ISettingService settingService,
-            ILogger<LicenseController> logger)
+            ILogger<LicenseController> logger,
+            IWebHostEnvironment env)
         {
             _licenseService = licenseService;
             _licenseFileService = licenseFileService;
             _moduleService = moduleService;
             _settingService = settingService;
             _logger = logger;
+            _env = env;
         }
 
         [Authorize(Roles = "SuperAdmin")]
@@ -107,10 +112,44 @@ namespace MedyxHMS.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperAdmin")]
-        public async Task<IActionResult> Upload(IFormFile licenseFile)
+        public async Task<IActionResult> Upload(IFormFile licenseFile, IFormFile? publicKeyFile)
         {
             try
             {
+                if (publicKeyFile != null && publicKeyFile.Length > 0)
+                {
+                    if (!string.Equals(Path.GetExtension(publicKeyFile.FileName), ".json", StringComparison.OrdinalIgnoreCase))
+                        throw new InvalidDataException("Public key file must be a .json file.");
+
+                    string json;
+                    using (var stream = publicKeyFile.OpenReadStream())
+                    using (var reader = new StreamReader(stream))
+                    {
+                        json = await reader.ReadToEndAsync();
+                    }
+
+                    var key = JsonSerializer.Deserialize<PublicKeyUploadDto>(json, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    }) ?? throw new InvalidDataException("Public key JSON is invalid.");
+
+                    var normalizedModulus = NormalizeHex(key.ModulusHex);
+                    var normalizedExponent = NormalizeHex(key.ExponentHex);
+
+                    ValidatePublicKeyHex(normalizedModulus, normalizedExponent);
+
+                    var computedVerificationKey = LicenseCryptoUtility.ComputeVerificationKey(normalizedModulus, normalizedExponent);
+                    if (!string.IsNullOrWhiteSpace(key.VerificationKey)
+                        && !string.Equals(key.VerificationKey.Trim(), computedVerificationKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new InvalidDataException("Public key JSON verification key does not match modulus/exponent.");
+                    }
+
+                    await _settingService.UpdateSettingAsync("LicensePublicKeyModulusHex", normalizedModulus);
+                    await _settingService.UpdateSettingAsync("LicensePublicKeyExponentHex", normalizedExponent);
+                    await _settingService.UpdateSettingAsync("LicenseVerificationKey", computedVerificationKey);
+                }
+
                 var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
                 await _licenseFileService.ValidateAndActivateAsync(
                     licenseFile,
@@ -122,6 +161,42 @@ namespace MedyxHMS.Controllers
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Signed license upload failed.");
+                TempData["ErrorMessage"] = ex.Message;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> LoadFromFile()
+        {
+            try
+            {
+                var filePath = Path.Combine(_env.ContentRootPath, "MedyxHMS.lic");
+                if (!System.IO.File.Exists(filePath))
+                    throw new FileNotFoundException($"MedyxHMS.lic not found in the application root ({_env.ContentRootPath}). Copy the file there and try again.");
+
+                var bytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var stream = new MemoryStream(bytes);
+                var formFile = new FormFile(stream, 0, bytes.Length, "licenseFile", "MedyxHMS.lic")
+                {
+                    Headers = new HeaderDictionary(),
+                    ContentType = "application/octet-stream"
+                };
+
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+                await _licenseFileService.ValidateAndActivateAsync(
+                    formFile,
+                    userId,
+                    HttpContext.Connection.RemoteIpAddress?.ToString());
+
+                TempData["SuccessMessage"] = $"License loaded from {filePath} and activated successfully.";
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "License load from file failed.");
                 TempData["ErrorMessage"] = ex.Message;
             }
 
@@ -294,6 +369,15 @@ namespace MedyxHMS.Controllers
         private static string EscapeCsv(string? value)
         {
             return (value ?? string.Empty).Replace("\"", "\"\"");
+        }
+
+        private sealed class PublicKeyUploadDto
+        {
+            public string ModulusHex { get; set; } = string.Empty;
+
+            public string ExponentHex { get; set; } = string.Empty;
+
+            public string? VerificationKey { get; set; }
         }
     }
 }

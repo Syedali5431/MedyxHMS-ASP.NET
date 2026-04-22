@@ -410,6 +410,46 @@ namespace MedyxHMS.Controllers
                 .WithSuccessMessage(deleted ? "Template deleted successfully" : "Template not found");
         }
 
+        [Authorize(Roles = "SuperAdmin")]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportLegacyPhpReports()
+        {
+            var existing = await _reportTemplateService.GetAllTemplatesAsync();
+            var existingKeys = existing
+                .Select(t => BuildLegacyTemplateName(t.Name))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var createdCount = 0;
+            var now = DateTime.UtcNow;
+            var actor = User.Identity?.Name ?? "System";
+
+            foreach (var report in LegacyPhpReportCatalog)
+            {
+                var templateName = BuildLegacyTemplateName(report.Name);
+                if (existingKeys.Contains(templateName))
+                    continue;
+
+                var template = new ReportTemplate
+                {
+                    Name = templateName,
+                    ReportType = report.Type,
+                    Description = $"Migrated from PHP report view: {report.SourcePath}",
+                    IsActive = true,
+                    IsDefault = false,
+                    CreatedBy = actor,
+                    CreatedDate = now
+                };
+
+                await _reportTemplateService.CreateTemplateAsync(template);
+                existingKeys.Add(templateName);
+                createdCount++;
+            }
+
+            return RedirectToAction(nameof(Builder), new { reportType = "LegacyPHP" })
+                .WithSuccessMessage($"Legacy PHP report import complete. Added {createdCount} editable template(s).");
+        }
+
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpGet]
         public async Task<IActionResult> Preview(int id)
@@ -424,6 +464,79 @@ namespace MedyxHMS.Controllers
             ViewData["Template"] = template;
             return View(result);
         }
+
+        private static string BuildLegacyTemplateName(string name)
+        {
+            var safeName = (name ?? string.Empty).Trim();
+            return safeName.StartsWith("PHP:", StringComparison.OrdinalIgnoreCase)
+                ? safeName
+                : $"PHP: {safeName}";
+        }
+
+        private static readonly (string Name, string Type, string SourcePath)[] LegacyPhpReportCatalog =
+        {
+            ("Appointment Report", "LegacyPHP", "application/views/admin/appointment/appointmentReport.php"),
+            ("Bill Report (Print)", "LegacyPHP", "application/views/admin/bill/_print_bill_report.php"),
+            ("Birth Report", "LegacyPHP", "application/views/admin/birthordeath/birthReport.php"),
+            ("Death Report", "LegacyPHP", "application/views/admin/birthordeath/deathReport.php"),
+            ("Birth Report (Legacy 1)", "LegacyPHP", "application/views/admin/birthreport/birthreport.php"),
+            ("Birth Report (Legacy 2)", "LegacyPHP", "application/views/admin/birthreport/birth_report.php"),
+            ("Birth Print Bill", "LegacyPHP", "application/views/admin/birthreport/printBill.php"),
+            ("Birth Search Report", "LegacyPHP", "application/views/admin/birthreport/search.php"),
+            ("Blood Donor Report", "LegacyPHP", "application/views/admin/bloodbank/blooddonorreport.php"),
+            ("Blood Issue Report", "LegacyPHP", "application/views/admin/bloodbank/bloodissuereport.php"),
+            ("Blood Component Issue Report", "LegacyPHP", "application/views/admin/bloodbank/componentissuereport.php"),
+            ("Consultation Report", "LegacyPHP", "application/views/admin/conference/consult_report.php"),
+            ("Meeting Report", "LegacyPHP", "application/views/admin/conference/meeting_report.php"),
+            ("Death Report (Legacy 1)", "LegacyPHP", "application/views/admin/deathreport/deathreport.php"),
+            ("Death Report (Legacy 2)", "LegacyPHP", "application/views/admin/deathreport/death_report.php"),
+            ("Death Print Bill", "LegacyPHP", "application/views/admin/deathreport/printBill.php"),
+            ("Death Search Report", "LegacyPHP", "application/views/admin/deathreport/search.php"),
+            ("Group Expense Report", "LegacyPHP", "application/views/admin/expense/groupexpenseReport.php"),
+            ("Medicine Expense Report", "LegacyPHP", "application/views/admin/expmedicine/expmedicinereport.php"),
+            ("All Transactions Report", "LegacyPHP", "application/views/admin/income/alltransactionReport.php"),
+            ("Group Income Report", "LegacyPHP", "application/views/admin/income/groupincomeReport.php"),
+            ("Transaction Report", "LegacyPHP", "application/views/admin/income/transactionReport.php"),
+            ("Issue Inventory Report", "LegacyPHP", "application/views/admin/issueitem/issueinventoryreport.php"),
+            ("Add Item Report", "LegacyPHP", "application/views/admin/item/additemreport.php"),
+            ("Item Report", "LegacyPHP", "application/views/admin/item/itemreport.php"),
+            ("Operation Theatre Report", "LegacyPHP", "application/views/admin/operationtheatre/otReport.php"),
+            ("Pathology Report", "LegacyPHP", "application/views/admin/pathology/pathologyReport.php"),
+            ("Pathology Print Report", "LegacyPHP", "application/views/admin/pathology/printReport.php"),
+            ("Pathology Report Detail", "LegacyPHP", "application/views/admin/pathology/reportDetail.php"),
+            ("Pathology Report Details Partial", "LegacyPHP", "application/views/admin/pathology/_getPathologyReportDetails.php"),
+            ("Pathology Patient Print Partial", "LegacyPHP", "application/views/admin/pathology/_printPatientReportDetail.php"),
+            ("Discharge Patient Report", "LegacyPHP", "application/views/admin/patient/dischargePatientReport.php"),
+            ("IPD Report", "LegacyPHP", "application/views/admin/patient/ipdReport.php"),
+            ("IPD Balance Report", "LegacyPHP", "application/views/admin/patient/ipdReportbalance.php"),
+            ("OPD Discharge Report", "LegacyPHP", "application/views/admin/patient/opddischargepatientReport.php"),
+            ("OPD Report", "LegacyPHP", "application/views/admin/patient/opdReport.php"),
+            ("OPD Balance Report", "LegacyPHP", "application/views/admin/patient/opdReportbalance.php"),
+            ("Patient Bill Report", "LegacyPHP", "application/views/admin/patient/patientBillReport.php"),
+            ("Patient Credential Report", "LegacyPHP", "application/views/admin/patient/patientcredentialreport.php"),
+            ("Patient Visit Report", "LegacyPHP", "application/views/admin/patient/patientVisitReport.php"),
+            ("Patient Visit Report Partial", "LegacyPHP", "application/views/admin/patient/_patientvisitreport.php"),
+            ("Visit Report Print Bill", "LegacyPHP", "application/views/admin/patient/visitreport/printBill.php"),
+            ("Visit Bill Detail Partial", "LegacyPHP", "application/views/admin/patient/visitreport/_getBillDetails.php"),
+            ("Visit Blood Issue Detail Partial", "LegacyPHP", "application/views/admin/patient/visitreport/_getBloodIssueDetail.php"),
+            ("Visit Component Issue Detail Partial", "LegacyPHP", "application/views/admin/patient/visitreport/_getcomponentIssueDetail.php"),
+            ("Visit Pathology Detail Partial", "LegacyPHP", "application/views/admin/patient/visitreport/_getPatientPathologyDetails.php"),
+            ("Visit Radiology Detail Partial", "LegacyPHP", "application/views/admin/patient/visitreport/_getPatientRadiologyDetails.php"),
+            ("Payroll Report", "LegacyPHP", "application/views/admin/payroll/payrollreport.php"),
+            ("Pharmacy Bill Report", "LegacyPHP", "application/views/admin/pharmacy/billReport.php"),
+            ("Radiology Print Report", "LegacyPHP", "application/views/admin/radio/printReport.php"),
+            ("Radiology Report", "LegacyPHP", "application/views/admin/radio/radiologyReport.php"),
+            ("Radiology Report Detail", "LegacyPHP", "application/views/admin/radio/reportDetail.php"),
+            ("Radiology Report Details Partial", "LegacyPHP", "application/views/admin/radio/_getRadiologyReportDetails.php"),
+            ("Radiology Patient Print Partial", "LegacyPHP", "application/views/admin/radio/_printPatientReportDetail.php"),
+            ("Referral Report", "LegacyPHP", "application/views/admin/referral/report.php"),
+            ("Staff Attendance Report", "LegacyPHP", "application/views/admin/staffattendance/attendancereport.php"),
+            ("TPA Report", "LegacyPHP", "application/views/admin/tpamanagement/tpareport.php"),
+            ("Transaction Report (Admin)", "LegacyPHP", "application/views/admin/transaction/transactionreport.php"),
+            ("Ambulance Report", "LegacyPHP", "application/views/admin/vehicle/ambulancereport.php"),
+            ("Patient Pathology Print Partial", "LegacyPHP", "application/views/patient/pathology/_printPatientReportDetail.php"),
+            ("Patient Radiology Print Partial", "LegacyPHP", "application/views/patient/radiology/_printPatientReportDetail.php")
+        };
     }
 
     // Extension method for redirect with message (if not already defined)

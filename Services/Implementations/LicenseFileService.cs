@@ -4,6 +4,7 @@ using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedyxHMS.Services.Implementations
@@ -13,15 +14,18 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly ISettingService _settingService;
         private readonly IDataProtector _storageProtector;
+        private readonly IWebHostEnvironment _environment;
 
         public LicenseFileService(
             ApplicationDbContext context,
             ISettingService settingService,
-            IDataProtectionProvider dataProtectionProvider)
+            IDataProtectionProvider dataProtectionProvider,
+            IWebHostEnvironment environment)
         {
             _context = context;
             _settingService = settingService;
             _storageProtector = dataProtectionProvider.CreateProtector("MedyxHMS.License.Storage.v1");
+            _environment = environment;
         }
 
         public async Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string performedByUserId, string? ipAddress = null)
@@ -72,17 +76,38 @@ namespace MedyxHMS.Services.Implementations
             if (string.IsNullOrWhiteSpace(expectedTenant))
                 throw new InvalidOperationException("LicenseTenantId setting is missing. Configure tenant before importing licenses.");
 
+            var payloadTenant = signed.Payload.TenantId?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(payloadTenant))
+                throw new InvalidDataException("License TenantId is missing.");
+
+            // Bootstrap tenant setting from the first real license import when the system is still in default state.
+            if (string.Equals(expectedTenant, "UNCONFIGURED", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(payloadTenant, expectedTenant, StringComparison.OrdinalIgnoreCase))
+            {
+                await _settingService.UpdateSettingAsync("LicenseTenantId", payloadTenant);
+                expectedTenant = payloadTenant;
+            }
+
             if (!string.Equals(signed.Payload.ProductName, expectedProduct, StringComparison.Ordinal))
                 throw new InvalidDataException("License product mismatch.");
 
-            if (!string.Equals(signed.Payload.TenantId, expectedTenant, StringComparison.Ordinal))
-                throw new InvalidDataException("License tenant mismatch.");
+            if (!string.Equals(payloadTenant, expectedTenant, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"License tenant mismatch. Expected '{expectedTenant}' but got '{payloadTenant}'.");
 
             if (signed.Payload.ExpiresAt.ToUniversalTime() < DateTime.UtcNow)
                 throw new InvalidDataException("License is already expired.");
 
             var modulusHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyModulusHex"))?.Trim();
             var exponentHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyExponentHex"))?.Trim();
+            if (string.IsNullOrWhiteSpace(modulusHex) || string.IsNullOrWhiteSpace(exponentHex))
+            {
+                var loaded = await TryLoadPublicKeySettingsFromDefaultPathAsync(signed.Payload.VerificationKey?.Trim());
+                if (loaded)
+                {
+                    modulusHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyModulusHex"))?.Trim();
+                    exponentHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyExponentHex"))?.Trim();
+                }
+            }
             if (string.IsNullOrWhiteSpace(modulusHex) || string.IsNullOrWhiteSpace(exponentHex))
                 throw new InvalidOperationException("License public key settings are missing.");
 
@@ -97,13 +122,34 @@ namespace MedyxHMS.Services.Implementations
             if (!string.Equals(configuredVerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Configured verification key does not match the configured public key.");
 
-            if (!string.Equals(signed.Payload.VerificationKey?.Trim(), expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
-                throw new InvalidDataException("License verification key mismatch. License was not generated for this installation key.");
+            var payloadVerificationKey = signed.Payload.VerificationKey?.Trim();
+            if (!string.Equals(payloadVerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
+            {
+                // If the uploaded license was generated with a newer keypair present in MedyxHMS-Lic/current,
+                // switch to that matching public key automatically.
+                var loaded = await TryLoadPublicKeySettingsFromDefaultPathAsync(payloadVerificationKey);
+                if (!loaded)
+                    throw new InvalidDataException("License verification key mismatch. License was not generated for this installation key.");
 
-            var keyAlreadyUsed = await _context.LicenseRecords
-                .AnyAsync(x => x.VerificationKey == expectedVerificationKey);
-            if (keyAlreadyUsed)
-                throw new InvalidDataException("This verification key has already been consumed by a previous uploaded license. Generate a new key pair in MedyxHMS-Lic.");
+                modulusHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyModulusHex"))?.Trim();
+                exponentHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyExponentHex"))?.Trim();
+                configuredVerificationKey = (await _settingService.GetSettingValueAsync("LicenseVerificationKey"))?.Trim();
+
+                if (string.IsNullOrWhiteSpace(modulusHex) || string.IsNullOrWhiteSpace(exponentHex))
+                    throw new InvalidOperationException("License public key settings are missing after key update.");
+
+                expectedVerificationKey = LicenseCryptoUtility.ComputeVerificationKey(modulusHex, exponentHex);
+                if (!string.Equals(configuredVerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase)
+                    || !string.Equals(payloadVerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new InvalidDataException("License verification key mismatch. License was not generated for this installation key.");
+                }
+            }
+
+            var duplicateLicense = await _context.LicenseRecords
+                .AnyAsync(x => x.LicenseGuid == signed.Payload.LicenseId);
+            if (duplicateLicense)
+                throw new InvalidDataException("This license has already been imported.");
 
             var canonical = LicenseCryptoUtility.BuildCanonicalPayloadJson(signed.Payload);
             var signatureValid = LicenseCryptoUtility.VerifyRsaSha256(canonical, signed.SignatureHex, modulusHex, exponentHex);
@@ -163,12 +209,81 @@ namespace MedyxHMS.Services.Implementations
             });
             await _context.SaveChangesAsync();
 
-            // One-time key policy: consume upload key after successful import.
-            await _settingService.UpdateSettingAsync("LicensePublicKeyModulusHex", string.Empty);
-            await _settingService.UpdateSettingAsync("LicensePublicKeyExponentHex", string.Empty);
-            await _settingService.UpdateSettingAsync("LicenseVerificationKey", string.Empty);
-
             return newRecord;
+        }
+
+        private async Task<bool> TryLoadPublicKeySettingsFromDefaultPathAsync(string? expectedVerificationKey)
+        {
+            try
+            {
+                var keyDirectory = Path.Combine(_environment.ContentRootPath, "MedyxHMS-Lic", "current");
+                if (!Directory.Exists(keyDirectory))
+                    return false;
+
+                var publicKeyFiles = Directory
+                    .GetFiles(keyDirectory, "medyxhms-public-key-*.json", SearchOption.TopDirectoryOnly)
+                    .OrderByDescending(File.GetLastWriteTimeUtc)
+                    .ToList();
+
+                foreach (var path in publicKeyFiles)
+                {
+                    var text = await File.ReadAllTextAsync(path);
+                    var key = JsonSerializer.Deserialize<PublicKeyFileDto>(text, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (key == null || string.IsNullOrWhiteSpace(key.ModulusHex) || string.IsNullOrWhiteSpace(key.ExponentHex))
+                        continue;
+
+                    var modulusHex = NormalizeHex(key.ModulusHex);
+                    var exponentHex = NormalizeHex(key.ExponentHex);
+                    if (!IsHex(modulusHex) || !IsHex(exponentHex) || modulusHex.Length % 2 != 0 || exponentHex.Length % 2 != 0)
+                        continue;
+
+                    var verificationKey = LicenseCryptoUtility.ComputeVerificationKey(modulusHex, exponentHex);
+                    if (!string.IsNullOrWhiteSpace(expectedVerificationKey)
+                        && !string.Equals(verificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    await _settingService.UpdateSettingAsync("LicensePublicKeyModulusHex", modulusHex);
+                    await _settingService.UpdateSettingAsync("LicensePublicKeyExponentHex", exponentHex);
+                    await _settingService.UpdateSettingAsync("LicenseVerificationKey", verificationKey);
+                    return true;
+                }
+            }
+            catch
+            {
+                // Ignore fallback read errors and let the normal validation message be shown.
+            }
+
+            return false;
+        }
+
+        private static string NormalizeHex(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            var cleaned = new string(value
+                .Where(c => !char.IsWhiteSpace(c))
+                .ToArray())
+                .Trim();
+
+            if (cleaned.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                cleaned = cleaned[2..];
+
+            return cleaned.ToUpperInvariant();
+        }
+
+        private static bool IsHex(string value)
+        {
+            return value.All(c =>
+                (c >= '0' && c <= '9') ||
+                (c >= 'A' && c <= 'F') ||
+                (c >= 'a' && c <= 'f'));
         }
 
         public async Task<bool> IsCurrentLicenseCryptographicallyValidAsync()
@@ -317,6 +432,17 @@ namespace MedyxHMS.Services.Implementations
 
             throw new InvalidDataException("License file format is invalid or not recognized.");
         }
+    }
+
+    internal sealed class PublicKeyFileDto
+    {
+        public string KeyId { get; set; } = string.Empty;
+        public string Algorithm { get; set; } = string.Empty;
+        public int KeySize { get; set; }
+        public DateTime CreatedAtUtc { get; set; }
+        public string ModulusHex { get; set; } = string.Empty;
+        public string ExponentHex { get; set; } = string.Empty;
+        public string VerificationKey { get; set; } = string.Empty;
     }
 
 }
