@@ -20,6 +20,7 @@ builder.Host.UseSerilog((context, configuration) =>
 // Add services to the container.
 builder.Services.AddControllersWithViews(options =>
 {
+    // Centralized license gate for MVC actions. Middleware also enforces license for non-MVC paths.
     options.Filters.Add<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
 });
 builder.Services.AddTransient<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
@@ -225,8 +226,11 @@ app.UseCors("AllowConfiguredOrigins");
 // Enable Session
 app.UseSession();
 
+// Authentication must run before license/module checks so policies can inspect user roles/claims.
 app.UseAuthentication();
+// License expiration is enforced before per-module entitlement checks.
 app.UseMiddleware<LicenseEnforcementMiddleware>();
+// Entitlement check validates both admin toggles and license module availability.
 app.UseMiddleware<ModuleEntitlementMiddleware>();
 app.UseAuthorization();
 

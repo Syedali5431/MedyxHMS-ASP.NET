@@ -1,33 +1,84 @@
-# README
+# User Guides — Index
 
+**Medyx HMS User Guides**  
+**Last Updated:** 2026-04-22  
 
-> Last Updated: 2026-04-22
-> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
-> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+---
 
-This folder contains user guides by role for the ASP.NET MedyxHMS application.
+## Overview
 
-## Roles Covered
-- SuperAdmin
-- Admin
-- Doctor
-- Nurse
-- Receptionist
-- Accountant/Staff Billing
-- Pharmacist
-- LabTechnician
-- Radiologist
-- Patient
+This folder contains role-specific user guides for all Medyx HMS user roles. Each guide covers login, module access, step-by-step workflows, and quick-reference tables specific to that role.
 
-## Additional Operational Guide
-- [MedyxHMS-Lic-Operator-Guide.md](MedyxHMS-Lic-Operator-Guide.md)
+---
 
-## Common Notes
-- Use the Login button at the top-right on public/app pages.
-- After login, users are redirected to a role-appropriate dashboard/module.
-- CSV/PDF export options are available on report/listing pages where enabled.
-- Report editing and schedule/delete operations are restricted to Admin and SuperAdmin.
-- AI Assistant can be opened using the floating AI button on the bottom-right.
-- New self-signup requests are approval-gated; account access starts only after Admin or SuperAdmin approval.
-- Account creation now requires a unique `user_name`; duplicates are blocked at validation.
-- New accounts use numeric user IDs in system identity records.
+## Role Guides
+
+| Guide | Role | Portal | Primary Area |
+|-------|------|--------|--------------|
+| [SuperAdmin.md](SuperAdmin.md) | SuperAdmin | Staff Portal | Full system governance, license, security |
+| [Admin.md](Admin.md) | Admin | Staff Portal | Hospital operations, patients, billing, reports |
+| [Doctor.md](Doctor.md) | Doctor | Staff Portal | OPD, IPD, prescriptions, test ordering |
+| [Nurse.md](Nurse.md) | Nurse | Staff Portal | IPD nursing, observations, orders tracking |
+| [Pharmacist.md](Pharmacist.md) | Pharmacist | Staff Portal | Prescriptions, stock, pharmacy billing |
+| [Accountant.md](Accountant.md) | Accountant | Staff Portal | Billing, payments, income/expense, reports |
+| [Receptionist.md](Receptionist.md) | Receptionist | Staff Portal | Registration, appointments, front office |
+| [LabTechnician.md](LabTechnician.md) | LabTechnician | Staff Portal | Lab orders, results, test catalogue |
+| [Radiologist.md](Radiologist.md) | Radiologist | Staff Portal | Imaging orders, radiology reports, catalogue |
+| [Staff.md](Staff.md) | Staff | Staff Portal | Attendance, leave, payroll, notifications |
+| [Patient.md](Patient.md) | Patient | Patient Portal | Appointments, records, bills, prescriptions |
+
+---
+
+## Additional Documents
+
+| Document | Description |
+|----------|-------------|
+| [MedyxHMS-LIC.md](MedyxHMS-LIC.md) | Complete explanation of how the MedyxHMS-Lic licensing tool works |
+
+---
+
+## Portal URLs
+
+| Portal | URL | Who Uses It |
+|--------|-----|-------------|
+| Staff / Admin Portal | `/` | All staff roles |
+| Patient Portal | `/PatientPortal/` | Patients only |
+| Public Website | `/Site/` | General public |
+
+---
+
+## Role-to-Module Access Summary
+
+| Module | SA | AD | DR | NU | PH | AC | RC | LT | RA | ST | PA |
+|--------|----|----|----|----|----|----|----|----|----|----|-----|
+| Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Patient Mgmt | ✅ | ✅ | 👁 | 👁 | — | — | ✅ | — | — | — | 👁 |
+| Appointments | ✅ | ✅ | ✅ | 👁 | — | — | ✅ | — | — | — | ✅ |
+| OPD | ✅ | ✅ | ✅ | 👁 | — | — | — | — | — | — | — |
+| IPD | ✅ | ✅ | ✅ | ✅ | — | — | 👁 | — | — | — | — |
+| Billing | ✅ | ✅ | — | — | ✅ | ✅ | — | — | — | — | 👁 |
+| Pharmacy | ✅ | ✅ | ✅ | 👁 | ✅ | — | — | — | — | — | 👁 |
+| Lab | ✅ | ✅ | ✅ | — | — | — | — | ✅ | — | — | 👁 |
+| Radiology | ✅ | ✅ | ✅ | — | — | — | — | — | ✅ | — | 👁 |
+| Blood Bank | ✅ | ✅ | ✅ | — | — | — | — | — | — | — | — |
+| Operation Theatre | ✅ | ✅ | ✅ | — | — | — | — | — | — | — | — |
+| Front Office | ✅ | ✅ | — | — | — | — | ✅ | — | — | — | — |
+| Attendance | ✅ | ✅ | — | — | — | — | — | — | — | ✅ | — |
+| Leave | ✅ | ✅ | — | — | — | — | — | — | — | ✅ | — |
+| Payroll | ✅ | ✅ | — | — | — | ✅ | — | — | — | 👁 | — |
+| Certificates | ✅ | ✅ | — | — | — | — | — | — | — | — | — |
+| Referrals | ✅ | ✅ | ✅ | — | — | — | ✅ | — | — | — | — |
+| Reports | ✅ | ✅ | 👁 | — | 👁 | ✅ | 👁 | 👁 | 👁 | — | — |
+| License | ✅ | — | — | — | — | — | — | — | — | — | — |
+| Module Mgmt | ✅ | — | — | — | — | — | — | — | — | — | — |
+| CMS | ✅ | ✅ | — | — | — | — | — | — | — | — | — |
+| Chatbot Admin | ✅ | — | — | — | — | — | — | — | — | — | — |
+| Audit | ✅ | 👁 | — | — | — | — | — | — | — | — | — |
+
+**Legend:**
+- ✅ Full access
+- 👁 Read-only / view access
+- — No access (or access controlled by Module Management)
+- SA = SuperAdmin, AD = Admin, DR = Doctor, NU = Nurse, PH = Pharmacist, AC = Accountant, RC = Receptionist, LT = LabTechnician, RA = Radiologist, ST = Staff, PA = Patient (via Patient Portal)
+
+> Actual module access is governed by license entitlement (modules must be licensed) and per-user Module Management settings configured by Admin/SuperAdmin. The table above reflects typical defaults.
