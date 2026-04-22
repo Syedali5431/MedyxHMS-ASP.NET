@@ -1,5 +1,11 @@
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<MedyxHMS.Models.ApplicationUser> SignInManager
+@inject UserManager<MedyxHMS.Models.ApplicationUser> UserManager
 @{
     ViewData["Title"] = "Access Denied";
+    bool isPatient = SignInManager.IsSignedIn(User) && User.IsInRole("Patient");
+    string dashboardUrl = isPatient ? "/PatientPortal/Dashboard" : "/Dashboard";
+    string logoutUrl = isPatient ? "/PatientPortal/Account/Logout" : "/Account/Logout";
 }
 
 <div class="row justify-content-center">
@@ -12,8 +18,8 @@
                 <i class="fas fa-lock fa-3x text-danger mb-3"></i>
                 <h4>You don't have permission to access this resource.</h4>
                 <p>Please contact your administrator if you believe this is an error.</p>
-                <a href="@Url.Action("Index", "Dashboard")" class="btn btn-primary">Go to Dashboard</a>
-                <a href="@Url.Action("Logout", "Account")" class="btn btn-secondary ml-2">Logout</a>
+                <a href="@dashboardUrl" class="btn btn-primary">Go to Dashboard</a>
+                <a href="@logoutUrl" class="btn btn-secondary ml-2">Logout</a>
             </div>
         </div>
     </div>

@@ -364,7 +364,7 @@ namespace MedyxHMS.Controllers
             await _concurrentSessionService.EndSessionAsync(HttpContext.Session.Id);
             HttpContext.Session.Remove("ActiveRole");
             await _signInManager.SignOutAsync();
-            return RedirectToAction("Login", "Account");
+            return LocalRedirect("/Account/Login");
         }
 
         [HttpGet]
@@ -457,28 +457,35 @@ namespace MedyxHMS.Controllers
 
         private async Task<IActionResult> RedirectToLocalAsync(ApplicationUser user, string? selectedRole, string? returnUrl)
         {
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
-
-            // If the user selected a specific role, route to that role's dashboard
+            // Resolve active role first so we can validate the returnUrl against it.
             var roleToUse = selectedRole;
-
-            // Fallback: derive from assigned roles using priority order
             if (string.IsNullOrWhiteSpace(roleToUse))
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 roleToUse = PickPrimaryRole(roles);
             }
 
+            bool isPatientRole = string.Equals(roleToUse, "Patient", StringComparison.OrdinalIgnoreCase);
+
+            // Only honour a returnUrl when it belongs to the same "zone" as the active role.
+            // PatientPortal URLs must never be used as landing pages for staff roles, and vice versa.
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                bool isPatientPortalUrl = returnUrl.StartsWith("/PatientPortal", StringComparison.OrdinalIgnoreCase);
+                if (isPatientRole == isPatientPortalUrl)
+                    return Redirect(returnUrl);
+                // returnUrl zone doesn't match the role – fall through to role-based routing below.
+            }
+
             return roleToUse switch
             {
-                "Patient"       => LocalRedirect(Url.Content("~/PatientPortal/Dashboard")),
-                "Receptionist"  => RedirectToAction("Index", "FrontOffice"),
-                "Accountant"    => RedirectToAction("Index", "Billing"),
-                "Pharmacist"    => RedirectToAction("Index", "Prescription"),
-                "Nurse"         => RedirectToAction("Index", "IPD"),
-                "Doctor"        => RedirectToAction("Index", "OPD"),
-                _               => RedirectToAction("Index", "Dashboard"),
+                "Patient"       => LocalRedirect("/PatientPortal/Dashboard"),
+                "Receptionist"  => LocalRedirect("/FrontOffice"),
+                "Accountant"    => LocalRedirect("/Billing"),
+                "Pharmacist"    => LocalRedirect("/Prescription"),
+                "Nurse"         => LocalRedirect("/IPD"),
+                "Doctor"        => LocalRedirect("/OPD"),
+                _               => LocalRedirect("/Dashboard"),
             };
         }
 

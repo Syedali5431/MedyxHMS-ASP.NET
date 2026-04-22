@@ -21,7 +21,7 @@ namespace MedyxHMS.DTOs
         public DateTime? UpdatedDate { get; set; }
         public string UpdatedBy { get; set; }
         public string StatusBadgeClass => GetStatusBadgeClass();
-        public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {AppointmentTime:hh\\:mm tt}";
+        public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {DateTime.Today.Add(AppointmentTime):hh:mm tt}";
 
         private string GetStatusBadgeClass()
         {
@@ -102,7 +102,7 @@ namespace MedyxHMS.DTOs
             _ => "badge-light"
         };
 
-        public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {AppointmentTime:hh\\:mm tt}";
+        public string FormattedDateTime => $"{AppointmentDate:MMM dd, yyyy} at {DateTime.Today.Add(AppointmentTime):hh:mm tt}";
     }
 
     public class AppointmentStatusUpdateDto

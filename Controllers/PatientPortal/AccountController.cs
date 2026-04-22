@@ -77,6 +77,18 @@ namespace MedyxHMS.Controllers.PatientPortal
                     user.LastLoginDate = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
 
+                    var roles = await _userManager.GetRolesAsync(user);
+                    bool isPatient = roles.Contains("Patient", StringComparer.OrdinalIgnoreCase);
+
+                    if (!isPatient)
+                    {
+                        // Non-patient users must not be sent to the PatientPortal.
+                        // Route them to their appropriate staff dashboard via the main account controller.
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "This portal is for patients only. Please use the main login page.");
+                        return View("~/Views/Account/Login.cshtml", viewModel);
+                    }
+
                     return LocalRedirect(returnUrl ?? Url.Content("~/PatientPortal/Dashboard"));
                 }
 

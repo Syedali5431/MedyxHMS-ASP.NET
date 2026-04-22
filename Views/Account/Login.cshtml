@@ -151,7 +151,28 @@
                 body:   formData
             });
 
-            var data = await resp.json();
+            var data = null;
+            var contentType = resp.headers.get('content-type') || '';
+
+            if (contentType.indexOf('application/json') >= 0) {
+                data = await resp.json();
+            } else {
+                var responseText = await resp.text();
+                data = {
+                    success: false,
+                    message: responseText
+                        ? ('Server returned an unexpected response. Status: ' + resp.status + '.')
+                        : ('Request failed with status ' + resp.status + '.')
+                };
+            }
+
+            if (!resp.ok) {
+                errBox.textContent = (data && data.message)
+                    ? data.message
+                    : ('Request failed with status ' + resp.status + '. Please refresh and try again.');
+                errBox.classList.remove('d-none');
+                return;
+            }
 
             if (!data.success) {
                 errBox.textContent = data.message || 'Invalid credentials.';
@@ -188,7 +209,7 @@
             document.getElementById('roleStep').classList.remove('d-none');
 
         } catch (err) {
-            errBox.textContent = 'A network error occurred. Please try again.';
+            errBox.textContent = 'Cannot reach the server. Please ensure the app is running and try again.';
             errBox.classList.remove('d-none');
         } finally {
             document.getElementById('checkBtnSpinner').classList.add('d-none');

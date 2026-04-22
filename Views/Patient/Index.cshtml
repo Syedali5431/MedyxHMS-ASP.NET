@@ -232,11 +232,13 @@
     <script>
         // Add any client-side functionality here
         $(document).ready(function() {
-            // Initialize DataTable if needed
-            $('#dataTable').DataTable({
-                "pageLength": 25,
-                "order": [[ 6, "desc" ]] // Sort by created date descending
-            });
+            // Initialize DataTable only when plugin is available.
+            if ($.fn && $.fn.DataTable) {
+                $('#dataTable').DataTable({
+                    "pageLength": 25,
+                    "order": [[ 6, "desc" ]] // Sort by created date descending
+                });
+            }
         });
     </script>
 }

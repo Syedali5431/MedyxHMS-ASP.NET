@@ -9,7 +9,7 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers.PatientPortal
 {
-    [Authorize]
+    [Authorize(Roles = "Patient")]
     [Route("PatientPortal/[controller]/[action]")]
     public class DashboardController : Controller
     {

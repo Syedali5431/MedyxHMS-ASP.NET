@@ -94,7 +94,7 @@
                                 Signed in as @User.Identity.Name
                             </li>
                             <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <form action="/Account/Logout" method="post" class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-outline-danger btn-sm">Logout</button>
                                 </form>

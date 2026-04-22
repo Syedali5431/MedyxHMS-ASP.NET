@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers.PatientPortal
 {
-    [Authorize]
+    [Authorize(Roles = "Patient")]
     public class MedicalRecordsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;

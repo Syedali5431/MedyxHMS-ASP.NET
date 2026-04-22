@@ -288,11 +288,13 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Initialize DataTable
-            $('#dataTable').DataTable({
-                "pageLength": 25,
-                "order": [[ 2, "asc" ]] // Sort by date/time ascending
-            });
+            // Initialize DataTable only when plugin is available.
+            if ($.fn && $.fn.DataTable) {
+                $('#dataTable').DataTable({
+                    "pageLength": 25,
+                    "order": [[ 2, "asc" ]] // Sort by date/time ascending
+                });
+            }
         });
 
         function confirmDelete(appointmentId, patientName, appointmentDateTime) {
