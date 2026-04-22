@@ -1,10 +1,11 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
+// Purpose: Contains application code for PatientPortalService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class PatientPortalService : IPatientPortalService

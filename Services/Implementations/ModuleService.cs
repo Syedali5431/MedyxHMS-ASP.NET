@@ -1,8 +1,9 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for ModuleService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ModuleService : IModuleService
@@ -47,7 +48,7 @@ namespace MedyxHMS.Services.Implementations
                 .Select(u => (bool?)u.IsEnabled)
                 .FirstOrDefaultAsync();
 
-            // No record → inherits global (= true at this point)
+            // No record â†’ inherits global (= true at this point)
             return access ?? true;
         }
 

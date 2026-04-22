@@ -1,5 +1,6 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 
+// Purpose: Contains application code for AuditViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class AuditLogIndexViewModel

@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 
+// Purpose: Contains application code for DatabaseInitializer and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class DatabaseInitializer

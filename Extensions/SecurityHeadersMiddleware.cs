@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 
+// Purpose: Contains application code for SecurityHeadersMiddleware and its related runtime behavior.
 namespace MedyxHMS.Extensions
 {
     /// <summary>

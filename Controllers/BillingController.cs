@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 
+// Purpose: Contains application code for BillingController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Roles = "Admin,SuperAdmin,Staff,Accountant")] // adjust roles as needed
@@ -338,7 +339,7 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(Details), new { id = billId });
         }
 
-        // ── Payment Gateway Settings ────────────────────────────────────────
+        // â”€â”€ Payment Gateway Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Authorize(Roles = "Admin,SuperAdmin")]
         [HttpGet]

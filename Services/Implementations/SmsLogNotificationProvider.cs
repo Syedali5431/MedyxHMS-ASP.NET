@@ -1,7 +1,8 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for SmsLogNotificationProvider and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     // SMS adapter placeholder: can be swapped with Twilio/Africa's Talking provider later.

@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -13,6 +13,7 @@ using AuthService = MedyxHMS.Services.Interfaces.IAuthorizationService;
 using AppointmentSummaryDto = MedyxHMS.ViewModels.AppointmentSummaryDto;
 using PatientDto = MedyxHMS.ViewModels.PatientDto;
 
+// Purpose: Contains application code for AppointmentController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize]

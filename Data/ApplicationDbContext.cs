@@ -1,8 +1,9 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for ApplicationDbContext and its related runtime behavior.
 namespace MedyxHMS.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>

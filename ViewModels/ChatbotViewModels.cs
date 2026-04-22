@@ -1,6 +1,7 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for ChatbotViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class ChatbotPageViewModel

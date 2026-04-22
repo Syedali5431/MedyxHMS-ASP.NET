@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for RadiologyDtos and its related runtime behavior.
 namespace MedyxHMS.DTOs
 {
     // ======== Radiology Test DTOs ========

@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using MedyxHMS.Data;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for AuditController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize]

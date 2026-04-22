@@ -1,9 +1,10 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
+// Purpose: Contains application code for LicenseExpiryFilter and its related runtime behavior.
 namespace MedyxHMS.Services.Filters
 {
     /// <summary>
@@ -74,7 +75,7 @@ namespace MedyxHMS.Services.Filters
                 return;
             }
 
-            // License is expired — determine action by role
+            // License is expired â€” determine action by role
             if (user.IsInRole("Admin"))
             {
                 var actionName = context.RouteData.Values["action"]?.ToString() ?? "";
@@ -94,7 +95,7 @@ namespace MedyxHMS.Services.Filters
             }
             else
             {
-                // Non-privileged role with expired license — sign them out
+                // Non-privileged role with expired license â€” sign them out
                 await _signInManager.SignOutAsync();
                 context.HttpContext.Session.Remove("ActiveRole");
                 context.Result = new RedirectToActionResult("Login", "Account", new { expiredLicense = true });

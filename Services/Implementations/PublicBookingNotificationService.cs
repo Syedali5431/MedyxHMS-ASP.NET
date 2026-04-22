@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for PublicBookingNotificationService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     // Step 4.2 notification hook (stub): currently logs payload for future email/SMS providers.

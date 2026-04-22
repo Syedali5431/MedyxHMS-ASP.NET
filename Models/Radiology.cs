@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for Radiology and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class RadiologyTest

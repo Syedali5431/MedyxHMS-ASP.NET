@@ -1,7 +1,8 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ChatbotPromptBuilder and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ChatbotPromptBuilder : IChatbotPromptBuilder

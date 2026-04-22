@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for AccountController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     public class AccountController : Controller
@@ -167,7 +168,7 @@ namespace MedyxHMS.Controllers
 
         /// <summary>
         /// AJAX endpoint: validate credentials and return the roles assigned to the user.
-        /// Credentials are NOT persisted/signed-in here – only checked so the UI can
+        /// Credentials are NOT persisted/signed-in here - only checked so the UI can
         /// display only the roles relevant to that user.
         /// </summary>
         [HttpPost]
@@ -261,6 +262,8 @@ namespace MedyxHMS.Controllers
 
                 if (!result.Succeeded)
                 {
+                    // Legacy bcrypt migration path: if old hash verification succeeds,
+                    // reset to Identity hash and retry sign-in once.
                     if (await TryMigratePasswordAsync(user, model.Password))
                         result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
                 }
@@ -277,7 +280,7 @@ namespace MedyxHMS.Controllers
                     {
                         if (!userRoles.Contains(model.SelectedRole, StringComparer.OrdinalIgnoreCase))
                         {
-                            // Submitted a role they don't have – ignore it silently and use normal precedence
+                            // Submitted a role they don't have - ignore it silently and use normal precedence
                             model.SelectedRole = null;
                         }
                     }
@@ -295,6 +298,7 @@ namespace MedyxHMS.Controllers
 
                     if (!sessionDecision.IsAllowed)
                     {
+                        // Enforce concurrent-user licensing/session limits at login time.
                         await _signInManager.SignOutAsync();
                         await _auditService.LogActivityAsync(
                             user.Id,
@@ -314,7 +318,7 @@ namespace MedyxHMS.Controllers
                     if (!string.IsNullOrWhiteSpace(model.SelectedRole))
                         HttpContext.Session.SetString("ActiveRole", model.SelectedRole);
 
-                    // ── License expiry gate ──────────────────────────────────────────────
+                    // â”€â”€ License expiry gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     var snapshot = await _licenseService.GetCurrentSnapshotAsync();
                     if (snapshot.State == LicenseState.Expired)
                     {
@@ -408,7 +412,7 @@ namespace MedyxHMS.Controllers
                 {
                     await _emailProvider.SendAsync(
                         email,
-                        "License File Request — MedyxHMS",
+                        "License File Request - MedyxHMS",
                         $"<p>A license renewal request has been submitted by <strong>{System.Net.WebUtility.HtmlEncode(requestingName)}</strong>.</p>" +
                         $"<p>The current license has expired. Please generate and upload a new license file at your earliest convenience.</p>" +
                         $"<p>Requested at: {DateTime.UtcNow:f} UTC</p>");
@@ -474,7 +478,7 @@ namespace MedyxHMS.Controllers
                 bool isPatientPortalUrl = returnUrl.StartsWith("/PatientPortal", StringComparison.OrdinalIgnoreCase);
                 if (isPatientRole == isPatientPortalUrl)
                     return Redirect(returnUrl);
-                // returnUrl zone doesn't match the role – fall through to role-based routing below.
+                // returnUrl zone doesn't match the role - fall through to role-based routing below.
             }
 
             return roleToUse switch

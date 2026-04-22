@@ -1,12 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Http;
 
+// Purpose: Contains application code for SiteViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
-    // ─── Public Homepage ──────────────────────────────────────────────────────
+    // â”€â”€â”€ Public Homepage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class SiteHomeViewModel
     {
         public List<CmsNotice> RecentNotices { get; set; } = new();
@@ -120,14 +121,14 @@ namespace MedyxHMS.ViewModels
         public string ButtonStyle { get; set; } = "Rounded";
     }
 
-    // ─── Public CMS Page View ────────────────────────────────────────────────
+    // â”€â”€â”€ Public CMS Page View â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class SitePageViewModel
     {
         public CmsPage Page { get; set; }
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
-    // ─── Public Notice / News List ───────────────────────────────────────────
+    // â”€â”€â”€ Public Notice / News List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class SiteNoticeListViewModel
     {
         public List<CmsNotice> Notices { get; set; } = new();
@@ -141,7 +142,7 @@ namespace MedyxHMS.ViewModels
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
-    // ─── Public Doctor Listing ───────────────────────────────────────────────
+    // â”€â”€â”€ Public Doctor Listing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class SiteDoctorListViewModel
     {
         public List<DoctorWithShifts> Doctors { get; set; } = new();
@@ -156,7 +157,7 @@ namespace MedyxHMS.ViewModels
         public List<DoctorShift> Shifts { get; set; } = new();
     }
 
-    // ─── Public Booking Form ─────────────────────────────────────────────────
+    // â”€â”€â”€ Public Booking Form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class PublicBookingViewModel
     {
         // Form fields
@@ -199,7 +200,7 @@ namespace MedyxHMS.ViewModels
         [Display(Name = "Captcha Answer")]
         public string CaptchaAnswer { get; set; }
 
-        // Honeypot field — must be empty on submit (anti-bot)
+        // Honeypot field â€” must be empty on submit (anti-bot)
         public string Website { get; set; }
 
         // Populated for the view
@@ -207,7 +208,7 @@ namespace MedyxHMS.ViewModels
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
-    // ─── Booking Confirmation ─────────────────────────────────────────────────
+    // â”€â”€â”€ Booking Confirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class BookingConfirmationViewModel
     {
         public string PatientName { get; set; }
@@ -218,7 +219,7 @@ namespace MedyxHMS.ViewModels
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
-    // ─── Available Slot (JSON response) ──────────────────────────────────────
+    // â”€â”€â”€ Available Slot (JSON response) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class AvailableSlotDto
     {
         public string Time { get; set; }

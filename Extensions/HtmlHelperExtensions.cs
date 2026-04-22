@@ -1,7 +1,8 @@
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
+﻿using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System;
 using System.Linq.Expressions;
 
+// Purpose: Contains application code for HtmlHelperExtensions and its related runtime behavior.
 namespace Microsoft.AspNetCore.Mvc.Rendering
 {
     public static class HtmlHelperExtensions

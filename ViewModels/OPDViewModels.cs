@@ -1,6 +1,7 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for OPDViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     // OPD (Outpatient Department) and IPD (Inpatient Department) ViewModels

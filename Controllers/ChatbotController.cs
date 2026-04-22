@@ -1,9 +1,10 @@
-using MedyxHMS.Services.Interfaces;
+﻿using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+// Purpose: Contains application code for ChatbotController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [AllowAnonymous]

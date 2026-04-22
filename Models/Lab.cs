@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for Lab and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class LabTest

@@ -1,4 +1,4 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+// Purpose: Contains application code for AppointmentsController and its related runtime behavior.
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize(Roles = "Patient")]

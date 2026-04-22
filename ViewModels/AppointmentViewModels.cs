@@ -1,6 +1,7 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for AppointmentViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class AppointmentIndexViewModel

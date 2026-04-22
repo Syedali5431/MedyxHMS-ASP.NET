@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for RBAC and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     /// <summary>

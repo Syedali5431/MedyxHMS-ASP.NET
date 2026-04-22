@@ -1,7 +1,8 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for StaffViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class StaffIndexViewModel

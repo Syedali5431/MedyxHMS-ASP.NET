@@ -1,7 +1,8 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for PatientPortalDtos and its related runtime behavior.
 namespace MedyxHMS.DTOs
 {
     // Patient Portal DTOs for patient-facing operations

@@ -1,4 +1,4 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for ModuleManagementController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize]
@@ -21,7 +22,7 @@ namespace MedyxHMS.Controllers
             _userManager = userManager;
         }
 
-        // ── Global Module List (SuperAdmin only) ──────────────────────────────
+        // â”€â”€ Global Module List (SuperAdmin only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Shows all system modules with a global enable/disable toggle.
@@ -49,7 +50,7 @@ namespace MedyxHMS.Controllers
                 : Json(new { success = false, message = "Module not found." });
         }
 
-        // ── User List for Module Assignment (Admin + SuperAdmin) ──────────────
+        // â”€â”€ User List for Module Assignment (Admin + SuperAdmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Shows a searchable list of users so an admin can pick one to configure modules.
@@ -96,7 +97,7 @@ namespace MedyxHMS.Controllers
             });
         }
 
-        // ── Per-User Module Access ─────────────────────────────────────────────
+        // â”€â”€ Per-User Module Access â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         /// <summary>
         /// Shows the module access grid for a specific user.
@@ -144,7 +145,7 @@ namespace MedyxHMS.Controllers
         }
     }
 
-    // ── Request DTOs ──────────────────────────────────────────────────────────
+    // â”€â”€ Request DTOs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public record ToggleGlobalRequest(int ModuleId, bool IsEnabled);
     public record SetUserAccessRequest(string UserId, int ModuleId, bool IsEnabled);
 }

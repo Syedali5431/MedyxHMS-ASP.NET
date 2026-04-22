@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for PatientDtos and its related runtime behavior.
 namespace MedyxHMS.DTOs
 {
     public class PatientDto

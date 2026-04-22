@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Extensions;
 using MedyxHMS.Models;
@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
+// Purpose: Contains application code for AccountController and its related runtime behavior.
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Route("PatientPortal/[controller]/[action]")]

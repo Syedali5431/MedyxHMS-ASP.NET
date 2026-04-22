@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for Settings and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class Setting

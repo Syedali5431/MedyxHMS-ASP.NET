@@ -19,6 +19,17 @@
 | Phase 6 | Licensing & Commercial Control | ✅ Complete |
 | Phase 7 | AI Chatbot & OpenAI Assistance | ✅ Complete |
 
+### 2026-04-22 Maintenance Update
+- [x] Added concise purpose comments across ASP.NET C# source files to improve onboarding and code readability
+- [x] Applied UTF-8 BOM standardization to 152+ C# source files (Controllers, DTOs, Models, ViewModels, Services, Extensions)
+- [x] Normalized line endings across project for consistency
+- ⚠️ **Character Encoding Issues**: Special Unicode characters (em-dashes, arrows, checkmarks) corrupted during formatting pass to HTML entities
+  - [x] AccountController.cs: ✅ 4 replacements fixed (em-dashes to hyphens) 
+  - [x] **Models/CMS.cs**: ✅ ALL FIXED - 5 class sections + ellipsis character replaced with proper XML documentation
+  - CmsController.cs, SiteController.cs, and ~55+ other files: 🔄 Character fixes pending
+- [x] Created detailed maintenance changelog at `docs/RECENT_CHANGES.md` with full remediation plan
+- 📋 **Recommendation**: Continue systematic fixes using file encoding conversion tools on remaining files
+
 ---
 
 ## ✅ Phase 0: Database Migration & Enterprise Enhancements

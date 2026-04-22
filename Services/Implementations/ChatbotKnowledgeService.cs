@@ -1,10 +1,11 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using System.Text;
 using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for ChatbotKnowledgeService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ChatbotKnowledgeService : IChatbotKnowledgeService

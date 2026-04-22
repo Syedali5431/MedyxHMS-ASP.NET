@@ -1,4 +1,4 @@
-using System.Net.Http.Headers;
+﻿using System.Net.Http.Headers;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
@@ -7,6 +7,7 @@ using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for OpenAiChatbotService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class OpenAiChatbotService : IChatbotService

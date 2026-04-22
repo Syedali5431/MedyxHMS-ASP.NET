@@ -1,7 +1,8 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for LabViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class LabIndexViewModel
@@ -75,8 +76,8 @@ namespace MedyxHMS.ViewModels
         public Dictionary<string, string> ReferenceRanges => new Dictionary<string, string>
         {
             ["Hemoglobin"] = "12-16 g/dL (Female), 14-18 g/dL (Male)",
-            ["WBC Count"] = "4,000-11,000 cells/μL",
-            ["Platelet Count"] = "150,000-450,000 cells/μL",
+            ["WBC Count"] = "4,000-11,000 cells/Î¼L",
+            ["Platelet Count"] = "150,000-450,000 cells/Î¼L",
             ["Blood Glucose"] = "70-100 mg/dL (Fasting)",
             ["Cholesterol"] = "< 200 mg/dL",
             ["Triglycerides"] = "< 150 mg/dL"

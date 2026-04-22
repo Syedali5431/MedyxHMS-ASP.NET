@@ -1,10 +1,11 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for StaffService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class StaffService : IStaffService

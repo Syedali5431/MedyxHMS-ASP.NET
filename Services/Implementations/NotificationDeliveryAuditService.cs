@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for NotificationDeliveryAuditService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class NotificationDeliveryAuditService : INotificationDeliveryAuditService

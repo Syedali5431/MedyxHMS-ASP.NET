@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for ErrorViewModel and its related runtime behavior.
 namespace MedyxHMS.Models;
 
 public class ErrorViewModel

@@ -1,8 +1,10 @@
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ModuleEntitlementMiddleware and its related runtime behavior.
 namespace MedyxHMS.Extensions
 {
+    // Maps route prefixes to module keys and enforces module-level access.
     public class ModuleEntitlementMiddleware
     {
         private static readonly (string Prefix, string ModuleKey)[] PathToModuleMap =
@@ -45,6 +47,7 @@ namespace MedyxHMS.Extensions
         {
             if (context.User.Identity?.IsAuthenticated != true || context.User.IsInRole("SuperAdmin"))
             {
+                // SuperAdmin bypasses module gating by design.
                 await _next(context);
                 return;
             }
@@ -66,6 +69,7 @@ namespace MedyxHMS.Extensions
             var moduleEnabledForUser = await moduleService.IsModuleEnabledForUserAsync(moduleKey, userId, isSuperAdmin: false);
             if (!moduleEnabledForUser)
             {
+                // Admin toggle disabled this module for the current user.
                 context.Response.Redirect($"/License/FeatureLocked?moduleKey={Uri.EscapeDataString(moduleKey)}&reason=admin");
                 return;
             }
@@ -73,6 +77,7 @@ namespace MedyxHMS.Extensions
             var licensed = await licenseService.IsModuleLicensedForCurrentLicenseAsync(moduleKey);
             if (!licensed)
             {
+                // Module exists, but current license does not include it.
                 context.Response.Redirect($"/License/FeatureLocked?moduleKey={Uri.EscapeDataString(moduleKey)}&reason=license");
                 return;
             }

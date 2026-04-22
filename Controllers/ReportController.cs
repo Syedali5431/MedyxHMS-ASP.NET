@@ -1,8 +1,9 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+// Purpose: Contains application code for ReportController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize]

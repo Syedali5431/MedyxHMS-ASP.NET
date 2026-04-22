@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using PatientDto = MedyxHMS.DTOs.PatientDto;
 
+// Purpose: Contains application code for OPDController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor")]

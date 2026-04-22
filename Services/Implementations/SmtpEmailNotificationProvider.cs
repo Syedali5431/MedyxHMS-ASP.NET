@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -8,6 +8,7 @@ using MedyxHMS.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for SmtpEmailNotificationProvider and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class SmtpEmailNotificationProvider : IEmailNotificationProvider

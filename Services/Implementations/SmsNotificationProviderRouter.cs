@@ -1,10 +1,11 @@
-using MedyxHMS.Services.Interfaces;
+﻿using MedyxHMS.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 
+// Purpose: Contains application code for SmsNotificationProviderRouter and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class SmsNotificationProviderRouter : ISmsNotificationProvider

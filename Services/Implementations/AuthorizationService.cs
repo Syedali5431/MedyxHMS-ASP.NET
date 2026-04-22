@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
+// Purpose: Contains application code for AuthorizationService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class AuthorizationService : MedyxHMS.Services.Interfaces.IAuthorizationService

@@ -1,4 +1,4 @@
-using MedyxHMS.Controllers;
+﻿using MedyxHMS.Controllers;
 using MedyxHMS.Extensions;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+// Purpose: Contains application code for DashboardController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize]

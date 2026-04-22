@@ -1,6 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
+// Purpose: Contains application code for MedicalRecord and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     [Table("MedicalRecords")]

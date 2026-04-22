@@ -1,10 +1,11 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+// Purpose: Contains application code for PrescriptionController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Roles = "Admin,SuperAdmin,Staff,Pharmacist")]

@@ -1,8 +1,9 @@
-using MedyxHMS.DTOs;
+﻿using MedyxHMS.DTOs;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
+// Purpose: Contains application code for AppController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [ApiController]

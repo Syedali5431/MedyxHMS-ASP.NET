@@ -1,15 +1,16 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ModuleManagementViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
-    // ── Global Module Management (SuperAdmin) ─────────────────────────────────
+    // â”€â”€ Global Module Management (SuperAdmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class SystemModuleListViewModel
     {
         public IReadOnlyList<SystemModule> Modules { get; set; } = [];
     }
 
-    // ── User Selection for Module Assignment (Admin + SuperAdmin) ─────────────
+    // â”€â”€ User Selection for Module Assignment (Admin + SuperAdmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class UserListForModulesViewModel
     {
         public IReadOnlyList<UserSummary> Users { get; set; } = [];
@@ -26,7 +27,7 @@ namespace MedyxHMS.ViewModels
         public IList<string> Roles { get; set; } = [];
     }
 
-    // ── Per-User Module Access (Admin + SuperAdmin) ────────────────────────────
+    // â”€â”€ Per-User Module Access (Admin + SuperAdmin) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class UserModuleAccessViewModel
     {
         public string UserId { get; set; } = string.Empty;

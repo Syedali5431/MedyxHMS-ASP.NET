@@ -1,7 +1,8 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using MedyxHMS.Models;
 
+// Purpose: Contains application code for HomeController and its related runtime behavior.
 namespace MedyxHMS.Controllers;
 
 public class HomeController : Controller

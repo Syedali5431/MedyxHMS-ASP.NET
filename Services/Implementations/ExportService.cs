@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -8,6 +8,7 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
+// Purpose: Contains application code for ExportService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ExportService : IExportService

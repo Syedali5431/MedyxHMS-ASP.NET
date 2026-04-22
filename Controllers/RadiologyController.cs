@@ -1,9 +1,10 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
+// Purpose: Contains application code for RadiologyController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor")]

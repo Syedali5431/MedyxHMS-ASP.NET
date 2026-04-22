@@ -52,7 +52,7 @@ namespace MedyxHMS.Models
     }
 
     /// <summary>
-    /// CMS Menu Item: Navigation menu items in the public website header/footer.
+    /// CMS Menu Item: Represents navigation menu items in the public website header/footer.
     /// Can link to external URLs or internal CMS pages with customizable sort order and appearance.
     /// </summary>
     public class CmsMenuItem

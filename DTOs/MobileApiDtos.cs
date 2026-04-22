@@ -1,5 +1,6 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
+// Purpose: Contains application code for MobileApiDtos and its related runtime behavior.
 namespace MedyxHMS.DTOs
 {
     public class MobileApiV1AppResponse

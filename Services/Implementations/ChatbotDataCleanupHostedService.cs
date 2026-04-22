@@ -1,5 +1,6 @@
-using MedyxHMS.Services.Interfaces;
+﻿using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ChatbotDataCleanupHostedService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ChatbotDataCleanupHostedService : BackgroundService

@@ -1,5 +1,6 @@
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 
+// Purpose: Contains application code for ApplicationUser and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class ApplicationUser : IdentityUser

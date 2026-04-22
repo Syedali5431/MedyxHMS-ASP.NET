@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for Licensing and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public enum LicenseState

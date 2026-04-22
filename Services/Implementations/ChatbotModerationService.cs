@@ -1,6 +1,7 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ChatbotModerationService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ChatbotModerationService : IChatbotModerationService

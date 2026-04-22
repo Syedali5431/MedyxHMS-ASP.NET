@@ -1,6 +1,7 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using MedyxHMS.Models;
 
+// Purpose: Contains application code for LicenseViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
     public class LicenseManagementViewModel

@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
+// Purpose: Contains application code for AccountsApprovalController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Roles = "Admin,SuperAdmin")]
@@ -97,6 +98,7 @@ namespace MedyxHMS.Controllers
 
             if (!string.Equals(request.Status, "Pending", StringComparison.OrdinalIgnoreCase))
             {
+                // Prevent double-processing to keep approval history deterministic.
                 TempData["ErrorMessage"] = "This request has already been processed.";
                 return RedirectToAction(nameof(Index));
             }
@@ -109,6 +111,7 @@ namespace MedyxHMS.Controllers
             }
 
             targetUser.IsActive = true;
+            // Activation happens only after explicit approval by Admin/SuperAdmin.
             await _userManager.UpdateAsync(targetUser);
 
             request.Status = "Approved";
@@ -290,6 +293,7 @@ namespace MedyxHMS.Controllers
             if (actorIsSuperAdmin)
                 return true;
 
+            // Admins can reset all non-SuperAdmin accounts, but cannot reset SuperAdmin passwords.
             if (actorIsAdmin && !targetIsSuperAdmin)
                 return true;
 

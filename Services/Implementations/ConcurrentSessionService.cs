@@ -1,9 +1,10 @@
-using System.Data;
+﻿using System.Data;
 using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for ConcurrentSessionService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ConcurrentSessionService : IConcurrentSessionService

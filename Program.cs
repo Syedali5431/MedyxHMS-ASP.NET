@@ -1,3 +1,4 @@
+// Purpose: Application entry point that configures DI, middleware pipeline, and endpoint routing for Medyx HMS.
 using MedyxHMS.Data;
 using MedyxHMS.Extensions;
 using MedyxHMS.Models;

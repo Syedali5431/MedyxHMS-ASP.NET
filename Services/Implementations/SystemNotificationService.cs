@@ -1,9 +1,10 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for SystemNotificationService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class SystemNotificationService : ISystemNotificationService

@@ -1,12 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using MedyxHMS.Models;
 using Microsoft.AspNetCore.Http;
 
+// Purpose: Contains application code for CmsViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
-    // ─── Admin: Page List ───────────────────────────────────────────────────────
+    // â”€â”€â”€ Admin: Page List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsPageIndexViewModel
     {
         public List<CmsPage> Pages { get; set; } = new();
@@ -14,7 +15,7 @@ namespace MedyxHMS.ViewModels
         public string SearchTerm { get; set; }
     }
 
-    // ─── Admin: Create / Edit Page ─────────────────────────────────────────────
+    // â”€â”€â”€ Admin: Create / Edit Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsPageEditViewModel
     {
         public int Id { get; set; }
@@ -56,7 +57,7 @@ namespace MedyxHMS.ViewModels
         public int SortOrder { get; set; }
     }
 
-    // ─── Admin: Notice List ────────────────────────────────────────────────────
+    // â”€â”€â”€ Admin: Notice List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsNoticeIndexViewModel
     {
         public List<CmsNotice> Notices { get; set; } = new();
@@ -68,7 +69,7 @@ namespace MedyxHMS.ViewModels
         public int TotalPages => (int)Math.Ceiling((double)TotalCount / Math.Max(1, PageSize));
     }
 
-    // ─── Admin: Create / Edit Notice ──────────────────────────────────────────
+    // â”€â”€â”€ Admin: Create / Edit Notice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsNoticeEditViewModel
     {
         public int Id { get; set; }
@@ -96,13 +97,13 @@ namespace MedyxHMS.ViewModels
         public DateTime? PublishedAt { get; set; }
     }
 
-    // ─── Admin: Menu Item List ─────────────────────────────────────────────────
+    // â”€â”€â”€ Admin: Menu Item List â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsMenuIndexViewModel
     {
         public List<CmsMenuItem> MenuItems { get; set; } = new();
     }
 
-    // ─── Admin: Create / Edit Menu Item ───────────────────────────────────────
+    // â”€â”€â”€ Admin: Create / Edit Menu Item â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsMenuItemEditViewModel
     {
         public int Id { get; set; }
@@ -127,7 +128,7 @@ namespace MedyxHMS.ViewModels
         public List<CmsPage> AvailablePages { get; set; } = new();
     }
 
-    // ─── Admin: Public Appointment Requests ───────────────────────────────────
+    // â”€â”€â”€ Admin: Public Appointment Requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class PublicAppointmentRequestIndexViewModel
     {
         public List<PublicAppointmentRequest> Requests { get; set; } = new();
@@ -159,7 +160,7 @@ namespace MedyxHMS.ViewModels
         public int ActiveMatches => MatchingRequests.Count(r => r.Status == "Pending" || r.Status == "Confirmed");
     }
 
-    // ─── Admin: Notification Settings ───────────────────────────────────────
+    // â”€â”€â”€ Admin: Notification Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     public class CmsNotificationSettingsViewModel
     {
         [Display(Name = "Enable Email Notifications")]

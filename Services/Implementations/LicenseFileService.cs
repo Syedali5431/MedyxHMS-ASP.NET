@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text;
 using MedyxHMS.Data;
 using MedyxHMS.Models;
@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 
+// Purpose: Contains application code for LicenseFileService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class LicenseFileService : ILicenseFileService

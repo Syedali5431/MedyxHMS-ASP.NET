@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for CmsController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     [Authorize(Policy = "RequireAdminRole")]
@@ -49,7 +50,7 @@ namespace MedyxHMS.Controllers
             _smtpHealthService = smtpHealthService;
         }
 
-        // ─── Pages ────────────────────────────────────────────────────────────
+        // â”€â”€â”€ Pages â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Index(string status = null, string search = null)
         {
@@ -231,7 +232,7 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ─── Notices ──────────────────────────────────────────────────────────
+        // â”€â”€â”€ Notices â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Notices(string type = null, string search = null, int page = 1, int pageSize = 20)
         {
@@ -390,7 +391,7 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(Notices));
         }
 
-        // ─── Menu Items ───────────────────────────────────────────────────────
+        // â”€â”€â”€ Menu Items â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Menu()
         {
@@ -489,7 +490,7 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(Menu));
         }
 
-        // ─── Notification Settings ──────────────────────────────────────────
+        // â”€â”€â”€ Notification Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> NotificationSettings()
         {
@@ -819,7 +820,7 @@ namespace MedyxHMS.Controllers
             return File(pdfBytes, "application/pdf", $"delivery_logs_{stamp}.pdf");
         }
 
-        // ─── Appointment Requests ─────────────────────────────────────────────
+        // â”€â”€â”€ Appointment Requests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> AppointmentRequests(
             string status = null, string search = null, DateTime? dateFrom = null, DateTime? dateTo = null,
@@ -1096,7 +1097,7 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(AppointmentRequests));
         }
 
-        // ─── Helper ───────────────────────────────────────────────────────────
+        // â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public static string ToSlug(string title)
         {

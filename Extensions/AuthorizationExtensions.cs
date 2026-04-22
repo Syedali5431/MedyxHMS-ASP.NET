@@ -1,4 +1,4 @@
-using MedyxHMS.Services.Interfaces;
+﻿using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Options;
 using System.Security.Claims;
 using PermissionService = MedyxHMS.Services.Interfaces.IAuthorizationService;
 
+// Purpose: Contains application code for AuthorizationExtensions and its related runtime behavior.
 namespace MedyxHMS.Extensions
 {
     public class PermissionRequirement : IAuthorizationRequirement

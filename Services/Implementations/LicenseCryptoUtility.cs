@@ -1,8 +1,9 @@
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using MedyxHMS.Models;
 
+// Purpose: Contains application code for LicenseCryptoUtility and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     internal static class LicenseCryptoUtility

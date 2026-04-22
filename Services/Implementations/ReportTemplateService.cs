@@ -1,4 +1,4 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.Data.SqlClient;
@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 using System.Data;
 
+// Purpose: Contains application code for ReportTemplateService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     /// <summary>

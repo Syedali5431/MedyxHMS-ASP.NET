@@ -1,6 +1,7 @@
-using MedyxHMS.Models;
+﻿using MedyxHMS.Models;
 using System.Security.Claims;
 
+// Purpose: Contains application code for IServices and its related runtime behavior.
 namespace MedyxHMS.Services.Interfaces
 {
     public interface ISettingService
@@ -620,7 +621,7 @@ namespace MedyxHMS.Services.Interfaces
         Task<bool> IsModuleEnabledForUserAsync(string moduleKey, string userId, bool isSuperAdmin = false);
 
         /// <summary>
-        /// Returns a dictionary of moduleKey → isEnabled for a given user,
+        /// Returns a dictionary of moduleKey â†’ isEnabled for a given user,
         /// respecting global and per-user overrides.
         /// </summary>
         Task<Dictionary<string, bool>> GetUserModuleMapAsync(string userId, bool isSuperAdmin = false);

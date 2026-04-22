@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for AccountApprovalRequest and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class AccountApprovalRequest

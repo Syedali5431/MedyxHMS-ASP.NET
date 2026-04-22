@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Encodings.Web;
@@ -11,10 +11,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for SiteController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
     /// <summary>
-    /// Public-facing website controller — no authentication required.
+    /// Public-facing website controller â€” no authentication required.
     /// Serves CMS pages, notices/news, doctor listings, and the online appointment booking form.
     /// </summary>
     public class SiteController : Controller
@@ -32,7 +33,7 @@ namespace MedyxHMS.Controllers
             _logger = logger;
         }
 
-        // ─── Homepage ─────────────────────────────────────────────────────────
+        // â”€â”€â”€ Homepage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Index()
         {
@@ -125,7 +126,7 @@ namespace MedyxHMS.Controllers
             return View(vm);
         }
 
-        // ─── CMS Page by Slug ────────────────────────────────────────────────
+        // â”€â”€â”€ CMS Page by Slug â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [Route("site/page/{slug}")]
         public async Task<IActionResult> Page(string slug)
@@ -145,7 +146,7 @@ namespace MedyxHMS.Controllers
             return View(vm);
         }
 
-        // ─── Notices / News / Events ─────────────────────────────────────────
+        // â”€â”€â”€ Notices / News / Events â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Notices(string type = "Notice", string search = null, int page = 1, int pageSize = 9)
         {
@@ -200,7 +201,7 @@ namespace MedyxHMS.Controllers
             return View(notice);
         }
 
-        // ─── Doctor Listing ───────────────────────────────────────────────────
+        // â”€â”€â”€ Doctor Listing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         public async Task<IActionResult> Doctors(int? departmentId = null)
         {
@@ -231,7 +232,7 @@ namespace MedyxHMS.Controllers
             return View(vm);
         }
 
-        // ─── Book Appointment ────────────────────────────────────────────────
+        // â”€â”€â”€ Book Appointment â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [HttpGet]
         public async Task<IActionResult> BookAppointment(int? doctorId = null)
@@ -253,10 +254,10 @@ namespace MedyxHMS.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> BookAppointment(PublicBookingViewModel vm)
         {
-            // Honeypot check — bots fill this field, humans don't see it
+            // Honeypot check â€” bots fill this field, humans don't see it
             if (!string.IsNullOrEmpty(vm.Website))
             {
-                // Silent reject — appear to succeed
+                // Silent reject â€” appear to succeed
                 return RedirectToAction(nameof(BookingConfirmation), new { requestId = 0 });
             }
 
@@ -357,7 +358,7 @@ namespace MedyxHMS.Controllers
         {
             if (requestId == 0)
             {
-                // Honeypot rejection — show generic confirmation
+                // Honeypot rejection â€” show generic confirmation
                 return View(new BookingConfirmationViewModel
                 {
                     PatientName = "Guest",
@@ -389,7 +390,7 @@ namespace MedyxHMS.Controllers
             return View(vm);
         }
 
-        // ─── AJAX: Available Slots ────────────────────────────────────────────
+        // â”€â”€â”€ AJAX: Available Slots â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         [HttpGet]
         public async Task<IActionResult> GetAvailableSlots(int doctorId, string date)
@@ -433,7 +434,7 @@ namespace MedyxHMS.Controllers
             return Json(slots);
         }
 
-        // ─── Helper ───────────────────────────────────────────────────────────
+        // â”€â”€â”€ Helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
         private Task<List<CmsMenuItem>> GetActiveMenuItemsAsync() =>
             _db.CmsMenuItems

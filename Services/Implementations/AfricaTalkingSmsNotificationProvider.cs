@@ -1,9 +1,10 @@
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Net.Http.Headers;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
+// Purpose: Contains application code for AfricaTalkingSmsNotificationProvider and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class AfricaTalkingSmsNotificationProvider

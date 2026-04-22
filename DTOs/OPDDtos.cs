@@ -1,5 +1,6 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for OPDDtos and its related runtime behavior.
 namespace MedyxHMS.DTOs
 {
     // OPD (Outpatient Department) and IPD (Inpatient Department) DTOs

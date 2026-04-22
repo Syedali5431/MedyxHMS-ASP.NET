@@ -1,7 +1,8 @@
-using System.Net.Sockets;
+﻿using System.Net.Sockets;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for SmtpHealthService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class SmtpHealthService : ISmtpHealthService

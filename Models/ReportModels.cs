@@ -1,3 +1,4 @@
+﻿// Purpose: Contains application code for ReportModels and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     /// <summary>

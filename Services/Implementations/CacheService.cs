@@ -1,7 +1,8 @@
-using Microsoft.Extensions.Caching.Distributed;
+﻿using Microsoft.Extensions.Caching.Distributed;
 using MedyxHMS.Services.Interfaces;
 using System.Text.Json;
 
+// Purpose: Contains application code for CacheService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     /// <summary>

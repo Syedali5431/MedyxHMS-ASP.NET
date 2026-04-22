@@ -1,9 +1,10 @@
-using MedyxHMS.Data;
+﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
+// Purpose: Contains application code for ChatbotConsentService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     /// <summary>
@@ -288,15 +289,15 @@ This chatbot is powered by **OpenAI's GPT model**. When you ask a question:
 - We retain conversation history for compliance and improvement purposes
 
 ## Important Limitations
-⚠️ **The chatbot cannot provide medical advice, diagnosis, or treatment recommendations.**
+âš ï¸ **The chatbot cannot provide medical advice, diagnosis, or treatment recommendations.**
 - Emergency issues are escalated to hospital staff
 - For medical concerns, please contact a licensed clinician
 
 ## Your Data & Privacy
-- ✓ Your consent is stored securely
-- ✓ You can request your transcript history
-- ✓ You can revoke consent at any time
-- ✓ We comply with healthcare privacy regulations
+- âœ“ Your consent is stored securely
+- âœ“ You can request your transcript history
+- âœ“ You can revoke consent at any time
+- âœ“ We comply with healthcare privacy regulations
 
 ## By accepting, you agree to:
 1. **AI Processing**: Your messages will be processed by OpenAI's models

@@ -1,6 +1,7 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
+// Purpose: Contains application code for NotificationDeliveryLog and its related runtime behavior.
 namespace MedyxHMS.Models
 {
     public class NotificationDeliveryLog

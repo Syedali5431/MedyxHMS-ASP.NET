@@ -1,6 +1,7 @@
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using MedyxHMS.Services.Interfaces;
 
+// Purpose: Contains application code for ChatbotPiiRedactionService and its related runtime behavior.
 namespace MedyxHMS.Services.Implementations
 {
     public class ChatbotPiiRedactionService : IChatbotPiiRedactionService
