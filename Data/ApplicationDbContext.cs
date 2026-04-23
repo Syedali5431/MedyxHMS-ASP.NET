@@ -92,6 +92,31 @@ namespace MedyxHMS.Data
         public DbSet<DoctorShift> DoctorShifts { get; set; }
         public DbSet<PublicAppointmentRequest> PublicAppointmentRequests { get; set; }
 
+        // M10 · Ambulance
+        public DbSet<AmbulanceVehicle> AmbulanceVehicles { get; set; }
+        public DbSet<AmbulanceDispatch> AmbulanceDispatches { get; set; }
+
+        // M12 · Birth / Death Records
+        public DbSet<BirthRecord> BirthRecords { get; set; }
+        public DbSet<DeathRecord> DeathRecords { get; set; }
+
+        // M15 · TPA
+        public DbSet<TpaProvider> TpaProviders { get; set; }
+        public DbSet<TpaClaim> TpaClaims { get; set; }
+
+        // M17 · Internal Messaging
+        public DbSet<InternalMessage> InternalMessages { get; set; }
+
+        // M18 · Inventory
+        public DbSet<InventoryItem> InventoryItems { get; set; }
+        public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
+
+        // M19 · Download Center
+        public DbSet<DownloadFile> DownloadFiles { get; set; }
+
+        // M22 · Live Consultation
+        public DbSet<LiveConsultationSession> LiveConsultationSessions { get; set; }
+
         // RBAC Entities (from migration analysis)
         public new DbSet<Role> Roles { get; set; }
         public DbSet<Feature> Features { get; set; }
@@ -551,6 +576,27 @@ namespace MedyxHMS.Data
             modelBuilder.Entity<RadiologyTest>().Property(x => x.Price).HasPrecision(precision, scale);
             modelBuilder.Entity<Staff>().Property(x => x.Salary).HasPrecision(precision, scale);
             modelBuilder.Entity<Transaction>().Property(x => x.Amount).HasPrecision(precision, scale);
+
+            // M10 · Ambulance (new modules)
+            modelBuilder.Entity<AmbulanceDispatch>().Property(x => x.DistanceKm).HasPrecision(precision, scale);
+            modelBuilder.Entity<AmbulanceDispatch>().Property(x => x.Charges).HasPrecision(precision, scale);
+
+            // M12 · Birth / Death Records
+            modelBuilder.Entity<BirthRecord>().Property(x => x.WeightKg).HasPrecision(precision, scale);
+
+            // M15 · TPA
+            modelBuilder.Entity<TpaClaim>().Property(x => x.ClaimedAmount).HasPrecision(precision, scale);
+            modelBuilder.Entity<TpaClaim>().Property(x => x.ApprovedAmount).HasPrecision(precision, scale);
+            modelBuilder.Entity<TpaClaim>().Property(x => x.SettledAmount).HasPrecision(precision, scale);
+
+            // M18 · Inventory
+            modelBuilder.Entity<InventoryItem>().Property(x => x.CurrentStock).HasPrecision(precision, scale);
+            modelBuilder.Entity<InventoryItem>().Property(x => x.MinimumStock).HasPrecision(precision, scale);
+            modelBuilder.Entity<InventoryItem>().Property(x => x.ReorderLevel).HasPrecision(precision, scale);
+            modelBuilder.Entity<InventoryItem>().Property(x => x.UnitCost).HasPrecision(precision, scale);
+
+            modelBuilder.Entity<InventoryTransaction>().Property(x => x.Quantity).HasPrecision(precision, scale);
+            modelBuilder.Entity<InventoryTransaction>().Property(x => x.UnitCost).HasPrecision(precision, scale);
         }
 
         private void SeedInitialData(ModelBuilder modelBuilder)

@@ -1,0 +1,74 @@
+@model IEnumerable<MedyxHMS.Models.LiveConsultationSession>
+@{
+    ViewData["Title"] = "Live Consultations";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-video text-success me-2"></i>Live Consultations</h4>
+            <small class="text-muted">Video &amp; remote consultation sessions</small>
+        </div>
+        <a asp-action="Schedule" class="btn btn-primary btn-sm">
+            <i class="fas fa-calendar-plus me-1"></i>Schedule Session
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Doctor</th>
+                        <th>Patient</th>
+                        <th>Scheduled</th>
+                        <th>Duration</th>
+                        <th>Platform</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        var statusBadge = s.Status switch
+                        {
+                            "InProgress"  => "bg-warning text-dark",
+                            "Completed"   => "bg-success",
+                            "Cancelled"   => "bg-danger",
+                            _             => "bg-secondary"
+                        };
+                        <tr>
+                            <td>@s.DoctorName</td>
+                            <td>@(s.Patient != null ? $"{s.Patient.FirstName} {s.Patient.LastName}" : s.PatientName)</td>
+                            <td>@s.ScheduledAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                            <td>@s.DurationMinutes min</td>
+                            <td><span class="badge bg-light text-dark border">@s.Platform</span></td>
+                            <td><span class="badge @statusBadge">@s.Status</span></td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-sm btn-outline-primary">Details</a>
+                                    @if (s.Status == "Scheduled" || s.Status == "InProgress")
+                                    {
+                                        <a href="@s.MeetingLink" target="_blank" class="btn btn-sm btn-success">
+                                            <i class="fas fa-video me-1"></i>Join
+                                        </a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No sessions scheduled.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,75 @@
+@model IEnumerable<MedyxHMS.Models.AmbulanceDispatch>
+@{
+    ViewData["Title"] = "Ambulance Dispatches";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-map-marked-alt text-danger me-2"></i>Dispatches</h4>
+            <small class="text-muted">Real-time ambulance dispatch log</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Vehicles</a>
+            <a asp-action="Dispatch" class="btn btn-danger btn-sm">
+                <i class="fas fa-plus me-1"></i>New Dispatch
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Vehicle</th>
+                        <th>Patient</th>
+                        <th>Pickup Address</th>
+                        <th>Purpose</th>
+                        <th>Dispatched</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        var statusBadge = d.Status switch
+                        {
+                            "Returned"   => "bg-success",
+                            "Cancelled"  => "bg-secondary",
+                            _            => "bg-warning text-dark"
+                        };
+                        <tr>
+                            <td>@d.AmbulanceVehicle?.VehicleNumber</td>
+                            <td>@(d.Patient != null ? $"{d.Patient.FirstName} {d.Patient.LastName}" : d.PatientName)</td>
+                            <td>@d.PickupAddress</td>
+                            <td>@d.Purpose</td>
+                            <td>@d.DispatchTime.ToString("MMM dd, yyyy HH:mm")</td>
+                            <td><span class="badge @statusBadge">@d.Status</span></td>
+                            <td>
+                                @if (d.Status == "Dispatched")
+                                {
+                                    <form asp-action="MarkReturned" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@d.Id" />
+                                        <button type="submit" class="btn btn-sm btn-success">Mark Returned</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No dispatches recorded.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

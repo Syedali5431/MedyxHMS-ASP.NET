@@ -18,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="Models\CMS_fixed.cs" />
     <Compile Remove="tests\**\*.cs" />
     <Compile Remove="temp_build_output\**\*.cs" />
     <Compile Remove="MedyxHMS-Lic\**\*.cs" />

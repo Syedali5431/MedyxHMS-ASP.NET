@@ -1,0 +1,79 @@
+@model MedyxHMS.Models.DeathRecord
+@{
+    ViewData["Title"] = $"Death Record — {Model.PatientName}";
+}
+
+<div class="container mt-3" style="max-width:700px">
+    <div class="d-flex align-items-center mb-3 gap-2">
+        <a asp-action="Deaths" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Death Records
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-print me-1"></i>Print
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header text-center">
+            <h5 class="mb-0">Death Certificate</h5>
+            <small class="text-muted">Certificate No: <code>@Model.CertificateNumber</code></small>
+        </div>
+        <div class="card-body">
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Patient Name</div>
+                <div class="col-8">@(Model.Patient != null ? $"{Model.Patient.FirstName} {Model.Patient.LastName}" : Model.PatientName)</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Gender</div>
+                <div class="col-8">@Model.Gender</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Date of Death</div>
+                <div class="col-8">@Model.DateOfDeath.ToString("MMMM dd, yyyy")</div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.TimeOfDeath))
+            {
+                <div class="row mb-2">
+                    <div class="col-4 fw-semibold text-muted">Time of Death</div>
+                    <div class="col-8">@Model.TimeOfDeath</div>
+                </div>
+            }
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Cause of Death</div>
+                <div class="col-8">@Model.CauseOfDeath</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Attending Doctor</div>
+                <div class="col-8">@Model.AttendingDoctorName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Next of Kin</div>
+                <div class="col-8">@Model.NextOfKinName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Next of Kin Contact</div>
+                <div class="col-8">@Model.NextOfKinContact</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Certificate</div>
+                <div class="col-8">
+                    @if (Model.CertificateIssued)
+                    {
+                        <span class="badge bg-success">Issued</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Pending</span>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="row mb-2">
+                    <div class="col-4 fw-semibold text-muted">Notes</div>
+                    <div class="col-8">@Model.Notes</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

@@ -1,0 +1,51 @@
+@model MedyxHMS.Models.AmbulanceVehicle
+@{
+    ViewData["Title"] = "Add Ambulance Vehicle";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-ambulance me-2"></i>Add Vehicle</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:600px">
+        <div class="card-body">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Vehicle Number <span class="text-danger">*</span></label>
+                    <input asp-for="VehicleNumber" class="form-control" placeholder="e.g. AMB-001" />
+                    <span asp-validation-for="VehicleNumber" class="text-danger small"></span>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Model</label>
+                        <input asp-for="Model" class="form-control" placeholder="e.g. Toyota HiAce" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Status</label>
+                        <select asp-for="Status" class="form-select">
+                            <option>Available</option>
+                            <option>Maintenance</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Driver Name</label>
+                        <input asp-for="DriverName" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Driver Contact</label>
+                        <input asp-for="DriverContact" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Notes</label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

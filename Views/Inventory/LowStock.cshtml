@@ -1,0 +1,65 @@
+@model IEnumerable<MedyxHMS.Models.InventoryItem>
+@{
+    ViewData["Title"] = "Low Stock Items";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Low Stock Alert</h4>
+            <small class="text-muted">Items at or below their reorder level</small>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">All Items</a>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle me-2"></i>All stock levels are adequate.
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            <strong>@Model.Count() item(s)</strong> need reordering.
+        </div>
+        <div class="card shadow-sm">
+            <div class="card-body table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Current Stock</th>
+                            <th>Min Stock</th>
+                            <th>Reorder Level</th>
+                            <th>Supplier</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model)
+                        {
+                            <tr class="table-danger">
+                                <td><code>@i.ItemCode</code></td>
+                                <td>@i.Name</td>
+                                <td>@i.Category</td>
+                                <td class="fw-bold">@i.CurrentStock @i.Unit</td>
+                                <td>@i.MinimumStock</td>
+                                <td>@i.ReorderLevel</td>
+                                <td>@i.Supplier</td>
+                                <td>
+                                    <a asp-action="AddTransaction" asp-route-itemId="@i.Id" class="btn btn-sm btn-success">
+                                        <i class="fas fa-plus me-1"></i>Restock
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

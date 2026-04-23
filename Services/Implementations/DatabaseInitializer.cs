@@ -44,6 +44,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureModuleTablesAsync();
             await EnsureAccountApprovalTableAsync();
             await EnsureClinicalEnhancementTablesAsync();
+            await EnsureNewModuleTablesAsync();
             await EnsureUserIdentityConstraintsAsync();
             await EnsureReportStoredProceduresAsync();
 
@@ -965,6 +966,12 @@ END");
             ("Chatbot",            "Chatbot",                    "AI chatbot assistant",                  "fas fa-robot",             21),
             ("CMS",                "CMS / Public Website",       "Public website and CMS management",     "fas fa-globe",             22),
             ("License",            "License Management",         "System license management",             "fas fa-key",               23),
+            ("BirthDeath",         "Birth / Death Records",      "Hospital birth and death certificates", "fas fa-baby",              24),
+            ("TPA",                "TPA Management",             "Third party administrator claims",      "fas fa-handshake",         25),
+            ("Messaging",          "Internal Messaging",         "Staff internal messaging",              "fas fa-comments",          26),
+            ("Inventory",          "Inventory Management",       "Hospital supply inventory",             "fas fa-boxes",             27),
+            ("DownloadCenter",     "Download Center",            "Staff document downloads",              "fas fa-download",          28),
+            ("LiveConsultation",   "Live Consultation",          "Video consultation sessions",           "fas fa-video",             29),
         };
 
         private async Task SeedSystemModulesAsync()
@@ -1116,6 +1123,268 @@ BEGIN
         ON [dbo].[SystemNotifications]([UserId], [IsRead], [CreatedAtUtc]);';
 
     EXEC sp_executesql @sql;
+END");
+        }
+
+        private async Task EnsureNewModuleTablesAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[AmbulanceVehicles]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[AmbulanceVehicles] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [VehicleNumber] NVARCHAR(450) NOT NULL,
+        [DriverName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DriverContact] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Model] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Status] NVARCHAR(MAX) NOT NULL DEFAULT('Available'),
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL
+    );
+    CREATE UNIQUE INDEX [IX_AmbulanceVehicles_VehicleNumber] ON [dbo].[AmbulanceVehicles]([VehicleNumber]);
+END
+
+IF OBJECT_ID(N'[dbo].[AmbulanceDispatches]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[AmbulanceDispatches] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [AmbulanceVehicleId] INT NOT NULL,
+        [PatientId] INT NULL,
+        [PatientName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [PickupAddress] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ContactNumber] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Purpose] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DispatchTime] DATETIME2 NOT NULL,
+        [ReturnTime] DATETIME2 NULL,
+        [Status] NVARCHAR(MAX) NOT NULL DEFAULT('Dispatched'),
+        [DistanceKm] DECIMAL(18,2) NULL,
+        [Charges] DECIMAL(18,2) NULL,
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_AmbulanceDispatches_AmbulanceVehicles_AmbulanceVehicleId]
+            FOREIGN KEY ([AmbulanceVehicleId]) REFERENCES [dbo].[AmbulanceVehicles]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_AmbulanceDispatches_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id])
+    );
+    CREATE INDEX [IX_AmbulanceDispatches_AmbulanceVehicleId] ON [dbo].[AmbulanceDispatches]([AmbulanceVehicleId]);
+    CREATE INDEX [IX_AmbulanceDispatches_PatientId] ON [dbo].[AmbulanceDispatches]([PatientId]);
+    CREATE INDEX [IX_AmbulanceDispatches_DispatchTime] ON [dbo].[AmbulanceDispatches]([DispatchTime]);
+END
+
+IF OBJECT_ID(N'[dbo].[BirthRecords]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[BirthRecords] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [BabyName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Gender] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DateOfBirth] DATETIME2 NOT NULL,
+        [TimeOfBirth] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [WeightKg] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [MotherName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [FatherName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [GuardianContact] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DeliveryType] NVARCHAR(MAX) NOT NULL DEFAULT('Normal'),
+        [AttendingDoctorName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [PatientId] INT NULL,
+        [CertificateNumber] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CertificateIssued] BIT NOT NULL DEFAULT(0),
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_BirthRecords_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id])
+    );
+    CREATE INDEX [IX_BirthRecords_PatientId] ON [dbo].[BirthRecords]([PatientId]);
+END
+
+IF OBJECT_ID(N'[dbo].[DeathRecords]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[DeathRecords] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [PatientId] INT NULL,
+        [PatientName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Gender] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DateOfDeath] DATETIME2 NOT NULL,
+        [TimeOfDeath] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CauseOfDeath] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [AttendingDoctorName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [NextOfKinName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [NextOfKinContact] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CertificateNumber] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CertificateIssued] BIT NOT NULL DEFAULT(0),
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_DeathRecords_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id])
+    );
+    CREATE INDEX [IX_DeathRecords_PatientId] ON [dbo].[DeathRecords]([PatientId]);
+END
+
+IF OBJECT_ID(N'[dbo].[TpaProviders]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[TpaProviders] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Name] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Code] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ContactPerson] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ContactEmail] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ContactPhone] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Address] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [TpaNetwork] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL
+    );
+END
+
+IF OBJECT_ID(N'[dbo].[TpaClaims]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[TpaClaims] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TpaProviderId] INT NOT NULL,
+        [PatientId] INT NOT NULL,
+        [BillId] INT NULL,
+        [ClaimNumber] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ClaimedAmount] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [ApprovedAmount] DECIMAL(18,2) NULL,
+        [SettledAmount] DECIMAL(18,2) NULL,
+        [Status] NVARCHAR(MAX) NOT NULL DEFAULT('Pending'),
+        [ClaimDate] DATETIME2 NOT NULL,
+        [SettlementDate] DATETIME2 NULL,
+        [Remarks] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_TpaClaims_TpaProviders_TpaProviderId]
+            FOREIGN KEY ([TpaProviderId]) REFERENCES [dbo].[TpaProviders]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_TpaClaims_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_TpaClaims_Bills_BillId]
+            FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills]([Id])
+    );
+    CREATE INDEX [IX_TpaClaims_TpaProviderId] ON [dbo].[TpaClaims]([TpaProviderId]);
+    CREATE INDEX [IX_TpaClaims_PatientId] ON [dbo].[TpaClaims]([PatientId]);
+    CREATE INDEX [IX_TpaClaims_BillId] ON [dbo].[TpaClaims]([BillId]);
+END");
+
+            await _context.Database.ExecuteSqlRawAsync(@"
+DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+
+IF OBJECT_ID(N'[dbo].[InternalMessages]', N'U') IS NULL
+BEGIN
+    DECLARE @internalMessagesSql NVARCHAR(MAX) = N'
+    CREATE TABLE [dbo].[InternalMessages] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [SenderId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
+        [RecipientId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL DEFAULT(''''),
+        [Subject] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [Body] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [IsRead] BIT NOT NULL DEFAULT(0),
+        [IsBroadcast] BIT NOT NULL DEFAULT(0),
+        [ParentMessageId] INT NULL,
+        [SentAt] DATETIME2 NOT NULL,
+        [ReadAt] DATETIME2 NULL,
+        [IsDeletedBySender] BIT NOT NULL DEFAULT(0),
+        [IsDeletedByRecipient] BIT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_InternalMessages_AspNetUsers_SenderId]
+            FOREIGN KEY ([SenderId]) REFERENCES [dbo].[AspNetUsers]([Id]),
+        CONSTRAINT [FK_InternalMessages_InternalMessages_ParentMessageId]
+            FOREIGN KEY ([ParentMessageId]) REFERENCES [dbo].[InternalMessages]([Id])
+    );
+    CREATE INDEX [IX_InternalMessages_SenderId] ON [dbo].[InternalMessages]([SenderId]);
+    CREATE INDEX [IX_InternalMessages_ParentMessageId] ON [dbo].[InternalMessages]([ParentMessageId]);';
+
+    EXEC sp_executesql @internalMessagesSql;
+END
+
+IF OBJECT_ID(N'[dbo].[InventoryItems]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[InventoryItems] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [ItemCode] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Name] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Category] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Unit] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CurrentStock] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [MinimumStock] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [ReorderLevel] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [UnitCost] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [Supplier] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [StorageLocation] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [CreatedDate] DATETIME2 NOT NULL
+    );
+END
+
+IF OBJECT_ID(N'[dbo].[InventoryTransactions]', N'U') IS NULL
+BEGIN
+    DECLARE @inventoryTransactionsSql NVARCHAR(MAX) = N'
+    CREATE TABLE [dbo].[InventoryTransactions] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [InventoryItemId] INT NOT NULL,
+        [TransactionType] NVARCHAR(MAX) NOT NULL DEFAULT(''IN''),
+        [Quantity] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [UnitCost] DECIMAL(18,2) NOT NULL DEFAULT(0),
+        [ReferenceNumber] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [Remarks] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [PerformedByUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL DEFAULT(''''),
+        [TransactionDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_InventoryTransactions_InventoryItems_InventoryItemId]
+            FOREIGN KEY ([InventoryItemId]) REFERENCES [dbo].[InventoryItems]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_InventoryTransactions_InventoryItemId] ON [dbo].[InventoryTransactions]([InventoryItemId]);';
+
+    EXEC sp_executesql @inventoryTransactionsSql;
+END
+
+IF OBJECT_ID(N'[dbo].[DownloadFiles]', N'U') IS NULL
+BEGIN
+    DECLARE @downloadFilesSql NVARCHAR(MAX) = N'
+    CREATE TABLE [dbo].[DownloadFiles] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Title] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [Description] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [Category] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [FileName] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [FilePath] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [FileType] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [FileSizeBytes] BIGINT NOT NULL DEFAULT(0),
+        [DownloadCount] INT NOT NULL DEFAULT(0),
+        [UploadedByUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL DEFAULT(''''),
+        [IsPublic] BIT NOT NULL DEFAULT(0),
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [UploadedAt] DATETIME2 NOT NULL
+    );';
+
+    EXEC sp_executesql @downloadFilesSql;
+END
+
+IF OBJECT_ID(N'[dbo].[LiveConsultationSessions]', N'U') IS NULL
+BEGIN
+    DECLARE @liveSessionsSql NVARCHAR(MAX) = N'
+    CREATE TABLE [dbo].[LiveConsultationSessions] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [PatientId] INT NULL,
+        [DoctorUserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL DEFAULT(''''),
+        [DoctorName] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [PatientName] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [ScheduledAt] DATETIME2 NOT NULL,
+        [DurationMinutes] INT NOT NULL DEFAULT(30),
+        [Platform] NVARCHAR(MAX) NOT NULL DEFAULT(''Zoom''),
+        [MeetingLink] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [MeetingId] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [MeetingPassword] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [Status] NVARCHAR(MAX) NOT NULL DEFAULT(''Scheduled''),
+        [Notes] NVARCHAR(MAX) NOT NULL DEFAULT(''''),
+        [BillId] INT NULL,
+        [CreatedDate] DATETIME2 NOT NULL,
+        CONSTRAINT [FK_LiveConsultationSessions_Patients_PatientId]
+            FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]),
+        CONSTRAINT [FK_LiveConsultationSessions_Bills_BillId]
+            FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills]([Id])
+    );
+    CREATE INDEX [IX_LiveConsultationSessions_PatientId] ON [dbo].[LiveConsultationSessions]([PatientId]);
+    CREATE INDEX [IX_LiveConsultationSessions_BillId] ON [dbo].[LiveConsultationSessions]([BillId]);
+    CREATE INDEX [IX_LiveConsultationSessions_ScheduledAt] ON [dbo].[LiveConsultationSessions]([ScheduledAt]);';
+
+    EXEC sp_executesql @liveSessionsSql;
 END");
         }
 

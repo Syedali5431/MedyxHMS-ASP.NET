@@ -1,0 +1,90 @@
+@model MedyxHMS.Models.BirthRecord
+@{
+    ViewData["Title"] = $"Birth Record — {Model.BabyName}";
+}
+
+<div class="container mt-3" style="max-width:700px">
+    <div class="d-flex align-items-center mb-3 gap-2">
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Birth Records
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-print me-1"></i>Print
+        </button>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header text-center">
+            <h5 class="mb-0">Birth Certificate</h5>
+            <small class="text-muted">Certificate No: <code>@Model.CertificateNumber</code></small>
+        </div>
+        <div class="card-body">
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Baby Name</div>
+                <div class="col-8">@Model.BabyName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Gender</div>
+                <div class="col-8">@Model.Gender</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Date of Birth</div>
+                <div class="col-8">@Model.DateOfBirth.ToString("MMMM dd, yyyy")</div>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.TimeOfBirth))
+            {
+                <div class="row mb-2">
+                    <div class="col-4 fw-semibold text-muted">Time of Birth</div>
+                    <div class="col-8">@Model.TimeOfBirth</div>
+                </div>
+            }
+            @if (Model.WeightKg > 0)
+            {
+                <div class="row mb-2">
+                    <div class="col-4 fw-semibold text-muted">Weight</div>
+                    <div class="col-8">@Model.WeightKg kg</div>
+                </div>
+            }
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Mother's Name</div>
+                <div class="col-8">@Model.MotherName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Father's Name</div>
+                <div class="col-8">@Model.FatherName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Guardian Contact</div>
+                <div class="col-8">@Model.GuardianContact</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Delivery Type</div>
+                <div class="col-8">@Model.DeliveryType</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Attending Doctor</div>
+                <div class="col-8">@Model.AttendingDoctorName</div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-4 fw-semibold text-muted">Certificate</div>
+                <div class="col-8">
+                    @if (Model.CertificateIssued)
+                    {
+                        <span class="badge bg-success">Issued</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Pending</span>
+                    }
+                </div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.Notes))
+            {
+                <div class="row mb-2">
+                    <div class="col-4 fw-semibold text-muted">Notes</div>
+                    <div class="col-8">@Model.Notes</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>

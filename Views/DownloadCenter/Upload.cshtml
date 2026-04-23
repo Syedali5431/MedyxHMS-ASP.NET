@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Upload File";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-upload text-primary me-2"></i>Upload File</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:580px">
+        <div class="card-body">
+            <form asp-action="Upload" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Title <span class="text-danger">*</span></label>
+                    <input name="Title" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Description</label>
+                    <textarea name="Description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Category</label>
+                    <select name="Category" class="form-select">
+                        <option>Form</option>
+                        <option>Policy</option>
+                        <option>SOP</option>
+                        <option>Report</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input type="checkbox" name="IsPublic" value="true" class="form-check-input" id="isPublic" />
+                        <label class="form-check-label" for="isPublic">Visible to all users (not just admins)</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">File <span class="text-danger">*</span></label>
+                    <input type="file" name="file" class="form-control" required
+                           accept=".pdf,.docx,.xlsx,.doc,.xls,.txt,.png,.jpg" />
+                    <small class="text-muted">Allowed: PDF, Word, Excel, TXT, PNG, JPG</small>
+                </div>
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
+                }
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Upload</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

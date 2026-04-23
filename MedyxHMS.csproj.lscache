@@ -53,24 +53,35 @@ TemporaryDependencyNodeTargetIdentifier=net8.0
 /warnaserror+:NU1605,SYSLIB0011
 
 [sourceFiles]
+Components/SidebarNavViewComponent.cs
 Controllers/
  AccountController.cs
+ AccountsApprovalController.cs
+ AmbulanceController.cs
+ AppController.cs
  AppointmentController.cs
  AttendanceController.cs
  AuditController.cs
  BillingController.cs
+ BirthDeathController.cs
  BloodBankController.cs
  CertificateController.cs
  ChatbotAdminController.cs
  ChatbotController.cs
  CmsController.cs
  DashboardController.cs
+ DownloadCenterController.cs
  FrontOfficeController.cs
  HomeController.cs
+ InventoryController.cs
  IPDController.cs
  LabController.cs
  LeaveController.cs
  LicenseController.cs
+ LiveConsultationController.cs
+ MessagingController.cs
+ ModuleManagementController.cs
+ NotificationsController.cs
  OPDController.cs
  OperationTheatreController.cs
  PatientController.cs
@@ -89,11 +100,13 @@ Controllers/
  ReportController.cs
  SiteController.cs
  StaffController.cs
+ TpaController.cs
 Data/ApplicationDbContext.cs
 DTOs/
  AppointmentDtos.cs
  BillingDtos.cs
  LabDtos.cs
+ MobileApiDtos.cs
  OPDDtos.cs
  PatientDtos.cs
  PatientPortalDtos.cs
@@ -104,7 +117,10 @@ Extensions/
  AuthorizationExtensions.cs
  HtmlHelperExtensions.cs
  LicenseEnforcementMiddleware.cs
+ ModuleEntitlementMiddleware.cs
+ SecurityHeadersMiddleware.cs
 Models/
+ AccountApprovalRequest.cs
  ApplicationUser.cs
  Billing.cs
  Chatbot.cs
@@ -114,62 +130,81 @@ Models/
  Lab.cs
  Licensing.cs
  MedicalRecord.cs
+ NewModules.cs
  NotificationDeliveryLog.cs
  OPD.cs
  OperationalHealth.cs
  Patient.cs
+ PatientClinicalExtensions.cs
  Pharmacy.cs
  Radiology.cs
  RBAC.cs
+ ReportModels.cs
  Settings.cs
  SpecializedServices.cs
+ UserSession.cs
 obj/Debug/net8.0/
  .NETCoreApp,Version=v8.0.AssemblyAttributes.cs
  MedyxHMS.AssemblyInfo.cs
  MedyxHMS.GlobalUsings.g.cs
  MedyxHMS.RazorAssemblyInfo.cs
 Program.cs
-Services/Implementations/
- AppointmentService.cs
- AttendanceService.cs
- AuditService.cs
- AuthorizationService.cs
- BedService.cs
- BillingService.cs
- BloodBankService.cs
- CertificateService.cs
- ChatbotKnowledgeService.cs
- ChatbotModerationService.cs
- ChatbotPromptBuilder.cs
- DatabaseInitializer.cs
- ExportService.cs
- FileService.cs
- FrontOfficeService.cs
- IPDService.cs
- LabService.cs
- LeaveService.cs
- LicenseReminderHostedService.cs
- LicenseService.cs
- NotificationDeliveryAuditService.cs
- OPDService.cs
- OpenAiChatbotService.cs
- OperationTheatreService.cs
- PatientPortalService.cs
- PatientService.cs
- PayrollService.cs
- PrescriptionService.cs
- PublicBookingNotificationService.cs
- RadiologyService.cs
- ReferralService.cs
- ReportService.cs
- SettingService.cs
- SmsLogNotificationProvider.cs
- SmtpEmailNotificationProvider.cs
- SmtpHealthService.cs
- StaffService.cs
- TwilioSmsNotificationProvider.cs
- WardService.cs
-Services/Interfaces/IServices.cs
+Services/
+ Filters/LicenseExpiryFilter.cs
+ Implementations/
+  AfricaTalkingSmsNotificationProvider.cs
+  AppointmentService.cs
+  AttendanceService.cs
+  AuditService.cs
+  AuthorizationService.cs
+  BedService.cs
+  BillingService.cs
+  BloodBankService.cs
+  CacheService.cs
+  CertificateService.cs
+  ChatbotConsentService.cs
+  ChatbotDataCleanupHostedService.cs
+  ChatbotDataCleanupService.cs
+  ChatbotKnowledgeService.cs
+  ChatbotModerationService.cs
+  ChatbotPiiRedactionService.cs
+  ChatbotPromptBuilder.cs
+  ConcurrentSessionService.cs
+  DatabaseInitializer.cs
+  ExportService.cs
+  FileService.cs
+  FrontOfficeService.cs
+  IPDService.cs
+  LabService.cs
+  LeaveService.cs
+  LicenseCryptoUtility.cs
+  LicenseFileService.cs
+  LicenseReminderHostedService.cs
+  LicenseService.cs
+  ModuleService.cs
+  NotificationDeliveryAuditService.cs
+  OPDService.cs
+  OpenAiChatbotService.cs
+  OperationTheatreService.cs
+  PatientPortalService.cs
+  PatientService.cs
+  PayrollService.cs
+  PrescriptionService.cs
+  PublicBookingNotificationService.cs
+  RadiologyService.cs
+  ReferralService.cs
+  ReportService.cs
+  ReportTemplateService.cs
+  SettingService.cs
+  SmsLogNotificationProvider.cs
+  SmsNotificationProviderRouter.cs
+  SmtpEmailNotificationProvider.cs
+  SmtpHealthService.cs
+  StaffService.cs
+  SystemNotificationService.cs
+  TwilioSmsNotificationProvider.cs
+  WardService.cs
+ Interfaces/IServices.cs
 ViewModels/
  AccountViewModels.cs
  AppointmentViewModels.cs
@@ -183,6 +218,7 @@ ViewModels/
  LabViewModels.cs
  LeaveViewModels.cs
  LicenseViewModels.cs
+ ModuleManagementViewModels.cs
  OPDViewModels.cs
  PatientPortalViewModels.cs
  PatientViewModels.cs
@@ -545,14 +581,14 @@ ViewModels/
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
+<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
  Microsoft.AspNetCore.Razor.Utilities.Shared.dll
  Microsoft.CodeAnalysis.Razor.Compiler.dll
  Microsoft.Extensions.ObjectPool.dll
-<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs/
+<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk.Web/analyzers/cs/
  Microsoft.AspNetCore.Analyzers.dll
  Microsoft.AspNetCore.Mvc.Analyzers.dll
-<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/microsoft.codeanalysis.analyzers/3.3.3/analyzers/dotnet/cs/
@@ -561,13 +597,25 @@ ViewModels/
 <NUGET>/microsoft.entityframeworkcore.analyzers/8.0.0/analyzers/dotnet/cs/Microsoft.EntityFrameworkCore.Analyzers.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.202/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
+<DOTNET>/sdk/10.0.203/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_8_default.globalconfig
 obj/Debug/net8.0/MedyxHMS.GeneratedMSBuildEditorConfig.editorconfig
 
 [additionalFiles]
 Views/Account/
  AccessDenied.cshtml
+ LicenseExpired.cshtml
  Login.cshtml
+ Register.cshtml
+Views/AccountsApproval/
+ Index.cshtml
+ Passwords.cshtml
+ ResetPassword.cshtml
+Views/Ambulance/
+ Create.cshtml
+ Dispatch.cshtml
+ Dispatches.cshtml
+ Edit.cshtml
+ Index.cshtml
 Views/Appointment/
  Calendar.cshtml
  Create.cshtml
@@ -586,8 +634,16 @@ Views/
  Billing/
   Create.cshtml
   Details.cshtml
+  GatewaySettings.cshtml
   Index.cshtml
   Pay.cshtml
+ BirthDeath/
+  BirthDetails.cshtml
+  CreateBirth.cshtml
+  CreateDeath.cshtml
+  DeathDetails.cshtml
+  Deaths.cshtml
+  Index.cshtml
  BloodBank/
   Index.cshtml
   Issue.cshtml
@@ -595,7 +651,9 @@ Views/
   GenerateCertificate.cshtml
   GenerateIdCard.cshtml
   Index.cshtml
- Chatbot/Index.cshtml
+ Chatbot/
+  Index.cshtml
+  RequestConsent.cshtml
  ChatbotAdmin/
   Analytics.cshtml
   Escalations.cshtml
@@ -612,6 +670,9 @@ Views/
   NotificationSettings.cshtml
   ReviewDuplicates.cshtml
  Dashboard/Index.cshtml
+ DownloadCenter/
+  Index.cshtml
+  Upload.cshtml
  FrontOffice/
   Complaints.cshtml
   DispatchReceive.cshtml
@@ -620,12 +681,21 @@ Views/
  Home/
   Index.cshtml
   Privacy.cshtml
+ Inventory/
+  AddTransaction.cshtml
+  Create.cshtml
+  Edit.cshtml
+  Index.cshtml
+  LowStock.cshtml
+  Transactions.cshtml
  IPD/
   Create.cshtml
   Details.cshtml
+  Edit.cshtml
   Index.cshtml
  Lab/
   CreateTest.cshtml
+  EditResult.cshtml
   Index.cshtml
   OrderTest.cshtml
   Results.cshtml
@@ -636,7 +706,23 @@ Views/
   Types.cshtml
  License/
   Expired.cshtml
+  FeatureLocked.cshtml
   Index.cshtml
+ LiveConsultation/
+  Details.cshtml
+  Index.cshtml
+  Schedule.cshtml
+ Messaging/
+  Broadcast.cshtml
+  Compose.cshtml
+  Index.cshtml
+  Read.cshtml
+  Sent.cshtml
+ ModuleManagement/
+  Index.cshtml
+  UserAccess.cshtml
+  Users.cshtml
+ Notifications/Index.cshtml
  OPD/
   Create.cshtml
   Details.cshtml
@@ -651,10 +737,15 @@ Views/
   Details.cshtml
   Edit.cshtml
   Index.cshtml
- PatientPortal/Appointments/
-  Book.cshtml
-  Index.cshtml
+  InsuranceCreate.cshtml
+  InsuranceEdit.cshtml
+  InsuranceForm.cshtml
+  InsuranceList.cshtml
  PatientPortal/
+  Account/Register.cshtml
+  Appointments/
+   Book.cshtml
+   Index.cshtml
   Bills/Index.cshtml
   Dashboard/Index.cshtml
   MedicalRecords/
@@ -662,6 +753,10 @@ Views/
    LabResults.cshtml
    Prescriptions.cshtml
    RadiologyResults.cshtml
+  Settings/
+   Index.cshtml
+   Privacy.cshtml
+   Security.cshtml
   Shared/_Layout.cshtml
  Payroll/
   Generate.cshtml
@@ -679,9 +774,20 @@ Views/
   Create.cshtml
   Index.cshtml
  Report/
+  Builder.cshtml
+  DepartmentReport.cshtml
+  Design.cshtml
+  EditReport.cshtml
   FinancialReport.cshtml
+  GeneratedReports.cshtml
   Index.cshtml
+  OccupancyReport.cshtml
+  PayrollReport.cshtml
+  Preview.cshtml
+  ScheduleReport.cshtml
+  StaffReport.cshtml
  Shared/
+  Components/SidebarNav/Default.cshtml
   Error.cshtml
   _Layout.cshtml
   _PublicLayout.cshtml
@@ -703,6 +809,12 @@ Views/
   Dashboard.cshtml
   Delete.cshtml
   Details.cshtml
+  Edit.cshtml
+  Index.cshtml
+ Tpa/
+  Claims.cshtml
+  Create.cshtml
+  CreateClaim.cshtml
   Edit.cshtml
   Index.cshtml
  _ViewImports.cshtml
@@ -711,7 +823,19 @@ Views/
 [dynamicFiles]
 Views/Account/
  AccessDenied.cshtml
+ LicenseExpired.cshtml
  Login.cshtml
+ Register.cshtml
+Views/AccountsApproval/
+ Index.cshtml
+ Passwords.cshtml
+ ResetPassword.cshtml
+Views/Ambulance/
+ Create.cshtml
+ Dispatch.cshtml
+ Dispatches.cshtml
+ Edit.cshtml
+ Index.cshtml
 Views/Appointment/
  Calendar.cshtml
  Create.cshtml
@@ -730,8 +854,16 @@ Views/
  Billing/
   Create.cshtml
   Details.cshtml
+  GatewaySettings.cshtml
   Index.cshtml
   Pay.cshtml
+ BirthDeath/
+  BirthDetails.cshtml
+  CreateBirth.cshtml
+  CreateDeath.cshtml
+  DeathDetails.cshtml
+  Deaths.cshtml
+  Index.cshtml
  BloodBank/
   Index.cshtml
   Issue.cshtml
@@ -739,7 +871,9 @@ Views/
   GenerateCertificate.cshtml
   GenerateIdCard.cshtml
   Index.cshtml
- Chatbot/Index.cshtml
+ Chatbot/
+  Index.cshtml
+  RequestConsent.cshtml
  ChatbotAdmin/
   Analytics.cshtml
   Escalations.cshtml
@@ -756,6 +890,9 @@ Views/
   NotificationSettings.cshtml
   ReviewDuplicates.cshtml
  Dashboard/Index.cshtml
+ DownloadCenter/
+  Index.cshtml
+  Upload.cshtml
  FrontOffice/
   Complaints.cshtml
   DispatchReceive.cshtml
@@ -764,12 +901,21 @@ Views/
  Home/
   Index.cshtml
   Privacy.cshtml
+ Inventory/
+  AddTransaction.cshtml
+  Create.cshtml
+  Edit.cshtml
+  Index.cshtml
+  LowStock.cshtml
+  Transactions.cshtml
  IPD/
   Create.cshtml
   Details.cshtml
+  Edit.cshtml
   Index.cshtml
  Lab/
   CreateTest.cshtml
+  EditResult.cshtml
   Index.cshtml
   OrderTest.cshtml
   Results.cshtml
@@ -780,7 +926,23 @@ Views/
   Types.cshtml
  License/
   Expired.cshtml
+  FeatureLocked.cshtml
   Index.cshtml
+ LiveConsultation/
+  Details.cshtml
+  Index.cshtml
+  Schedule.cshtml
+ Messaging/
+  Broadcast.cshtml
+  Compose.cshtml
+  Index.cshtml
+  Read.cshtml
+  Sent.cshtml
+ ModuleManagement/
+  Index.cshtml
+  UserAccess.cshtml
+  Users.cshtml
+ Notifications/Index.cshtml
  OPD/
   Create.cshtml
   Details.cshtml
@@ -795,10 +957,15 @@ Views/
   Details.cshtml
   Edit.cshtml
   Index.cshtml
- PatientPortal/Appointments/
-  Book.cshtml
-  Index.cshtml
+  InsuranceCreate.cshtml
+  InsuranceEdit.cshtml
+  InsuranceForm.cshtml
+  InsuranceList.cshtml
  PatientPortal/
+  Account/Register.cshtml
+  Appointments/
+   Book.cshtml
+   Index.cshtml
   Bills/Index.cshtml
   Dashboard/Index.cshtml
   MedicalRecords/
@@ -806,6 +973,10 @@ Views/
    LabResults.cshtml
    Prescriptions.cshtml
    RadiologyResults.cshtml
+  Settings/
+   Index.cshtml
+   Privacy.cshtml
+   Security.cshtml
   Shared/_Layout.cshtml
  Payroll/
   Generate.cshtml
@@ -823,9 +994,20 @@ Views/
   Create.cshtml
   Index.cshtml
  Report/
+  Builder.cshtml
+  DepartmentReport.cshtml
+  Design.cshtml
+  EditReport.cshtml
   FinancialReport.cshtml
+  GeneratedReports.cshtml
   Index.cshtml
+  OccupancyReport.cshtml
+  PayrollReport.cshtml
+  Preview.cshtml
+  ScheduleReport.cshtml
+  StaffReport.cshtml
  Shared/
+  Components/SidebarNav/Default.cshtml
   Error.cshtml
   _Layout.cshtml
   _PublicLayout.cshtml
@@ -847,6 +1029,12 @@ Views/
   Dashboard.cshtml
   Delete.cshtml
   Details.cshtml
+  Edit.cshtml
+  Index.cshtml
+ Tpa/
+  Claims.cshtml
+  Create.cshtml
+  CreateClaim.cshtml
   Edit.cshtml
   Index.cshtml
  _ViewImports.cshtml

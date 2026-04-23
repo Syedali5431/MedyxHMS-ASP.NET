@@ -1,0 +1,75 @@
+@model MedyxHMS.Models.TpaClaim
+@{
+    ViewData["Title"] = "New TPA Claim";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-file-invoice text-primary me-2"></i>New TPA Claim</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:640px">
+        <div class="card-body">
+            <form asp-action="CreateClaim" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">TPA Provider <span class="text-danger">*</span></label>
+                    <select asp-for="TpaProviderId" class="form-select">
+                        <option value="">-- Select provider --</option>
+                        @foreach (var p in (IEnumerable<MedyxHMS.Models.TpaProvider>)ViewBag.Providers)
+                        {
+                            <option value="@p.Id">@p.Name (@p.TpaNetwork)</option>
+                        }
+                    </select>
+                    <span asp-validation-for="TpaProviderId" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Patient <span class="text-danger">*</span></label>
+                    <select asp-for="PatientId" class="form-select">
+                        <option value="">-- Select patient --</option>
+                        @foreach (var p in (IEnumerable<MedyxHMS.Models.Patient>)ViewBag.Patients)
+                        {
+                            <option value="@p.Id">@p.FirstName @p.LastName</option>
+                        }
+                    </select>
+                    <span asp-validation-for="PatientId" class="text-danger small"></span>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Claim Date</label>
+                        <input asp-for="ClaimDate" type="date" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Claimed Amount <span class="text-danger">*</span></label>
+                        <input asp-for="ClaimedAmount" type="number" step="0.01" class="form-control" />
+                        <span asp-validation-for="ClaimedAmount" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Bill</label>
+                    <select asp-for="BillId" class="form-select">
+                        <option value="">-- Optional bill link --</option>
+                        @foreach (var bill in (IEnumerable<MedyxHMS.Models.Bill>)ViewBag.Bills)
+                        {
+                            <option value="@bill.Id">Bill #@bill.Id</option>
+                        }
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Initial Status</label>
+                    <select asp-for="Status" class="form-select">
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Settled">Settled</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Remarks</label>
+                    <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Submit Claim</button>
+                    <a asp-action="Claims" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

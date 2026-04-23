@@ -1,0 +1,88 @@
+@model IEnumerable<MedyxHMS.Models.InternalMessage>
+@{
+    ViewData["Title"] = "Inbox";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-envelope text-primary me-2"></i>Messaging</h4>
+            <small class="text-muted">Internal staff communication</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Sent" class="btn btn-outline-secondary btn-sm">Sent</a>
+            @if (isAdmin)
+            {
+                <a asp-action="Broadcast" class="btn btn-outline-warning btn-sm">
+                    <i class="fas fa-bullhorn me-1"></i>Broadcast
+                </a>
+            }
+            <a asp-action="Compose" class="btn btn-primary btn-sm">
+                <i class="fas fa-pen me-1"></i>Compose
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:3%"></th>
+                        <th>Subject</th>
+                        <th>From</th>
+                        <th>Received</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var m in Model)
+                    {
+                        <tr class="@(!m.IsRead ? "fw-semibold" : "")">
+                            <td class="text-center">
+                                @if (m.IsBroadcast)
+                                {
+                                    <i class="fas fa-bullhorn text-warning" title="Broadcast"></i>
+                                }
+                                else if (!m.IsRead)
+                                {
+                                    <i class="fas fa-circle text-primary" style="font-size:0.5rem"></i>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Read" asp-route-id="@m.Id" class="text-decoration-none text-dark">
+                                    @m.Subject
+                                </a>
+                            </td>
+                            <td><small>@m.SenderId</small></td>
+                            <td><small>@m.SentAt.ToLocalTime().ToString("MMM dd, HH:mm")</small></td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Compose" asp-route-replyToId="@m.Id" class="btn btn-sm btn-outline-secondary">Reply</a>
+                                    <form asp-action="Delete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@m.Id" />
+                                        <input type="hidden" name="folder" value="inbox" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Delete?')">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted py-4">Inbox is empty.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

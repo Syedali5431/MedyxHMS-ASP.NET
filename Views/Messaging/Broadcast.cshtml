@@ -1,0 +1,34 @@
+@model MedyxHMS.Models.InternalMessage
+@{
+    ViewData["Title"] = "Broadcast Message";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-bullhorn text-warning me-2"></i>Broadcast to All Staff</h4>
+    <div class="alert alert-warning mt-2">
+        This message will be sent to <strong>all staff members</strong>.
+    </div>
+    <div class="card mt-3 shadow-sm" style="max-width:640px">
+        <div class="card-body">
+            <form asp-action="Broadcast" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+                    <input asp-for="Subject" class="form-control" />
+                    <span asp-validation-for="Subject" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Message <span class="text-danger">*</span></label>
+                    <textarea asp-for="Body" class="form-control" rows="6"></textarea>
+                    <span asp-validation-for="Body" class="text-danger small"></span>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-bullhorn me-1"></i>Send Broadcast
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

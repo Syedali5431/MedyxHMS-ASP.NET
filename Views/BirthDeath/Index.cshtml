@@ -1,0 +1,79 @@
+@model IEnumerable<MedyxHMS.Models.BirthRecord>
+@{
+    ViewData["Title"] = "Birth Records";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-baby text-info me-2"></i>Birth Records</h4>
+            <small class="text-muted">Hospital birth certificates &amp; records</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Deaths" class="btn btn-outline-secondary btn-sm">
+                <i class="fas fa-book-dead me-1"></i>Death Records
+            </a>
+            <a asp-action="CreateBirth" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>New Birth Record
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cert #</th>
+                        <th>Baby Name</th>
+                        <th>Gender</th>
+                        <th>Date of Birth</th>
+                        <th>Weight (kg)</th>
+                        <th>Mother</th>
+                        <th>Delivery Type</th>
+                        <th>Doctor</th>
+                        <th>Cert Issued</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var b in Model)
+                    {
+                        <tr>
+                            <td><code>@b.CertificateNumber</code></td>
+                            <td>@b.BabyName</td>
+                            <td>@b.Gender</td>
+                            <td>@b.DateOfBirth.ToString("MMM dd, yyyy")</td>
+                            <td>@b.WeightKg.ToString("F2")</td>
+                            <td>@b.MotherName</td>
+                            <td>@b.DeliveryType</td>
+                            <td>@b.AttendingDoctorName</td>
+                            <td>
+                                @if (b.CertificateIssued)
+                                {
+                                    <span class="badge bg-success">Issued</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="BirthDetails" asp-route-id="@b.Id" class="btn btn-sm btn-outline-primary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="10" class="text-center text-muted py-4">No birth records found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

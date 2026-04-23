@@ -1,0 +1,77 @@
+@model IEnumerable<MedyxHMS.Models.TpaProvider>
+@{
+    ViewData["Title"] = "TPA Management";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-handshake text-success me-2"></i>TPA Management</h4>
+            <small class="text-muted">Third Party Administrator providers &amp; insurance claims</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Claims" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-file-invoice me-1"></i>Claims
+            </a>
+            @if (isAdmin)
+            {
+                <a asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add TPA Provider
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>TPA Provider</th>
+                        <th>Network / Insurer</th>
+                        <th>Contact Person</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr>
+                            <td><code>@t.Code</code></td>
+                            <td>@t.Name</td>
+                            <td>@t.TpaNetwork</td>
+                            <td>@t.ContactPerson</td>
+                            <td>@t.ContactEmail</td>
+                            <td>@t.ContactPhone</td>
+                            <td>
+                                <span class="badge @(t.IsActive ? "bg-success" : "bg-secondary")">
+                                    @(t.IsActive ? "Active" : "Inactive")
+                                </span>
+                            </td>
+                            <td>
+                                @if (isAdmin)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-4">No TPA providers registered.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

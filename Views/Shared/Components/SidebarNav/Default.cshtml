@@ -1,0 +1,668 @@
+@model MedyxHMS.Components.SidebarNavViewModel
+
+@* Staff portal persistent left sidebar – M1 through M24 *@
+
+<div class="staff-sidebar-header px-3 py-2 d-flex align-items-center gap-2">
+    <i class="fas fa-hospital-user text-primary"></i>
+    <span class="fw-semibold text-white small">Navigation</span>
+</div>
+
+<ul class="nav flex-column staff-sidebar-nav mb-4">
+
+    @* ─── M1 · Dashboard (always visible) ─── *@
+    <li class="nav-item">
+        <a href="/Dashboard"
+           class="staff-sidebar-link @(Model.IsActive("/Dashboard") ? "active" : "")">
+            <i class="fas fa-tachometer-alt staff-sidebar-icon"></i>Dashboard
+        </a>
+    </li>
+
+    @* ─────────── CLINICAL ─────────── *@
+    <li class="staff-sidebar-section">Clinical</li>
+
+    @* M3 · Appointments *@
+    @if (Model.ModuleOn("Appointment"))
+    {
+        <li class="nav-item">
+            <a href="#sb-appointment"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Appointment") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Appointment") ? "true" : "false")">
+                <i class="fas fa-calendar-check staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Appointments</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-appointment"
+                 class="collapse @(Model.IsActive("/Appointment") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Appointment" class="staff-sidebar-sublink">All Appointments</a></li>
+                    <li><a href="/Appointment/Calendar" class="staff-sidebar-sublink">Calendar</a></li>
+                    <li><a href="/Appointment/Create" class="staff-sidebar-sublink">Schedule New</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M4 · OPD *@
+    @if (Model.ModuleOn("OPD"))
+    {
+        <li class="nav-item">
+            <a href="#sb-opd"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/OPD") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/OPD") ? "true" : "false")">
+                <i class="fas fa-stethoscope staff-sidebar-icon"></i>
+                <span class="flex-grow-1">OPD</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-opd" class="collapse @(Model.IsActive("/OPD") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/OPD" class="staff-sidebar-sublink">OPD Visits</a></li>
+                    <li><a href="/OPD/Create" class="staff-sidebar-sublink">New OPD Visit</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M5 · IPD *@
+    @if (Model.ModuleOn("IPD"))
+    {
+        <li class="nav-item">
+            <a href="#sb-ipd"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/IPD") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/IPD") ? "true" : "false")">
+                <i class="fas fa-bed staff-sidebar-icon"></i>
+                <span class="flex-grow-1">IPD</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-ipd" class="collapse @(Model.IsActive("/IPD") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/IPD" class="staff-sidebar-sublink">Admissions</a></li>
+                    <li><a href="/IPD/Create" class="staff-sidebar-sublink">New Admission</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M6 · Pharmacy *@
+    @if (Model.ModuleOn("Prescription"))
+    {
+        <li class="nav-item">
+            <a href="#sb-pharmacy"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Prescription") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Prescription") ? "true" : "false")">
+                <i class="fas fa-pills staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Pharmacy</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-pharmacy"
+                 class="collapse @(Model.IsActive("/Prescription") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Prescription" class="staff-sidebar-sublink">Prescriptions</a></li>
+                    <li><a href="/Prescription/Medicines" class="staff-sidebar-sublink">Medicines</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M7 · Pathology *@
+    @if (Model.ModuleOn("Lab"))
+    {
+        <li class="nav-item">
+            <a href="#sb-lab"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Lab") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Lab") ? "true" : "false")">
+                <i class="fas fa-flask staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Pathology</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-lab" class="collapse @(Model.IsActive("/Lab") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Lab" class="staff-sidebar-sublink">Lab Tests</a></li>
+                    <li><a href="/Lab/Results" class="staff-sidebar-sublink">Results</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M8 · Radiology *@
+    @if (Model.ModuleOn("Radiology"))
+    {
+        <li class="nav-item">
+            <a href="#sb-radiology"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Radiology") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Radiology") ? "true" : "false")">
+                <i class="fas fa-x-ray staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Radiology</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-radiology"
+                 class="collapse @(Model.IsActive("/Radiology") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Radiology" class="staff-sidebar-sublink">Tests</a></li>
+                    <li><a href="/Radiology/Results" class="staff-sidebar-sublink">Results</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M9 · Blood Bank *@
+    @if (Model.ModuleOn("BloodBank"))
+    {
+        <li class="nav-item">
+            <a href="#sb-bloodbank"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/BloodBank") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/BloodBank") ? "true" : "false")">
+                <i class="fas fa-tint staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Blood Bank</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-bloodbank"
+                 class="collapse @(Model.IsActive("/BloodBank") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/BloodBank" class="staff-sidebar-sublink">Inventory</a></li>
+                    <li><a href="/BloodBank/Issue" class="staff-sidebar-sublink">Issue Blood</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M10 · Ambulance *@
+    @if (Model.ModuleOn("Ambulance"))
+    {
+        <li class="nav-item">
+            <a href="#sb-ambulance"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Ambulance") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Ambulance") ? "true" : "false")">
+                <i class="fas fa-ambulance staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Ambulance</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-ambulance" class="collapse @(Model.IsActive("/Ambulance") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Ambulance" class="staff-sidebar-sublink">Vehicles</a></li>
+                    <li><a href="/Ambulance/Dispatches" class="staff-sidebar-sublink">Dispatch Log</a></li>
+                    <li><a href="/Ambulance/Dispatch" class="staff-sidebar-sublink">New Dispatch</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M11 · Operation Theatre *@
+    @if (Model.ModuleOn("OperationTheatre"))
+    {
+        <li class="nav-item">
+            <a href="#sb-ot"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/OperationTheatre") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/OperationTheatre") ? "true" : "false")">
+                <i class="fas fa-hospital staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Operation Theatre</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-ot"
+                 class="collapse @(Model.IsActive("/OperationTheatre") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/OperationTheatre" class="staff-sidebar-sublink">OT Schedule</a></li>
+                    <li><a href="/OperationTheatre/Create" class="staff-sidebar-sublink">Add OT Case</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* ─────────── ADMINISTRATIVE ─────────── *@
+    <li class="staff-sidebar-section">Administrative</li>
+
+    @* M2 · Billing *@
+    @if (Model.ModuleOn("Billing"))
+    {
+        <li class="nav-item">
+            <a href="#sb-billing"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Billing") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Billing") ? "true" : "false")">
+                <i class="fas fa-file-invoice-dollar staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Billing</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-billing"
+                 class="collapse @(Model.IsActive("/Billing") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Billing" class="staff-sidebar-sublink">Bills</a></li>
+                    <li><a href="/Billing/Create" class="staff-sidebar-sublink">New Bill</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M11-FO · Front Office *@
+    @if (Model.ModuleOn("FrontOffice"))
+    {
+        <li class="nav-item">
+            <a href="#sb-frontoffice"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/FrontOffice") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/FrontOffice") ? "true" : "false")">
+                <i class="fas fa-concierge-bell staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Front Office</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-frontoffice"
+                 class="collapse @(Model.IsActive("/FrontOffice") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/FrontOffice" class="staff-sidebar-sublink">Overview</a></li>
+                    <li><a href="/FrontOffice/Visitors" class="staff-sidebar-sublink">Visitors</a></li>
+                    <li><a href="/FrontOffice/Complaints" class="staff-sidebar-sublink">Complaints</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M14 · Referral *@
+    @if (Model.ModuleOn("Referral"))
+    {
+        <li class="nav-item">
+            <a href="#sb-referral"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Referral") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Referral") ? "true" : "false")">
+                <i class="fas fa-share-alt staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Referral</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-referral"
+                 class="collapse @(Model.IsActive("/Referral") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Referral" class="staff-sidebar-sublink">Referrals</a></li>
+                    <li><a href="/Referral/Create" class="staff-sidebar-sublink">Create Referral</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* ─────────── PATIENTS ─────────── *@
+    <li class="staff-sidebar-section">Patients</li>
+
+    @* Patient Management *@
+    @if (Model.ModuleOn("Patient"))
+    {
+        <li class="nav-item">
+            <a href="#sb-patient"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Patient") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Patient") ? "true" : "false")">
+                <i class="fas fa-user-injured staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Patients</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-patient"
+                 class="collapse @(Model.IsActive("/Patient") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Patient" class="staff-sidebar-sublink">Patient List</a></li>
+                    <li><a href="/Patient/Create" class="staff-sidebar-sublink">Add Patient</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M12 · Birth / Death Records *@
+    @if (Model.ModuleOn("BirthDeath"))
+    {
+        <li class="nav-item">
+            <a href="#sb-birthdeath"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/BirthDeath") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/BirthDeath") ? "true" : "false")">
+                <i class="fas fa-baby staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Birth / Death</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-birthdeath" class="collapse @(Model.IsActive("/BirthDeath") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/BirthDeath" class="staff-sidebar-sublink">Birth Records</a></li>
+                    <li><a href="/BirthDeath/Deaths" class="staff-sidebar-sublink">Death Records</a></li>
+                    <li><a href="/BirthDeath/CreateBirth" class="staff-sidebar-sublink">New Birth</a></li>
+                    <li><a href="/BirthDeath/CreateDeath" class="staff-sidebar-sublink">New Death</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* ─────────── HUMAN RESOURCE ─────────── *@
+    @if (Model.ModuleOn("Attendance") || Model.ModuleOn("Leave") || Model.ModuleOn("Payroll") || Model.IsAdminOrSuper)
+    {
+        <li class="staff-sidebar-section">HR</li>
+
+        @* M13 · Human Resource *@
+        <li class="nav-item">
+            <a href="#sb-hr"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActiveAny("/Staff", "/Attendance", "/Leave", "/Payroll") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/Staff", "/Attendance", "/Leave", "/Payroll") ? "true" : "false")">
+                <i class="fas fa-users-cog staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Human Resource</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-hr"
+                 class="collapse @(Model.IsActiveAny("/Staff", "/Attendance", "/Leave", "/Payroll") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Staff" class="staff-sidebar-sublink">Staff</a></li>
+                    }
+                    @if (Model.ModuleOn("Attendance"))
+                    {
+                        <li><a href="/Attendance" class="staff-sidebar-sublink">Attendance</a></li>
+                    }
+                    @if (Model.ModuleOn("Leave"))
+                    {
+                        <li><a href="/Leave" class="staff-sidebar-sublink">Leave</a></li>
+                        @if (Model.IsAdminOrSuper)
+                        {
+                            <li><a href="/Leave/Types" class="staff-sidebar-sublink">Leave Types</a></li>
+                            <li><a href="/Leave/Balances" class="staff-sidebar-sublink">Balances</a></li>
+                        }
+                    }
+                    @if (Model.ModuleOn("Payroll"))
+                    {
+                        <li><a href="/Payroll" class="staff-sidebar-sublink">Payroll</a></li>
+                        @if (Model.IsAdminOrSuper)
+                        {
+                            <li><a href="/Payroll/Generate" class="staff-sidebar-sublink">Generate Payroll</a></li>
+                        }
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* ─────────── OTHER ─────────── *@
+    <li class="staff-sidebar-section">Other</li>
+
+    @* M16 · Finance *@
+    @if (Model.IsAdminOrSuper || Model.ModuleOn("Report"))
+    {
+        <li class="nav-item">
+            <a href="/Report/FinancialReport"
+               class="staff-sidebar-link @(Model.IsActive("/Report/FinancialReport") ? "active" : "")">
+                <i class="fas fa-coins staff-sidebar-icon"></i>Finance
+            </a>
+        </li>
+    }
+
+    @* M20 · Certificate *@
+    @if (Model.ModuleOn("Certificate"))
+    {
+        <li class="nav-item">
+            <a href="#sb-certificate"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Certificate") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Certificate") ? "true" : "false")">
+                <i class="fas fa-id-card staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Certificate</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-certificate"
+                 class="collapse @(Model.IsActive("/Certificate") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Certificate" class="staff-sidebar-sublink">Certificates</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Certificate/GenerateCertificate" class="staff-sidebar-sublink">Generate Certificate</a></li>
+                        <li><a href="/Certificate/GenerateIdCard" class="staff-sidebar-sublink">Patient / Staff ID Card</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* M23 · Reports *@
+    @if (Model.ModuleOn("Report"))
+    {
+        <li class="nav-item">
+            <a href="#sb-reports"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActiveAny("/Report", "/Audit") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/Report", "/Audit") ? "true" : "false")">
+                <i class="fas fa-chart-bar staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Reports</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-reports"
+                 class="collapse @(Model.IsActiveAny("/Report", "/Audit") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Report" class="staff-sidebar-sublink">Reports Hub</a></li>
+                    <li><a href="/Report/DepartmentReport" class="staff-sidebar-sublink">Department</a></li>
+                    <li><a href="/Report/OccupancyReport" class="staff-sidebar-sublink">Occupancy</a></li>
+                    <li><a href="/Report/StaffReport" class="staff-sidebar-sublink">Staff</a></li>
+                    <li><a href="/Report/GeneratedReports" class="staff-sidebar-sublink">Generated</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Report/Builder" class="staff-sidebar-sublink">Report Builder</a></li>
+                    }
+                    <li><a href="/Audit" class="staff-sidebar-sublink">Audit Logs</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* Notifications *@
+    <li class="nav-item">
+        <a href="/Notifications"
+           class="staff-sidebar-link @(Model.IsActive("/Notifications") ? "active" : "")">
+            <i class="fas fa-bell staff-sidebar-icon"></i>Notifications
+        </a>
+    </li>
+
+    @if (Model.ModuleOn("TPA"))
+    {
+        <li class="nav-item">
+            <a href="#sb-tpa"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Tpa") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Tpa") ? "true" : "false")">
+                <i class="fas fa-handshake staff-sidebar-icon"></i>
+                <span class="flex-grow-1">TPA Management</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-tpa" class="collapse @(Model.IsActive("/Tpa") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Tpa" class="staff-sidebar-sublink">Providers</a></li>
+                    <li><a href="/Tpa/Claims" class="staff-sidebar-sublink">Claims</a></li>
+                    <li><a href="/Tpa/CreateClaim" class="staff-sidebar-sublink">New Claim</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Tpa/Create" class="staff-sidebar-sublink">Add Provider</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @if (Model.ModuleOn("Inventory"))
+    {
+        <li class="nav-item">
+            <a href="#sb-inventory"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Inventory") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Inventory") ? "true" : "false")">
+                <i class="fas fa-boxes staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Inventory</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-inventory" class="collapse @(Model.IsActive("/Inventory") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Inventory" class="staff-sidebar-sublink">Items</a></li>
+                    <li><a href="/Inventory/Transactions" class="staff-sidebar-sublink">Transactions</a></li>
+                    <li><a href="/Inventory/LowStock" class="staff-sidebar-sublink">Low Stock</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Inventory/Create" class="staff-sidebar-sublink">Add Item</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @if (Model.ModuleOn("Messaging"))
+    {
+        <li class="nav-item">
+            <a href="#sb-messaging"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/Messaging") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/Messaging") ? "true" : "false")">
+                <i class="fas fa-comments staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Messaging</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-messaging" class="collapse @(Model.IsActive("/Messaging") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/Messaging" class="staff-sidebar-sublink">Inbox</a></li>
+                    <li><a href="/Messaging/Sent" class="staff-sidebar-sublink">Sent</a></li>
+                    <li><a href="/Messaging/Compose" class="staff-sidebar-sublink">Compose</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/Messaging/Broadcast" class="staff-sidebar-sublink">Broadcast</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @if (Model.ModuleOn("DownloadCenter"))
+    {
+        <li class="nav-item">
+            <a href="#sb-downloads"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/DownloadCenter") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/DownloadCenter") ? "true" : "false")">
+                <i class="fas fa-download staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Download Center</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-downloads" class="collapse @(Model.IsActive("/DownloadCenter") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/DownloadCenter" class="staff-sidebar-sublink">Files</a></li>
+                    @if (Model.IsAdminOrSuper)
+                    {
+                        <li><a href="/DownloadCenter/Upload" class="staff-sidebar-sublink">Upload</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+    }
+
+    @if (Model.ModuleOn("LiveConsultation"))
+    {
+        <li class="nav-item">
+            <a href="#sb-liveconsult"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/LiveConsultation") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/LiveConsultation") ? "true" : "false")">
+                <i class="fas fa-video staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Live Consultation</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-liveconsult" class="collapse @(Model.IsActive("/LiveConsultation") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/LiveConsultation" class="staff-sidebar-sublink">Sessions</a></li>
+                    <li><a href="/LiveConsultation/Schedule" class="staff-sidebar-sublink">Schedule</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
+    @* ─────────── ADMIN SECTION ─────────── *@
+    @if (Model.IsAdminOrSuper)
+    {
+        <li class="staff-sidebar-section">Admin</li>
+
+        @* M21 · Website CMS *@
+        @if (Model.ModuleOn("CMS"))
+        {
+            <li class="nav-item">
+                <a href="#sb-cms"
+                   data-bs-toggle="collapse"
+                   class="staff-sidebar-link @(Model.IsActiveAny("/Cms", "/PublicSiteAdmin") ? "" : "collapsed")"
+                   aria-expanded="@(Model.IsActiveAny("/Cms", "/PublicSiteAdmin") ? "true" : "false")">
+                    <i class="fas fa-globe staff-sidebar-icon"></i>
+                    <span class="flex-grow-1">Website CMS</span>
+                    <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+                </a>
+                <div id="sb-cms"
+                     class="collapse @(Model.IsActiveAny("/Cms", "/PublicSiteAdmin") ? "show" : "")">
+                    <ul class="nav flex-column ms-3">
+                        <li><a href="/Cms" class="staff-sidebar-sublink">Pages</a></li>
+                        <li><a href="/Cms/Notices" class="staff-sidebar-sublink">Notices</a></li>
+                        <li><a href="/Cms/Menu" class="staff-sidebar-sublink">Menu</a></li>
+                        <li><a href="/Cms/AppointmentRequests" class="staff-sidebar-sublink">Booking Requests</a></li>
+                        <li><a href="/Cms/NotificationSettings" class="staff-sidebar-sublink">Notification Settings</a></li>
+                        <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">Site Settings</a></li>
+                        <li>
+                            <a href="/Site" class="staff-sidebar-sublink" target="_blank">
+                                View Public Site <i class="fas fa-external-link-alt fa-xs ms-1"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </li>
+        }
+
+        @* Chatbot Admin *@
+        @if (Model.ModuleOn("Chatbot"))
+        {
+            <li class="nav-item">
+                <a href="#sb-chatbot"
+                   data-bs-toggle="collapse"
+                   class="staff-sidebar-link @(Model.IsActive("/ChatbotAdmin") ? "" : "collapsed")"
+                   aria-expanded="@(Model.IsActive("/ChatbotAdmin") ? "true" : "false")">
+                    <i class="fas fa-robot staff-sidebar-icon"></i>
+                    <span class="flex-grow-1">Chatbot Admin</span>
+                    <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+                </a>
+                <div id="sb-chatbot"
+                     class="collapse @(Model.IsActive("/ChatbotAdmin") ? "show" : "")">
+                    <ul class="nav flex-column ms-3">
+                        <li><a href="/ChatbotAdmin/Settings" class="staff-sidebar-sublink">Settings</a></li>
+                        <li><a href="/ChatbotAdmin/Analytics" class="staff-sidebar-sublink">Analytics</a></li>
+                        <li><a href="/ChatbotAdmin/Escalations" class="staff-sidebar-sublink">Escalations</a></li>
+                    </ul>
+                </div>
+            </li>
+        }
+
+        @* M24 · Setup / Settings *@
+        <li class="nav-item">
+            <a href="#sb-setup"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "true" : "false")">
+                <i class="fas fa-cog staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Setup / Settings</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-setup"
+                 class="collapse @(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/App" class="staff-sidebar-sublink">App Config</a></li>
+                    <li><a href="/AccountsApproval" class="staff-sidebar-sublink">Accounts Approval</a></li>
+                    <li><a href="/AccountsApproval/Passwords" class="staff-sidebar-sublink">Password Mgmt</a></li>
+                    <li><a href="/ModuleManagement" class="staff-sidebar-sublink">Module Management</a></li>
+                    <li><a href="/ModuleManagement/Users" class="staff-sidebar-sublink">User Module Access</a></li>
+                    @if (Model.IsSuperAdmin)
+                    {
+                        <li><a href="/License" class="staff-sidebar-sublink">License</a></li>
+                    }
+                </ul>
+            </div>
+        </li>
+
+    }
+
+</ul>

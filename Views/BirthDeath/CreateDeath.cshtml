@@ -1,0 +1,75 @@
+@model MedyxHMS.Models.DeathRecord
+@{
+    ViewData["Title"] = "New Death Record";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-book-dead text-secondary me-2"></i>New Death Record</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:700px">
+        <div class="card-body">
+            <form asp-action="CreateDeath" method="post">
+                @Html.AntiForgeryToken()
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Patient Name <span class="text-danger">*</span></label>
+                        <input asp-for="PatientName" class="form-control" />
+                        <span asp-validation-for="PatientName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-3">
+                        <label class="form-label fw-semibold">Gender</label>
+                        <select asp-for="Gender" class="form-select">
+                            <option>Male</option>
+                            <option>Female</option>
+                            <option>Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Date of Death <span class="text-danger">*</span></label>
+                        <input asp-for="DateOfDeath" type="date" class="form-control" />
+                        <span asp-validation-for="DateOfDeath" class="text-danger small"></span>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Time of Death</label>
+                        <input asp-for="TimeOfDeath" type="time" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Cause of Death <span class="text-danger">*</span></label>
+                    <input asp-for="CauseOfDeath" class="form-control" />
+                    <span asp-validation-for="CauseOfDeath" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Attending Doctor</label>
+                    <input asp-for="AttendingDoctorName" class="form-control" />
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Next of Kin Name</label>
+                        <input asp-for="NextOfKinName" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Next of Kin Contact</label>
+                        <input asp-for="NextOfKinContact" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Certificate Issued</label>
+                    <div class="form-check">
+                        <input asp-for="CertificateIssued" type="checkbox" class="form-check-input" id="certIssued" />
+                        <label class="form-check-label" for="certIssued">Yes, issue death certificate</label>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Notes</label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save Death Record</button>
+                    <a asp-action="Deaths" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

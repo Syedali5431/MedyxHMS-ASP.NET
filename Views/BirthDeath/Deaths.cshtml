@@ -1,0 +1,77 @@
+@model IEnumerable<MedyxHMS.Models.DeathRecord>
+@{
+    ViewData["Title"] = "Death Records";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-book-dead text-secondary me-2"></i>Death Records</h4>
+            <small class="text-muted">Hospital death certificates &amp; records</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-outline-info btn-sm">
+                <i class="fas fa-baby me-1"></i>Birth Records
+            </a>
+            <a asp-action="CreateDeath" class="btn btn-primary btn-sm">
+                <i class="fas fa-plus me-1"></i>New Death Record
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Cert #</th>
+                        <th>Patient Name</th>
+                        <th>Gender</th>
+                        <th>Date of Death</th>
+                        <th>Cause of Death</th>
+                        <th>Attending Doctor</th>
+                        <th>Next of Kin</th>
+                        <th>Cert Issued</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        <tr>
+                            <td><code>@d.CertificateNumber</code></td>
+                            <td>@(d.Patient != null ? $"{d.Patient.FirstName} {d.Patient.LastName}" : d.PatientName)</td>
+                            <td>@d.Gender</td>
+                            <td>@d.DateOfDeath.ToString("MMM dd, yyyy")</td>
+                            <td>@d.CauseOfDeath</td>
+                            <td>@d.AttendingDoctorName</td>
+                            <td>@d.NextOfKinName</td>
+                            <td>
+                                @if (d.CertificateIssued)
+                                {
+                                    <span class="badge bg-success">Issued</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pending</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="DeathDetails" asp-route-id="@d.Id" class="btn btn-sm btn-outline-secondary">View</a>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="9" class="text-center text-muted py-4">No death records found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -50,6 +50,26 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQWNjb3VudFxSZWdpc3Rlci5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Ambulance/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW1idWxhbmNlXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Ambulance/Dispatch.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW1idWxhbmNlXERpc3BhdGNoLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Ambulance/Dispatches.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW1idWxhbmNlXERpc3BhdGNoZXMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Ambulance/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW1idWxhbmNlXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Ambulance/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQW1idWxhbmNlXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Appointment/Calendar.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXBwb2ludG1lbnRcQ2FsZW5kYXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
@@ -116,6 +136,30 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Billing/Pay.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlsbGluZ1xQYXkuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/BirthDetails.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxCaXJ0aERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/CreateBirth.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxDcmVhdGVCaXJ0aC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/CreateDeath.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxDcmVhdGVEZWF0aC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/DeathDetails.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxEZWF0aERldGFpbHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/Deaths.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxEZWF0aHMuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BirthDeath/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQmlydGhEZWF0aFxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/BloodBank/Index.cshtml]
@@ -202,6 +246,14 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRGFzaGJvYXJkXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/DownloadCenter/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG93bmxvYWRDZW50ZXJcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/DownloadCenter/Upload.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRG93bmxvYWRDZW50ZXJcVXBsb2FkLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/FrontOffice/Complaints.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRnJvbnRPZmZpY2VcQ29tcGxhaW50cy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -224,6 +276,30 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/AddTransaction.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XEFkZFRyYW5zYWN0aW9uLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/LowStock.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XExvd1N0b2NrLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Inventory/Transactions.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW52ZW50b3J5XFRyYW5zYWN0aW9ucy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/IPD/Create.cshtml]
@@ -288,6 +364,38 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/License/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGljZW5zZVxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/LiveConsultation/Details.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGl2ZUNvbnN1bHRhdGlvblxEZXRhaWxzLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/LiveConsultation/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGl2ZUNvbnN1bHRhdGlvblxJbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/LiveConsultation/Schedule.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTGl2ZUNvbnN1bHRhdGlvblxTY2hlZHVsZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Messaging/Broadcast.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXEJyb2FkY2FzdC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Messaging/Compose.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXENvbXBvc2UuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Messaging/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXEluZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Messaging/Read.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXFJlYWQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Messaging/Sent.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTWVzc2FnaW5nXFNlbnQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/ModuleManagement/Index.cshtml]
@@ -510,6 +618,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XFN0YWZmUmVwb3J0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Shared/Components/SidebarNav/Default.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcU2lkZWJhck5hdlxEZWZhdWx0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
@@ -588,6 +700,26 @@ build_metadata.AdditionalFiles.CssScope =
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Staff/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU3RhZmZcSW5kZXguY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Tpa/Claims.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHBhXENsYWltcy5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Tpa/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHBhXENyZWF0ZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Tpa/CreateClaim.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHBhXENyZWF0ZUNsYWltLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Tpa/Edit.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHBhXEVkaXQuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Tpa/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVHBhXEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/_ViewImports.cshtml]

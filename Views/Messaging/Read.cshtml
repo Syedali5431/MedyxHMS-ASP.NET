@@ -1,0 +1,45 @@
+@model MedyxHMS.Models.InternalMessage
+@{
+    ViewData["Title"] = Model.Subject;
+}
+
+<div class="container mt-3" style="max-width:720px">
+    <div class="d-flex align-items-center mb-3 gap-2">
+        <a asp-action="Index" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i>Inbox
+        </a>
+        <a asp-action="Compose" asp-route-replyToId="@Model.Id" class="btn btn-sm btn-outline-primary">Reply</a>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h5 class="mb-1">@Model.Subject</h5>
+            <small class="text-muted">
+                From <strong>@Model.SenderId</strong> &nbsp;·&nbsp;
+                @Model.SentAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                @if (Model.IsBroadcast)
+                {
+                    <span class="badge bg-warning text-dark ms-2">Broadcast</span>
+                }
+            </small>
+        </div>
+        <div class="card-body">
+            <p style="white-space:pre-wrap">@Model.Body</p>
+        </div>
+    </div>
+
+    @if (Model.ParentMessage != null)
+    {
+        <div class="card shadow-sm mt-3 border-start border-3 border-secondary">
+            <div class="card-header bg-light">
+                <small class="text-muted">
+                    Original message from <strong>@Model.ParentMessage.SenderId</strong>
+                    &nbsp;·&nbsp; @Model.ParentMessage.SentAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                </small>
+            </div>
+            <div class="card-body text-muted">
+                <p style="white-space:pre-wrap">@Model.ParentMessage.Body</p>
+            </div>
+        </div>
+    }
+</div>

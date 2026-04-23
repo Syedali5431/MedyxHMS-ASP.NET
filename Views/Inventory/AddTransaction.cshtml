@@ -1,0 +1,61 @@
+@model MedyxHMS.Models.InventoryTransaction
+@{
+    ViewData["Title"] = "Add Transaction";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-exchange-alt text-secondary me-2"></i>Add Stock Transaction</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:580px">
+        <div class="card-body">
+            <form asp-action="AddTransaction" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Item <span class="text-danger">*</span></label>
+                    <select asp-for="InventoryItemId" class="form-select">
+                        <option value="">-- Select item --</option>
+                        @foreach (var i in ViewBag.Items)
+                        {
+                            <option value="@i.Id" selected="@(i.Id == (int?)ViewBag.PreselectedItemId)">
+                                @i.Name (@i.ItemCode) — Stock: @i.CurrentStock @i.Unit
+                            </option>
+                        }
+                    </select>
+                    <span asp-validation-for="InventoryItemId" class="text-danger small"></span>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Transaction Type <span class="text-danger">*</span></label>
+                        <select asp-for="TransactionType" class="form-select">
+                            <option value="IN">IN (Received)</option>
+                            <option value="OUT">OUT (Issued)</option>
+                            <option value="Adjustment">Adjustment</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Quantity <span class="text-danger">*</span></label>
+                        <input asp-for="Quantity" type="number" class="form-control" min="1" />
+                        <span asp-validation-for="Quantity" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Unit Cost</label>
+                        <input asp-for="UnitCost" type="number" step="0.01" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Reference #</label>
+                        <input asp-for="ReferenceNumber" class="form-control" placeholder="PO, Invoice, etc." />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Remarks</label>
+                    <textarea asp-for="Remarks" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Record Transaction</button>
+                    <a asp-action="Transactions" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

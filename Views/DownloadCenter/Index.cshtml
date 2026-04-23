@@ -1,0 +1,85 @@
+@model IEnumerable<MedyxHMS.Models.DownloadFile>
+@{
+    ViewData["Title"] = "Download Center";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+    var categories = new[] { "Form", "Policy", "SOP", "Report" };
+    string activeCategory = ViewBag.Category ?? "";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-download text-primary me-2"></i>Download Center</h4>
+            <small class="text-muted">Staff documents &amp; forms</small>
+        </div>
+        @if (isAdmin)
+        {
+            <a asp-action="Upload" class="btn btn-primary btn-sm">
+                <i class="fas fa-upload me-1"></i>Upload File
+            </a>
+        }
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="mb-3">
+        <a asp-action="Index" class="btn btn-sm @(activeCategory == "" ? "btn-primary" : "btn-outline-primary")">All</a>
+        @foreach (var cat in categories)
+        {
+            <a asp-action="Index" asp-route-category="@cat"
+               class="btn btn-sm @(activeCategory == cat ? "btn-primary" : "btn-outline-primary") ms-1">@cat</a>
+        }
+    </div>
+
+    <div class="row g-3">
+        @foreach (var f in Model)
+        {
+            <div class="col-md-4 col-lg-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex align-items-start mb-2">
+                            <i class="fas fa-file-alt fa-2x text-muted me-3 mt-1"></i>
+                            <div>
+                                <h6 class="mb-0">@f.Title</h6>
+                                <small class="text-muted">@f.Category</small>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(f.Description))
+                        {
+                            <p class="small text-muted mb-2">@f.Description</p>
+                        }
+                        <div class="d-flex justify-content-between align-items-center mt-auto">
+                            <small class="text-muted">
+                                <span class="badge bg-light text-dark border">@f.FileType</span>
+                                &nbsp;@(f.FileSizeBytes > 1024*1024 ? $"{f.FileSizeBytes/1048576.0:F1} MB" : $"{f.FileSizeBytes/1024.0:F0} KB")
+                            </small>
+                            <small class="text-muted">@f.DownloadCount DLs</small>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-transparent d-flex gap-2">
+                        <a asp-action="Download" asp-route-id="@f.Id" class="btn btn-sm btn-primary flex-grow-1">
+                            <i class="fas fa-download me-1"></i>Download
+                        </a>
+                        @if (isAdmin)
+                        {
+                            <form asp-action="Delete" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@f.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remove this file?')">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        @if (!Model.Any())
+        {
+            <div class="col-12 text-center text-muted py-5">No files available in this category.</div>
+        }
+    </div>
+</div>

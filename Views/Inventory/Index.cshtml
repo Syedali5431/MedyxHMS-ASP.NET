@@ -1,0 +1,115 @@
+@model IEnumerable<MedyxHMS.Models.InventoryItem>
+@{
+    ViewData["Title"] = "Inventory";
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+    int lowStockCount = ViewBag.LowStock ?? 0;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-boxes text-info me-2"></i>Inventory Management</h4>
+            <small class="text-muted">Hospital supply &amp; equipment tracking</small>
+        </div>
+        <div class="d-flex gap-2">
+            @if (lowStockCount > 0)
+            {
+                <a asp-action="LowStock" class="btn btn-danger btn-sm">
+                    <i class="fas fa-exclamation-triangle me-1"></i>Low Stock
+                    <span class="badge bg-white text-danger ms-1">@lowStockCount</span>
+                </a>
+            }
+            <a asp-action="Transactions" class="btn btn-outline-secondary btn-sm">Transactions</a>
+            @if (isAdmin)
+            {
+                <a asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add Item
+                </a>
+            }
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <form method="get" class="row g-2 align-items-end">
+                <div class="col-md-5">
+                    <input type="text" name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search by name, code, supplier…" />
+                </div>
+                <div class="col-md-3">
+                    <select name="category" class="form-select form-select-sm">
+                        <option value="">All Categories</option>
+                        <option value="Consumable" selected="@(ViewBag.Category=="Consumable")">Consumable</option>
+                        <option value="Equipment" selected="@(ViewBag.Category=="Equipment")">Equipment</option>
+                        <option value="Drug" selected="@(ViewBag.Category=="Drug")">Drug</option>
+                        <option value="Linen" selected="@(ViewBag.Category=="Linen")">Linen</option>
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-primary btn-sm">Filter</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Code</th>
+                        <th>Name</th>
+                        <th>Category</th>
+                        <th>Unit</th>
+                        <th>Stock</th>
+                        <th>Reorder At</th>
+                        <th>Unit Cost</th>
+                        <th>Supplier</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        var stockClass = i.CurrentStock <= i.ReorderLevel ? "text-danger fw-bold" : "";
+                        <tr>
+                            <td><code>@i.ItemCode</code></td>
+                            <td>@i.Name</td>
+                            <td><span class="badge bg-light text-dark border">@i.Category</span></td>
+                            <td>@i.Unit</td>
+                            <td class="@stockClass">
+                                @i.CurrentStock
+                                @if (i.CurrentStock <= i.ReorderLevel)
+                                {
+                                    <i class="fas fa-exclamation-circle text-danger ms-1" title="Low stock"></i>
+                                }
+                            </td>
+                            <td>@i.ReorderLevel</td>
+                            <td>@i.UnitCost.ToString("N2")</td>
+                            <td>@i.Supplier</td>
+                            <td>
+                                <div class="d-flex gap-1">
+                                    <a asp-action="Transactions" asp-route-itemId="@i.Id" class="btn btn-sm btn-outline-info">Txns</a>
+                                    <a asp-action="AddTransaction" asp-route-itemId="@i.Id" class="btn btn-sm btn-outline-success">Stock In/Out</a>
+                                    @if (isAdmin)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@i.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="9" class="text-center text-muted py-4">No items found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

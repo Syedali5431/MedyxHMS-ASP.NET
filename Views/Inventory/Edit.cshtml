@@ -1,0 +1,80 @@
+@model MedyxHMS.Models.InventoryItem
+@{
+    ViewData["Title"] = "Edit Inventory Item";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-boxes text-info me-2"></i>Edit Inventory Item</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:640px">
+        <div class="card-body">
+            <form asp-action="Edit" method="post">
+                @Html.AntiForgeryToken()
+                <input asp-for="Id" type="hidden" />
+                <div class="row g-3 mb-3">
+                    <div class="col-4">
+                        <label class="form-label fw-semibold">Item Code</label>
+                        <input asp-for="ItemCode" class="form-control" />
+                    </div>
+                    <div class="col-8">
+                        <label class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Category</label>
+                        <select asp-for="Category" class="form-select">
+                            <option value="Consumable">Consumable</option>
+                            <option value="Equipment">Equipment</option>
+                            <option value="Drug">Drug</option>
+                            <option value="Linen">Linen</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Unit</label>
+                        <input asp-for="Unit" class="form-control" />
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-4">
+                        <label class="form-label fw-semibold">Current Stock</label>
+                        <input asp-for="CurrentStock" type="number" step="0.01" class="form-control" />
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-semibold">Minimum Stock</label>
+                        <input asp-for="MinimumStock" type="number" step="0.01" class="form-control" />
+                    </div>
+                    <div class="col-4">
+                        <label class="form-label fw-semibold">Reorder Level</label>
+                        <input asp-for="ReorderLevel" type="number" step="0.01" class="form-control" />
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Unit Cost</label>
+                        <input asp-for="UnitCost" type="number" step="0.01" class="form-control" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label fw-semibold">Supplier</label>
+                        <input asp-for="Supplier" class="form-control" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Storage Location</label>
+                    <input asp-for="StorageLocation" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input asp-for="IsActive" type="checkbox" class="form-check-input" id="isActive" />
+                        <label class="form-check-label" for="isActive">Active</label>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -121,32 +121,47 @@ P3 Caveat:
 
 Sourced from the original PHP AdminLTE-based admin panel sidebar. Items are module-gated where noted.
 
-| ID  | Menu Item                   | Sub-items                                                                 | Conditional |
-|-----|-----------------------------|---------------------------------------------------------------------------|-------------|
-| M1  | Dashboard                   | —                                                                         | No          |
-| M2  | Billing                     | —                                                                         | Module      |
-| M3  | Appointment                 | —                                                                         | Module      |
-| M4  | OPD (Out Patient)           | —                                                                         | No          |
-| M5  | IPD (In Patient)            | —                                                                         | No          |
-| M6  | Pharmacy                    | —                                                                         | Module      |
-| M7  | Pathology                   | —                                                                         | Module      |
-| M8  | Radiology                   | —                                                                         | Module      |
-| M9  | Blood Bank                  | —                                                                         | Module      |
-| M10 | Ambulance / Transport       | —                                                                         | Module      |
-| M11 | Front Office                | —                                                                         | No          |
-| M12 | Birth / Death Record        | Birth Record, Death Record                                                | No          |
-| M13 | Human Resource (HR)         | —                                                                         | No          |
-| M14 | Referral                    | —                                                                         | Module      |
-| M15 | TPA Management              | —                                                                         | Module      |
-| M16 | Finance                     | Income, Expenses                                                          | No          |
-| M17 | Messaging                   | —                                                                         | No          |
-| M18 | Inventory                   | —                                                                         | Module      |
-| M19 | Download Center             | —                                                                         | No          |
-| M20 | Certificate                 | Certificate, Patient ID Card, Staff ID Card                               | No          |
-| M21 | Front CMS                   | —                                                                         | Module      |
-| M22 | Live Consultation           | Live Consultation, Live Meeting                                            | Module      |
-| M23 | Reports                     | *(See Reports section below — R1–R40)*                                    | No          |
-| M24 | Setup / Settings            | Settings, Patient, Hospital Charges, Bed, Print Header/Footer, Front Office Setup, Operations, Pharmacy Setup, Pathology Setup, Radiology Setup, Blood Bank Setup, Symptoms, Findings, Zoom Settings, Finance Setup, HR (Leave Types), Referral Commission, Online Appointment, Inventory, Custom Fields | No |
+> **Implementation Status:** Sidebar implemented in ASPNET as a persistent left-nav via `SidebarNavViewComponent` + `Views/Shared/Components/SidebarNav/Default.cshtml`. Layout updated in `_Layout.cshtml` to a two-column flex layout (sidebar + main content) for all authenticated staff pages. CSS added to `wwwroot/css/site.css`. Mobile support via off-canvas overlay toggled by `#sidebar-toggle-btn`.
+
+| ID  | Menu Item                   | Sub-items                                                                 | Conditional | ASPNET Status |
+|-----|-----------------------------|---------------------------------------------------------------------------|-------------|---------------|
+| M1  | Dashboard                   | —                                                                         | No          | ✅ Implemented |
+| M2  | Billing                     | Bills, New Bill                                                           | Module      | ✅ Implemented |
+| M3  | Appointment                 | All Appointments, Calendar, Schedule New                                  | Module      | ✅ Implemented |
+| M4  | OPD (Out Patient)           | OPD Visits, New OPD Visit                                                 | Module      | ✅ Implemented |
+| M5  | IPD (In Patient)            | Admissions, New Admission                                                 | Module      | ✅ Implemented |
+| M6  | Pharmacy                    | Prescriptions, Medicines                                                  | Module      | ✅ Implemented |
+| M7  | Pathology                   | Lab Tests, Results                                                        | Module      | ✅ Implemented |
+| M8  | Radiology                   | Tests, Results                                                            | Module      | ✅ Implemented |
+| M9  | Blood Bank                  | Inventory, Issue Blood                                                    | Module      | ✅ Implemented |
+| M10 | Ambulance / Transport       | Vehicles, Dispatch Log, New Dispatch                                      | Module      | ✅ Implemented |
+| M11 | Front Office                | Overview, Visitors, Complaints                                            | Module      | ✅ Implemented |
+| M12 | Birth / Death Record        | Birth Records, Death Records, New Birth, New Death                       | Module      | ✅ Implemented |
+| M13 | Human Resource (HR)         | Staff, Attendance, Leave, Leave Types, Balances, Payroll, Generate Payroll | No         | ✅ Implemented |
+| M14 | Referral                    | Referrals, Create Referral                                                | Module      | ✅ Implemented |
+| M15 | TPA Management              | Providers, Claims, New Claim                                              | Module      | ✅ Implemented |
+| M16 | Finance                     | Financial Report                                                          | Admin+      | ✅ Implemented (→ Report/FinancialReport) |
+| M17 | Messaging                   | Inbox, Sent, Compose, Broadcast                                           | Module      | ✅ Implemented |
+| M18 | Inventory                   | Items, Transactions, Low Stock, Add Item                                  | Module      | ✅ Implemented |
+| M19 | Download Center             | Files, Upload                                                             | Module      | ✅ Implemented |
+| M20 | Certificate                 | Certificates, Generate Certificate, Patient/Staff ID Card                 | Module      | ✅ Implemented |
+| M21 | Front CMS                   | Pages, Notices, Menu, Booking Requests, Notification Settings, Site Settings | Module + Admin+ | ✅ Implemented |
+| M22 | Live Consultation           | Sessions, Schedule                                                        | Module      | ✅ Implemented |
+| M23 | Reports                     | Reports Hub, Department, Occupancy, Staff, Generated, Report Builder, Audit Logs | Module | ✅ Implemented |
+| M24 | Setup / Settings            | App Config, Accounts Approval, Password Mgmt, Module Management, User Module Access, License | Admin+ | ✅ Implemented |
+
+**Key Files:**
+- `Components/SidebarNavViewComponent.cs` — ViewComponent (injects IModuleService, reads roles/moduleMap)
+- `Views/Shared/Components/SidebarNav/Default.cshtml` — Full M1–M24 Razor template
+- `Views/Shared/_Layout.cshtml` — Updated: two-column flex layout + mobile toggle button + sidebar JS
+- `wwwroot/css/site.css` — New sidebar CSS section (`.staff-sidebar`, `.staff-sidebar-link`, etc.)
+
+**2026-04-23 Validation Update:**
+- Excluded duplicate backup model file `Models/CMS_fixed.cs` from project compilation to clear unrelated full-build conflicts.
+- Added `EnsureNewModuleTablesAsync()` in `Services/Implementations/DatabaseInitializer.cs` so existing databases get M10/M12/M15/M17/M18/M19/M22 tables on startup.
+- Verified authenticated route smoke pass for:
+	`/Ambulance`, `/BirthDeath`, `/Tpa`, `/Messaging`, `/Inventory`, `/DownloadCenter`, `/LiveConsultation`
+	plus their primary create/list subpages. All returned HTTP 200 after schema backfill.
 
 ---
 
@@ -273,6 +288,99 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 | CB10 | Analytics Dashboard           | View chatbot usage statistics, session counts, and satisfaction scores   |
 | CB11 | Escalation Management         | List and manage all escalated chatbot sessions                           |
 | CB12 | Resolve Escalation            | Mark escalations as resolved; update ticket status                       |
+
+
+### FInal Stage Bed Management
+Add a complete "Bed Management" module and menu to the main dashboard.
+
+TECH CONTEXT:
+- Web-based dashboard
+- Role-based access (Admin, Nurse, Doctor)
+- Existing sidebar menu and dashboard layout
+- Backend API + Database already present
+
+TASKS:
+
+1. DASHBOARD MENU
+- Add a new sidebar menu item labeled: "Bed Management"
+- Use a bed/hospital icon
+- Menu visible to: Admin, Nurse
+- Route: /bed-management
+
+2. BED MANAGEMENT MODULE (PAGE)
+Create a Bed Management page with the following sections:
+
+A. Bed Overview (Top Summary Cards)
+- Total Beds
+- Available Beds
+- Occupied Beds
+- Cleaning / Maintenance Beds
+
+B. Bed List Table
+Display a table with columns:
+- Bed ID
+- Ward / Department
+- Bed Type (ICU, General, Emergency, Isolation)
+- Status (Available, Occupied, Cleaning, Maintenance)
+- Assigned Patient (if occupied)
+- Last Updated
+- Actions (Assign, Transfer, Release, Block)
+
+C. Bed Actions
+- Assign bed to patient (modal form)
+- Release bed on discharge
+- Transfer patient to another bed
+- Mark bed as Cleaning or Maintenance
+- Block bed for isolation or emergency
+
+D. Status Indicators
+- Green: Available
+- Red: Occupied
+- Yellow: Cleaning
+- Grey: Maintenance / Blocked
+
+3. BUSINESS LOGIC
+- A bed can only be assigned if status = Available
+- When a patient is discharged, bed status → Cleaning
+- After cleaning confirmation, status → Available
+- ICU beds require admin approval for assignment
+- Isolation beds must be flagged and restricted
+
+4. BACKEND / DATA MODEL (if missing)
+Create or use a `beds` table with fields:
+- id
+- bed_number
+- ward
+- bed_type
+- status
+- patient_id (nullable)
+- is_isolation
+- last_updated
+
+Provide API endpoints:
+- GET /api/beds
+- POST /api/beds/assign
+- POST /api/beds/release
+- POST /api/beds/transfer
+- POST /api/beds/status
+
+5. UI REQUIREMENTS
+- Responsive layout
+- Real-time refresh or manual refresh button
+- Confirmation dialogs for critical actions
+- Toast notifications for success/error
+
+6. CLEAN CODE REQUIREMENTS
+- Reusable components
+- Proper state management
+- Clear naming conventions
+- Add inline comments where business rules apply
+
+OUTPUT EXPECTATION:
+- Sidebar menu item added
+- Fully functional Bed Management page
+- Mock data acceptable if backend is incomplete
+- Code should match existing project style
 
 ---
 

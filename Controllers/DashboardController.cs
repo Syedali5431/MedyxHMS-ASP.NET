@@ -240,6 +240,24 @@ namespace MedyxHMS.Controllers
                     return isAdmin;
                 }
 
+                if (item.Controller.Equals("Messaging", StringComparison.OrdinalIgnoreCase) &&
+                    item.Action.Equals("Broadcast", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("Inventory", StringComparison.OrdinalIgnoreCase) &&
+                    item.Action.Equals("Create", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("DownloadCenter", StringComparison.OrdinalIgnoreCase) &&
+                    item.Action.Equals("Upload", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
                 return true;
             }).ToList();
         }
@@ -356,7 +374,46 @@ namespace MedyxHMS.Controllers
                 },
                 "AMBULANCE" => new List<DashboardModuleNavItem>
                 {
-                    new() { Label = "Ambulance (Roadmap)", Description = "Ambulance module endpoints can be added here.", Controller = "Dashboard", Action = "Index" }
+                    new() { Label = "Ambulance Vehicles", Description = "Manage ambulance fleet and availability.", Controller = "Ambulance", Action = "Index" },
+                    new() { Label = "Dispatch Log", Description = "Track ambulance dispatches and returns.", Controller = "Ambulance", Action = "Dispatches" },
+                    new() { Label = "New Dispatch", Description = "Dispatch an available ambulance.", Controller = "Ambulance", Action = "Dispatch" }
+                },
+                "BIRTHDEATH" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Birth Records", Description = "View and issue birth records.", Controller = "BirthDeath", Action = "Index" },
+                    new() { Label = "Death Records", Description = "View and issue death records.", Controller = "BirthDeath", Action = "Deaths" },
+                    new() { Label = "New Birth Record", Description = "Create a birth record.", Controller = "BirthDeath", Action = "CreateBirth" },
+                    new() { Label = "New Death Record", Description = "Create a death record.", Controller = "BirthDeath", Action = "CreateDeath" }
+                },
+                "TPA" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "TPA Providers", Description = "Manage third party administrator providers.", Controller = "Tpa", Action = "Index" },
+                    new() { Label = "TPA Claims", Description = "Track insurance and TPA claims.", Controller = "Tpa", Action = "Claims" },
+                    new() { Label = "New Claim", Description = "Create a new TPA claim.", Controller = "Tpa", Action = "CreateClaim" }
+                },
+                "MESSAGING" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Inbox", Description = "Review received internal messages.", Controller = "Messaging", Action = "Index" },
+                    new() { Label = "Sent Messages", Description = "Review sent messages.", Controller = "Messaging", Action = "Sent" },
+                    new() { Label = "Compose Message", Description = "Send an internal message.", Controller = "Messaging", Action = "Compose" },
+                    new() { Label = "Broadcast", Description = "Send a message to all staff.", Controller = "Messaging", Action = "Broadcast" }
+                },
+                "INVENTORY" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Inventory Items", Description = "Browse inventory stock and suppliers.", Controller = "Inventory", Action = "Index" },
+                    new() { Label = "Add Item", Description = "Register a new inventory item.", Controller = "Inventory", Action = "Create" },
+                    new() { Label = "Transactions", Description = "Review stock movement history.", Controller = "Inventory", Action = "Transactions" },
+                    new() { Label = "Low Stock", Description = "See items that need reordering.", Controller = "Inventory", Action = "LowStock" }
+                },
+                "DOWNLOADCENTER" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Download Center", Description = "Browse shared staff documents.", Controller = "DownloadCenter", Action = "Index" },
+                    new() { Label = "Upload File", Description = "Upload a staff document.", Controller = "DownloadCenter", Action = "Upload" }
+                },
+                "LIVECONSULTATION" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Consultations", Description = "Review scheduled live consultation sessions.", Controller = "LiveConsultation", Action = "Index" },
+                    new() { Label = "Schedule Session", Description = "Schedule a new live consultation.", Controller = "LiveConsultation", Action = "Schedule" }
                 },
                 "CHATBOT" => new List<DashboardModuleNavItem>
                 {

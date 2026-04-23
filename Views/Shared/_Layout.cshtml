@@ -14,6 +14,16 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container-fluid">
+                @if (User.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <button id="sidebar-toggle-btn"
+                            class="btn btn-sm btn-outline-secondary me-2 d-lg-none"
+                            type="button"
+                            title="Toggle sidebar"
+                            aria-label="Toggle sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                }
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">MedyxHMS</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -111,11 +121,28 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <div class="d-flex staff-wrapper">
+            <nav id="staff-sidebar" class="staff-sidebar">
+                @await Component.InvokeAsync("SidebarNav")
+            </nav>
+            <div class="staff-main-content">
+                <main role="main" class="pb-3 px-3 pt-2">
+                    @RenderBody()
+                </main>
+            </div>
+        </div>
+        <div id="sidebar-overlay" class="staff-sidebar-overlay"></div>
+    }
+    else
+    {
+        <div class="container">
+            <main role="main" class="pb-3">
+                @RenderBody()
+            </main>
+        </div>
+    }
 
     <footer class="border-top footer text-muted">
         <div class="container">
@@ -159,5 +186,39 @@
         </script>
     }
     @await RenderSectionAsync("Scripts", required: false)
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <script>
+            (function () {
+                var sidebar = document.getElementById('staff-sidebar');
+                var overlay = document.getElementById('sidebar-overlay');
+                var toggleBtn = document.getElementById('sidebar-toggle-btn');
+
+                function openSidebar() {
+                    if (sidebar) sidebar.classList.add('show');
+                    if (overlay) overlay.classList.add('show');
+                }
+
+                function closeSidebar() {
+                    if (sidebar) sidebar.classList.remove('show');
+                    if (overlay) overlay.classList.remove('show');
+                }
+
+                if (toggleBtn) {
+                    toggleBtn.addEventListener('click', function () {
+                        if (sidebar && sidebar.classList.contains('show')) {
+                            closeSidebar();
+                        } else {
+                            openSidebar();
+                        }
+                    });
+                }
+
+                if (overlay) {
+                    overlay.addEventListener('click', closeSidebar);
+                }
+            }());
+        </script>
+    }
 </body>
 </html>
