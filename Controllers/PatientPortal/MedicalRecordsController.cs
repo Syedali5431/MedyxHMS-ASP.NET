@@ -9,6 +9,7 @@ using System.Security.Claims;
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize(Roles = "Patient")]
+    [Route("PatientPortal/[controller]/[action]")]
     public class MedicalRecordsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
@@ -37,7 +38,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -83,7 +84,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var record = await _patientPortalService.GetMedicalRecordDetailsAsync(id);
@@ -129,7 +130,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -177,7 +178,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -236,7 +237,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -311,7 +312,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
 
             var records = await _patientPortalService.GetPatientMedicalRecordsAsync(patientId.Value.ToString(), startDate, endDate);
 
@@ -335,7 +336,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
 
             var prescriptions = await _prescriptionService.GetPrescriptionsByPatientAsync(patientId.Value);
             var headers = new[] { "Date", "Medicine", "Dosage", "Frequency", "Duration (days)", "Qty", "Amount" };
@@ -360,7 +361,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
 
             var results = await _labService.GetLabResultsByPatientAsync(patientId.Value);
             if (startDate.HasValue)
@@ -389,7 +390,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
 
             var results = await _radiologyService.GetRadiologyResultsByPatientAsync(patientId.Value);
             if (startDate.HasValue)

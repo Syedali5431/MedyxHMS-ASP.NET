@@ -9,6 +9,7 @@ using System.Security.Claims;
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize(Roles = "Patient")]
+    [Route("PatientPortal/[controller]/[action]")]
     public class BillsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
@@ -26,12 +27,18 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
             {
-                var bills = await _patientPortalService.GetPatientBillsAsync(userId, filter);
+                var bills = await _patientPortalService.GetPatientBillsAsync(patientId.Value.ToString(), filter);
 
                 var viewModel = new PatientPortalBillsViewModel
                 {
@@ -70,7 +77,13 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var bill = await _patientPortalService.GetBillDetailsAsync(id);
@@ -80,7 +93,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             // Verify patient owns this bill
-            if (bill.PatientId.ToString() != userId)
+            if (bill.PatientId != patientId.Value)
             {
                 return Forbid();
             }
@@ -123,7 +136,13 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var bill = await _patientPortalService.GetBillDetailsAsync(id);
@@ -133,7 +152,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             // Verify patient owns this bill
-            if (bill.PatientId.ToString() != userId)
+            if (bill.PatientId != patientId.Value)
             {
                 return Forbid();
             }
@@ -157,7 +176,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             if (ModelState.IsValid)
@@ -186,13 +205,19 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
             {
                 var bill = await _patientPortalService.GetBillDetailsAsync(id);
-                if (bill == null || bill.PatientId.ToString() != userId)
+                if (bill == null || bill.PatientId != patientId.Value)
                 {
                     return Forbid();
                 }
@@ -229,9 +254,13 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
 
-            var bills = await _patientPortalService.GetPatientBillsAsync(userId, filter);
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+                return LocalRedirect("/PatientPortal/Account/Login");
+
+            var bills = await _patientPortalService.GetPatientBillsAsync(patientId.Value.ToString(), filter);
             var headers = new[] { "Bill #", "Bill Date", "Due Date", "Total", "Paid", "Status" };
             var rows = bills.Select(b => (IReadOnlyList<string>)new[]
             {
@@ -253,6 +282,16 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             var pdfBytes = _exportService.BuildPdfTable(title, headers, rows);
             return File(pdfBytes, "application/pdf", $"patient_bills_{stamp}.pdf");
+        }
+
+        private async Task<int?> ResolveCurrentPatientIdAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return null;
+
+            var patient = await _patientPortalService.GetPatientByIdAsync(userId);
+            return patient?.Id;
         }
     }
 }

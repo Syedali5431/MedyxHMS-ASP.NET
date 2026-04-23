@@ -61,7 +61,7 @@ namespace MedyxHMS.Controllers
                 FeatureToggles = await _settingService.GetFeatureTogglesAsync(),
                 UserPermissions = permissions.ToList(),
                 UserRoles = roles.ToList(),
-                ModuleExplorer = await BuildModuleExplorerAsync(registeredModules, moduleMap, isSuperAdmin)
+                ModuleExplorer = await BuildModuleExplorerAsync(registeredModules, moduleMap, roles.ToList(), isSuperAdmin)
             };
 
             try
@@ -163,6 +163,7 @@ namespace MedyxHMS.Controllers
         private async Task<List<DashboardModuleNavGroup>> BuildModuleExplorerAsync(
             IReadOnlyList<SystemModule> modules,
             Dictionary<string, bool> moduleMap,
+            IReadOnlyCollection<string> roles,
             bool isSuperAdmin)
         {
             var result = new List<DashboardModuleNavGroup>();
@@ -178,7 +179,7 @@ namespace MedyxHMS.Controllers
                 if (!isLicensed && !module.Key.Equals("License", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                var options = GetModuleOptions(module.Key);
+                var options = FilterInaccessibleOptions(GetModuleOptions(module.Key), roles, isSuperAdmin);
                 if (options.Count == 0)
                     continue;
 
@@ -193,6 +194,54 @@ namespace MedyxHMS.Controllers
             }
 
             return result;
+        }
+
+        private static List<DashboardModuleNavItem> FilterInaccessibleOptions(
+            List<DashboardModuleNavItem> options,
+            IReadOnlyCollection<string> roles,
+            bool isSuperAdmin)
+        {
+            if (isSuperAdmin)
+                return options;
+
+            var isAdmin = roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+
+            return options.Where(item =>
+            {
+                // Keep staff portal navigation actionable by hiding admin-only operations.
+                if (item.Controller.Equals("Payroll", StringComparison.OrdinalIgnoreCase) &&
+                    item.Action.Equals("Generate", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("Leave", StringComparison.OrdinalIgnoreCase) &&
+                    (item.Action.Equals("Types", StringComparison.OrdinalIgnoreCase) ||
+                     item.Action.Equals("Balances", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("Certificate", StringComparison.OrdinalIgnoreCase) &&
+                    (item.Action.Equals("GenerateCertificate", StringComparison.OrdinalIgnoreCase) ||
+                     item.Action.Equals("GenerateIdCard", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("Report", StringComparison.OrdinalIgnoreCase) &&
+                    item.Action.Equals("Builder", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                if (item.Controller.Equals("ChatbotAdmin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return isAdmin;
+                }
+
+                return true;
+            }).ToList();
         }
 
         private static List<DashboardModuleNavItem> GetModuleOptions(string moduleKey)

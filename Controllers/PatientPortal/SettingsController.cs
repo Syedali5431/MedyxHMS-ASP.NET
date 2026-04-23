@@ -9,6 +9,7 @@ using System.Security.Claims;
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize(Roles = "Patient")]
+    [Route("PatientPortal/[controller]/[action]")]
     public class SettingsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
@@ -24,7 +25,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -74,7 +75,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -120,7 +121,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var viewModel = new PatientPortalSecuritySettingsViewModel

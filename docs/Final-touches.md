@@ -68,8 +68,6 @@ Run Date: 2026-04-23
 Caveat:
 - This checklist is static/code-path validation. Full runtime E2E validation was not executed in this pass.
 
----
-
 ## Portals (P)
 
 | ID | Portal Name          | URL Prefix         | Intended Users                         |
@@ -77,6 +75,45 @@ Caveat:
 | P1 | Staff / Admin Portal | `/`                | All staff roles (RL1–RL7, RL9–RL11)   |
 | P2 | Patient Portal       | `/PatientPortal/`  | Patients (RL8)                         |
 | P3 | Public Website (CMS) | `/Site/`           | General public (unauthenticated)        |
+
+### Portal Focus: P1 (Staff/Admin Portal)
+
+Validation Summary (2026-04-23):
+- PASS: Authentication/session middleware order supports staff portal login and authorized routing.
+- PASS: Role landing redirects now explicitly cover `SuperAdmin`, `Admin`, `Doctor`, `Nurse`, `Pharmacist`, `Accountant`, `Receptionist`, `LabTechnician`, `Radiologist`, and `Staff`.
+- PASS: Dashboard module explorer now hides admin-only operations for non-admin staff users (for example payroll generation, leave type/balance admin screens, certificate generation, report builder, chatbot admin settings) to reduce forbidden/dead-end navigation.
+
+P1 Caveat:
+- This P1 validation is code-path and authorization-surface based. Full browser/runtime flow tests per role are still recommended in staging.
+
+### Portal Focus: P2 (Patient Portal)
+
+Validation Summary (2026-04-23):
+- PASS: Patient portal controllers now use consistent route prefixing with `PatientPortal/[controller]/[action]` across Account, Dashboard, Appointments, Bills, MedicalRecords, and Settings.
+- PASS: Unauthenticated redirects in patient portal flows now consistently point to `/PatientPortal/Account/Login`, preventing accidental fallback into staff-side account routes.
+- PASS: Patient ownership checks for appointment and bill details now compare against resolved patient-record identity, not raw ASP.NET Identity user id string coercion.
+- PASS: Patient appointment booking now uses resolved patient-record id, eliminating fragile integer parsing of identity user identifiers.
+- PASS: Patient portal login now accepts return URLs only when they are local and under `/PatientPortal`, otherwise safely falls back to `/PatientPortal/Dashboard`.
+- PASS: Dashboard, appointment list, and bill list/export data retrieval now consistently use patient record id values, preventing empty/misaligned results when Identity user ids are non-numeric.
+
+P2 Caveat:
+- This P2 validation is static/code-path focused. A short runtime browser smoke pass for login, appointment detail, bill detail/download, and medical report exports is still recommended in staging.
+
+### Portal Focus: P3 (Public Website / CMS)
+
+Validation Summary (2026-04-23):
+- PASS: `SiteController` carries no `[Authorize]` attribute — all public pages (home, notices, news, doctors, book appointment, contact, location, careers) are correctly unauthenticated.
+- PASS: Admin CMS management (`CmsController`) is protected by `[Authorize(Policy = "RequireAdminRole")]`, mapped to `Admin,SuperAdmin` in `Program.cs`.
+- PASS: `PublicSiteAdminController` (site settings, hero images, theme) is protected by `[Authorize(Roles = "Admin,SuperAdmin")]`.
+- PASS: Public booking form has honeypot field, server-side CAPTCHA challenge, past-date rejection, doctor existence check, and duplicate request detection (phone + doctor + date + time + active status).
+- PASS: Session is correctly wired — `AddDistributedMemoryCache` + `AddSession` + `UseSession` in middleware pipeline ensures captcha session keys are available.
+- PASS: Slug-based `Page` and `NoticeDetail` lookups filter to `Published`/active content only — draft CMS content is never exposed to public users.
+- PASS: Map embed URL fallback safely encodes the address query string with `UrlEncoder.Default.Encode`.
+- PASS: **BookingConfirmation IDOR fixed** — `requestId` is now routed through `TempData` instead of a plain query parameter, preventing unauthenticated enumeration of other patients' booking summaries.
+- PASS: **MapEmbedUrl scheme validated** — `PublicSiteAdminController` now rejects any configured map URL that does not start with `https://` before persisting it, preventing non-HTTPS or `javascript:` scheme injection.
+
+P3 Caveat:
+- P3 validation is code-path and static security focused. A runtime browser smoke pass covering public booking, CMS page rendering, and admin settings save/preview is still recommended in staging.
 
 ---
 

@@ -351,11 +351,19 @@ namespace MedyxHMS.Controllers
             _logger.LogInformation("Public booking request #{RequestId} linked to patient {PatientId}",
                 request.Id, patient.PatientId);
 
-            return RedirectToAction(nameof(BookingConfirmation), new { requestId = request.Id });
+            TempData["PublicBookingRequestId"] = request.Id;
+            return RedirectToAction(nameof(BookingConfirmation));
         }
 
-        public async Task<IActionResult> BookingConfirmation(int requestId)
+        public async Task<IActionResult> BookingConfirmation()
         {
+            // requestId is only accessible via TempData from the redirect — prevents enumeration.
+            if (!TempData.TryGetValue("PublicBookingRequestId", out var raw) || raw is not int requestId)
+            {
+                // Honeypot path or direct URL access — show generic confirmation.
+                requestId = 0;
+            }
+
             if (requestId == 0)
             {
                 // Honeypot rejection â€” show generic confirmation

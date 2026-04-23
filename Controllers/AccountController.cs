@@ -483,12 +483,17 @@ namespace MedyxHMS.Controllers
 
             return roleToUse switch
             {
+                "SuperAdmin"    => LocalRedirect("/Dashboard"),
+                "Admin"         => LocalRedirect("/Dashboard"),
                 "Patient"       => LocalRedirect("/PatientPortal/Dashboard"),
                 "Receptionist"  => LocalRedirect("/FrontOffice"),
                 "Accountant"    => LocalRedirect("/Billing"),
                 "Pharmacist"    => LocalRedirect("/Prescription"),
                 "Nurse"         => LocalRedirect("/IPD"),
                 "Doctor"        => LocalRedirect("/OPD"),
+                "LabTechnician" => LocalRedirect("/Lab"),
+                "Radiologist"   => LocalRedirect("/Radiology"),
+                "Staff"         => LocalRedirect("/Dashboard"),
                 _               => LocalRedirect("/Dashboard"),
             };
         }
@@ -499,7 +504,7 @@ namespace MedyxHMS.Controllers
         /// </summary>
         private static string PickPrimaryRole(IList<string> roles)
         {
-            foreach (var candidate in new[] { "SuperAdmin", "Admin", "Doctor", "Nurse", "Pharmacist", "Accountant", "Receptionist", "Patient" })
+            foreach (var candidate in new[] { "SuperAdmin", "Admin", "Doctor", "Nurse", "Pharmacist", "Accountant", "Receptionist", "LabTechnician", "Radiologist", "Staff", "Patient" })
             {
                 if (roles.Contains(candidate, StringComparer.OrdinalIgnoreCase))
                     return candidate;

@@ -30,7 +30,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account");
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -41,7 +41,9 @@ namespace MedyxHMS.Controllers.PatientPortal
                     return NotFound();
                 }
 
-                var dashboardData = await _patientPortalService.GetPatientDashboardDataAsync(userId);
+                var patientRecordId = patient.Id.ToString();
+
+                var dashboardData = await _patientPortalService.GetPatientDashboardDataAsync(patientRecordId);
 
                 var viewModel = new PatientPortalDashboardViewModel
                 {
@@ -73,7 +75,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 };
 
                 // Get recent appointments
-                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(userId, "upcoming");
+                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(patientRecordId, "upcoming");
                 viewModel.Dashboard.RecentAppointments = appointments.Take(5).Select(a => new PatientPortalAppointmentDto
                 {
                     Id = a.Id.ToString(),
@@ -86,7 +88,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 }).ToList();
 
                 // Get recent bills
-                var bills = await _patientPortalService.GetPatientBillsAsync(userId);
+                var bills = await _patientPortalService.GetPatientBillsAsync(patientRecordId);
                 viewModel.Dashboard.RecentBills = bills.Take(5).Select(b => new PatientPortalBillDto
                 {
                     Id = b.Id.ToString(),
@@ -112,7 +114,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account");
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var patient = await _patientPortalService.GetPatientByIdAsync(userId);
@@ -160,7 +162,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account");
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             if (ModelState.IsValid)
@@ -208,7 +210,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account");
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var viewModel = new PatientPortalPasswordChangeViewModel
@@ -227,7 +229,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account");
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             if (ModelState.IsValid)
@@ -272,7 +274,13 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+
+            var patient = await _patientPortalService.GetPatientByIdAsync(userId);
+            if (patient == null)
+                return NotFound();
+
+            var patientRecordId = patient.Id.ToString();
 
             string[] headers;
             List<IReadOnlyList<string>> rows;
@@ -281,7 +289,7 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             if (section == "appointments")
             {
-                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(userId, "upcoming");
+                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(patientRecordId, "upcoming");
                 headers = new[] { "Date", "Time", "Doctor", "Department", "Status" };
                 rows = appointments.Take(5).Select(a => (IReadOnlyList<string>)new[]
                 {
@@ -296,7 +304,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
             else
             {
-                var bills = await _patientPortalService.GetPatientBillsAsync(userId);
+                var bills = await _patientPortalService.GetPatientBillsAsync(patientRecordId);
                 headers = new[] { "Bill #", "Date", "Total", "Paid", "Status" };
                 rows = bills.Take(5).Select(b => (IReadOnlyList<string>)new[]
                 {

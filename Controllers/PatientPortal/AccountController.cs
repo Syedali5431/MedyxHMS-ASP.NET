@@ -90,7 +90,15 @@ namespace MedyxHMS.Controllers.PatientPortal
                         return View("~/Views/Account/Login.cshtml", viewModel);
                     }
 
-                    return LocalRedirect(returnUrl ?? Url.Content("~/PatientPortal/Dashboard"));
+                    // Patient portal should only redirect to patient-portal-local paths.
+                    if (!string.IsNullOrWhiteSpace(returnUrl)
+                        && Url.IsLocalUrl(returnUrl)
+                        && returnUrl.StartsWith("/PatientPortal", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return LocalRedirect(returnUrl);
+                    }
+
+                    return LocalRedirect(Url.Content("~/PatientPortal/Dashboard"));
                 }
 
                 if (result.IsLockedOut)

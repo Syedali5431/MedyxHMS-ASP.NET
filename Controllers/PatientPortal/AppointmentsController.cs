@@ -10,6 +10,7 @@ using System.Security.Claims;
 namespace MedyxHMS.Controllers.PatientPortal
 {
     [Authorize(Roles = "Patient")]
+    [Route("PatientPortal/[controller]/[action]")]
     public class AppointmentsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
@@ -25,12 +26,18 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
             {
-                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(userId, filter);
+                var appointments = await _patientPortalService.GetPatientAppointmentsAsync(patientId.Value.ToString(), filter);
 
                 var viewModel = new PatientPortalAppointmentsViewModel
                 {
@@ -71,7 +78,13 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var appointment = await _patientPortalService.GetAppointmentDetailsAsync(id);
@@ -81,7 +94,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             // Verify patient owns this appointment
-            if (appointment.PatientId.ToString() != userId)
+            if (appointment.PatientId != patientId.Value)
             {
                 return Forbid();
             }
@@ -119,7 +132,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -156,7 +169,13 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             if (ModelState.IsValid)
@@ -165,7 +184,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 {
                     var appointment = new Appointment
                     {
-                        PatientId = int.Parse(userId),
+                        PatientId = patientId.Value,
                         StaffId = viewModel.Appointment.DoctorId,
                         AppointmentDate = viewModel.SelectedDate.Add(new TimeSpan(9, 0, 0)), // Default time
                         Symptoms = viewModel.Appointment.Symptoms,
@@ -197,7 +216,13 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue)
+            {
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             var appointment = await _patientPortalService.GetAppointmentDetailsAsync(id);
@@ -206,7 +231,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 return NotFound();
             }
 
-            if (appointment.PatientId.ToString() != userId)
+            if (appointment.PatientId != patientId.Value)
             {
                 return Forbid();
             }
@@ -234,7 +259,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -268,7 +293,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
             {
-                return RedirectToAction("Login", "Account", new { area = "PatientPortal" });
+                return LocalRedirect("/PatientPortal/Account/Login");
             }
 
             try
@@ -304,6 +329,16 @@ namespace MedyxHMS.Controllers.PatientPortal
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        private async Task<int?> ResolveCurrentPatientIdAsync()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return null;
+
+            var patient = await _patientPortalService.GetPatientByIdAsync(userId);
+            return patient?.Id;
         }
     }
 }

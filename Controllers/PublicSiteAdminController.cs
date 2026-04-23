@@ -62,7 +62,15 @@ namespace MedyxHMS.Controllers
             await _settingService.UpdateSettingAsync("PublicSiteAddress", vm.PublicAddress ?? string.Empty);
             await _settingService.UpdateSettingAsync("PublicSitePhone", vm.PublicPhone ?? string.Empty);
             await _settingService.UpdateSettingAsync("PublicSiteEmail", vm.PublicEmail ?? string.Empty);
-            await _settingService.UpdateSettingAsync("PublicSiteMapEmbedUrl", vm.PublicMapEmbedUrl ?? string.Empty);
+
+            // Only persist map embed URLs that start with https:// to prevent non-HTTPS or javascript: scheme URLs.
+            var mapUrl = vm.PublicMapEmbedUrl ?? string.Empty;
+            if (!string.IsNullOrWhiteSpace(mapUrl) && !mapUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                ModelState.AddModelError(nameof(vm.PublicMapEmbedUrl), "Map embed URL must start with https://.");
+                return View(vm);
+            }
+            await _settingService.UpdateSettingAsync("PublicSiteMapEmbedUrl", mapUrl);
             await _settingService.UpdateSettingAsync("PublicSiteCareersContent", vm.CareersContent ?? string.Empty);
 
             if (vm.HomeHeroImageFile != null)
