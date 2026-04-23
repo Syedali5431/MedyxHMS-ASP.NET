@@ -1,0 +1,519 @@
+@model IEnumerable<MedyxHMS.Models.Bed>
+@using MedyxHMS.Services.Interfaces
+@{
+    ViewData["Title"] = "Bed Management";
+    var summary = ViewBag.Summary as BedManagementSummary ?? new BedManagementSummary();
+    var wards   = (ViewBag.Wards   as IEnumerable<MedyxHMS.Models.Ward>)   ?? Enumerable.Empty<MedyxHMS.Models.Ward>();
+    var patients= (ViewBag.Patients as System.Collections.IEnumerable) ?? Array.Empty<object>();
+    var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+}
+
+<div class="container-fluid">
+
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-bed me-2"></i>Bed Management</h1>
+            <p class="text-muted mb-0">Real-time bed availability and patient assignment</p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+                <i class="fas fa-sync-alt me-1"></i>Refresh
+            </button>
+            @if (isAdmin)
+            {
+                <a asp-action="Create" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Add Bed
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Alerts -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-xl col-md-4 col-6 mb-3">
+            <div class="card border-start border-primary border-4 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="row align-items-center g-0">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Beds</div>
+                            <div class="h4 mb-0 fw-bold">@summary.TotalBeds</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-bed fa-2x text-secondary opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-6 mb-3">
+            <div class="card border-start border-success border-4 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="row align-items-center g-0">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Available</div>
+                            <div class="h4 mb-0 fw-bold text-success">@summary.AvailableBeds</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-check-circle fa-2x text-success opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-6 mb-3">
+            <div class="card border-start border-danger border-4 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="row align-items-center g-0">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">Occupied</div>
+                            <div class="h4 mb-0 fw-bold text-danger">@summary.OccupiedBeds</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-user-injured fa-2x text-danger opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-6 mb-3">
+            <div class="card border-start border-warning border-4 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="row align-items-center g-0">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">Cleaning</div>
+                            <div class="h4 mb-0 fw-bold text-warning">@summary.CleaningBeds</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-broom fa-2x text-warning opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl col-md-4 col-6 mb-3">
+            <div class="card border-start border-secondary border-4 shadow-sm h-100">
+                <div class="card-body py-3">
+                    <div class="row align-items-center g-0">
+                        <div class="col">
+                            <div class="text-xs fw-bold text-secondary text-uppercase mb-1">Maintenance</div>
+                            <div class="h4 mb-0 fw-bold text-secondary">@summary.MaintenanceBeds</div>
+                        </div>
+                        <div class="col-auto"><i class="fas fa-tools fa-2x text-secondary opacity-50"></i></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-2">
+            <div class="row g-2 align-items-center">
+                <div class="col-md-3">
+                    <input type="text" id="bedSearchInput" class="form-control form-control-sm" placeholder="Search bed number, ward, patient…">
+                </div>
+                <div class="col-md-2">
+                    <select id="statusFilter" class="form-select form-select-sm">
+                        <option value="">All Statuses</option>
+                        <option value="Available">Available</option>
+                        <option value="Occupied">Occupied</option>
+                        <option value="Cleaning">Cleaning</option>
+                        <option value="Maintenance">Maintenance</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="wardFilter" class="form-select form-select-sm">
+                        <option value="">All Wards</option>
+                        @foreach (var ward in wards)
+                        {
+                            <option value="@ward.Name">@ward.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <select id="typeFilter" class="form-select form-select-sm">
+                        <option value="">All Types</option>
+                        <option value="General">General</option>
+                        <option value="ICU">ICU</option>
+                        <option value="Private">Private</option>
+                        <option value="Semi-private">Semi-private</option>
+                        <option value="Isolation">Isolation</option>
+                        <option value="Emergency">Emergency</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bed List Table -->
+    <div class="card shadow mb-4">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-bordered mb-0" id="bedsTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Bed #</th>
+                            <th>Ward</th>
+                            <th>Type</th>
+                            <th>Status</th>
+                            <th>Assigned Patient</th>
+                            <th>Daily Rate</th>
+                            <th>Last Updated</th>
+                            <th class="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">
+                                    <i class="fas fa-bed fa-2x mb-2 d-block opacity-25"></i>
+                                    No beds found. @(isAdmin ? "Click \"Add Bed\" to get started." : "")
+                                </td>
+                            </tr>
+                        }
+                        @foreach (var bed in Model)
+                        {
+                            <tr class="bed-row"
+                                data-status="@bed.Status"
+                                data-ward="@bed.Ward?.Name"
+                                data-type="@bed.BedType"
+                                data-search="@bed.BedNumber @bed.Ward?.Name @bed.BedType @bed.Patient?.FirstName @bed.Patient?.LastName">
+                                <td class="fw-bold">
+                                    @bed.BedNumber
+                                    @if (bed.IsIsolation)
+                                    {
+                                        <span class="badge bg-purple ms-1 text-white" style="background:#6f42c1!important" title="Isolation Bed"><i class="fas fa-shield-virus"></i></span>
+                                    }
+                                    @if (bed.RequiresAdminApproval)
+                                    {
+                                        <span class="badge bg-info ms-1" title="ICU — Admin approval required"><i class="fas fa-lock"></i></span>
+                                    }
+                                </td>
+                                <td>@bed.Ward?.Name</td>
+                                <td>
+                                    <span class="badge @GetTypeBadge(bed.BedType)">@bed.BedType</span>
+                                </td>
+                                <td>
+                                    @{
+                                        var (badgeCss, icon) = GetStatusBadge(bed.Status);
+                                    }
+                                    <span class="badge @badgeCss">
+                                        <i class="@icon me-1"></i>@bed.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (bed.Patient != null)
+                                    {
+                                        <span>@bed.Patient.FirstName @bed.Patient.LastName</span>
+                                        <small class="text-muted d-block">ID: @bed.Patient.PatientId</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">—</span>
+                                    }
+                                </td>
+                                <td>@bed.DailyCharges.ToString("C")</td>
+                                <td>
+                                    @if (bed.LastUpdated.HasValue)
+                                    {
+                                        <small>@bed.LastUpdated.Value.ToLocalTime().ToString("dd MMM yyyy HH:mm")</small>
+                                    }
+                                    else
+                                    {
+                                        <small class="text-muted">—</small>
+                                    }
+                                </td>
+                                <td class="text-center text-nowrap">
+                                    <!-- Assign -->
+                                    @if (bed.Status == "Available")
+                                    {
+                                        <button class="btn btn-success btn-sm me-1"
+                                                data-bs-toggle="modal" data-bs-target="#assignModal"
+                                                data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
+                                                data-requires-admin="@bed.RequiresAdminApproval.ToString().ToLower()"
+                                                title="Assign to patient">
+                                            <i class="fas fa-user-plus"></i>
+                                        </button>
+                                    }
+                                    <!-- Release -->
+                                    @if (bed.Status == "Occupied")
+                                    {
+                                        <button class="btn btn-warning btn-sm me-1"
+                                                data-bs-toggle="modal" data-bs-target="#releaseModal"
+                                                data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
+                                                data-patient="@bed.Patient?.FirstName @bed.Patient?.LastName"
+                                                title="Release bed">
+                                            <i class="fas fa-sign-out-alt"></i>
+                                        </button>
+                                        <!-- Transfer -->
+                                        <button class="btn btn-info btn-sm me-1 text-white"
+                                                data-bs-toggle="modal" data-bs-target="#transferModal"
+                                                data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
+                                                title="Transfer patient">
+                                            <i class="fas fa-exchange-alt"></i>
+                                        </button>
+                                    }
+                                    <!-- Status change (Cleaning/Maintenance) -->
+                                    @if (bed.Status != "Occupied")
+                                    {
+                                        <div class="btn-group me-1">
+                                            <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
+                                                    data-bs-toggle="dropdown" title="Set status">
+                                                <i class="fas fa-cog"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                @if (bed.Status != "Available")
+                                                {
+                                                    <li>
+                                                        <form method="post" asp-action="SetStatus">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="bedId" value="@bed.Id" />
+                                                            <input type="hidden" name="status" value="Available" />
+                                                            <button type="submit" class="dropdown-item text-success">
+                                                                <i class="fas fa-check-circle me-2"></i>Mark Available
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                                @if (bed.Status != "Cleaning")
+                                                {
+                                                    <li>
+                                                        <form method="post" asp-action="SetStatus">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="bedId" value="@bed.Id" />
+                                                            <input type="hidden" name="status" value="Cleaning" />
+                                                            <button type="submit" class="dropdown-item text-warning">
+                                                                <i class="fas fa-broom me-2"></i>Mark Cleaning
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                                @if (bed.Status != "Maintenance")
+                                                {
+                                                    <li>
+                                                        <form method="post" asp-action="SetStatus">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="bedId" value="@bed.Id" />
+                                                            <input type="hidden" name="status" value="Maintenance" />
+                                                            <button type="submit" class="dropdown-item text-secondary">
+                                                                <i class="fas fa-tools me-2"></i>Mark Maintenance
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </div>
+                                    }
+                                    <!-- Edit (admin only) -->
+                                    @if (isAdmin)
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@bed.Id"
+                                           class="btn btn-outline-primary btn-sm" title="Edit bed">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Assign Modal ─────────────────────────────────────────── -->
+<div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="Assign">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bedId" id="assignBedId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="assignModalLabel">
+                        <i class="fas fa-user-plus me-2"></i>Assign Bed
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="icuWarning" class="alert alert-warning d-none">
+                        <i class="fas fa-lock me-2"></i>This is an <strong>ICU bed</strong> — Admin approval is required.
+                    </div>
+                    <p>Assigning bed: <strong id="assignBedNumber"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Select Patient</label>
+                        <select name="patientId" class="form-select" required>
+                            <option value="">— Choose a patient —</option>
+                            @foreach (dynamic pt in patients)
+                            {
+                                <option value="@pt.Id">@pt.Name (@pt.PatientId)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-user-plus me-1"></i>Assign
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Release Modal ────────────────────────────────────────── -->
+<div class="modal fade" id="releaseModal" tabindex="-1" aria-labelledby="releaseModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="Release">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="bedId" id="releaseBedId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="releaseModalLabel">
+                        <i class="fas fa-sign-out-alt me-2"></i>Release Bed
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Release bed <strong id="releaseBedNumber"></strong>?</p>
+                    <p>Patient: <strong id="releasePatientName"></strong></p>
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i>The bed will be set to <strong>Cleaning</strong> status after release.
+                        Mark it <strong>Available</strong> once cleaned.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-sign-out-alt me-1"></i>Confirm Release
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ── Transfer Modal ───────────────────────────────────────── -->
+<div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" asp-action="Transfer">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="fromBedId" id="transferFromBedId" />
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transferModalLabel">
+                        <i class="fas fa-exchange-alt me-2"></i>Transfer Patient
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Transfer patient from bed: <strong id="transferFromBedNumber"></strong></p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Target Bed (Available only)</label>
+                        <select name="toBedId" class="form-select" required>
+                            <option value="">— Choose target bed —</option>
+                            @foreach (var bed in Model.Where(b => b.Status == "Available"))
+                            {
+                                <option value="@bed.Id">@bed.BedNumber — @bed.Ward?.Name (@bed.BedType)</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-info text-white">
+                        <i class="fas fa-exchange-alt me-1"></i>Transfer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // ── Modal wiring ──────────────────────────────────────────
+        document.getElementById('assignModal').addEventListener('show.bs.modal', function (e) {
+            var btn = e.relatedTarget;
+            document.getElementById('assignBedId').value     = btn.getAttribute('data-bed-id');
+            document.getElementById('assignBedNumber').textContent = btn.getAttribute('data-bed-number');
+            var requiresAdmin = btn.getAttribute('data-requires-admin') === 'true';
+            document.getElementById('icuWarning').classList.toggle('d-none', !requiresAdmin);
+        });
+
+        document.getElementById('releaseModal').addEventListener('show.bs.modal', function (e) {
+            var btn = e.relatedTarget;
+            document.getElementById('releaseBedId').value          = btn.getAttribute('data-bed-id');
+            document.getElementById('releaseBedNumber').textContent = btn.getAttribute('data-bed-number');
+            document.getElementById('releasePatientName').textContent = btn.getAttribute('data-patient');
+        });
+
+        document.getElementById('transferModal').addEventListener('show.bs.modal', function (e) {
+            var btn = e.relatedTarget;
+            document.getElementById('transferFromBedId').value          = btn.getAttribute('data-bed-id');
+            document.getElementById('transferFromBedNumber').textContent = btn.getAttribute('data-bed-number');
+        });
+
+        // ── Table filtering ───────────────────────────────────────
+        function filterTable() {
+            var search = document.getElementById('bedSearchInput').value.toLowerCase();
+            var status = document.getElementById('statusFilter').value;
+            var ward   = document.getElementById('wardFilter').value;
+            var type   = document.getElementById('typeFilter').value;
+
+            document.querySelectorAll('.bed-row').forEach(function (row) {
+                var matchSearch = !search || row.getAttribute('data-search').toLowerCase().includes(search);
+                var matchStatus = !status || row.getAttribute('data-status') === status;
+                var matchWard   = !ward   || row.getAttribute('data-ward') === ward;
+                var matchType   = !type   || row.getAttribute('data-type') === type;
+                row.style.display = (matchSearch && matchStatus && matchWard && matchType) ? '' : 'none';
+            });
+        }
+
+        document.getElementById('bedSearchInput').addEventListener('input', filterTable);
+        document.getElementById('statusFilter').addEventListener('change', filterTable);
+        document.getElementById('wardFilter').addEventListener('change', filterTable);
+        document.getElementById('typeFilter').addEventListener('change', filterTable);
+
+        // Auto-dismiss alerts
+        setTimeout(function () {
+            document.querySelectorAll('.alert.alert-success, .alert.alert-danger').forEach(function (el) {
+                var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+                bsAlert.close();
+            });
+        }, 4000);
+    </script>
+}
+
+@functions {
+    static (string css, string icon) GetStatusBadge(string status) => status switch
+    {
+        "Available"   => ("bg-success", "fas fa-check-circle"),
+        "Occupied"    => ("bg-danger",  "fas fa-user-injured"),
+        "Cleaning"    => ("bg-warning text-dark", "fas fa-broom"),
+        "Maintenance" => ("bg-secondary", "fas fa-tools"),
+        _             => ("bg-light text-dark", "fas fa-question-circle")
+    };
+
+    static string GetTypeBadge(string type) => type switch
+    {
+        "ICU"        => "bg-danger",
+        "Emergency"  => "bg-danger",
+        "Isolation"  => "bg-purple text-white",
+        "Private"    => "bg-info text-white",
+        "General"    => "bg-light text-dark border",
+        _            => "bg-light text-dark border"
+    };
+}

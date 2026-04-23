@@ -395,6 +395,20 @@ namespace MedyxHMS.Services.Interfaces
         Task<IEnumerable<Bed>> GetBedsByStatusAsync(string status);
         Task<bool> UpdateBedStatusAsync(int bedId, string status);
         Task<Bed> GetBedByBedNumberAsync(string bedNumber, int wardId);
+        // Bed Management operations
+        Task<(bool Success, string Error)> AssignBedAsync(int bedId, int patientId, string requestingRole);
+        Task<(bool Success, string Error)> ReleaseBedAsync(int bedId);
+        Task<(bool Success, string Error)> TransferBedAsync(int fromBedId, int toBedId);
+        Task<BedManagementSummary> GetBedManagementSummaryAsync();
+    }
+
+    public class BedManagementSummary
+    {
+        public int TotalBeds { get; set; }
+        public int AvailableBeds { get; set; }
+        public int OccupiedBeds { get; set; }
+        public int CleaningBeds { get; set; }
+        public int MaintenanceBeds { get; set; }
     }
 
     public interface IPrescriptionService

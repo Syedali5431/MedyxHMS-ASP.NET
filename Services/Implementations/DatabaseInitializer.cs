@@ -973,6 +973,7 @@ END");
             ("Inventory",          "Inventory Management",       "Hospital supply inventory",             "fas fa-boxes",             27),
             ("DownloadCenter",     "Download Center",            "Staff document downloads",              "fas fa-download",          28),
             ("LiveConsultation",   "Live Consultation",          "Video consultation sessions",           "fas fa-video",             29),
+            ("BedManagement",      "Bed Management",             "Hospital bed tracking and assignment",  "fas fa-procedures",        30),
         };
 
         private async Task SeedSystemModulesAsync()
@@ -1387,6 +1388,25 @@ BEGIN
 
     EXEC sp_executesql @liveSessionsSql;
 END");
+
+        // ── Bed Management: backfill new columns added to Beds table ──
+        await _context.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'[dbo].[Beds]', N'PatientId') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [PatientId] INT NULL;
+
+IF COL_LENGTH(N'[dbo].[Beds]', N'IsIsolation') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [IsIsolation] BIT NOT NULL CONSTRAINT [DF_Beds_IsIsolation] DEFAULT(0);
+
+IF COL_LENGTH(N'[dbo].[Beds]', N'RequiresAdminApproval') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [RequiresAdminApproval] BIT NOT NULL CONSTRAINT [DF_Beds_RequiresAdminApproval] DEFAULT(0);
+
+IF COL_LENGTH(N'[dbo].[Beds]', N'LastUpdated') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [LastUpdated] DATETIME2 NULL;
+
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Beds_Patients_PatientId')
+AND OBJECT_ID(N'[dbo].[Patients]', N'U') IS NOT NULL
+    ALTER TABLE [dbo].[Beds] ADD CONSTRAINT [FK_Beds_Patients_PatientId]
+        FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE SET NULL;");
         }
 
         private async Task SeedRolesAndFeaturesAsync()

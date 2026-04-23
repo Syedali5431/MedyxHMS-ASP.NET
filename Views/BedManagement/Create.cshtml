@@ -1,0 +1,107 @@
+@model MedyxHMS.Models.Bed
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Bed" : "Add New Bed";
+    var wards = (ViewBag.Wards as IEnumerable<MedyxHMS.Models.Ward>) ?? Enumerable.Empty<MedyxHMS.Models.Ward>();
+    var bedTypes = new[] { "General", "ICU", "Private", "Semi-private", "Isolation", "Emergency" };
+}
+
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-bed me-2"></i>@ViewData["Title"]
+        </h1>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left me-1"></i>Back to Beds
+        </a>
+    </div>
+
+    <div class="card shadow mb-4" style="max-width:600px">
+        <div class="card-body">
+            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")">
+                @Html.AntiForgeryToken()
+                @if (isEdit)
+                {
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="CreatedDate" />
+                    <input type="hidden" asp-for="Status" />
+                    <input type="hidden" asp-for="PatientId" />
+                }
+
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
+
+                <div class="mb-3">
+                    <label asp-for="BedNumber" class="form-label fw-bold">Bed Number <span class="text-danger">*</span></label>
+                    <input asp-for="BedNumber" class="form-control" placeholder="e.g. W1-B01" required />
+                    <span asp-validation-for="BedNumber" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="WardId" class="form-label fw-bold">Ward <span class="text-danger">*</span></label>
+                    <select asp-for="WardId" class="form-select" required>
+                        <option value="">— Select Ward —</option>
+                        @foreach (var w in wards)
+                        {
+                            <option value="@w.Id">@w.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="WardId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="BedType" class="form-label fw-bold">Bed Type <span class="text-danger">*</span></label>
+                    <select asp-for="BedType" class="form-select" id="bedTypeSelect" required>
+                        <option value="">— Select Type —</option>
+                        @foreach (var t in bedTypes)
+                        {
+                            <option value="@t">@t</option>
+                        }
+                    </select>
+                    <span asp-validation-for="BedType" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="DailyCharges" class="form-label fw-bold">Daily Charges</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input asp-for="DailyCharges" type="number" step="0.01" min="0" class="form-control" />
+                    </div>
+                    <span asp-validation-for="DailyCharges" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                        <label asp-for="IsActive" class="form-check-label">Active</label>
+                    </div>
+                </div>
+
+                <div id="icuNote" class="alert alert-info d-none">
+                    <i class="fas fa-info-circle me-2"></i>ICU beds automatically require Admin approval for assignment.
+                </div>
+                <div id="isoNote" class="alert alert-warning d-none">
+                    <i class="fas fa-shield-virus me-2"></i>Isolation beds are marked with the isolation flag.
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>@(isEdit ? "Save Changes" : "Create Bed")
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.getElementById('bedTypeSelect').addEventListener('change', function () {
+            document.getElementById('icuNote').classList.toggle('d-none', this.value !== 'ICU');
+            document.getElementById('isoNote').classList.toggle('d-none', this.value !== 'Isolation');
+        });
+        // Trigger on load for edit page
+        document.getElementById('bedTypeSelect').dispatchEvent(new Event('change'));
+    </script>
+}

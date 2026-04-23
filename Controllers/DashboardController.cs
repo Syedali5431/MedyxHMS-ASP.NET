@@ -415,6 +415,12 @@ namespace MedyxHMS.Controllers
                     new() { Label = "Consultations", Description = "Review scheduled live consultation sessions.", Controller = "LiveConsultation", Action = "Index" },
                     new() { Label = "Schedule Session", Description = "Schedule a new live consultation.", Controller = "LiveConsultation", Action = "Schedule" }
                 },
+                "BEDMANAGEMENT" => new List<DashboardModuleNavItem>
+                {
+                    new() { Label = "Bed Overview", Description = "View all beds, statuses and occupancy.", Controller = "BedManagement", Action = "Index" },
+                    new() { Label = "Assign Bed", Description = "Assign an available bed to a patient.", Controller = "BedManagement", Action = "Index" },
+                    new() { Label = "Update Status", Description = "Set bed to Available, Cleaning or Maintenance.", Controller = "BedManagement", Action = "Index" }
+                },
                 "CHATBOT" => new List<DashboardModuleNavItem>
                 {
                     new() { Label = "Chatbot", Description = "Open AI assistant interface.", Controller = "Chatbot", Action = "Index" },

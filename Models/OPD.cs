@@ -65,13 +65,21 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
         public int WardId { get; set; }
         public string BedNumber { get; set; } = string.Empty;
-        public string BedType { get; set; } = string.Empty; // General, ICU, Private, Semi-private
+        public string BedType { get; set; } = string.Empty; // General, ICU, Private, Semi-private, Isolation, Emergency
         public decimal DailyCharges { get; set; }
-        public string Status { get; set; } = string.Empty; // Available, Occupied, Maintenance
+        // Status: Available, Occupied, Cleaning, Maintenance
+        public string Status { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public bool IsIsolation { get; set; } = false;
+        // ICU beds require admin approval before assignment
+        public bool RequiresAdminApproval { get; set; } = false;
+        // Assigned patient (nullable — set when Occupied)
+        public int? PatientId { get; set; }
+        public DateTime? LastUpdated { get; set; }
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         // Navigation properties
         public Ward Ward { get; set; } = null!;
+        public Patient? Patient { get; set; }
     }
 }
