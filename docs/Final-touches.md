@@ -301,13 +301,6 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 | CB12 | Resolve Escalation            | Mark escalations as resolved; update ticket status                       |
 
 
-### FInal Stage Bed Management
-Add a complete "Bed Management" module and menu to the main dashboard.
-
-TECH CONTEXT:
-
----
-
 ## 2026-04-23 — Module Implementation & Validation Complete
 
 **Modules Successfully Implemented & Validated:**
@@ -319,29 +312,16 @@ TECH CONTEXT:
 - M19 Download Center: File listing, upload interface
 - M22 Live Consultation: Session list, schedule consultation
 
-**Build & Quality Status:**
-- Clean compile: zero errors, pre-existing nullable reference warnings only
-- All 12 decimal properties across new modules configured with HasPrecision(18,2)
-- SavedReport.ExecutionTimeMs precision mapping added
-- Duplicate CMS model (Models/CMS_fixed.cs) excluded to resolve type conflicts
 
-**Authenticated Runtime Validation:**
-- Fresh build completed with clean database initialization
-- 20/20 module routes passed smoke test (HTTP 200, no errors, no redirects)
-- All module list/index pages loaded successfully with existing SQL Server database
-- Schema backfill applied on startup via DatabaseInitializer.EnsureNewModuleTablesAsync()
+### FInal Stage Bed Management
+Add a complete "Bed Management" module and menu to the main dashboard.
 
-**Remaining Pre-Go-Live Work:**
-- High: Full role-based business UAT with production-like data (Testing)
-- High: Validate report outputs — Department, Occupancy, Staff, Payroll (Reports)
-- High: Admin/SuperAdmin governance workflows end-to-end (Auth)
-- High: Go-live cutover rehearsal and rollback validation (Deployment)
-- Medium: Production SMS provider credential onboarding (Notifications)
-- Medium: Production SMTP credential onboarding (Notifications)
-- Medium: Staging soak test for retries, opt-outs, provider failover (Notifications)
-- Low: Zoom/Live Consultation secure integration (Deferred)
-- Low: Additional payment gateways beyond top 5 (Deferred)
-- Low: Expand language support beyond top 3–5 (Deferred)
+TECH CONTEXT:
+
+- Web-based dashboard
+- Role-based access (Admin, Nurse, Doctor)
+- Existing sidebar menu and dashboard layout
+- Backend API + Database already present
 
 TASKS:
 
@@ -425,6 +405,32 @@ OUTPUT EXPECTATION:
 - Fully functional Bed Management page
 - Mock data acceptable if backend is incomplete
 - Code should match existing project style
+
+
+## Tasks to perform to close project
+**Build & Quality Status:**
+- Clean compile: zero errors, pre-existing nullable reference warnings only
+- All 12 decimal properties across new modules configured with HasPrecision(18,2)
+- SavedReport.ExecutionTimeMs precision mapping added
+- Duplicate CMS model (Models/CMS_fixed.cs) excluded to resolve type conflicts
+
+**Authenticated Runtime Validation:**
+- Fresh build completed with clean database initialization
+- 20/20 module routes passed smoke test (HTTP 200, no errors, no redirects)
+- All module list/index pages loaded successfully with existing SQL Server database
+- Schema backfill applied on startup via DatabaseInitializer.EnsureNewModuleTablesAsync()
+
+**Remaining Pre-Go-Live Work:**
+- High: Full role-based business UAT with production-like data (Testing)
+- High: Validate report outputs — Department, Occupancy, Staff, Payroll (Reports)
+- High: Admin/SuperAdmin governance workflows end-to-end (Auth)
+- High: Go-live cutover rehearsal and rollback validation (Deployment)
+- Medium: Production SMS provider credential onboarding (Notifications)
+- Medium: Production SMTP credential onboarding (Notifications)
+- Medium: Staging soak test for retries, opt-outs, provider failover (Notifications)
+- Low: Zoom/Live Consultation secure integration (Deferred)
+- Low: Additional payment gateways beyond top 5 (Deferred)
+- Low: Expand language support beyond top 3–5 (Deferred)
 
 ---
 
