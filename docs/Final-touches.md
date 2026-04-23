@@ -150,6 +150,17 @@ Sourced from the original PHP AdminLTE-based admin panel sidebar. Items are modu
 | M23 | Reports                     | Reports Hub, Department, Occupancy, Staff, Generated, Report Builder, Audit Logs | Module | ✅ Implemented |
 | M24 | Setup / Settings            | App Config, Accounts Approval, Password Mgmt, Module Management, User Module Access, License | Admin+ | ✅ Implemented |
 
+### Validation Summary (2026-04-23)
+
+- Sidebar coverage status: M1-M24 navigation tree is implemented and rendered through the shared staff sidebar component.
+- Runtime route validation: all targeted sidebar module routes returned HTTP 200 in authenticated smoke checks after schema backfill and entitlement reconciliation.
+- Recently completed modules validated through sidebar paths: M10 Ambulance, M12 Birth/Death, M15 TPA, M17 Messaging, M18 Inventory, M19 Download Center, M22 Live Consultation.
+- Role-based access validation (seeded UAT users): Admin, Doctor, Nurse, Accountant, Receptionist, and Patient route matrices passed for their expected sidebar-accessible modules.
+- Multi-role validation: `multirole.uat@hospital.com` role picker returned Doctor and Nurse; both role selections routed to expected module landings (`/OPD`, `/IPD`).
+- Access boundary validation: protected routes redirect to login when unauthenticated; post-logout access to protected routes redirects back to login.
+- Admin boundary validation: admin access to `/License` currently resolves to `/Account/AccessDenied` in the latest run, consistent with active role gate behavior.
+- Evidence artifacts: `docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md` (Run 4) and `temp_build_output/uat-role-run4-results.json`.
+
 **Key Files:**
 - `Components/SidebarNavViewComponent.cs` — ViewComponent (injects IModuleService, reads roles/moduleMap)
 - `Views/Shared/Components/SidebarNav/Default.cshtml` — Full M1–M24 Razor template
