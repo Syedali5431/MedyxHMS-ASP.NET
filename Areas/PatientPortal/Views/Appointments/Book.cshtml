@@ -1,0 +1,208 @@
+@{
+    ViewData["Title"] = "Book Appointment";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalBookAppointmentViewModel
+
+<div class="book-appointment-header mb-4">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-calendar-plus text-primary"></i> Book an Appointment
+            </h1>
+            <p class="text-muted">Select a doctor and choose your preferred date and time</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <form method="post" asp-action="Book">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 1: Select a Doctor</h5>
+                </div>
+                <div class="card-body">
+                    @if (Model.AvailableDoctors != null && Model.AvailableDoctors.Any())
+                    {
+                        <div class="row">
+                            @foreach (var doctor in Model.AvailableDoctors)
+                            {
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check doctor-option">
+                                        <input class="form-check-input" type="radio" name="Appointment.DoctorId" id="doctor_@doctor.Id" value="@doctor.Id" required>
+                                        <label class="form-check-label w-100" for="doctor_@doctor.Id">
+                                            <div class="doctor-card p-3">
+                                                <h6 class="mb-1">Dr. @doctor.FirstName @doctor.LastName</h6>
+                                                <p class="text-muted mb-1">@doctor.Department - @doctor.Designation</p>
+                                                @if (!string.IsNullOrEmpty(doctor.About))
+                                                {
+                                                    <small>@doctor.About</small>
+                                                }
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> No doctors available at the moment.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 2: Select Date & Time</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="SelectedDate" class="form-label">Preferred Date</label>
+                            <input type="date" class="form-control" id="SelectedDate" name="SelectedDate" required min="@DateTime.Today.ToString("yyyy-MM-dd")">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="SelectedTime" class="form-label">Preferred Time</label>
+                            <select class="form-select" id="SelectedTime" name="SelectedTime" required>
+                                <option value="">Select a time slot</option>
+                                <option value="09:00">09:00 AM</option>
+                                <option value="09:30">09:30 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="10:30">10:30 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="11:30">11:30 AM</option>
+                                <option value="02:00">02:00 PM</option>
+                                <option value="02:30">02:30 PM</option>
+                                <option value="03:00">03:00 PM</option>
+                                <option value="03:30">03:30 PM</option>
+                                <option value="04:00">04:00 PM</option>
+                                <option value="04:30">04:30 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Step 3: Appointment Details</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="Symptoms" class="form-label">What are your symptoms?</label>
+                        <textarea class="form-control" id="Symptoms" name="Appointment.Symptoms" rows="3" placeholder="Please describe your symptoms or the reason for visit..." required></textarea>
+                        <small class="form-text text-muted">This helps the doctor prepare for your appointment</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Notes" class="form-label">Additional Notes (Optional)</label>
+                        <textarea class="form-control" id="Notes" name="Appointment.Notes" rows="2" placeholder="Any additional information for the doctor..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Priority" class="form-label">Appointment Priority</label>
+                        <select class="form-select" id="Priority" name="Appointment.Priority">
+                            <option value="Normal">Normal</option>
+                            <option value="Urgent">Urgent</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-info mb-4">
+                <div class="card-body bg-light">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                        <label class="form-check-label" for="agreeTerms">
+                            I agree to the appointment terms and conditions
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-between">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="fas fa-check-circle"></i> Book Appointment
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Sidebar Info -->
+    <div class="col-lg-4">
+        <div class="card sticky-top" style="top: 20px;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-info-circle"></i> Important Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <h6 class="mb-3">Before Your Appointment:</h6>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <strong>Arrive Early:</strong> Please arrive 10-15 minutes early
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <strong>Bring ID:</strong> Have your insurance card and ID ready
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <strong>Medical History:</strong> Prepare a list of current medications
+                    </li>
+                    <li class="mb-2">
+                        <i class="fas fa-check-circle text-success"></i>
+                        <strong>Questions:</strong> Write down any questions beforehand
+                    </li>
+                </ul>
+
+                <hr>
+
+                <h6 class="mb-3">Cancellation Policy:</h6>
+                <p class="small">
+                    Appointments can be cancelled or rescheduled up to 24 hours before the scheduled time.
+                    Late cancellations may result in charges.
+                </p>
+
+                <div class="alert alert-info small">
+                    <strong>Need Help?</strong> Contact our support team at <strong>1-800-MEDYX-HMS</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .doctor-option .form-check-input:checked ~ .form-check-label .doctor-card {
+            background-color: #e7f3ff;
+            border: 2px solid #007bff;
+        }
+
+        .doctor-card {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+
+        .doctor-card:hover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+
+        .page-title {
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+}

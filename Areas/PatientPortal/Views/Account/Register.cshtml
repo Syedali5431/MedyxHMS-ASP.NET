@@ -1,0 +1,109 @@
+@model MedyxHMS.ViewModels.PatientPortalRegisterViewModel
+@{
+    ViewData["Title"] = "Patient Sign Up";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-user-plus me-2"></i>Patient Registration</h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Your registration will be reviewed by an admin before activation. You will receive an email when approved.
+                </div>
+
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                    <h6 class="text-primary mb-3">Account Details</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.UserName" class="form-label"></label>
+                            <input asp-for="Register.UserName" class="form-control" placeholder="e.g. john.doe" />
+                            <span asp-validation-for="Register.UserName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.Email" class="form-label"></label>
+                            <input asp-for="Register.Email" type="email" class="form-control" placeholder="your@email.com" />
+                            <span asp-validation-for="Register.Email" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary mb-3 mt-2">Personal Information</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.FirstName" class="form-label"></label>
+                            <input asp-for="Register.FirstName" class="form-control" />
+                            <span asp-validation-for="Register.FirstName" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.LastName" class="form-label"></label>
+                            <input asp-for="Register.LastName" class="form-control" />
+                            <span asp-validation-for="Register.LastName" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.Phone" class="form-label"></label>
+                            <input asp-for="Register.Phone" type="tel" class="form-control" />
+                            <span asp-validation-for="Register.Phone" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Register.DateOfBirth" class="form-label"></label>
+                            <input asp-for="Register.DateOfBirth" type="date" class="form-control" />
+                            <span asp-validation-for="Register.DateOfBirth" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label asp-for="Register.Gender" class="form-label"></label>
+                            <select asp-for="Register.Gender" class="form-select">
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            <span asp-validation-for="Register.Gender" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <h6 class="text-primary mb-3 mt-2">Password</h6>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.Password" class="form-label"></label>
+                            <input asp-for="Register.Password" type="password" class="form-control" />
+                            <span asp-validation-for="Register.Password" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Register.ConfirmPassword" class="form-label"></label>
+                            <input asp-for="Register.ConfirmPassword" type="password" class="form-control" />
+                            <span asp-validation-for="Register.ConfirmPassword" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input asp-for="AcceptTerms" class="form-check-input" />
+                        <label asp-for="AcceptTerms" class="form-check-label">
+                            I accept the <a href="#" target="_blank">Terms and Conditions</a>
+                        </label>
+                        <span asp-validation-for="AcceptTerms" class="text-danger small d-block"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a asp-action="Login" class="btn btn-outline-secondary">Back to Login</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane me-1"></i>Submit for Approval
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

@@ -597,6 +597,9 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<InventoryTransaction>().Property(x => x.Quantity).HasPrecision(precision, scale);
             modelBuilder.Entity<InventoryTransaction>().Property(x => x.UnitCost).HasPrecision(precision, scale);
+
+                // Report entities
+                modelBuilder.Entity<SavedReport>().Property(x => x.ExecutionTimeMs).HasPrecision(precision, scale);
         }
 
         private void SeedInitialData(ModelBuilder modelBuilder)

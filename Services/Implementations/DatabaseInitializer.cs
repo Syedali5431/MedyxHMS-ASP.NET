@@ -59,6 +59,7 @@ namespace MedyxHMS.Services.Implementations
 
             // Seed SuperAdmin user
             await SeedSuperAdminUserAsync();
+            await SeedUatRoleUsersAsync();
             await EnsureIdentityRolesMatchStaffRolesForAllUsersAsync();
         }
 
@@ -1914,6 +1915,243 @@ END");
             foreach (var user in users)
             {
                 await EnsureIdentityRolesMatchStaffRolesAsync(user);
+            }
+        }
+
+        private async Task SeedUatRoleUsersAsync()
+        {
+            var roleUsers = new[]
+            {
+                new { Email = "admin.uat@hospital.com", UserName = "admin.uat", EmployeeId = "UAT-ADM-001", FirstName = "Uat", LastName = "Admin", Role = "Admin", Designation = "Administrator", Department = "Administration" },
+                new { Email = "doctor.uat@hospital.com", UserName = "doctor.uat", EmployeeId = "UAT-DOC-001", FirstName = "Uat", LastName = "Doctor", Role = "Doctor", Designation = "Doctor", Department = "General Medicine" },
+                new { Email = "nurse.uat@hospital.com", UserName = "nurse.uat", EmployeeId = "UAT-NUR-001", FirstName = "Uat", LastName = "Nurse", Role = "Nurse", Designation = "Nurse", Department = "General Medicine" },
+                new { Email = "accountant.uat@hospital.com", UserName = "accountant.uat", EmployeeId = "UAT-ACC-001", FirstName = "Uat", LastName = "Accountant", Role = "Accountant", Designation = "Accountant", Department = "Finance" },
+                new { Email = "receptionist.uat@hospital.com", UserName = "receptionist.uat", EmployeeId = "UAT-REC-001", FirstName = "Uat", LastName = "Receptionist", Role = "Receptionist", Designation = "Receptionist", Department = "Front Office" }
+            };
+
+            foreach (var seed in roleUsers)
+            {
+                await EnsureUatStaffUserAsync(seed.Email, seed.UserName, seed.EmployeeId, seed.FirstName, seed.LastName, seed.Role, seed.Designation, seed.Department);
+            }
+
+            // Multi-role account for dynamic role-selection validation.
+            await EnsureUatStaffUserAsync(
+                "multirole.uat@hospital.com",
+                "multirole.uat",
+                "UAT-MULTI-001",
+                "Uat",
+                "MultiRole",
+                "Doctor",
+                "Doctor",
+                "General Medicine");
+            await EnsureUatStaffRoleLinkAsync("multirole.uat@hospital.com", "Nurse");
+
+            // Portal-only patient account for patient-role UAT.
+            await EnsureUatPatientUserAsync(
+                "patient.uat@hospital.com",
+                "patient.uat",
+                "UAT-PAT-001",
+                "Uat",
+                "Patient");
+        }
+
+        private async Task EnsureUatStaffUserAsync(
+            string email,
+            string userName,
+            string employeeId,
+            string firstName,
+            string lastName,
+            string roleName,
+            string designation,
+            string department)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    UserName = userName,
+                    Email = email,
+                    EmailConfirmed = true,
+                    EmployeeId = employeeId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                var createResult = await _userManager.CreateAsync(user, "UatRole@123!");
+                if (!createResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed creating UAT user {Email}: {Errors}", email, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                    return;
+                }
+            }
+
+            await EnsureUatStaffRecordAsync(user, employeeId, designation, department);
+            await EnsureUatStaffRoleLinkAsync(email, roleName);
+        }
+
+        private async Task EnsureUatPatientUserAsync(
+            string email,
+            string userName,
+            string employeeId,
+            string firstName,
+            string lastName)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                user = new ApplicationUser
+                {
+                    UserName = userName,
+                    Email = email,
+                    EmailConfirmed = true,
+                    EmployeeId = employeeId,
+                    FirstName = firstName,
+                    LastName = lastName,
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                var createResult = await _userManager.CreateAsync(user, "UatRole@123!");
+                if (!createResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed creating UAT patient user {Email}: {Errors}", email, string.Join(", ", createResult.Errors.Select(e => e.Description)));
+                    return;
+                }
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (!currentRoles.Contains("Patient", StringComparer.OrdinalIgnoreCase))
+            {
+                var addRoleResult = await _userManager.AddToRoleAsync(user, "Patient");
+                if (!addRoleResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed assigning Patient role to UAT user {Email}: {Errors}", email, string.Join(", ", addRoleResult.Errors.Select(e => e.Description)));
+                }
+            }
+
+            await EnsureUatPatientRecordAsync(user, email, firstName, lastName);
+        }
+
+        private async Task EnsureUatPatientRecordAsync(ApplicationUser user, string email, string firstName, string lastName)
+        {
+            var linkedPatient = await _context.Patients
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+            if (linkedPatient != null)
+            {
+                return;
+            }
+
+            var existingByEmail = await _context.Patients
+                .FirstOrDefaultAsync(p => p.Email == email);
+            if (existingByEmail != null)
+            {
+                existingByEmail.UserId = user.Id;
+                existingByEmail.IsActive = true;
+                await _context.SaveChangesAsync();
+                return;
+            }
+
+            var nextIdSeed = await _context.Patients.CountAsync() + 1;
+            var patientCode = $"UATP{nextIdSeed:D5}";
+            while (await _context.Patients.AnyAsync(p => p.PatientId == patientCode))
+            {
+                nextIdSeed++;
+                patientCode = $"UATP{nextIdSeed:D5}";
+            }
+
+            _context.Patients.Add(new Patient
+            {
+                PatientId = patientCode,
+                FirstName = firstName,
+                LastName = lastName,
+                Email = email,
+                Phone = "9000000000",
+                DateOfBirth = DateTime.UtcNow.Date.AddYears(-30),
+                Gender = "Other",
+                Address = "UAT Address",
+                City = "UAT City",
+                State = "UAT State",
+                Country = "India",
+                PostalCode = "000000",
+                BloodGroup = "O+",
+                EmergencyContactName = "UAT Contact",
+                EmergencyContactPhone = "9000000001",
+                EmergencyContactRelation = "Self",
+                MedicalHistory = string.Empty,
+                Allergies = string.Empty,
+                GuardianName = string.Empty,
+                GuardianPhone = string.Empty,
+                MaritalStatus = string.Empty,
+                Occupation = "UAT",
+                UserId = user.Id,
+                ProfileImagePath = string.Empty,
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                LastVisitDate = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureUatStaffRecordAsync(ApplicationUser user, string employeeId, string designation, string department)
+        {
+            var staff = await _context.Staff.FirstOrDefaultAsync(s => s.Id == user.Id);
+            if (staff != null)
+            {
+                return;
+            }
+
+            _context.Staff.Add(new Staff
+            {
+                Id = user.Id,
+                EmployeeId = employeeId,
+                FirstName = user.FirstName ?? "Uat",
+                LastName = user.LastName ?? "User",
+                Department = department,
+                Designation = designation,
+                DateOfJoining = DateTime.UtcNow,
+                Salary = 0,
+                Email = user.Email ?? string.Empty,
+                Phone = string.Empty,
+                Address = string.Empty,
+                About = "System generated UAT staff profile",
+                IsActive = true,
+                CreatedDate = DateTime.UtcNow,
+                User = user
+            });
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureUatStaffRoleLinkAsync(string email, string roleName)
+        {
+            var user = await _userManager.FindByEmailAsync(email);
+            if (user == null)
+            {
+                return;
+            }
+
+            var role = await _context.Roles.FirstOrDefaultAsync(r => r.Name == roleName);
+            if (role == null)
+            {
+                return;
+            }
+
+            var hasStaffRole = await _context.StaffRoles.AnyAsync(sr => sr.StaffId == user.Id && sr.RoleId == role.Id);
+            if (!hasStaffRole)
+            {
+                _context.StaffRoles.Add(new StaffRole
+                {
+                    StaffId = user.Id,
+                    RoleId = role.Id,
+                    AssignedDate = DateTime.UtcNow,
+                    AssignedBy = "System"
+                });
+
+                await _context.SaveChangesAsync();
             }
         }
     }

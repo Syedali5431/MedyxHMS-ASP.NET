@@ -127,7 +127,7 @@ namespace MedyxHMS.Controllers
 
         // Get IPD admission create form
         [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff")]
+        [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff,Nurse")]
         public async Task<IActionResult> Create(int? patientId)
         {
             var patients = await _patientService.GetAllPatientsAsync();
@@ -171,7 +171,7 @@ namespace MedyxHMS.Controllers
         // Post IPD admission create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff")]
+        [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff,Nurse")]
         public async Task<IActionResult> Create(CreateIPDAdmissionViewModel model)
         {
             if (ModelState.IsValid)

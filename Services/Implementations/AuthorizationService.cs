@@ -36,16 +36,60 @@ namespace MedyxHMS.Services.Implementations
             if (userRoles.Any(r => r.Name == "SuperAdmin"))
                 return true;
 
-            // Check specific permission
+            var permissionCandidates = ExpandPermissionAliases(permission)
+                .ToList();
+
+            // Check specific permission (supports legacy and dotted aliases)
             var hasPermission = await _context.StaffRoles
                 .Include(sr => sr.Role)
                 .ThenInclude(r => r.RoleFeatures)
                 .ThenInclude(rf => rf.Feature)
                 .Where(sr => sr.StaffId == userId)
                 .SelectMany(sr => sr.Role.RoleFeatures)
-                .AnyAsync(rf => rf.Feature.Name == permission && rf.CanView);
+                .AnyAsync(rf => permissionCandidates.Contains(rf.Feature.Name) && rf.CanView);
 
             return hasPermission;
+        }
+
+        private static IEnumerable<string> ExpandPermissionAliases(string permission)
+        {
+            if (string.IsNullOrWhiteSpace(permission))
+            {
+                yield break;
+            }
+
+            var normalized = permission.Trim();
+            yield return normalized;
+
+            if (!normalized.Contains('.'))
+            {
+                yield break;
+            }
+
+            var parts = normalized.Split('.', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if (parts.Length != 2)
+            {
+                yield break;
+            }
+
+            var module = parts[0];
+            var action = parts[1];
+
+            var moduleToken = module switch
+            {
+                "Patient" => "Patients",
+                "Appointment" => "Appointments",
+                "Billing" => "Bills",
+                "Bill" => "Bills",
+                "OPD" => "OPDVisits",
+                "IPD" => "IPDAdmissions",
+                "Medicine" => "Medicines",
+                "Lab" => "LabTests",
+                "Radiology" => "RadiologyTests",
+                _ => module
+            };
+
+            yield return $"{action}{moduleToken}";
         }
 
         public async Task<bool> HasAnyPermissionAsync(string userId, IEnumerable<string> permissions)

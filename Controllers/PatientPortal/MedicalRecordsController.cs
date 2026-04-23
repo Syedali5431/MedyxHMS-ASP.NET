@@ -8,6 +8,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for MedicalRecordsController and its related runtime behavior.
 namespace MedyxHMS.Controllers.PatientPortal
 {
+    [Area("PatientPortal")]
     [Authorize(Roles = "Patient")]
     [Route("PatientPortal/[controller]/[action]")]
     public class MedicalRecordsController : Controller

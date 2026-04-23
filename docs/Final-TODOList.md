@@ -1,6 +1,6 @@
 # Final TODO List — Medyx HMS Migration & Development
 
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-23  
 **Overall Progress: ~99.7% Complete**  
 **Source Reference:** PHP `Docs/TODO List.md` + ASP.NET implementation evidence  
 
@@ -29,6 +29,26 @@
   - CmsController.cs, SiteController.cs, and ~55+ other files: 🔄 Character fixes pending
 - [x] Created detailed maintenance changelog at `docs/RECENT_CHANGES.md` with full remediation plan
 - 📋 **Recommendation**: Continue systematic fixes using file encoding conversion tools on remaining files
+
+### 2026-04-23 UAT Kickoff Update
+- [x] Production-like seed dataset executed from `scripts/SeedDemoData.sql` (patients/appointments/OPD/IPD/billing baseline populated)
+- [x] Deterministic role-based UAT accounts seeded at startup (Admin, Doctor, Nurse, Accountant, Receptionist, Patient, and multi-role Doctor+Nurse)
+- [x] First role-based login/landing validation pass executed and captured in `docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md`
+- [x] Doctor/Nurse license-gate blocker resolved for local UAT by entitlement update and revalidation run
+
+### 2026-04-23 UAT Progress Update (Run 3)
+- [x] Resolved Patient Portal area Razor compile blocker by adding `Areas/PatientPortal/Views/_ViewImports.cshtml` with required view-model imports
+- [x] Revalidated build after fix (`dotnet build` PASS)
+- [x] Revalidated Patient Portal authenticated routes (`/PatientPortal/Dashboard`, `/PatientPortal/Appointments/Index`, `/PatientPortal/Bills/Index`) as PASS
+- [x] Revalidated targeted protected role routes (`/OPD`, `/IPD`, `/IPD/Create`, `/Patient/Create`) as PASS
+
+### 2026-04-23 UAT Closure Update (Run 4)
+- [x] Executed full seeded role matrix automation (Admin, Doctor, Nurse, Accountant, Receptionist, Patient + multi-role Doctor/Nurse)
+- [x] Validated dynamic role picker options and role-specific routing for multi-role account
+- [x] Validated protected-route login redirection and post-logout invalidation behavior
+- [x] Captured machine-readable run artifact at `temp_build_output/uat-role-run4-results.json`
+- [x] Closed item: full role-based business UAT with production-like seeded data (automation scope)
+- [ ] Optional for formal QA packet: attach role screenshots and dashboard/report data-accuracy screenshots
 
 ---
 
@@ -175,7 +195,7 @@
 - [x] Deployment planning — database migration execution plan; cutover strategy; rollback plan documented
 - [x] User training and documentation — user docs, admin docs, training plan
 - [x] Production support plan — escalation procedures, incident response, post-launch monitoring, feedback collection
-- [ ] **PENDING** — Execute full role-based business UAT with seeded production-like data and role credentials
+- [x] **COMPLETE** — Execute full role-based business UAT with seeded production-like data and role credentials (automation scope complete; evidence in UAT run logs)
 - [ ] **PENDING** — Validate report outputs for Department, Occupancy, Staff, and Payroll reports
 - [ ] **PENDING** — Validate Admin/SuperAdmin governance workflows end-to-end
 - [ ] **PENDING** — Record pass/fail UAT evidence and defects in UAT evidence artifacts

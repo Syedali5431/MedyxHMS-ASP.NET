@@ -1,0 +1,227 @@
+@{
+    ViewData["Title"] = "Medical Records";
+    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+}
+
+@model PatientPortalMedicalRecordsViewModel
+
+<div class="medical-records-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title">
+                <i class="fas fa-file-medical text-primary"></i> Medical Records
+            </h1>
+            <p class="text-muted">View your medical history and test results</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="d-flex justify-content-md-end gap-2 flex-wrap">
+                <a href="@Url.Action("DownloadReport", "MedicalRecords", new { area = "PatientPortal", startDate = Model.StartDate?.ToString("yyyy-MM-dd"), endDate = Model.EndDate?.ToString("yyyy-MM-dd") })" class="btn btn-outline-danger">
+                    <i class="fas fa-file-pdf"></i> Download PDF Report
+                </a>
+                <a href="@Url.Action("Prescriptions", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-prescription-bottle-alt"></i> Prescriptions
+                </a>
+                <a href="@Url.Action("LabResults", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-vial"></i> Pathology
+                </a>
+                <a href="@Url.Action("RadiologyResults", "MedicalRecords")" class="btn btn-outline-primary">
+                    <i class="fas fa-x-ray"></i> Radiology
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Options -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row align-items-end g-3">
+            <div class="col-md-3">
+                <label for="startDate" class="form-label">From Date</label>
+                <input type="date" class="form-control" id="startDate" name="startDate" value="@Model.StartDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-3">
+                <label for="endDate" class="form-label">To Date</label>
+                <input type="date" class="form-control" id="endDate" name="endDate" value="@Model.EndDate?.ToString("yyyy-MM-dd")">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-search"></i> Filter
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                    <i class="fas fa-redo"></i> Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Medical Records Timeline -->
+@if (Model.MedicalRecords != null && Model.MedicalRecords.Any())
+{
+    <div class="medical-records-timeline">
+        @foreach (var record in Model.MedicalRecords)
+        {
+            <div class="timeline-item mb-4">
+                <div class="timeline-marker"></div>
+                <div class="card">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                <h5 class="card-title mb-1">Visit on @record.RecordDate?.ToString("MMMM dd, yyyy")</h5>
+                                <p class="text-muted mb-2">
+                                    <i class="fas fa-user-md"></i> Dr. @record.DoctorName | <i class="fas fa-hospital"></i> @record.Department
+                                </p>
+                                
+                                @if (!string.IsNullOrEmpty(record.Diagnosis))
+                                {
+                                    <div class="mb-3">
+                                        <h6 class="text-secondary">Diagnosis</h6>
+                                        <p class="mb-0">@record.Diagnosis</p>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(record.Treatment))
+                                {
+                                    <div class="mb-3">
+                                        <h6 class="text-secondary">Treatment</h6>
+                                        <p class="mb-0">@record.Treatment</p>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(record.Prescription))
+                                {
+                                    <div class="mb-3">
+                                        <h6 class="text-secondary">Prescription</h6>
+                                        <p class="mb-0">@record.Prescription</p>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(record.Notes))
+                                {
+                                    <div class="mb-0">
+                                        <h6 class="text-secondary">Notes</h6>
+                                        <p class="mb-0">@record.Notes</p>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col-md-4">
+                                <a href="@Url.Action("Details", "MedicalRecords", new { id = record.Id })" class="btn btn-primary w-100 mb-2">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                <a href="@Url.Action("DownloadReport", "MedicalRecords", new { area = "PatientPortal", startDate = record.RecordDate?.ToString("yyyy-MM-dd"), endDate = record.RecordDate?.ToString("yyyy-MM-dd") })" class="btn btn-outline-danger w-100">
+                                    <i class="fas fa-file-pdf"></i> Download PDF
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav aria-label="Page navigation" class="mt-4">
+            <ul class="pagination justify-content-center">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1, startDate = Model.StartDate?.ToString("yyyy-MM-dd"), endDate = Model.EndDate?.ToString("yyyy-MM-dd") })">Previous</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                }
+
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.CurrentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action("Index", new { page = i, startDate = Model.StartDate?.ToString("yyyy-MM-dd"), endDate = Model.EndDate?.ToString("yyyy-MM-dd") })">@i</a>
+                        </li>
+                    }
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1, startDate = Model.StartDate?.ToString("yyyy-MM-dd"), endDate = Model.EndDate?.ToString("yyyy-MM-dd") })">Next</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="alert alert-info text-center py-5">
+        <i class="fas fa-file-medical fa-3x mb-3"></i>
+        <h4>No Medical Records Found</h4>
+        <p>You don't have any medical records yet.</p>
+    </div>
+}
+
+@section Styles {
+    <style>
+        .medical-records-timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline-item {
+            position: relative;
+        }
+
+        .timeline-marker {
+            position: absolute;
+            left: -30px;
+            top: 25px;
+            width: 20px;
+            height: 20px;
+            background: #007bff;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 3px #e0e0e0;
+        }
+
+        .card {
+            border-left: 4px solid #007bff;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+        }
+
+        .page-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        h6.text-secondary {
+            font-weight: 600;
+            color: #495057;
+        }
+    </style>
+}

@@ -9,6 +9,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for AppointmentsController and its related runtime behavior.
 namespace MedyxHMS.Controllers.PatientPortal
 {
+    [Area("PatientPortal")]
     [Authorize(Roles = "Patient")]
     [Route("PatientPortal/[controller]/[action]")]
     public class AppointmentsController : Controller
