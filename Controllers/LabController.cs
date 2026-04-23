@@ -9,7 +9,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for LabController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor")]
+    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor,LabTechnician")]
     public class LabController : Controller
     {
         private readonly ILabService _labService;

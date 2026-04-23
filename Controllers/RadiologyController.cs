@@ -7,7 +7,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for RadiologyController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor")]
+    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor,Radiologist")]
     public class RadiologyController : Controller
     {
         private readonly IRadiologyService _radiologyService;

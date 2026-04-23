@@ -521,11 +521,11 @@ namespace MedyxHMS.Controllers
         // ======== Insurance Management ========
 
         private static bool CanManageInsurance(System.Security.Principal.IPrincipal user) =>
-            user.IsInRole("Patient") || user.IsInRole("Receptionist") ||
+            user.IsInRole("Receptionist") ||
             user.IsInRole("Admin") || user.IsInRole("SuperAdmin");
 
         [HttpGet]
-        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
         public async Task<IActionResult> InsuranceList(int patientId)
         {
             var patient = await _patientService.GetPatientByIdAsync(patientId);
@@ -543,7 +543,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
         public async Task<IActionResult> InsuranceCreate(int patientId)
         {
             var patient = await _patientService.GetPatientByIdAsync(patientId);
@@ -556,7 +556,7 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
         public async Task<IActionResult> InsuranceCreate(PatientInsurance model)
         {
             ModelState.Remove("Patient");
@@ -570,7 +570,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
         public async Task<IActionResult> InsuranceEdit(int id)
         {
             var ins = await _context.PatientInsurances.FindAsync(id);
@@ -583,7 +583,7 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Patient,Receptionist,Admin,SuperAdmin")]
+        [Authorize(Roles = "Receptionist,Admin,SuperAdmin")]
         public async Task<IActionResult> InsuranceEdit(PatientInsurance model)
         {
             ModelState.Remove("Patient");

@@ -6,19 +6,67 @@ A staged reference inventory of all roles, portals, menus, modules, reports, and
 
 ## Roles (RL)
 
-| ID  | Role Name      | Description                                      |
-|-----|----------------|--------------------------------------------------|
-| RL1 | SuperAdmin     | Full system access; manages all modules globally |
-| RL2 | Admin          | Hospital admin; access to most operational areas |
-| RL3 | Doctor         | Access to OPD, IPD, prescriptions, appointments  |
-| RL4 | Nurse          | Access to IPD nursing workflows                  |
-| RL5 | Pharmacist     | Access to pharmacy and prescription dispensing   |
-| RL6 | Accountant     | Access to billing and finance modules            |
-| RL7 | Receptionist   | Access to Front Office / patient registration    |
-| RL8 | Patient        | Access to Patient Portal only                    |
-| RL9 | LabTechnician  | Access to pathology/laboratory module            |
-| RL10| Radiologist    | Access to radiology module                       |
-| RL11| Staff          | General staff; basic system access               |
+| ID  | Role Name      | Description                                      | Status |
+|-----|----------------|--------------------------------------------------|--------|
+| RL1 | SuperAdmin     | Full system access; manages all modules globally | Completed |
+| RL2 | Admin          | Hospital admin; access to most operational areas | Completed |
+| RL3 | Doctor         | Access to OPD, IPD, prescriptions, appointments  | Completed |
+| RL4 | Nurse          | Access to IPD nursing workflows                  | Completed |
+| RL5 | Pharmacist     | Access to pharmacy and prescription dispensing   | Completed |
+| RL6 | Accountant     | Access to billing and finance modules            | Completed |
+| RL7 | Receptionist   | Access to Front Office / patient registration    | Completed |
+| RL8 | Patient        | Access to Patient Portal only                    | Completed |
+| RL9 | LabTechnician  | Access to pathology/laboratory module            | Completed |
+| RL10| Radiologist    | Access to radiology module                       | Completed |
+| RL11| Staff          | General staff; basic system access               | Configured |
+
+Implementation note:
+`RL1 / SuperAdmin` is now synchronized across both RBAC `StaffRoles` and ASP.NET Identity roles. This ensures the super admin account receives all controller-level role gates, module bypass behavior, settings access, and feature permissions assigned to `SuperAdmin`.
+
+`RL2 / Admin` is now covered by the same startup reconciliation path for existing staff-backed accounts, so Admin users inherit their assigned Identity role gates together with the RBAC features already seeded for Admin, including `ManageUsers`, `ManageSettings`, and `ViewReports`.
+
+`RL3 / Doctor` is now configured for the intended OPD, IPD, appointment, and prescription workflow by aligning appointment permission checks with seeded feature names, allowing doctors through the prescription controller role gate, and backfilling missing Doctor role features during startup for existing databases.
+
+`RL4 / Nurse` is now configured for the intended IPD nursing workflow by preserving existing IPD access and allowing nurses into the medicine-facing controller paths that match their seeded `ViewMedicines` and `DispenseMedicines` permissions, without expanding nurse access to admin-only medicine maintenance actions.
+
+`RL5 / Pharmacist` is now configured for the pharmacy workflow by allowing pharmacist accounts into the medicine create and edit actions that match their seeded `ViewMedicines`, `AddMedicines`, and `DispenseMedicines` permissions, while leaving destructive admin-only actions such as prescription delete unchanged.
+
+`RL6 / Accountant` is now configured for billing and finance workflows by enabling accountant access to payroll/report viewing endpoints and financial reports, while keeping mutation-heavy admin workflows (payroll generation/mark-paid and report template/schedule administration) restricted to admin-level roles.
+
+`RL7 / Receptionist` is now configured for front-office and registration-adjacent finance flow by aligning billing controller role gates with the receptionist role's seeded `ViewBills` and `AddBills` permissions, alongside existing receptionist access in FrontOffice and patient registration surfaces.
+
+`RL8 / Patient` is now configured as portal-only by keeping patient functionality in dedicated `PatientPortal` controllers and removing direct Patient role access from staff-side insurance management actions under the main `Patient` controller.
+
+`RL9 / LabTechnician` is now configured for laboratory workflows by aligning the lab controller role gate with the seeded `ViewLabTests` and `AddLabTests` permissions assigned to LabTechnician.
+
+`RL10 / Radiologist` is now configured for radiology workflows by aligning the radiology controller role gate with the seeded `ViewRadiologyTests` and `AddRadiologyTests` permissions assigned to Radiologist.
+
+`RL11 / Staff` is now configured for baseline operational access through existing patient and appointment permission checks plus billing role gates, matching the seeded Staff permissions for `ViewPatients`, `AddPatients`, `EditPatients`, `ViewAppointments`, `AddAppointments`, `EditAppointments`, `ViewBills`, and `AddBills`.
+
+## Validation (Focused Smoke Checklist)
+
+Scope:
+- Static smoke verification of role seed permissions in `DatabaseInitializer` against controller role gates and permission checks.
+- Focused on RL1-RL11 access alignment only.
+
+Run Date: 2026-04-23
+
+| Role | Result | Notes |
+|------|--------|-------|
+| RL1 SuperAdmin | PASS | Global admin/superadmin gates and module bypass behavior remain aligned. |
+| RL2 Admin | PASS | Admin access retained across management and reporting surfaces; identity-role reconciliation in place. |
+| RL3 Doctor | PASS | OPD/IPD/appointment/prescription path aligned with doctor role and appointment permission key mapping. |
+| RL4 Nurse | PASS | IPD/nursing flow aligned; medicine-facing access aligns with nurse seeded permissions. |
+| RL5 Pharmacist | PASS | Pharmacy create/edit medicine paths aligned with pharmacist seeded permissions. |
+| RL6 Accountant | PASS | Billing plus finance/report viewing access aligned; admin-only mutation/report-template flows remain restricted. |
+| RL7 Receptionist | PASS | Front office and billing create/view alignment validated with receptionist seeded permissions. |
+| RL8 Patient | PASS | Portal-only model validated; patient role removed from staff-side insurance actions. |
+| RL9 LabTechnician | PASS | Lab controller role gate aligned with lab technician seeded permissions. |
+| RL10 Radiologist | PASS | Radiology controller role gate aligned with radiologist seeded permissions. |
+| RL11 Staff | PASS | Baseline staff access (patients/appointments/billing) aligned with seeded permissions and current gates. |
+
+Caveat:
+- This checklist is static/code-path validation. Full runtime E2E validation was not executed in this pass.
 
 ---
 
@@ -192,4 +240,4 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 ---
 
 *Document generated from PHP source (`php-original/`) and ASP.NET source (`MedyxHMS-ASPNET/`) analysis.*
-*Last updated: 2026-04-22*
+*Last updated: 2026-04-23*

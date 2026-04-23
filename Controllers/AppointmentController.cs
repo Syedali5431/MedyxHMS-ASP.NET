@@ -757,7 +757,18 @@ namespace MedyxHMS.Controllers
                 return false;
             }
 
-            return await _authorizationService.HasPermissionAsync(userId, $"{module}.{action}");
+            var permission = module.Equals("Appointment", StringComparison.OrdinalIgnoreCase)
+                ? action switch
+                {
+                    "View" => "ViewAppointments",
+                    "Add" => "AddAppointments",
+                    "Edit" => "EditAppointments",
+                    "Delete" => "DeleteAppointments",
+                    _ => $"{module}.{action}"
+                }
+                : $"{module}.{action}";
+
+            return await _authorizationService.HasPermissionAsync(userId, permission);
         }
     }
 }

@@ -7,7 +7,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for PayrollController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff")]
+    [Authorize(Roles = "Admin,SuperAdmin,Staff,Accountant")]
     public class PayrollController : Controller
     {
         private readonly IPayrollService _payrollService;

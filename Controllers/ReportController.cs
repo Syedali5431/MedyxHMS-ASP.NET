@@ -23,13 +23,13 @@ namespace MedyxHMS.Controllers
             _logger = logger;
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> Index()
         {
             return View();
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> DepartmentReport(int? departmentId, DateTime? startDate, DateTime? endDate)
         {
             if (!startDate.HasValue)
@@ -55,7 +55,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> FinancialReport(DateTime? startDate, DateTime? endDate)
         {
             if (!startDate.HasValue)
@@ -80,7 +80,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> OccupancyReport(DateTime? date)
         {
             if (!date.HasValue)
@@ -103,7 +103,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> StaffReport(string staffId, DateTime? startDate, DateTime? endDate)
         {
             if (!startDate.HasValue)
@@ -129,7 +129,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> PayrollReport(DateTime? month)
         {
             if (!month.HasValue)
@@ -150,7 +150,7 @@ namespace MedyxHMS.Controllers
             }
         }
 
-        [Authorize(Policy = "Permission:*")]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> GeneratedReports(string reportType, DateTime? startDate, DateTime? endDate)
         {
             try

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 // Purpose: Contains application code for PrescriptionController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff,Pharmacist")]
+    [Authorize(Roles = "Admin,SuperAdmin,Doctor,Nurse,Staff,Pharmacist")]
     public class PrescriptionController : Controller
     {
         private readonly IPrescriptionService _prescriptionService;
@@ -291,7 +291,7 @@ namespace MedyxHMS.Controllers
 
         // Get medicine create form
         [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = "Admin,SuperAdmin,Pharmacist")]
         public IActionResult CreateMedicine()
         {
             return View(new MedicineCreateDto { IsActive = true });
@@ -300,7 +300,7 @@ namespace MedyxHMS.Controllers
         // Post medicine create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = "Admin,SuperAdmin,Pharmacist")]
         public async Task<IActionResult> CreateMedicine(MedicineCreateDto model)
         {
             if (ModelState.IsValid)
@@ -341,7 +341,7 @@ namespace MedyxHMS.Controllers
 
         // Get medicine edit form
         [HttpGet]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = "Admin,SuperAdmin,Pharmacist")]
         public async Task<IActionResult> EditMedicine(int id)
         {
             var medicine = await _prescriptionService.GetMedicineByIdAsync(id);
@@ -368,7 +368,7 @@ namespace MedyxHMS.Controllers
         // Post medicine edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = "Admin,SuperAdmin,Pharmacist")]
         public async Task<IActionResult> EditMedicine(MedicineUpdateDto model)
         {
             var medicine = await _prescriptionService.GetMedicineByIdAsync(model.Id);

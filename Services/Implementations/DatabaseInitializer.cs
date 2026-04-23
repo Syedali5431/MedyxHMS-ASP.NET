@@ -54,9 +54,11 @@ namespace MedyxHMS.Services.Implementations
 
             // Seed roles and features
             await SeedRolesAndFeaturesAsync();
+            await EnsureRoleFeaturesSyncedAsync();
 
             // Seed SuperAdmin user
             await SeedSuperAdminUserAsync();
+            await EnsureIdentityRolesMatchStaffRolesForAllUsersAsync();
         }
 
         private async Task EnsureReportStoredProceduresAsync()
@@ -1253,6 +1255,7 @@ END");
                     "ViewPatients", "EditPatients",
                     "ViewAppointments", "AddAppointments", "EditAppointments",
                     "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
+                    "ViewMedicines", "AddMedicines",
                     "ViewLabTests", "AddLabTests", "ViewRadiologyTests", "AddRadiologyTests"
                 },
                 "Nurse" => new[] {
@@ -1314,6 +1317,117 @@ END");
             await _context.SaveChangesAsync();
         }
 
+        private async Task EnsureRoleFeaturesSyncedAsync()
+        {
+            var roles = await _context.Roles
+                .Include(role => role.RoleFeatures)
+                .ToListAsync();
+
+            var featuresByName = await _context.Features
+                .ToDictionaryAsync(feature => feature.Name, StringComparer.OrdinalIgnoreCase);
+
+            foreach (var role in roles)
+            {
+                var desiredPermissions = GetRolePermissions(role.Name);
+                var existingFeatureNames = role.RoleFeatures
+                    .Select(roleFeature => roleFeature.FeatureId)
+                    .ToHashSet();
+
+                foreach (var permission in desiredPermissions)
+                {
+                    if (!featuresByName.TryGetValue(permission, out var feature))
+                    {
+                        continue;
+                    }
+
+                    if (existingFeatureNames.Contains(feature.Id))
+                    {
+                        continue;
+                    }
+
+                    _context.RoleFeatures.Add(new RoleFeature
+                    {
+                        RoleId = role.Id,
+                        FeatureId = feature.Id,
+                        CanView = true,
+                        CanAdd = permission.Contains("Add"),
+                        CanEdit = permission.Contains("Edit"),
+                        CanDelete = permission.Contains("Delete"),
+                        CreatedDate = DateTime.UtcNow
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static string[] GetRolePermissions(string roleName)
+        {
+            return roleName switch
+            {
+                "SuperAdmin" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients", "DeletePatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments", "DeleteAppointments",
+                    "ViewBills", "AddBills", "EditBills", "DeleteBills", "ProcessPayments",
+                    "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
+                    "ViewMedicines", "AddMedicines", "DispenseMedicines",
+                    "ViewLabTests", "AddLabTests", "ViewRadiologyTests", "AddRadiologyTests",
+                    "ManageUsers", "ManageRoles", "ViewReports", "ManageSettings"
+                },
+                "Admin" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments",
+                    "ViewBills", "AddBills", "EditBills", "ProcessPayments",
+                    "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
+                    "ViewMedicines", "AddMedicines", "DispenseMedicines",
+                    "ViewLabTests", "AddLabTests", "ViewRadiologyTests", "AddRadiologyTests",
+                    "ManageUsers", "ViewReports", "ManageSettings"
+                },
+                "Doctor" => new[] {
+                    "ViewPatients", "EditPatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments",
+                    "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
+                    "ViewMedicines", "AddMedicines",
+                    "ViewLabTests", "AddLabTests", "ViewRadiologyTests", "AddRadiologyTests"
+                },
+                "Nurse" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewAppointments",
+                    "ViewOPDVisits", "AddOPDVisits", "ViewIPDAdmissions", "AddIPDAdmissions",
+                    "ViewMedicines", "DispenseMedicines"
+                },
+                "Staff" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments",
+                    "ViewBills", "AddBills"
+                },
+                "Accountant" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewBills", "AddBills", "EditBills", "ProcessPayments",
+                    "ViewReports"
+                },
+                "Receptionist" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewAppointments", "AddAppointments", "EditAppointments",
+                    "ViewBills", "AddBills"
+                },
+                "Pharmacist" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewMedicines", "AddMedicines", "DispenseMedicines"
+                },
+                "LabTechnician" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewLabTests", "AddLabTests"
+                },
+                "Radiologist" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewRadiologyTests", "AddRadiologyTests"
+                },
+                "Patient" => Array.Empty<string>(),
+                _ => Array.Empty<string>()
+            };
+        }
+
         private async Task SeedSuperAdminUserAsync()
         {
             const string superAdminEmail = "superadmin@hospital.com";
@@ -1353,6 +1467,7 @@ END");
             }
 
             await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
+            await EnsureIdentityRolesMatchStaffRolesAsync(superAdminUser);
         }
 
         private async Task EnsureUserIdentityConstraintsAsync()
@@ -1470,6 +1585,67 @@ END");
             };
             _context.StaffRoles.Add(staffRole);
             await _context.SaveChangesAsync();
+        }
+
+        private async Task EnsureIdentityRolesMatchStaffRolesAsync(ApplicationUser user)
+        {
+            var desiredRoleNames = await _context.StaffRoles
+                .Where(sr => sr.StaffId == user.Id)
+                .Select(sr => sr.Role.Name)
+                .Distinct()
+                .ToListAsync();
+
+            var currentIdentityRoles = await _userManager.GetRolesAsync(user);
+
+            var rolesToRemove = currentIdentityRoles
+                .Except(desiredRoleNames, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed removing stale Identity roles from SuperAdmin seed user {UserId}: {Errors}",
+                        user.Id,
+                        string.Join(", ", removeResult.Errors.Select(e => e.Description)));
+                }
+            }
+
+            var rolesToAdd = desiredRoleNames
+                .Except(currentIdentityRoles, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                {
+                    _logger.LogWarning("Failed adding Identity roles to SuperAdmin seed user {UserId}: {Errors}",
+                        user.Id,
+                        string.Join(", ", addResult.Errors.Select(e => e.Description)));
+                }
+            }
+        }
+
+        private async Task EnsureIdentityRolesMatchStaffRolesForAllUsersAsync()
+        {
+            var staffUserIds = await _context.StaffRoles
+                .Select(sr => sr.StaffId)
+                .Distinct()
+                .ToListAsync();
+
+            if (staffUserIds.Count == 0)
+            {
+                return;
+            }
+
+            var users = await _userManager.Users
+                .Where(user => staffUserIds.Contains(user.Id))
+                .ToListAsync();
+
+            foreach (var user in users)
+            {
+                await EnsureIdentityRolesMatchStaffRolesAsync(user);
+            }
         }
     }
 }

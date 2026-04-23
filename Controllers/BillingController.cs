@@ -11,7 +11,7 @@ using System.Globalization;
 // Purpose: Contains application code for BillingController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff,Accountant")] // adjust roles as needed
+    [Authorize(Roles = "Admin,SuperAdmin,Staff,Accountant,Receptionist")] // aligned with seeded receptionist billing permissions
     public class BillingController : Controller
     {
         private readonly IBillingService _billingService;

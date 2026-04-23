@@ -122,6 +122,7 @@ namespace MedyxHMS.Services.Implementations
                         }
                     }
                     await _context.SaveChangesAsync();
+                    await SyncIdentityRolesAsync(user, roleIds);
                 }
 
                 await transaction.CommitAsync();
@@ -218,6 +219,7 @@ namespace MedyxHMS.Services.Implementations
                 }
 
                 await _context.SaveChangesAsync();
+                await SyncIdentityRolesAsync(existingStaff.User, roleIds);
                 await transaction.CommitAsync();
 
                 // Log activity
@@ -230,6 +232,55 @@ namespace MedyxHMS.Services.Implementations
             {
                 await transaction.RollbackAsync();
                 throw;
+            }
+        }
+
+        private async Task SyncIdentityRolesAsync(ApplicationUser user, IEnumerable<int>? roleIds)
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var desiredRoleIds = roleIds?.Distinct().ToList() ?? new List<int>();
+            var desiredRoleNames = desiredRoleIds.Count == 0
+                ? new List<string>()
+                : await _context.Roles
+                    .Where(r => desiredRoleIds.Contains(r.Id))
+                    .Select(r => r.Name)
+                    .Distinct()
+                    .ToListAsync();
+
+            var allRbacRoleNames = await _context.Roles
+                .Select(r => r.Name)
+                .Distinct()
+                .ToListAsync();
+
+            var currentIdentityRoles = await _userManager.GetRolesAsync(user);
+            var currentManagedRoles = currentIdentityRoles
+                .Where(roleName => allRbacRoleNames.Contains(roleName, StringComparer.OrdinalIgnoreCase))
+                .ToList();
+
+            var rolesToRemove = currentManagedRoles
+                .Except(desiredRoleNames, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (rolesToRemove.Count > 0)
+            {
+                var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToRemove);
+                if (!removeResult.Succeeded)
+                {
+                    throw new InvalidOperationException($"Failed to remove Identity roles from user {user.Id}: {string.Join(", ", removeResult.Errors.Select(e => e.Description))}");
+                }
+            }
+
+            var rolesToAdd = desiredRoleNames
+                .Except(currentIdentityRoles, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (rolesToAdd.Count > 0)
+            {
+                var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+                if (!addResult.Succeeded)
+                {
+                    throw new InvalidOperationException($"Failed to add Identity roles to user {user.Id}: {string.Join(", ", addResult.Errors.Select(e => e.Description))}");
+                }
             }
         }
 
