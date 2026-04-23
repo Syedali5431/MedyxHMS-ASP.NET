@@ -662,16 +662,16 @@
         <li class="nav-item">
             <a href="#sb-setup"
                data-bs-toggle="collapse"
-               class="staff-sidebar-link @(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "" : "collapsed")"
-               aria-expanded="@(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "true" : "false")">
+               class="staff-sidebar-link @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "true" : "false")">
                 <i class="fas fa-cog staff-sidebar-icon"></i>
                 <span class="flex-grow-1">Setup / Settings</span>
                 <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
             </a>
             <div id="sb-setup"
-                 class="collapse @(Model.IsActiveAny("/App", "/ModuleManagement", "/AccountsApproval") ? "show" : "")">
+                 class="collapse @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/App" class="staff-sidebar-sublink">App Config</a></li>
+                    <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">App Config</a></li>
                     <li><a href="/AccountsApproval" class="staff-sidebar-sublink">Accounts Approval</a></li>
                     <li><a href="/AccountsApproval/Passwords" class="staff-sidebar-sublink">Password Mgmt</a></li>
                     <li><a href="/ModuleManagement" class="staff-sidebar-sublink">Module Management</a></li>

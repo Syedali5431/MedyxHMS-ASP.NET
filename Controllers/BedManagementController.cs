@@ -25,7 +25,10 @@ namespace MedyxHMS.Controllers
             _audit = audit;
         }
 
-        // ── GET: /BedManagement ──────────────────────────────────
+        // ── GET: /BedManagement and /bed-management ─────────────
+        [HttpGet("/BedManagement")]
+        [HttpGet("/BedManagement/Index")]
+        [HttpGet("/bed-management")]
         public async Task<IActionResult> Index()
         {
             var beds = await _context.Beds
@@ -59,10 +62,6 @@ namespace MedyxHMS.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public async Task<IActionResult> Assign(int bedId, int patientId)
         {
-            var role = User.FindFirstValue(ClaimTypes.Role)
-                    ?? User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
-                    ?? string.Empty;
-
             // Determine the most-privileged role for ICU check
             var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
             var effectiveRole = roles.Contains("SuperAdmin") ? "SuperAdmin"
@@ -132,7 +131,7 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> SetStatus(int bedId, string status)
         {
             // Validate allowed statuses
-            var allowed = new[] { "Available", "Cleaning", "Maintenance" };
+            var allowed = new[] { "Available", "Cleaning", "Maintenance", "Blocked" };
             if (!allowed.Contains(status))
             {
                 TempData["ErrorMessage"] = "Invalid status value.";
@@ -161,6 +160,126 @@ namespace MedyxHMS.Controllers
 
             TempData["SuccessMessage"] = $"Bed status updated to {status}.";
             return RedirectToAction(nameof(Index));
+        }
+
+        // ── API: GET /api/beds ─────────────────────────────────
+        [HttpGet("/api/beds")]
+        public async Task<IActionResult> GetBedsApi()
+        {
+            var beds = await _context.Beds
+                .Include(b => b.Ward)
+                .Include(b => b.Patient)
+                .Where(b => b.IsActive)
+                .OrderBy(b => b.Ward.Name)
+                .ThenBy(b => b.BedNumber)
+                .Select(b => new
+                {
+                    b.Id,
+                    b.BedNumber,
+                    Ward = b.Ward.Name,
+                    b.BedType,
+                    b.Status,
+                    b.PatientId,
+                    PatientName = b.Patient != null ? (b.Patient.FirstName + " " + b.Patient.LastName) : null,
+                    b.IsIsolation,
+                    b.RequiresAdminApproval,
+                    b.LastUpdated
+                })
+                .ToListAsync();
+
+            return Ok(beds);
+        }
+
+        // ── API: POST /api/beds/assign ─────────────────────────
+        [HttpPost("/api/beds/assign")]
+        public async Task<IActionResult> AssignBedApi([FromBody] AssignBedRequest request)
+        {
+            if (request.BedId <= 0 || request.PatientId <= 0)
+                return BadRequest(new { success = false, error = "Invalid request payload." });
+
+            var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+            var effectiveRole = roles.Contains("SuperAdmin") ? "SuperAdmin"
+                             : roles.Contains("Admin") ? "Admin"
+                             : roles.FirstOrDefault() ?? string.Empty;
+
+            var (ok, error) = await _bedService.AssignBedAsync(request.BedId, request.PatientId, effectiveRole);
+            if (!ok)
+                return BadRequest(new { success = false, error });
+
+            await _audit.LogActivityAsync(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                "ASSIGN", "Bed", request.BedId.ToString(), null,
+                $"API bed assignment to patient {request.PatientId}");
+
+            return Ok(new { success = true });
+        }
+
+        // ── API: POST /api/beds/release ────────────────────────
+        [HttpPost("/api/beds/release")]
+        public async Task<IActionResult> ReleaseBedApi([FromBody] ReleaseBedRequest request)
+        {
+            if (request.BedId <= 0)
+                return BadRequest(new { success = false, error = "Invalid request payload." });
+
+            var (ok, error) = await _bedService.ReleaseBedAsync(request.BedId);
+            if (!ok)
+                return BadRequest(new { success = false, error });
+
+            await _audit.LogActivityAsync(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                "RELEASE", "Bed", request.BedId.ToString(), null,
+                "API bed release");
+
+            return Ok(new { success = true });
+        }
+
+        // ── API: POST /api/beds/transfer ───────────────────────
+        [HttpPost("/api/beds/transfer")]
+        public async Task<IActionResult> TransferBedApi([FromBody] TransferBedRequest request)
+        {
+            if (request.FromBedId <= 0 || request.ToBedId <= 0)
+                return BadRequest(new { success = false, error = "Invalid request payload." });
+
+            var (ok, error) = await _bedService.TransferBedAsync(request.FromBedId, request.ToBedId);
+            if (!ok)
+                return BadRequest(new { success = false, error });
+
+            await _audit.LogActivityAsync(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                "TRANSFER", "Bed", request.FromBedId.ToString(), null,
+                $"API bed transfer {request.FromBedId} -> {request.ToBedId}");
+
+            return Ok(new { success = true });
+        }
+
+        // ── API: POST /api/beds/status ─────────────────────────
+        [HttpPost("/api/beds/status")]
+        public async Task<IActionResult> UpdateBedStatusApi([FromBody] UpdateBedStatusRequest request)
+        {
+            var allowed = new[] { "Available", "Cleaning", "Maintenance", "Blocked" };
+            if (request.BedId <= 0 || string.IsNullOrWhiteSpace(request.Status) || !allowed.Contains(request.Status))
+                return BadRequest(new { success = false, error = "Invalid request payload." });
+
+            var bed = await _context.Beds.FindAsync(request.BedId);
+            if (bed == null)
+                return NotFound(new { success = false, error = "Bed not found." });
+
+            if (bed.Status == "Occupied" && request.Status != "Available")
+                return BadRequest(new { success = false, error = "Cannot change status of an occupied bed. Release the bed first." });
+
+            var old = bed.Status;
+            bed.Status = request.Status;
+            bed.LastUpdated = DateTime.UtcNow;
+            if (request.Status == "Available")
+                bed.PatientId = null;
+
+            await _context.SaveChangesAsync();
+
+            await _audit.LogActivityAsync(
+                User.FindFirstValue(ClaimTypes.NameIdentifier),
+                "STATUS_CHANGE", "Bed", request.BedId.ToString(), old, request.Status);
+
+            return Ok(new { success = true });
         }
 
         // ── Admin-only: Create new bed ──────────────────────────
@@ -226,6 +345,29 @@ namespace MedyxHMS.Controllers
 
             TempData["SuccessMessage"] = $"Bed {model.BedNumber} updated.";
             return RedirectToAction(nameof(Index));
+        }
+
+        public sealed class AssignBedRequest
+        {
+            public int BedId { get; set; }
+            public int PatientId { get; set; }
+        }
+
+        public sealed class ReleaseBedRequest
+        {
+            public int BedId { get; set; }
+        }
+
+        public sealed class TransferBedRequest
+        {
+            public int FromBedId { get; set; }
+            public int ToBedId { get; set; }
+        }
+
+        public sealed class UpdateBedStatusRequest
+        {
+            public int BedId { get; set; }
+            public string Status { get; set; } = string.Empty;
         }
     }
 }

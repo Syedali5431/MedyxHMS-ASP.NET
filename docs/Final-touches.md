@@ -406,8 +406,54 @@ OUTPUT EXPECTATION:
 - Mock data acceptable if backend is incomplete
 - Code should match existing project style
 
+### Bed Management Validation Summary (2026-04-23)
+
+- PASS: Sidebar module entry added for Bed Management with hospital bed icon and staff-facing navigation.
+- PASS: Dashboard module explorer includes Bed Management quick links aligned to existing module option patterns.
+- PASS: Bed Management page includes summary cards (Total, Available, Occupied, Cleaning, Maintenance) and a responsive bed table.
+- PASS: Bed workflow actions implemented: Assign, Release, Transfer, and status updates (Available/Cleaning/Maintenance) with confirmation UX.
+- PASS: Core business rules implemented in service layer:
+	- Assign allowed only when bed status is Available.
+	- Release transitions Occupied -> Cleaning.
+	- Transfer requires source Occupied and target Available.
+	- ICU assignment enforces admin-level approval.
+	- Isolation/approval flags are persisted on bed records.
+- PASS: Database initializer backfill covers BedManagement module seed and idempotent Beds schema additions for PatientId, IsIsolation, RequiresAdminApproval, and LastUpdated.
+- PASS: API contract implemented for bed operations:
+	- GET `/api/beds`
+	- POST `/api/beds/assign`
+	- POST `/api/beds/release`
+	- POST `/api/beds/transfer`
+	- POST `/api/beds/status`
+
+Bed Management Caveat:
+- Runtime E2E API smoke validation with role-specific tokens should be executed in staging as part of pre-go-live checks.
+
 
 ## Tasks to perform to close project
+### Module Coverage Validation Summary (2026-04-23)
+
+- PASS: Static module contract alignment check completed across seed, dashboard explorer, and sidebar wiring.
+- PASS: `DefaultModules` count = 30 and dashboard explorer module option blocks = 30 (no missing keys).
+- PASS: Sidebar module gates are present for staff-facing modules; expected non-sidebar module keys are `Dashboard`, `License`, and `PatientPortal`.
+- PASS: Dashboard explorer target validation completed for 76 unique controller/action pairs; 0 missing controller files and 0 missing action methods.
+- PASS: Sidebar target validation completed for 87 unique links; 0 broken controller/action targets detected.
+- PASS: Bed Management API contract now present and mapped:
+	- GET `/api/beds`
+	- POST `/api/beds/assign`
+	- POST `/api/beds/release`
+	- POST `/api/beds/transfer`
+	- POST `/api/beds/status`
+- PASS: Current compile state after module updates remains stable (0 errors; warning-only build).
+- PASS: Authenticated runtime role smoke executed successfully via `scripts/Run-RoleModuleSmoke.ps1` against LocalDB-backed app instance.
+	- Staff/admin roles validated: SuperAdmin, Admin, Doctor, Nurse, Accountant, Receptionist, Multi-role (Doctor/Nurse).
+	- Patient portal role validated: Patient.
+	- Result: 0 failing routes across all tested role-route matrices (staff: 88 routes each, patient: 5 routes).
+	- Evidence artifact: `temp_build_output/uat-role-run-current.json`.
+
+Validation Caveat:
+- This pass is static and compile-time verification. Authenticated runtime workflow UAT per role is still required for full go-live confidence.
+
 **Build & Quality Status:**
 - Clean compile: zero errors, pre-existing nullable reference warnings only
 - All 12 decimal properties across new modules configured with HasPrecision(18,2)

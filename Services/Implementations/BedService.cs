@@ -181,7 +181,7 @@ namespace MedyxHMS.Services.Implementations
                 AvailableBeds   = beds.Count(b => b.Status == "Available"),
                 OccupiedBeds    = beds.Count(b => b.Status == "Occupied"),
                 CleaningBeds    = beds.Count(b => b.Status == "Cleaning"),
-                MaintenanceBeds = beds.Count(b => b.Status == "Maintenance")
+                MaintenanceBeds = beds.Count(b => b.Status == "Maintenance" || b.Status == "Blocked")
             };
         }
     }

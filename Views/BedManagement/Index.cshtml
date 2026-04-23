@@ -128,6 +128,7 @@
                         <option value="Occupied">Occupied</option>
                         <option value="Cleaning">Cleaning</option>
                         <option value="Maintenance">Maintenance</option>
+                        <option value="Blocked">Blocked</option>
                     </select>
                 </div>
                 <div class="col-md-2">
@@ -307,6 +308,19 @@
                                                             <input type="hidden" name="status" value="Maintenance" />
                                                             <button type="submit" class="dropdown-item text-secondary">
                                                                 <i class="fas fa-tools me-2"></i>Mark Maintenance
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                }
+                                                @if (bed.Status != "Blocked")
+                                                {
+                                                    <li>
+                                                        <form method="post" asp-action="SetStatus">
+                                                            @Html.AntiForgeryToken()
+                                                            <input type="hidden" name="bedId" value="@bed.Id" />
+                                                            <input type="hidden" name="status" value="Blocked" />
+                                                            <button type="submit" class="dropdown-item text-secondary">
+                                                                <i class="fas fa-ban me-2"></i>Mark Blocked
                                                             </button>
                                                         </form>
                                                     </li>
@@ -504,6 +518,7 @@
         "Occupied"    => ("bg-danger",  "fas fa-user-injured"),
         "Cleaning"    => ("bg-warning text-dark", "fas fa-broom"),
         "Maintenance" => ("bg-secondary", "fas fa-tools"),
+        "Blocked"     => ("bg-secondary", "fas fa-ban"),
         _             => ("bg-light text-dark", "fas fa-question-circle")
     };
 

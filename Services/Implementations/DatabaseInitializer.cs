@@ -1407,6 +1407,134 @@ IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Beds_Patients_Pa
 AND OBJECT_ID(N'[dbo].[Patients]', N'U') IS NOT NULL
     ALTER TABLE [dbo].[Beds] ADD CONSTRAINT [FK_Beds_Patients_PatientId]
         FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients]([Id]) ON DELETE SET NULL;");
+
+        // ── Patient schema backfill for legacy databases ─────────────────────
+        await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Patients]', N'U') IS NOT NULL
+AND COL_LENGTH(N'[dbo].[Patients]', N'HasInsurance') IS NULL
+    ALTER TABLE [dbo].[Patients]
+    ADD [HasInsurance] BIT NOT NULL CONSTRAINT [DF_Patients_HasInsurance] DEFAULT(0);");
+
+        // ── Report builder schema backfill for legacy databases ─────────────
+        await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ReportTemplates]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ReportTemplates] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [Name] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [Description] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ReportType] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedBy] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        [ModifiedDate] DATETIME2 NULL,
+        [ModifiedBy] NVARCHAR(MAX) NULL,
+        [IsActive] BIT NOT NULL DEFAULT(1),
+        [IsDefault] BIT NOT NULL DEFAULT(0)
+    );
+END
+
+IF OBJECT_ID(N'[dbo].[ReportFields]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ReportFields] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TemplateId] INT NOT NULL,
+        [FieldName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ColumnName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [DataType] NVARCHAR(MAX) NOT NULL DEFAULT('string'),
+        [DisplayFormat] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [IsVisible] BIT NOT NULL DEFAULT(1),
+        [IsSortable] BIT NOT NULL DEFAULT(1),
+        [IsFilterable] BIT NOT NULL DEFAULT(1),
+        [SortOrder] INT NOT NULL DEFAULT(0),
+        [Width] INT NULL,
+        [Alignment] NVARCHAR(MAX) NULL,
+        CONSTRAINT [FK_ReportFields_ReportTemplates_TemplateId]
+            FOREIGN KEY ([TemplateId]) REFERENCES [dbo].[ReportTemplates]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_ReportFields_TemplateId] ON [dbo].[ReportFields]([TemplateId]);
+END
+
+IF OBJECT_ID(N'[dbo].[ReportFilters]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ReportFilters] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TemplateId] INT NOT NULL,
+        [FilterName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ColumnName] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [OperatorType] NVARCHAR(MAX) NOT NULL DEFAULT('equals'),
+        [DefaultValue] NVARCHAR(MAX) NULL,
+        [IsRequired] BIT NOT NULL DEFAULT(0),
+        [SortOrder] INT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_ReportFilters_ReportTemplates_TemplateId]
+            FOREIGN KEY ([TemplateId]) REFERENCES [dbo].[ReportTemplates]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_ReportFilters_TemplateId] ON [dbo].[ReportFilters]([TemplateId]);
+END
+
+IF OBJECT_ID(N'[dbo].[ReportDesigns]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ReportDesigns] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TemplateId] INT NOT NULL,
+        [HeaderText] NVARCHAR(MAX) NULL,
+        [FooterText] NVARCHAR(MAX) NULL,
+        [ColorScheme] NVARCHAR(MAX) NULL,
+        [ShowGridLines] BIT NOT NULL DEFAULT(1),
+        [ShowAlternatingRows] BIT NOT NULL DEFAULT(1),
+        [ShowTotals] BIT NOT NULL DEFAULT(0),
+        [ShowGrouping] BIT NOT NULL DEFAULT(0),
+        [PageOrientation] NVARCHAR(MAX) NULL,
+        [IncludeTimestamp] BIT NOT NULL DEFAULT(1),
+        [CompanyLogo] NVARCHAR(MAX) NULL,
+        [CustomCss] NVARCHAR(MAX) NULL,
+        CONSTRAINT [FK_ReportDesigns_ReportTemplates_TemplateId]
+            FOREIGN KEY ([TemplateId]) REFERENCES [dbo].[ReportTemplates]([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [IX_ReportDesigns_TemplateId] ON [dbo].[ReportDesigns]([TemplateId]);
+END
+
+IF OBJECT_ID(N'[dbo].[ReportCharts]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ReportCharts] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TemplateId] INT NOT NULL,
+        [Title] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ChartType] NVARCHAR(MAX) NOT NULL DEFAULT('bar'),
+        [XAxisField] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [YAxisField] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [ShowLegend] BIT NOT NULL DEFAULT(1),
+        [ShowTooltip] BIT NOT NULL DEFAULT(1),
+        [ColorScheme] NVARCHAR(MAX) NULL,
+        [SortOrder] INT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_ReportCharts_ReportTemplates_TemplateId]
+            FOREIGN KEY ([TemplateId]) REFERENCES [dbo].[ReportTemplates]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_ReportCharts_TemplateId] ON [dbo].[ReportCharts]([TemplateId]);
+END
+
+IF OBJECT_ID(N'[dbo].[SavedReports]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[SavedReports] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [TemplateId] INT NOT NULL,
+        [Title] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedBy] NVARCHAR(MAX) NOT NULL DEFAULT(''),
+        [CreatedDate] DATETIME2 NOT NULL,
+        [Description] NVARCHAR(MAX) NULL,
+        [FilterParams] NVARCHAR(MAX) NULL,
+        [ReportData] NVARCHAR(MAX) NULL,
+        [RecordCount] INT NOT NULL DEFAULT(0),
+        [ExecutionTimeMs] DECIMAL(18,2) NULL,
+        [ExportFormats] NVARCHAR(MAX) NULL,
+        [Status] NVARCHAR(MAX) NOT NULL DEFAULT('Generated'),
+        [ExpiresAt] DATETIME2 NULL,
+        [IsPublic] BIT NOT NULL DEFAULT(0),
+        [ScheduleId] INT NULL,
+        CONSTRAINT [FK_SavedReports_ReportTemplates_TemplateId]
+            FOREIGN KEY ([TemplateId]) REFERENCES [dbo].[ReportTemplates]([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_SavedReports_TemplateId] ON [dbo].[SavedReports]([TemplateId]);
+END");
         }
 
         private async Task SeedRolesAndFeaturesAsync()
