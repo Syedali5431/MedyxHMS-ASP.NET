@@ -1,6 +1,7 @@
 ﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
+using MedyxHMS.ViewModels;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using System.Data;
@@ -327,6 +328,287 @@ namespace MedyxHMS.Services.Implementations
                 .ToDictionaryAsync(x => x.Department ?? "Unknown", x => x.Count);
 
             return distribution;
+        }
+
+        #endregion
+
+        #region Legacy Reports (R1-R5)
+
+        /// <summary>
+        /// R1: Daily Transaction Report - All transactions for a specific date
+        /// </summary>
+        public async Task<DailyTransactionReportViewModel> GenerateDailyTransactionReportAsync(DateTime reportDate)
+        {
+            var cacheKey = $"report:daily-transaction:{reportDate:yyyyMMdd}";
+            var cached = await _cacheService.GetAsync<DailyTransactionReportViewModel>(cacheKey);
+            if (cached != null) return cached;
+
+            var transactions = await _context.Transactions
+                .Where(t => t.TransactionDate.Date == reportDate.Date)
+                .OrderByDescending(t => t.TransactionDate)
+                .ToListAsync();
+
+            var transactionData = transactions.Select(t => (dynamic)new
+            {
+                t.Id,
+                t.TransactionId,
+                t.TransactionType,
+                t.Amount,
+                t.Description,
+                t.ReferenceNumber,
+                TransactionDate = t.TransactionDate.ToString("yyyy-MM-dd HH:mm"),
+                t.ProcessedBy,
+                t.Status
+            }).ToList();
+
+            var totalPayments = transactions.Where(t => t.TransactionType == "Payment").Sum(t => t.Amount);
+            var totalRefunds = transactions.Where(t => t.TransactionType == "Refund").Sum(t => t.Amount);
+
+            var result = new DailyTransactionReportViewModel
+            {
+                TransactionData = transactionData,
+                ReportDate = reportDate.Date,
+                TotalTransactions = transactions.Sum(t => t.Amount),
+                TotalPayments = totalPayments,
+                TotalRefunds = totalRefunds,
+                TransactionCount = transactions.Count
+            };
+
+            await _cacheService.SetAsync(cacheKey, result, 10);
+            return result;
+        }
+
+        /// <summary>
+        /// R2: All Transaction Report - Transactions within a date range
+        /// </summary>
+        public async Task<AllTransactionReportViewModel> GenerateAllTransactionReportAsync(DateTime startDate, DateTime endDate)
+        {
+            var cacheKey = $"report:all-transactions:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cached = await _cacheService.GetAsync<AllTransactionReportViewModel>(cacheKey);
+            if (cached != null) return cached;
+
+            var transactions = await _context.Transactions
+                .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+                .OrderByDescending(t => t.TransactionDate)
+                .ToListAsync();
+
+            var transactionData = transactions.Select(t => (dynamic)new
+            {
+                t.Id,
+                t.TransactionId,
+                t.TransactionType,
+                t.Amount,
+                t.Description,
+                t.ReferenceNumber,
+                TransactionDate = t.TransactionDate.ToString("yyyy-MM-dd"),
+                t.ProcessedBy,
+                t.Status
+            }).ToList();
+
+            var totalPayments = transactions.Where(t => t.TransactionType == "Payment").Sum(t => t.Amount);
+            var totalRefunds = transactions.Where(t => t.TransactionType == "Refund").Sum(t => t.Amount);
+            var breakdown = transactions.GroupBy(t => t.TransactionType)
+                .ToDictionary(g => g.Key ?? "Unknown", g => g.Sum(t => t.Amount));
+
+            var result = new AllTransactionReportViewModel
+            {
+                TransactionData = transactionData,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalAmount = transactions.Sum(t => t.Amount),
+                TotalPayments = totalPayments,
+                TotalRefunds = totalRefunds,
+                TransactionCount = transactions.Count,
+                BreakdownByType = breakdown
+            };
+
+            await _cacheService.SetAsync(cacheKey, result, 15);
+            return result;
+        }
+
+        /// <summary>
+        /// R3: Appointment Report - Appointments within a date range with statistics
+        /// </summary>
+        public async Task<AppointmentReportViewModel> GenerateAppointmentReportAsync(DateTime startDate, DateTime endDate)
+        {
+            var cacheKey = $"report:appointments:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cached = await _cacheService.GetAsync<AppointmentReportViewModel>(cacheKey);
+            if (cached != null) return cached;
+
+            var appointments = await _context.Appointments
+                .Where(a => a.AppointmentDate >= startDate && a.AppointmentDate <= endDate)
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            var appointmentData = appointments.Select(a => (dynamic)new
+            {
+                a.Id,
+                a.AppointmentId,
+                PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                DoctorName = a.Doctor.FirstName + " " + a.Doctor.LastName,
+                AppointmentDate = a.AppointmentDate.ToString("yyyy-MM-dd"),
+                AppointmentTime = a.AppointmentTime.ToString(@"hh\:mm"),
+                a.Status,
+                a.AppointmentType,
+                a.Priority
+            }).ToList();
+
+            var completed = appointments.Count(a => a.Status == "Completed");
+            var cancelled = appointments.Count(a => a.Status == "Cancelled");
+            var completionRate = appointments.Count > 0 ? ((double)completed / appointments.Count) * 100 : 0;
+
+            var appointmentsByType = appointments.GroupBy(a => a.AppointmentType ?? "Unknown")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var appointmentsByDoctor = appointments.GroupBy(a => (a.Doctor.FirstName + " " + a.Doctor.LastName).Trim())
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var result = new AppointmentReportViewModel
+            {
+                AppointmentData = appointmentData,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalAppointments = appointments.Count,
+                CompletedAppointments = completed,
+                CancelledAppointments = cancelled,
+                ScheduledAppointments = appointments.Count(a => a.Status == "Scheduled"),
+                CompletionRate = (decimal)completionRate,
+                AppointmentsByType = appointmentsByType,
+                AppointmentsByDoctor = appointmentsByDoctor
+            };
+
+            await _cacheService.SetAsync(cacheKey, result, 15);
+            return result;
+        }
+
+        /// <summary>
+        /// R4: OPD Report - Out-patient visits with consultation data
+        /// </summary>
+        public async Task<OPDReportViewModel> GenerateOPDReportAsync(DateTime startDate, DateTime endDate)
+        {
+            var cacheKey = $"report:opd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cached = await _cacheService.GetAsync<OPDReportViewModel>(cacheKey);
+            if (cached != null) return cached;
+
+            var visits = await _context.OPDVisits
+                .Where(v => v.VisitDate >= startDate && v.VisitDate <= endDate)
+                .Include(v => v.Patient)
+                .Include(v => v.Doctor)
+                .OrderByDescending(v => v.VisitDate)
+                .ToListAsync();
+
+            var visitData = visits.Select(v => (dynamic)new
+            {
+                v.Id,
+                PatientName = v.Patient.FirstName + " " + v.Patient.LastName,
+                DoctorName = v.Doctor.FirstName + " " + v.Doctor.LastName,
+                VisitDate = v.VisitDate.ToString("yyyy-MM-dd"),
+                v.Diagnosis,
+                v.ConsultationFee,
+                v.PaymentStatus,
+                v.CreatedBy
+            }).ToList();
+
+            var uniquePatients = visits.Select(v => v.PatientId).Distinct().Count();
+            var paidVisits = visits.Count(v => v.PaymentStatus == "Paid");
+            var pendingVisits = visits.Count(v => v.PaymentStatus == "Pending");
+            var totalFees = visits.Sum(v => v.ConsultationFee);
+            var avgFee = visits.Count > 0 ? totalFees / visits.Count : 0;
+
+            var visitsByDoctor = visits.GroupBy(v => (v.Doctor.FirstName + " " + v.Doctor.LastName).Trim())
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var result = new OPDReportViewModel
+            {
+                OPDVisitData = visitData,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalVisits = visits.Count,
+                UniquePatients = uniquePatients,
+                TotalConsultationFees = totalFees,
+                AverageConsultationFee = avgFee,
+                PaidVisits = paidVisits,
+                PendingPaymentVisits = pendingVisits,
+                VisitsByDoctor = visitsByDoctor
+            };
+
+            await _cacheService.SetAsync(cacheKey, result, 15);
+            return result;
+        }
+
+        /// <summary>
+        /// R5: IPD Report - In-patient admissions with length of stay data
+        /// </summary>
+        public async Task<IPDReportViewModel> GenerateIPDReportAsync(DateTime startDate, DateTime endDate)
+        {
+            var cacheKey = $"report:ipd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cached = await _cacheService.GetAsync<IPDReportViewModel>(cacheKey);
+            if (cached != null) return cached;
+
+            var admissions = await _context.IPDAdmissions
+                .Where(a => a.AdmissionDate >= startDate && a.AdmissionDate <= endDate)
+                .Include(a => a.Patient)
+                .Include(a => a.Doctor)
+                .Include(a => a.Bed)
+                .ThenInclude(b => b.Ward)
+                .OrderByDescending(a => a.AdmissionDate)
+                .ToListAsync();
+
+            var admissionData = admissions.Select(a => (dynamic)new
+            {
+                a.Id,
+                PatientName = a.Patient.FirstName + " " + a.Patient.LastName,
+                DoctorName = a.Doctor.FirstName + " " + a.Doctor.LastName,
+                WardName = a.Bed?.Ward?.Name ?? "Unknown",
+                BedNumber = a.Bed?.BedNumber ?? "N/A",
+                AdmissionDate = a.AdmissionDate.ToString("yyyy-MM-dd"),
+                DischargeDate = a.DischargeDate.HasValue ? a.DischargeDate.Value.ToString("yyyy-MM-dd") : "Still Admitted",
+                LengthOfStay = a.DischargeDate.HasValue 
+                    ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays 
+                    : (int)(DateTime.UtcNow - a.AdmissionDate).TotalDays,
+                a.AdmissionType,
+                a.Diagnosis,
+                a.Status,
+                DailyCharges = a.DailyCharges
+            }).ToList();
+
+            var discharged = admissions.Count(a => a.DischargeDate.HasValue);
+            var currentlyAdmitted = admissions.Count(a => !a.DischargeDate.HasValue);
+            var totalDailyCharges = admissions.Sum(a => a.DailyCharges);
+            
+            var avgLengthOfStay = 0.0;
+            if (admissions.Count > 0)
+            {
+                var totalDays = admissions.Sum(a => a.DischargeDate.HasValue 
+                    ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays 
+                    : (int)(DateTime.UtcNow - a.AdmissionDate).TotalDays);
+                avgLengthOfStay = (double)totalDays / admissions.Count;
+            }
+
+            var admissionsByType = admissions.GroupBy(a => a.AdmissionType ?? "Unknown")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var admissionsByWard = admissions.GroupBy(a => a.Bed?.Ward?.Name ?? "Unknown")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var result = new IPDReportViewModel
+            {
+                IPDAdmissionData = admissionData,
+                StartDate = startDate,
+                EndDate = endDate,
+                TotalAdmissions = admissions.Count,
+                DischargedPatients = discharged,
+                CurrentlyAdmitted = currentlyAdmitted,
+                AverageLengthOfStay = avgLengthOfStay,
+                TotalDailyCharges = totalDailyCharges,
+                AdmissionsByType = admissionsByType,
+                AdmissionsByWard = admissionsByWard
+            };
+
+            await _cacheService.SetAsync(cacheKey, result, 15);
+            return result;
         }
 
         #endregion

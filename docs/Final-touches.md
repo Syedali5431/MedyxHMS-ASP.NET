@@ -297,6 +297,82 @@ Sourced from the PHP sidebar Reports submenu and the ASP.NET `ReportController` 
 	- `R49 - Report Preview` present
 	- `R41` selection renders an embedded `/Report/DepartmentReport` iframe in the workspace detail pane
 
+### 2026-04-25 — Legacy Report to ASP.NET Conversion (R1-R5)
+
+**Objective:** Convert 5 highest-priority legacy PHP reports (R1-R5: Daily Transaction, All Transaction, Appointment, OPD, IPD) to full ASP.NET data-backed pages with role-based authorization, date range filters, and export button placeholders.
+
+**Implementation Status:** ✅ COMPLETED
+
+**Reports Converted:**
+- `R1` Daily Transaction Report → `/Report/DailyTransactionReport`
+- `R2` All Transaction Report → `/Report/AllTransactionReport`
+- `R3` Appointment Report → `/Report/AppointmentReport`
+- `R4` OPD Report → `/Report/OPDLegacyReport`
+- `R5` IPD Report → `/Report/IPDLegacyReport`
+
+**Technical Implementation:**
+
+**1. ViewModels Created** (ViewModels/ReportViewModels.cs)
+- `DailyTransactionReportViewModel`: DateTime ReportDate, List<dynamic> TransactionData, decimal TotalTransactions/TotalPayments/TotalRefunds, int TransactionCount
+- `AllTransactionReportViewModel`: DateTime StartDate/EndDate, List<dynamic> TransactionData, decimal TotalAmount/TotalPayments/TotalRefunds, int TransactionCount, Dictionary<string, decimal> BreakdownByType
+- `AppointmentReportViewModel`: DateTime StartDate/EndDate, List<dynamic> AppointmentData, int TotalAppointments/CompletedAppointments/CancelledAppointments/ScheduledAppointments, decimal CompletionRate, Dictionary<string, int> AppointmentsByType/AppointmentsByDoctor
+- `OPDReportViewModel`: DateTime StartDate/EndDate, List<dynamic> OPDVisitData, int TotalVisits/UniquePatients, decimal TotalConsultationFees/AverageConsultationFee, int PaidVisits/PendingPaymentVisits, Dictionary<string, int> VisitsByDoctor
+- `IPDReportViewModel`: DateTime StartDate/EndDate, List<dynamic> IPDAdmissionData, int TotalAdmissions/DischargedPatients/CurrentlyAdmitted, double AverageLengthOfStay, decimal TotalDailyCharges, Dictionary<string, int> AdmissionsByType/AdmissionsByWard
+
+**2. Service Layer Methods** (Services/Implementations/ReportService.cs)
+- `GenerateDailyTransactionReportAsync(DateTime reportDate)` - LINQ query Transaction table, group by TransactionType, calculate totals; 10-minute cache
+- `GenerateAllTransactionReportAsync(DateTime startDate, DateTime endDate)` - Query transactions in date range, build breakdown by type, 15-minute cache
+- `GenerateAppointmentReportAsync(DateTime startDate, DateTime endDate)` - Query appointments with Patient/Doctor includes, calculate completion rate, group by type/doctor; 15-minute cache
+- `GenerateOPDReportAsync(DateTime startDate, DateTime endDate)` - Query OPDVisits with includes, track payment status, group by doctor; 15-minute cache
+- `GenerateIPDReportAsync(DateTime startDate, DateTime endDate)` - Query IPDAdmissions with Bed->Ward includes, calculate length of stay, group by type/ward; 15-minute cache
+
+All methods include error handling with ILogger and fallback empty ViewModels on exception.
+
+**3. Controller Actions** (Controllers/ReportController.cs)
+- `[Authorize(Roles = "Admin,SuperAdmin,Accountant")]` decorated methods for all 5 reports
+- Automatic date defaulting: single report defaults to current date, range reports default to 1 month prior
+- Async action methods returning PartialView for workspace embedding
+- Wrapped in try-catch with ILogger for error tracking
+
+**4. UI Partial Views** (Views/Report/_*ReportPartial.cshtml)
+- `_DailyTransactionReportPartial.cshtml`: Single date picker + Generate button; summary cards (TotalTransactions, TotalPayments, TotalRefunds, TransactionCount); responsive data table with Type badge, Amount (currency formatted), Status; export button placeholders (PDF, Excel, Print)
+- `_AllTransactionReportPartial.cshtml`: Date range pickers; summary cards + BreakdownByType section with 3-column card grid; data table identical to R1
+- `_AppointmentReportPartial.cshtml`: Date range pickers; 4-column summary stats (TotalAppointments, Completed, Scheduled, CompletionRate%); two-column layout showing AppointmentsByType and AppointmentsByDoctor (top 5); data table with ID, Patient, Doctor, Date, Time, Type, Priority, Status badge
+- `_OPDReportPartial.cshtml`: Date range pickers; 4 summary cards (TotalVisits, UniquePatients, TotalConsultationFees, AverageConsultationFee); PaymentStatus split card (Paid vs Pending); Top Doctors section; data table with ID, Patient, Doctor, VisitDate, Diagnosis, ConsultationFee, PaymentStatus badge, CreatedBy
+- `_IPDReportPartial.cshtml`: Date range pickers; 4 summary cards (TotalAdmissions, Discharged, CurrentlyAdmitted, AverageLengthOfStay); AdmissionsByType and AdmissionsByWard breakdown sections; financial summary card (TotalDailyCharges + average per admission); data table with ID, Patient, Doctor, Ward, Bed, AdmissionDate, DischargeDate, LOS (calculated), AdmissionType, Status badge
+
+All views use Bootstrap 5 styling, responsive layout, dynamic property access for flexible object binding, currency formatting via ToString("C"), and date formatting via ToString().
+
+**5. Catalog Registry Update** (ViewModels/ReportCatalogViewModels.cs)
+- Updated `Build()` method to mark R1-R5 as `Feature()` entries instead of `Legacy()` entries
+- Added embedded URLs for each: `/Report/DailyTransactionReport`, `/Report/AllTransactionReport`, `/Report/AppointmentReport`, `/Report/OPDLegacyReport`, `/Report/IPDLegacyReport`
+- Changed category from "PHP-Originated Reports" to "ASP.NET Reports - Converted"
+
+**6. Workspace Integration** (Views/Report/Index.cshtml)
+- Added 5 conditional branches in workspace detail pane render logic: `if (selected.Key == "R1")` through `if (selected.Key == "R5")` calling `@await Html.PartialAsync()` for each report
+- Conditions checked before existing iframe/legacy template logic to take precedence
+
+**Build & Compilation:**
+- ✅ Initial compilation succeeded after ViewModels, service methods, and controller actions added (0 errors)
+- ⚠️ Partial view creation introduced 9 Razor syntax errors in JavaScript template string formatting (CSS1003 syntax errors at lines ~96, ~119, ~133)
+- ✅ Fixed Razor syntax errors by restructuring currency formatting in table cells from `@(...:C)` syntax to explicit `ToString("C")` calls within @{} code blocks
+- ✅ Final build succeeded after syntax fixes: Build succeeded. 0 errors, 0 warnings (file lock warnings from running app ignored)
+
+**Authorization & Access:**
+- Accountant role: Can access all 5 reports via [Authorize(Roles = "Admin,SuperAdmin,Accountant")] gate
+- Admin/SuperAdmin: Full access
+- Other roles: 401 Unauthorized on report access attempt
+
+**Caching Strategy:**
+- Daily reports (R1): 10-minute TTL cache per date key
+- Range reports (R2-R5): 15-minute TTL cache per date range key
+- Cache keys include report type and date parameters for proper cache isolation
+
+**Known Limitations & Future Work:**
+- Export functionality (PDF, Excel, Print) currently placeholder alert() calls; will require integration with iTextSharp/EPPlus/SelectPdf libraries
+- R6-R40 (35 remaining legacy reports) can follow same implementation pattern using R1-R5 as proof-of-concept template
+- Runtime validation with actual data pending (requires authenticated admin session)
+
 ---
 
 ## AI / Chatbot Features (CB)

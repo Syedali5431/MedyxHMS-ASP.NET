@@ -117,4 +117,88 @@ namespace MedyxHMS.ViewModels
         public Dictionary<string, int> TopActions { get; set; }
         public DateTime LastAuditLogDate { get; set; }
     }
+
+    /// <summary>
+    /// R1: Daily Transaction Report
+    /// Shows all financial transactions (payments, refunds, adjustments) for a given date
+    /// </summary>
+    public class DailyTransactionReportViewModel
+    {
+        public List<dynamic> TransactionData { get; set; } = new();
+        public DateTime ReportDate { get; set; } = DateTime.UtcNow.Date;
+        public decimal TotalTransactions { get; set; }
+        public decimal TotalPayments { get; set; }
+        public decimal TotalRefunds { get; set; }
+        public int TransactionCount { get; set; }
+    }
+
+    /// <summary>
+    /// R2: All Transaction Report
+    /// Shows all financial transactions within a date range
+    /// </summary>
+    public class AllTransactionReportViewModel
+    {
+        public List<dynamic> TransactionData { get; set; } = new();
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal TotalPayments { get; set; }
+        public decimal TotalRefunds { get; set; }
+        public int TransactionCount { get; set; }
+        public Dictionary<string, decimal> BreakdownByType { get; set; } = new();
+    }
+
+    /// <summary>
+    /// R3: Appointment Report
+    /// Shows all appointments within a date range with status breakdown
+    /// </summary>
+    public class AppointmentReportViewModel
+    {
+        public List<dynamic> AppointmentData { get; set; } = new();
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int TotalAppointments { get; set; }
+        public int CompletedAppointments { get; set; }
+        public int CancelledAppointments { get; set; }
+        public int ScheduledAppointments { get; set; }
+        public decimal CompletionRate { get; set; }
+        public Dictionary<string, int> AppointmentsByType { get; set; } = new();
+        public Dictionary<string, int> AppointmentsByDoctor { get; set; } = new();
+    }
+
+    /// <summary>
+    /// R4: OPD Report
+    /// Shows out-patient visits, diagnoses, and consultation fees
+    /// </summary>
+    public class OPDReportViewModel
+    {
+        public List<dynamic> OPDVisitData { get; set; } = new();
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int TotalVisits { get; set; }
+        public int UniquePatients { get; set; }
+        public decimal TotalConsultationFees { get; set; }
+        public decimal AverageConsultationFee { get; set; }
+        public int PaidVisits { get; set; }
+        public int PendingPaymentVisits { get; set; }
+        public Dictionary<string, int> VisitsByDoctor { get; set; } = new();
+    }
+
+    /// <summary>
+    /// R5: IPD Report
+    /// Shows in-patient admissions, length of stay, and discharge status
+    /// </summary>
+    public class IPDReportViewModel
+    {
+        public List<dynamic> IPDAdmissionData { get; set; } = new();
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public int TotalAdmissions { get; set; }
+        public int DischargedPatients { get; set; }
+        public int CurrentlyAdmitted { get; set; }
+        public double AverageLengthOfStay { get; set; }
+        public decimal TotalDailyCharges { get; set; }
+        public Dictionary<string, int> AdmissionsByType { get; set; } = new();
+        public Dictionary<string, int> AdmissionsByWard { get; set; } = new();
+    }
 }

@@ -181,6 +181,162 @@ namespace MedyxHMS.Controllers
             }
         }
 
+        #region Legacy Reports (R1-R5) - ASP.NET Converted
+
+        /// <summary>
+        /// R1: Daily Transaction Report
+        /// Shows all transactions for a specific date with payment breakdown
+        /// </summary>
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        [HttpGet]
+        public async Task<IActionResult> DailyTransactionReport(DateTime? reportDate)
+        {
+            if (!reportDate.HasValue)
+                reportDate = DateTime.UtcNow;
+
+            try
+            {
+                var report = await _reportService.GenerateDailyTransactionReportAsync(reportDate.Value.Date);
+                ViewData["ReportDate"] = reportDate;
+                return PartialView("_DailyTransactionReportPartial", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating daily transaction report");
+                return PartialView("_DailyTransactionReportPartial", new DailyTransactionReportViewModel { ReportDate = reportDate?.Date ?? DateTime.UtcNow.Date });
+            }
+        }
+
+        /// <summary>
+        /// R2: All Transaction Report
+        /// Shows all transactions within a date range
+        /// </summary>
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        [HttpGet]
+        public async Task<IActionResult> AllTransactionReport(DateTime? startDate, DateTime? endDate)
+        {
+            if (!startDate.HasValue)
+                startDate = DateTime.UtcNow.AddMonths(-1).Date;
+            if (!endDate.HasValue)
+                endDate = DateTime.UtcNow.Date;
+
+            try
+            {
+                var report = await _reportService.GenerateAllTransactionReportAsync(startDate.Value, endDate.Value);
+                ViewData["StartDate"] = startDate;
+                ViewData["EndDate"] = endDate;
+                return PartialView("_AllTransactionReportPartial", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating all transaction report");
+                var emptyReport = new AllTransactionReportViewModel 
+                { 
+                    StartDate = startDate.Value, 
+                    EndDate = endDate.Value 
+                };
+                return PartialView("_AllTransactionReportPartial", emptyReport);
+            }
+        }
+
+        /// <summary>
+        /// R3: Appointment Report
+        /// Shows all appointments within a date range with status and doctor breakdown
+        /// </summary>
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        [HttpGet]
+        public async Task<IActionResult> AppointmentReport(DateTime? startDate, DateTime? endDate)
+        {
+            if (!startDate.HasValue)
+                startDate = DateTime.UtcNow.AddMonths(-1).Date;
+            if (!endDate.HasValue)
+                endDate = DateTime.UtcNow.Date;
+
+            try
+            {
+                var report = await _reportService.GenerateAppointmentReportAsync(startDate.Value, endDate.Value);
+                ViewData["StartDate"] = startDate;
+                ViewData["EndDate"] = endDate;
+                return PartialView("_AppointmentReportPartial", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating appointment report");
+                var emptyReport = new AppointmentReportViewModel 
+                { 
+                    StartDate = startDate.Value, 
+                    EndDate = endDate.Value 
+                };
+                return PartialView("_AppointmentReportPartial", emptyReport);
+            }
+        }
+
+        /// <summary>
+        /// R4: OPD Report
+        /// Shows out-patient visits, diagnoses, and consultation fees
+        /// </summary>
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        [HttpGet]
+        public async Task<IActionResult> OPDLegacyReport(DateTime? startDate, DateTime? endDate)
+        {
+            if (!startDate.HasValue)
+                startDate = DateTime.UtcNow.AddMonths(-1).Date;
+            if (!endDate.HasValue)
+                endDate = DateTime.UtcNow.Date;
+
+            try
+            {
+                var report = await _reportService.GenerateOPDReportAsync(startDate.Value, endDate.Value);
+                ViewData["StartDate"] = startDate;
+                ViewData["EndDate"] = endDate;
+                return PartialView("_OPDReportPartial", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating OPD report");
+                var emptyReport = new OPDReportViewModel 
+                { 
+                    StartDate = startDate.Value, 
+                    EndDate = endDate.Value 
+                };
+                return PartialView("_OPDReportPartial", emptyReport);
+            }
+        }
+
+        /// <summary>
+        /// R5: IPD Report
+        /// Shows in-patient admissions, length of stay, and discharge status
+        /// </summary>
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        [HttpGet]
+        public async Task<IActionResult> IPDLegacyReport(DateTime? startDate, DateTime? endDate)
+        {
+            if (!startDate.HasValue)
+                startDate = DateTime.UtcNow.AddMonths(-1).Date;
+            if (!endDate.HasValue)
+                endDate = DateTime.UtcNow.Date;
+
+            try
+            {
+                var report = await _reportService.GenerateIPDReportAsync(startDate.Value, endDate.Value);
+                ViewData["StartDate"] = startDate;
+                ViewData["EndDate"] = endDate;
+                return PartialView("_IPDReportPartial", report);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating IPD report");
+                var emptyReport = new IPDReportViewModel 
+                { 
+                    StartDate = startDate.Value, 
+                    EndDate = endDate.Value 
+                };
+                return PartialView("_IPDReportPartial", emptyReport);
+            }
+        }
+
+        #endregion
+
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> GeneratedReports(string reportType, DateTime? startDate, DateTime? endDate)
         {

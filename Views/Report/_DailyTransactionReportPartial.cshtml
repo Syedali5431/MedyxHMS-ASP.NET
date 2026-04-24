@@ -1,0 +1,136 @@
+@model DailyTransactionReportViewModel
+
+@{
+    ViewData["Title"] = "Daily Transaction Report";
+}
+
+<div class="card h-100">
+    <div class="card-header bg-info text-white">
+        <h5 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>Daily Transaction Report (R1)</h5>
+    </div>
+    <div class="card-body">
+        <!-- Filter Section -->
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <label class="form-label">Report Date</label>
+                <input type="date" id="reportDate" class="form-control" value="@Model.ReportDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Transactions</h6>
+                        <h4 class="text-primary">@Model.TransactionCount</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Amount</h6>
+                        <h4 class="text-success">@Model.TotalTransactions.ToString("C")</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Payments</h6>
+                        <h4 class="text-info">@Model.TotalPayments.ToString("C")</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Refunds</h6>
+                        <h4 class="text-warning">@Model.TotalRefunds.ToString("C")</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="mb-3">
+            <button class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Transaction ID</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Description</th>
+                        <th>Reference</th>
+                        <th>Time</th>
+                        <th>Processed By</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.TransactionData != null && Model.TransactionData.Any())
+                    {
+                        foreach (var transaction in Model.TransactionData)
+                        {
+                            var txType = ((object)transaction).GetType();
+                            <tr>
+                                <td>@(txType.GetProperty("TransactionId")?.GetValue(transaction)?.ToString() ?? "-")</td>
+                                <td>
+                                    @{
+                                        var tType = txType.GetProperty("TransactionType")?.GetValue(transaction)?.ToString() ?? "-";
+                                        var badgeClass = tType == "Payment" ? "bg-success" : tType == "Refund" ? "bg-warning" : "bg-secondary";
+                                    }
+                                    <span class="badge @badgeClass">@tType</span>
+                                </td>
+                                <td class="text-end">@{var amt = (decimal?)txType.GetProperty("Amount")?.GetValue(transaction) ?? 0; @amt.ToString("C")}</td>
+                                <td>@(txType.GetProperty("Description")?.GetValue(transaction)?.ToString() ?? "-")</td>
+                                <td>@(txType.GetProperty("ReferenceNumber")?.GetValue(transaction)?.ToString() ?? "-")</td>
+                                <td>@(txType.GetProperty("TransactionDate")?.GetValue(transaction)?.ToString() ?? "-")</td>
+                                <td>@(txType.GetProperty("ProcessedBy")?.GetValue(transaction)?.ToString() ?? "-")</td>
+                                <td>
+                                    @{
+                                        var status = txType.GetProperty("Status")?.GetValue(transaction)?.ToString() ?? "-";
+                                        var statusBadge = status == "Completed" ? "bg-success" : status == "Pending" ? "bg-warning" : "bg-danger";
+                                    }
+                                    <span class="badge @statusBadge">@status</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No transactions found for the selected date.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function reloadReport() {
+    const reportDate = document.getElementById('reportDate').value;
+    location.href = `@Url.Action("DailyTransactionReport")?reportDate=${reportDate}`;
+}
+
+function exportToPDF() {
+    alert('PDF export feature coming soon');
+}
+
+function exportToExcel() {
+    alert('Excel export feature coming soon');
+}
+</script>

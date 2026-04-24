@@ -62,11 +62,11 @@ namespace MedyxHMS.ViewModels
         {
             return new List<ReportCatalogItem>
             {
-                Legacy("R1", "Daily Transaction Report"),
-                Legacy("R2", "All Transaction Report", "PHP: All Transactions Report"),
-                Legacy("R3", "Appointment Report", "PHP: Appointment Report"),
-                Legacy("R4", "OPD Report", "PHP: OPD Report"),
-                Legacy("R5", "IPD Report", "PHP: IPD Report"),
+                Feature("R1", "Daily Transaction Report", "ASP.NET Reports - Converted", "Daily transaction report showing payments and refunds for a selected date.", "/Report/DailyTransactionReport"),
+                Feature("R2", "All Transaction Report", "ASP.NET Reports - Converted", "All transactions within a date range with breakdown by type and status.", "/Report/AllTransactionReport"),
+                Feature("R3", "Appointment Report", "ASP.NET Reports - Converted", "Appointment statistics with status breakdown and doctor-wise analysis.", "/Report/AppointmentReport"),
+                Feature("R4", "OPD Report", "ASP.NET Reports - Converted", "Out-patient visits with consultation fees and payment status tracking.", "/Report/OPDLegacyReport"),
+                Feature("R5", "IPD Report", "ASP.NET Reports - Converted", "In-patient admissions with length of stay and discharge analysis.", "/Report/IPDLegacyReport"),
                 Legacy("R6", "OPD Balance Report", "PHP: OPD Balance Report"),
                 Legacy("R7", "IPD Balance Report", "PHP: IPD Balance Report"),
                 Legacy("R8", "OPD Discharged Patient Report"),

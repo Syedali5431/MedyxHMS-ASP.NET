@@ -1,4 +1,5 @@
 ﻿using MedyxHMS.Models;
+using MedyxHMS.ViewModels;
 using System.Security.Claims;
 
 // Purpose: Contains application code for IServices and its related runtime behavior.
@@ -602,6 +603,13 @@ namespace MedyxHMS.Services.Interfaces
         Task<List<dynamic>> GenerateStaffAttendanceReportAsync(string staffId, DateTime startDate, DateTime endDate);
         Task<List<dynamic>> GeneratePayrollReportAsync(DateTime month);
         Task<Dictionary<string, int>> GetStaffDepartmentDistributionAsync();
+
+        // Legacy Reports (R1-R5)
+        Task<DailyTransactionReportViewModel> GenerateDailyTransactionReportAsync(DateTime reportDate);
+        Task<AllTransactionReportViewModel> GenerateAllTransactionReportAsync(DateTime startDate, DateTime endDate);
+        Task<AppointmentReportViewModel> GenerateAppointmentReportAsync(DateTime startDate, DateTime endDate);
+        Task<OPDReportViewModel> GenerateOPDReportAsync(DateTime startDate, DateTime endDate);
+        Task<IPDReportViewModel> GenerateIPDReportAsync(DateTime startDate, DateTime endDate);
 
         // General Report Management
         Task<GeneratedReport> SaveReportAsync(GeneratedReport report);

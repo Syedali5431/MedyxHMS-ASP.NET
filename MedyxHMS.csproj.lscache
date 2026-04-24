@@ -810,6 +810,11 @@ Views/
   Preview.cshtml
   ScheduleReport.cshtml
   StaffReport.cshtml
+  _AllTransactionReportPartial.cshtml
+  _AppointmentReportPartial.cshtml
+  _DailyTransactionReportPartial.cshtml
+  _IPDReportPartial.cshtml
+  _OPDReportPartial.cshtml
  Shared/
   Components/SidebarNav/Default.cshtml
   Error.cshtml
@@ -1052,6 +1057,11 @@ Views/
   Preview.cshtml
   ScheduleReport.cshtml
   StaffReport.cshtml
+  _AllTransactionReportPartial.cshtml
+  _AppointmentReportPartial.cshtml
+  _DailyTransactionReportPartial.cshtml
+  _IPDReportPartial.cshtml
+  _OPDReportPartial.cshtml
  Shared/
   Components/SidebarNav/Default.cshtml
   Error.cshtml

@@ -105,6 +105,31 @@
                             <p class="mb-0">Select any report under Reports in the left sidebar and its detail panel will render here on the right.</p>
                         </div>
                     }
+                    else if (selected.Key == "R1")
+                    {
+                        <!-- R1: Daily Transaction Report -->
+                        @await Html.PartialAsync("_DailyTransactionReportPartial")
+                    }
+                    else if (selected.Key == "R2")
+                    {
+                        <!-- R2: All Transaction Report -->
+                        @await Html.PartialAsync("_AllTransactionReportPartial")
+                    }
+                    else if (selected.Key == "R3")
+                    {
+                        <!-- R3: Appointment Report -->
+                        @await Html.PartialAsync("_AppointmentReportPartial")
+                    }
+                    else if (selected.Key == "R4")
+                    {
+                        <!-- R4: OPD Report -->
+                        @await Html.PartialAsync("_OPDReportPartial")
+                    }
+                    else if (selected.Key == "R5")
+                    {
+                        <!-- R5: IPD Report -->
+                        @await Html.PartialAsync("_IPDReportPartial")
+                    }
                     else if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
                     {
                         <iframe src="@selected.EmbeddedUrl" title="@selected.Name" style="width:100%;min-height:900px;border:0;"></iframe>

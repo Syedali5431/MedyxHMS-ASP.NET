@@ -1,0 +1,194 @@
+@model IPDReportViewModel
+
+@{
+    ViewData["Title"] = "IPD Report";
+}
+
+<div class="card h-100">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0"><i class="fas fa-hospital-user me-2"></i>IPD Report (R5)</h5>
+    </div>
+    <div class="card-body">
+        <!-- Filter Section -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" id="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" id="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Admissions</h6>
+                        <h4 class="text-primary">@Model.TotalAdmissions</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Discharged</h6>
+                        <h4 class="text-success">@Model.DischargedPatients</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Currently Admitted</h6>
+                        <h4 class="text-warning">@Model.CurrentlyAdmitted</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Avg LOS (days)</h6>
+                        <h4 class="text-info">@Model.AverageLengthOfStay.ToString("F1")</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breakdown by Type and Ward -->
+        <div class="row mb-3">
+            @if (Model.AdmissionsByType != null && Model.AdmissionsByType.Any())
+            {
+                <div class="col-md-6">
+                    <h6>Admissions by Type</h6>
+                    <div class="list-group">
+                        @foreach (var item in Model.AdmissionsByType)
+                        {
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>@item.Key</span>
+                                <strong>@item.Value</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            @if (Model.AdmissionsByWard != null && Model.AdmissionsByWard.Any())
+            {
+                <div class="col-md-6">
+                    <h6>Admissions by Ward</h6>
+                    <div class="list-group">
+                        @foreach (var item in Model.AdmissionsByWard)
+                        {
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>@item.Key</span>
+                                <strong>@item.Value</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="row mb-3">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title">Financial Summary</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">Total Daily Charges</small>
+                                <h5 class="text-success">@Model.TotalDailyCharges.ToString("C")</h5>
+                            </div>
+                            <div class="col-md-6">
+                                <small class="text-muted">Average Per Admission</small>
+                                <h5 class="text-info">@((Model.TotalAdmissions > 0 ? Model.TotalDailyCharges / Model.TotalAdmissions : 0).ToString("C"))</h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="mb-3">
+            <button class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+        </div>
+
+        <!-- IPD Admissions Table -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Ward</th>
+                        <th>Bed</th>
+                        <th>Admission Date</th>
+                        <th>Discharge Date</th>
+                        <th>LOS (days)</th>
+                        <th>Admission Type</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.IPDAdmissionData != null && Model.IPDAdmissionData.Any())
+                    {
+                        foreach (var admission in Model.IPDAdmissionData)
+                        {
+                            var admType = ((object)admission).GetType();
+                            <tr>
+                                <td>@(admType.GetProperty("Id")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("PatientName")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("DoctorName")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("WardName")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("BedNumber")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("AdmissionDate")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("DischargeDate")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("LengthOfStay")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>@(admType.GetProperty("AdmissionType")?.GetValue(admission)?.ToString() ?? "-")</td>
+                                <td>
+                                    @{
+                                        var status = admType.GetProperty("Status")?.GetValue(admission)?.ToString() ?? "-";
+                                        var statusBadge = status == "Discharged" ? "bg-success" : status == "Admitted" ? "bg-info" : "bg-secondary";
+                                    }
+                                    <span class="badge @statusBadge">@status</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center text-muted">No IPD admissions found for the selected date range.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function reloadReport() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    location.href = `@Url.Action("IPDLegacyReport")?startDate=${startDate}&endDate=${endDate}`;
+}
+
+function exportToPDF() {
+    alert('PDF export feature coming soon');
+}
+
+function exportToExcel() {
+    alert('Excel export feature coming soon');
+}
+</script>

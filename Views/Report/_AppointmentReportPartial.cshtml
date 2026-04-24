@@ -1,0 +1,169 @@
+@model AppointmentReportViewModel
+
+@{
+    ViewData["Title"] = "Appointment Report";
+}
+
+<div class="card h-100">
+    <div class="card-header bg-success text-white">
+        <h5 class="mb-0"><i class="fas fa-calendar-check me-2"></i>Appointment Report (R3)</h5>
+    </div>
+    <div class="card-body">
+        <!-- Filter Section -->
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label class="form-label">Start Date</label>
+                <input type="date" id="startDate" class="form-control" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">End Date</label>
+                <input type="date" id="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Total Appointments</h6>
+                        <h4 class="text-primary">@Model.TotalAppointments</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Completed</h6>
+                        <h4 class="text-success">@Model.CompletedAppointments</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Scheduled</h6>
+                        <h4 class="text-info">@Model.ScheduledAppointments</h4>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h6 class="card-title">Completion Rate</h6>
+                        <h4 class="text-warning">@Model.CompletionRate.ToString("F1")%</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Breakdown by Type and Doctor -->
+        <div class="row mb-3">
+            @if (Model.AppointmentsByType != null && Model.AppointmentsByType.Any())
+            {
+                <div class="col-md-6">
+                    <h6>By Appointment Type</h6>
+                    <div class="list-group">
+                        @foreach (var item in Model.AppointmentsByType)
+                        {
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>@item.Key</span>
+                                <strong>@item.Value</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            @if (Model.AppointmentsByDoctor != null && Model.AppointmentsByDoctor.Any())
+            {
+                <div class="col-md-6">
+                    <h6>By Doctor</h6>
+                    <div class="list-group">
+                        @foreach (var item in Model.AppointmentsByDoctor.Take(5))
+                        {
+                            <div class="list-group-item d-flex justify-content-between">
+                                <span>@item.Key</span>
+                                <strong>@item.Value</strong>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="mb-3">
+            <button class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+        </div>
+
+        <!-- Appointments Table -->
+        <div class="table-responsive">
+            <table class="table table-striped table-bordered">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Patient</th>
+                        <th>Doctor</th>
+                        <th>Appointment Date</th>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.AppointmentData != null && Model.AppointmentData.Any())
+                    {
+                        foreach (var appt in Model.AppointmentData)
+                        {
+                            var apptType = ((object)appt).GetType();
+                            <tr>
+                                <td>@(apptType.GetProperty("AppointmentId")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("PatientName")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("DoctorName")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("AppointmentDate")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("AppointmentTime")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("AppointmentType")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>@(apptType.GetProperty("Priority")?.GetValue(appt)?.ToString() ?? "-")</td>
+                                <td>
+                                    @{
+                                        var status = apptType.GetProperty("Status")?.GetValue(appt)?.ToString() ?? "-";
+                                        var statusBadge = status == "Completed" ? "bg-success" : status == "Scheduled" ? "bg-info" : status == "Cancelled" ? "bg-danger" : "bg-secondary";
+                                    }
+                                    <span class="badge @statusBadge">@status</span>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No appointments found for the selected date range.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function reloadReport() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    location.href = `@Url.Action("AppointmentReport")?startDate=${startDate}&endDate=${endDate}`;
+}
+
+function exportToPDF() {
+    alert('PDF export feature coming soon');
+}
+
+function exportToExcel() {
+    alert('Excel export feature coming soon');
+}
+</script>
