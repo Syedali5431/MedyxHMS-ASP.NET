@@ -1223,98 +1223,368 @@ Created comprehensive backlog with 3 strategic epics, each with full security, c
 - Go-live readiness: **Backlog approved and ready for execution**
 - Evidence artifact: `temp_build_output/stage6-deferred-enhancements-backlog-2026-04-24.json` (26 KB)
 
-### Stage 7 - System Management (New)
+### Stage 7 - System Management (New) - Phased Implementation Plan
 
-Add a new sidebar menu item at the end of staff-side menus named **System Management**.
+**Overview:** Implement unified System Management sidebar menu for non-patient users with 4 phased rollout targeting completion by 2026-09-30.
 
-Access rule:
-- Available to all non-patient users.
-- Not available to patient role.
+**Global Requirements:**
+- New sidebar menu item: "System Management" at end of staff-side menus
+- Access rule: Available to all non-patient users (SuperAdmin, Admin, Doctor, Nurse, Accountant, Receptionist, LabTechnician, Radiologist, Staff); NOT available to Patient role
+- Implementation pattern: Feature toggles for phased rollout, each phase independently deployable
 
-Sub-menus under System Management:
+---
 
-#### A. Report Management
+## **Phase 1: Core Infrastructure & Foundation (Weeks 1-2)**
 
-1. Report List
-- Provide a section with an interactive table with 3 columns:
-	- Sr#
-	- Report Name
-	- Purpose
-- Right-click actions on a report row:
-	- Mark Active
-	- Mark Inactive
-- If a report is marked Inactive:
-	- Hide it from user dashboard and Reports menu for all users except SuperAdmin.
-- Visibility and interaction rules:
-	- SuperAdmin: can see all reports (active + inactive) and gets interactive table.
-	- Other roles: can only see active reports and get simple (non-interactive) table.
-	- Only SuperAdmin can mark reports active/inactive.
+**Scope:** Establish System Management menu structure, access control framework, and permission model
 
-2. Create Report
-- Provide a section to create a new report and save it.
-- Section must include two tabs:
-	- Editor
-	- Preview
-- Editor tab is for composing the new report.
-- Preview tab shows rendered preview before save/finalization.
+**Work Items:**
+1. Create SystemManagementController with base actions
+2. Create Views/SystemManagement/ folder structure
+3. Implement [Authorize] class-level protection on controller (non-Patient users only)
+4. Add permission checks: SuperAdmin (full access), Admin (subset), Others (view-only where applicable)
+5. Create SystemManagementViewModel with common properties (UserContext, AccessLevel, FeatureFlags)
+6. Add sidebar navigation item "System Management" with conditional display per role
+7. Create System Management home/dashboard view (index page listing all subsections)
+8. Add feature toggles to appsettings.json for each Phase 2-4 subsection (disabled by default)
+9. Create database migration for SystemManagement feature flags
+10. Create SystemManagementService for feature flag evaluation per user
 
-3. Edit Report
-- Provide a section with:
-	- A report-selection dropdown at top.
-	- A report editor panel below for:
-		- Add/remove report fields
-		- Change report name and title
-		- Update style and font
-		- Other report layout/content edits
-- Section must include two tabs:
-	- Editor
-	- Preview
-- Access rule:
-	- Available only to SuperAdmin and Admin roles.
+**Dependencies:**
+- Existing role/permission infrastructure (RBAC already implemented)
+- Sidebar navigation component (already exists)
+- Feature toggle service (may need to create)
 
-4. Download Report
-- Provide a section with:
-	- A report-selection dropdown at top.
-	- Filters for generating selected report.
-	- A download button near the dropdown to export generated report.
-- Download formats:
-	- Excel
-	- PDF
-- Download button behavior:
-	- Disabled until report is generated.
-- Access rule:
-	- Available to all non-patient user roles.
+**Effort Estimate:** 8 story points, 5 days
 
-#### B. User Management
+**Owner & Team:**
+- Owner: Tech Lead - Frontend Specialist
+- Team: 1 Backend engineer, 1 Frontend engineer
 
-1. User List
-- Provide a section with an interactive table showing minimum user details.
-- Right-click actions on user row:
-	- Mark Active
-	- Mark Inactive
-- Mark Inactive behavior:
-	- User account becomes inactive and cannot log in until reactivated.
-- Mark Active behavior:
-	- Prompt for a new password.
-	- On password confirmation, account is reactivated.
-	- User can then log in using the new password.
+**Priority:** CRITICAL (prerequisite for all later phases)
 
-#### C. Theme Management
+**Validation Criteria:**
+- System Management menu appears in sidebar for non-Patient users ✅
+- Menu does NOT appear for Patient role ✅
+- Dashboard view loads with feature toggle status for Phase 2-4 subsections ✅
+- Access control denies Patient users (HTTP 403) ✅
+- All other non-Patient roles can access menu (HTTP 200) ✅
 
-- Provide an interactive theme picker section with theme icons and names
-	- Example: Sunflower icon with label Sunflower, Snowflake icon with label Snowflake.
-- On theme click, show confirmation prompt:
-	- "Apply this theme?"
-- If user selects Yes:
-	- Apply selected theme.
-- If user selects No:
-	- Close prompt and do not change theme.
+**Deliverables:**
+- SystemManagementController with role-based authorization
+- System Management sidebar nav item with conditional display
+- Dashboard view showing all subsections (with Phase 2-4 disabled by default)
+- Feature toggle configuration and service layer
+- Database migration for feature flags
 
-Theme scope and persistence rules:
-- Theme is user-specific (not global per role).
-- If a user has multiple roles, the same selected theme remains applied regardless of chosen role at login.
-- Access rule:
-	- Available to all non-patient users.
+---
+
+## **Phase 2: Report Management Subsection (Weeks 3-5)**
+
+**Scope:** Implement all 4 report management features (Report List, Create Report, Edit Report, Download Report)
+
+**Work Items:**
+
+### A. Report List
+1. Create ReportListViewModel with report inventory (Id, Name, Purpose, Status, CreatedDate, LastModified)
+2. Create Reports/Index view with interactive table (Sr#, Report Name, Purpose columns)
+3. Implement table rendering: show all reports if SuperAdmin, only active reports if other roles
+4. Create right-click context menu:
+   - Option 1: Mark Active (SuperAdmin only)
+   - Option 2: Mark Inactive (SuperAdmin only)
+5. Implement mark-inactive logic: database flag update, exclude from dashboard/menu for non-SuperAdmin
+6. Implement mark-active logic: confirm dialog, database flag update
+7. Add filter bar: Status dropdown (All, Active, Inactive)
+8. Add search box: filter by report name
+
+### B. Create Report
+1. Create CreateReportViewModel (ReportName, Title, Description, Fields, Style, Font)
+2. Create CreateReport view with two tabs:
+   - Tab 1 (Editor): UI for selecting fields, naming, styling
+   - Tab 2 (Preview): Live preview of report
+3. Implement field builder: drag-drop or selection panel for report fields
+4. Implement style editor: font, color, layout options
+5. Implement save logic: persist new report to database
+6. Implement preview rendering: fetch sample data and render report template
+7. Add validation: report name uniqueness, required fields
+
+### C. Edit Report
+1. Create EditReportViewModel with report selection dropdown
+2. Create EditReport view with two tabs:
+   - Tab 1 (Editor): Edit report fields, name, title, style, font
+   - Tab 2 (Preview): Live preview after changes
+3. Implement dropdown: load list of editable reports
+4. Implement field editor: add/remove/reorder fields
+5. Implement access control: only SuperAdmin/Admin can access this section
+6. Implement save logic: update report definition in database
+7. Add change tracking: log who changed what field, when
+
+### D. Download Report
+1. Create DownloadReportViewModel with report selector dropdown
+2. Create DownloadReport view with dropdown, filters panel, download button
+3. Implement dropdown: load list of available reports (all for SuperAdmin, active for others)
+4. Implement filter panel: date range, department, custom filters per report
+5. Implement download button logic:
+   - Generate report with selected filters
+   - Export to Excel or PDF
+   - Button disabled until report is generated
+6. Implement Excel export: report fields → Excel columns, data → rows
+7. Implement PDF export: use PDF library (iTextSharp, SelectPdf, etc.)
+8. Add progress indicator: show generation status (Generating... 25%... 50%...)
+
+**Dependencies:**
+- Phase 1 (Core Infrastructure) must be completed first
+- Report data models and ReportService (already exist from Stage 2)
+- PDF/Excel export libraries
+
+**Effort Estimate:** 21 story points, 14 days
+
+**Owner & Team:**
+- Owner: Tech Lead - Report Systems Specialist
+- Team: 2 Backend engineers, 2 Frontend engineers, 1 QA engineer
+
+**Priority:** HIGH (core reporting capability)
+
+**Validation Criteria:**
+- Report list shows all reports for SuperAdmin, active-only for others ✅
+- Right-click actions (Mark Active/Inactive) work correctly ✅
+- Create Report saves new report with fields/style ✅
+- Edit Report updates existing report (SuperAdmin/Admin only) ✅
+- Download Report generates and exports to Excel/PDF correctly ✅
+- Access controls enforced per role ✅
+- No report data corruption after operations ✅
+
+**Deliverables:**
+- ReportManagementController with actions: List, Create, Edit, Download
+- ReportManagementViewModel, CreateReportViewModel, EditReportViewModel, DownloadReportViewModel
+- Views: Index (list), Create, Edit, Download
+- Report export service (Excel + PDF)
+- Report field builder UI component
+- Database schema updates: Report status flag, change audit trail
+
+---
+
+## **Phase 3: User Management Subsection (Weeks 6-7)**
+
+**Scope:** Implement user list with status management (activate/deactivate)
+
+**Work Items:**
+1. Create UserManagementViewModel (UserId, Email, Name, Roles, Status, LastLogin, CreatedDate)
+2. Create Users/Index view with interactive table (Sr#, Email, Name, Roles, Status columns)
+3. Implement table rendering: all users displayed to SuperAdmin/Admin, read-only table for others
+4. Create right-click context menu:
+   - Option 1: Mark Active (SuperAdmin/Admin only)
+   - Option 2: Mark Inactive (SuperAdmin/Admin only)
+5. Implement mark-inactive logic:
+   - Set ApplicationUser.IsActive = false in database
+   - Prevent login attempts (add check in login action)
+   - Show "Account inactive" message on failed login
+6. Implement mark-active logic:
+   - Show password reset dialog
+   - Generate temporary password
+   - Generate password reset token
+   - Email password reset link to user
+   - Set ApplicationUser.IsActive = true
+   - User must reset password before login
+7. Add filter bar: Status dropdown (All, Active, Inactive), Role dropdown
+8. Add search box: filter by email, name, employee ID
+9. Implement audit logging: log all status changes (who changed, when, reason)
+10. Add user details view: show extended info on user click (department, phone, address, etc.)
+
+**Dependencies:**
+- Phase 1 (Core Infrastructure) must be completed first
+- UserManager from ASP.NET Identity (already exists)
+- Password reset functionality (already exists from Account module)
+- IAuditService (already exists)
+
+**Effort Estimate:** 13 story points, 8 days
+
+**Owner & Team:**
+- Owner: Tech Lead - Identity & Access Specialist
+- Team: 1 Backend engineer, 1 Frontend engineer, 1 QA engineer
+
+**Priority:** HIGH (critical for user lifecycle management)
+
+**Validation Criteria:**
+- User list displays correctly per role (full for Admin, limited for others) ✅
+- Mark Inactive: user cannot login afterward ✅
+- Mark Active: user receives password reset email ✅
+- User must reset password before first login after reactivation ✅
+- Audit trail records all status changes ✅
+- Filters (Status, Role) work correctly ✅
+- No user account data corruption ✅
+
+**Deliverables:**
+- UserManagementController with actions: List, MarkActive, MarkInactive
+- UserManagementViewModel
+- Views: Index (list), Details (extended user info)
+- User status change service with audit logging
+- Login validation to check IsActive flag
+- Password reset email template
+- Database query: inactive user display logic
+
+---
+
+## **Phase 4: Theme Management Subsection (Weeks 8-9)**
+
+**Scope:** Implement user-specific theme picker with persistence
+
+**Work Items:**
+1. Create ThemeManagementViewModel (AvailableThemes, CurrentUserTheme, ThemePreviewImages)
+2. Create Themes/Index view with theme picker:
+   - Display theme icons/thumbnails (e.g., Sunflower, Snowflake, Ocean, Forest, etc.)
+   - Show theme name below each icon
+   - Highlight currently selected theme
+3. Implement theme selection UI:
+   - On theme click, show confirmation prompt: "Apply this theme?"
+   - If Yes: apply theme and persist to database
+   - If No: close prompt without change
+4. Create UserThemePreference entity:
+   - UserId (FK to ApplicationUser)
+   - ThemeId (FK to Theme catalog)
+   - PreferenceSince (DateTime)
+   - IsDefault (bool)
+5. Implement theme persistence:
+   - Store UserThemePreference in database per user
+   - Load theme preference on user login
+   - Apply CSS theme to user session
+6. Implement theme scope logic:
+   - Theme is USER-SPECIFIC, not role-based
+   - If user has multiple roles, same theme applies regardless of login role
+   - When user switches roles in system, theme persists
+7. Create available themes catalog:
+   - Define 6-8 pre-built themes (Sunflower, Snowflake, Ocean, Forest, Midnight, Sunset, etc.)
+   - Store theme CSS/SASS in wwwroot/css/themes/
+   - Each theme includes: primary color, secondary color, font, spacing, etc.
+8. Implement CSS loading logic:
+   - Dynamic CSS injection via <link> tag in layout
+   - Or use CSS variables and update :root on theme change
+9. Add theme management for admins (optional for Phase 4, may defer to Phase 5):
+   - Create custom themes (optional, lower priority)
+   - Upload theme logo/colors
+10. Test theme persistence across sessions:
+    - Logout and login again, verify theme persists
+
+**Dependencies:**
+- Phase 1 (Core Infrastructure) must be completed first
+- CSS/styling framework (Bootstrap already in place)
+- UserManager (already exists)
+
+**Effort Estimate:** 8 story points, 5 days
+
+**Owner & Team:**
+- Owner: Tech Lead - UI/UX Specialist
+- Team: 1 Backend engineer, 1 Frontend engineer, 1 QA engineer
+
+**Priority:** MEDIUM (enhancing user experience, non-blocking for go-live)
+
+**Validation Criteria:**
+- Theme picker displays all available themes ✅
+- Theme selection works with confirmation prompt ✅
+- Theme persists after logout/login ✅
+- Theme persists when user switches roles ✅
+- All themes render correctly on all browser sizes ✅
+- No CSS conflicts with existing application styling ✅
+- Performance: theme switching < 500ms ✅
+
+**Deliverables:**
+- ThemeManagementController with action: Index, SelectTheme
+- ThemeManagementViewModel
+- Views: Index (theme picker)
+- UserThemePreference entity and DbSet
+- Database migration: UserThemePreferences table
+- 6-8 pre-built theme CSS files (Sunflower, Snowflake, Ocean, etc.)
+- CSS loading/injection service
+- Theme persistence service
+- Layout modification to support dynamic theme loading
+
+---
+
+## **Stage 7 Overall Timeline:**
+
+| Phase | Name | Duration | Start Date | End Date | Critical Path |
+|-------|------|----------|-----------|----------|---------------|
+| **1** | Core Infrastructure | 5 days | 2026-09-01 | 2026-09-05 | YES (blocker for all later phases) |
+| **2** | Report Management | 14 days | 2026-09-08 | 2026-09-21 | YES (high value) |
+| **3** | User Management | 8 days | 2026-09-22 | 2026-09-29 | YES (critical for operations) |
+| **4** | Theme Management | 5 days | 2026-09-22 | 2026-09-29 | NO (parallel with Phase 3) |
+| **TOTAL** | **Stage 7** | **27 days** | **2026-09-01** | **2026-09-30** | — |
+
+**Notes:**
+- Phase 3 and 4 can execute in parallel (no dependencies on each other)
+- Phase 3 + 4 combined: 8 days (since they overlap from 2026-09-22 onwards)
+- Critical path: Phase 1 → Phase 2 → (Phase 3 || Phase 4)
+
+---
+
+## **Stage 7 Effort & Resource Summary:**
+
+| Metric | Value |
+|--------|-------|
+| **Total Story Points** | 50 SP |
+| **Total Duration** | 27 days |
+| **Total FTE Required** | 4-5 engineers (backend, frontend, QA) |
+| **Feature Toggles** | 4 (one per phase, disabled by default) |
+| **Database Migrations** | 3 (Phase 1 feature flags, Phase 3 user theme, Phase 4 themes catalog) |
+| **New Controllers** | 1 (SystemManagementController) + child controllers per phase |
+| **New Views** | 8-10 (Phase 1 dashboard, Phase 2 report mgmt, Phase 3 user mgmt, Phase 4 theme mgmt) |
+| **Deployment Risk** | LOW (feature-toggled, no breaking changes) |
+| **Rollback Plan** | Disable feature flags in appsettings.json, zero data migration required |
+
+---
+
+## **Stage 7 Phased Rollout Strategy:**
+
+**Week 1-2 (Phase 1):** Deploy core infrastructure, feature toggles disabled
+- Users see "System Management" menu only if feature enabled
+- Zero functional change if disabled
+- Validation: infrastructure loads correctly, no errors in logs
+
+**Week 3-5 (Phase 2):** Deploy Report Management, toggle enabled for SuperAdmin/Admin only
+- Phased rollout: SuperAdmin tests first (2 days), then Admin role (3 days), then all roles
+- Existing Report menu not affected; new System Management report tools are additions
+- Validation: report operations work correctly, no data loss
+
+**Week 6-7 (Phase 3):** Deploy User Management, toggle enabled for SuperAdmin/Admin
+- Similar phased rollout: SuperAdmin tests first, then Admin
+- No impact on existing account management; new user status tools are additions
+- Validation: user status changes work, audit trail populated
+
+**Week 8-9 (Phase 4):** Deploy Theme Management, toggle enabled for all non-Patient users
+- Immediately available to all users
+- No breaking changes; theme defaults to current styling if not selected
+- Validation: theme switching works, persistence confirmed
+
+---
+
+## **Stage 7 Risk Mitigation:**
+
+| Risk | Severity | Mitigation |
+|------|----------|-----------|
+| Feature toggle service fails | Medium | Implement fallback: features disabled if toggle service down |
+| Report export performance slow | Medium | Implement async export, queue large exports, send email when ready |
+| User status change causing logouts | Low | Implement graceful session termination with "account deactivated" message |
+| Theme CSS conflicts | Low | CSS scoping, !important rules where needed, cross-browser testing |
+| Database migration delays | Medium | Test migrations in staging, have rollback scripts prepared |
+
+---
+
+## **Stage 7 Sign-Off Prerequisites:**
+
+Before marking Phase complete, validate:
+1. ✅ Code review passed (2 reviewers minimum)
+2. ✅ Unit tests: > 80% coverage per phase
+3. ✅ Integration tests: all phase workflows tested
+4. ✅ Manual QA: phase checklist completed
+5. ✅ Cross-browser testing: Chrome, Firefox, Safari, Edge
+6. ✅ Accessibility testing: WCAG 2.1 AA compliance
+7. ✅ Performance testing: response times < 500ms, no memory leaks
+8. ✅ Audit logging: all phase operations logged
+9. ✅ Documentation updated: user guides, admin runbooks
+10. ✅ Staging deployment: phase deployed to staging environment, no critical issues
+
+**Stage 7 Target Completion:** 2026-09-30 ✅
+**Go-Live Readiness:** Stage 7 completion enables Stage 8 (Certificates) and post-launch operations
 
 ### Stage 8 - Certificates
 
