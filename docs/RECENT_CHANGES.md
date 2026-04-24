@@ -62,6 +62,9 @@ Remove runtime error pages when selecting report keys from the unified Reports W
 #### Validation
 - `dotnet build` succeeded.
 - Application relaunched successfully and is listening on port 5105 for verification.
+- Authenticated automated sweep completed for all report keys R1-R49 using seeded SuperAdmin session.
+- Result: HTTP 200 for all 49 routes (`/Report?reportKey=R1` through `/Report?reportKey=R49`).
+- Runtime log review after sweep showed no unhandled exception entries.
 
 ---
 
