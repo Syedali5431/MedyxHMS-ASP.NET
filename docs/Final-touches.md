@@ -898,11 +898,11 @@ Theme scope and persistence rules:
 
 ### Stage 8 - Certificates
 
-Create another seperate Menu in side-bar with name Certificates and it will include below:
+Create another separate Menu in side-bar with name Certificates and it will include below:
 
-- Add Birth certificate genrator
+- Add Birth certificate generator
 	- enter details in the pop-up prompt for the child and when save generate a birth certificate to be later printed on hospital's letterhead
-- Add Death certificate genrator
+- Add Death certificate generator
 	- enter details in the pop-up prompt for the child and when save generate a death certificate to be later printed on hospital's letterhead
 
 Add these both certificates in Report editor to design and edit the certificate as per the hospital's preference. Also add option to import design for both certificates in MS Word file to use predefined format.
