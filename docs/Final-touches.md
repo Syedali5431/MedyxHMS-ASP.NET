@@ -1586,16 +1586,159 @@ Before marking Phase complete, validate:
 **Stage 7 Target Completion:** 2026-09-30 ✅
 **Go-Live Readiness:** Stage 7 completion enables Stage 8 (Certificates) and post-launch operations
 
-### Stage 8 - Certificates
+### Stage 8 - Certificates - Phased Implementation Plan
 
-Create another separate Menu in side-bar with name Certificates and it will include below:
+**Overview:** Implement a dedicated Certificates sidebar menu with Birth/Death certificate generation, report-editor customization, and MS Word template import in a controlled 4-phase rollout.
 
-- Add Birth certificate generator
-	- enter details in the pop-up prompt for the child and when save generate a birth certificate to be later printed on hospital's letterhead
-- Add Death certificate generator
-	- enter details in the pop-up prompt for the child and when save generate a death certificate to be later printed on hospital's letterhead
+**Global Requirements:**
+- New sidebar menu item: "Certificates" on staff-side menus
+- Access: all non-patient roles (SuperAdmin, Admin, Doctor, Nurse, Receptionist, Staff)
+- Patient role: no access
+- Output goal: printable certificates aligned to hospital letterhead standards
 
-Add these both certificates in Report editor to design and edit the certificate as per the hospital's preference. Also add option to import design for both certificates in MS Word file to use predefined format.
+---
+
+## **Phase 1: Certificates Foundation & Menu (Week 1)**
+
+**Scope:** Create core certificate module structure and navigation entry.
+
+**Work Items:**
+1. Add Certificates menu item and route group.
+2. Create `CertificateController` with base actions (`Index`, `Birth`, `Death`).
+3. Create `Views/Certificate/` structure and landing page.
+4. Implement role-based authorization for non-patient users.
+5. Add feature toggle keys for Birth generator, Death generator, Template import.
+
+**Effort Estimate:** 5 story points, 3 days
+
+**Validation Criteria:**
+- Certificates menu appears for non-patient users only.
+- Patient role cannot access certificates routes (403).
+- Landing page loads without runtime errors.
+
+**Deliverables:**
+- Certificates sidebar entry
+- Base controller/actions
+- Landing page and phase toggles
+
+---
+
+## **Phase 2: Birth/Death Certificate Generators (Week 2-3)**
+
+**Scope:** Implement interactive popup forms and generation workflow for both certificate types.
+
+**Work Items:**
+1. Create Birth Certificate popup form:
+	- Child details
+	- Parent/guardian details
+	- Date/time/place of birth
+	- Attending doctor and registration metadata
+2. Create Death Certificate popup form:
+	- Deceased details
+	- Date/time/place of death
+	- Cause/certifying doctor details
+	- Registration metadata
+3. Add server-side validation and required field checks.
+4. Persist generated certificate records with audit metadata.
+5. Implement printable render view aligned to hospital letterhead constraints.
+6. Add print-friendly CSS and preview mode.
+
+**Effort Estimate:** 13 story points, 8 days
+
+**Validation Criteria:**
+- Birth certificate can be created, saved, previewed, and printed.
+- Death certificate can be created, saved, previewed, and printed.
+- Invalid/incomplete forms are blocked with validation errors.
+- Generated output includes all required fields and registration ID.
+
+**Deliverables:**
+- Birth certificate generator
+- Death certificate generator
+- Certificate persistence + audit trace
+- Print-optimized output views
+
+---
+
+## **Phase 3: Report Editor Integration for Certificate Design (Week 4)**
+
+**Scope:** Expose Birth/Death certificates as editable templates in Report Editor.
+
+**Work Items:**
+1. Register Birth and Death templates in Report Editor template catalog.
+2. Enable design editing:
+	- Header/footer
+	- Font/style
+	- Section ordering
+	- Field visibility
+3. Add preview tab support specific to certificate layouts.
+4. Add versioning/change-log entry for template edits.
+5. Restrict design editing to Admin and SuperAdmin.
+
+**Effort Estimate:** 8 story points, 5 days
+
+**Validation Criteria:**
+- Both certificates appear in Report Editor selection.
+- Admin/SuperAdmin can edit and preview templates.
+- Non-admin users can generate certificates but cannot modify template design.
+- Template version history records who changed what and when.
+
+**Deliverables:**
+- Certificate template integration in Report Editor
+- Preview/edit pipeline for certificate layouts
+- Role-gated design permissions
+
+---
+
+## **Phase 4: MS Word Template Import & Final QA (Week 5)**
+
+**Scope:** Support import of predefined MS Word certificate designs and complete end-to-end QA.
+
+**Work Items:**
+1. Add `.docx` template import for Birth certificate design.
+2. Add `.docx` template import for Death certificate design.
+3. Parse supported placeholders (example: `{{ChildName}}`, `{{DOB}}`, `{{DoctorName}}`).
+4. Map placeholders to certificate data fields with validation report.
+5. Add fallback behavior for unknown placeholders.
+6. Run end-to-end QA for generation, editor integration, import pipeline, and printing.
+
+**Effort Estimate:** 8 story points, 5 days
+
+**Validation Criteria:**
+- Valid Word templates import successfully for both certificate types.
+- Imported layouts render accurately in preview and print output.
+- Placeholder mapping is validated and reported to user.
+- End-to-end flow (import -> edit -> generate -> print) passes QA.
+
+**Deliverables:**
+- Word template import pipeline
+- Placeholder mapping validator
+- Final QA sign-off report
+
+---
+
+## **Stage 8 Overall Timeline:**
+
+| Phase | Name | Duration | Target Window | Priority |
+|-------|------|----------|---------------|----------|
+| 1 | Foundation & Menu | 3 days | Week 1 | Critical |
+| 2 | Birth/Death Generators | 8 days | Week 2-3 | High |
+| 3 | Report Editor Integration | 5 days | Week 4 | High |
+| 4 | Word Import & Final QA | 5 days | Week 5 | Medium |
+| **Total** | **Stage 8** | **21 days** | **5 weeks** | — |
+
+**Stage 8 Effort Summary:**
+- Total Story Points: 34 SP
+- Total Duration: 21 days
+- Recommended Team: 2 Backend, 1 Frontend, 1 QA
+
+**Stage 8 Sign-Off Criteria:**
+1. Birth and Death certificates fully generatable and printable.
+2. Certificate templates editable via Report Editor (Admin/SuperAdmin).
+3. Word template import works for both certificate types.
+4. Role access boundaries validated (patient denied).
+5. Audit logs and validation errors captured for compliance.
+
+**Target Outcome:** Stage 8 completion provides production-ready, hospital-customizable certificate issuance with reusable template workflows.
 
 ---
 
