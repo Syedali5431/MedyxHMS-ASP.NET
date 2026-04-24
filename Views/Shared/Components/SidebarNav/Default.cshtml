@@ -437,16 +437,29 @@
             <div id="sb-reports"
                  class="collapse @(Model.IsActiveAny("/Report", "/Audit") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Report" class="staff-sidebar-sublink">Reports Hub</a></li>
-                    <li><a href="/Report/DepartmentReport" class="staff-sidebar-sublink">Department</a></li>
-                    <li><a href="/Report/OccupancyReport" class="staff-sidebar-sublink">Occupancy</a></li>
-                    <li><a href="/Report/StaffReport" class="staff-sidebar-sublink">Staff</a></li>
-                    <li><a href="/Report/GeneratedReports" class="staff-sidebar-sublink">Generated</a></li>
-                    @if (Model.IsAdminOrSuper)
-                    {
-                        <li><a href="/Report/Builder" class="staff-sidebar-sublink">Report Builder</a></li>
-                    }
-                    <li><a href="/Audit" class="staff-sidebar-sublink">Audit Logs</a></li>
+                    <li><a href="/Report" class="staff-sidebar-sublink">Reports Workspace</a></li>
+                    <li class="px-2 pt-2 pb-1">
+                        <label for="sidebar-report-selector" class="form-label text-white-50 small mb-1">Select Report</label>
+                        <select id="sidebar-report-selector" class="form-select form-select-sm bg-dark text-white border-secondary" onchange="if (this.value) window.location.href = this.value;">
+                            <option value="/Report">Choose a report...</option>
+                            @foreach (var group in Model.ReportCatalog.GroupBy(r => r.Category))
+                            {
+                                <optgroup label="@group.Key">
+                                    @foreach (var item in group)
+                                    {
+                                        if (Model.CurrentReportKey == item.Key)
+                                        {
+                                            <option value="/Report?reportKey=@item.Key" selected>@item.Key - @item.Name</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="/Report?reportKey=@item.Key">@item.Key - @item.Name</option>
+                                        }
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                    </li>
                 </ul>
             </div>
         </li>

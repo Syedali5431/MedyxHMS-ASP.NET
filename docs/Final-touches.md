@@ -274,6 +274,29 @@ Sourced from the PHP sidebar Reports submenu and the ASP.NET `ReportController` 
 | R48 | Legacy PHP Report Import      | Import reports migrated from PHP system            |
 | R49 | Report Preview                | Preview report before generating/exporting         |
 
+### 2026-04-24 Reports Workspace Update
+
+- PASS: A unified 49-report catalog is now wired into the staff sidebar under `Reports` as a dropdown selector instead of relying on the old card-based report dashboard.
+- PASS: Sidebar selector now exposes all documented report entries `R1` through `R49`.
+	- Authenticated validation result against `/Report`: `REPORT_SELECTOR_COUNT=49`
+- PASS: Selecting a report now routes into a single Reports workspace (`/Report?reportKey=...`) and renders the chosen report detail on the right side of the main content area.
+- PASS: Core ASP.NET report pages are embedded directly in the workspace detail pane for the current implemented report actions/features:
+	- `R37` Audit Trail Report -> `/Audit`
+	- `R41` Department Report -> `/Report/DepartmentReport`
+	- `R42` Financial Report -> `/Report/FinancialReport`
+	- `R43` Occupancy Report -> `/Report/OccupancyReport`
+	- `R44` Staff Report -> `/Report/StaffReport`
+	- `R45` Report Builder / Template -> `/Report/Builder` (admin-level)
+	- `R46` Report Scheduler -> `/Report/ScheduleReport` (admin-level)
+	- `R47` Generated Reports Archive -> `/Report/GeneratedReports`
+- PASS: PHP-originated reports `R1` through `R40` are now all selectable from the same catalog and display as legacy report definitions within the Reports workspace, with template mapping/import actions where available.
+- PASS: Report Preview (`R49`) now surfaces previewable imported template links from the same workspace.
+- PASS: Authenticated HTML validation with the seeded Admin account confirmed:
+	- sidebar selector present
+	- `R1 - Daily Transaction Report` present
+	- `R49 - Report Preview` present
+	- `R41` selection renders an embedded `/Report/DepartmentReport` iframe in the workspace detail pane
+
 ---
 
 ## AI / Chatbot Features (CB)

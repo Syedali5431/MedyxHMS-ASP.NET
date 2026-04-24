@@ -1,139 +1,176 @@
+@model MedyxHMS.ViewModels.ReportsWorkspaceViewModel
 @{
-    ViewData["Title"] = "Reports";
+    ViewData["Title"] = "Reports Workspace";
+    var selected = Model.SelectedReport;
 }
 
 <div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-chart-line"></i> Reports Dashboard
-                    </h4>
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="h3 mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Reports Workspace</h1>
+            <p class="text-muted mb-0">Use the sidebar Reports dropdown to select any of the 49 report definitions and render its detail panel here.</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="badge text-bg-dark">49 total reports</span>
+            <span class="badge text-bg-secondary">40 PHP-originated</span>
+            <span class="badge text-bg-primary">9 ASP.NET reports/features</span>
+            <span class="badge text-bg-success">@Model.ImportedLegacyTemplateCount imported legacy templates</span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">@(selected == null ? "Selection" : $"{selected.Key} · {selected.Name}")</h2>
                 </div>
-
                 <div class="card-body">
-                    <div class="row">
-                        <!-- Department Report -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-primary">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-building text-primary"></i> Department Report
-                                    </h5>
-                                    <p class="card-text">View staff attendance and performance by department.</p>
-                                    <a href="@Url.Action("DepartmentReport")" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Report
-                                    </a>
+                    @if (selected == null)
+                    {
+                        <p class="text-muted">No report selected yet. Choose a report from the sidebar dropdown under Reports.</p>
+                        <div class="list-group list-group-flush small">
+                            @foreach (var group in Model.Items.GroupBy(i => i.Category))
+                            {
+                                <div class="list-group-item px-0">
+                                    <div class="fw-semibold">@group.Key</div>
+                                    <div class="text-muted">@group.Count() report option(s)</div>
                                 </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <dl class="row small mb-3">
+                            <dt class="col-sm-5 text-muted">Category</dt>
+                            <dd class="col-sm-7">@selected.Category</dd>
+                            <dt class="col-sm-5 text-muted">Mode</dt>
+                            <dd class="col-sm-7">@(selected.IsLegacy ? "Legacy report definition" : "ASP.NET report page")</dd>
+                            <dt class="col-sm-5 text-muted">Summary</dt>
+                            <dd class="col-sm-7">@selected.Summary</dd>
+                            @if (!string.IsNullOrWhiteSpace(Model.MatchingTemplateName))
+                            {
+                                <dt class="col-sm-5 text-muted">Mapped Template</dt>
+                                <dd class="col-sm-7 text-success">@Model.MatchingTemplateName</dd>
+                            }
+                        </dl>
+
+                        <div class="d-grid gap-2">
+                            @if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
+                            {
+                                <a class="btn btn-primary" href="@selected.EmbeddedUrl" target="_blank" rel="noopener">Open Standalone</a>
+                            }
+
+                            @if (selected.IsLegacy && Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                            {
+                                <a class="btn btn-outline-primary" href="@Url.Action("Design", "Report", new { id = Model.MatchingTemplateId.Value })">Open Template Builder</a>
+                                <a class="btn btn-outline-secondary" href="@Url.Action("Preview", "Report", new { id = Model.MatchingTemplateId.Value })">Preview Template</a>
+                            }
+
+                            @if (selected.IsLegacy && !Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                            {
+                                <form asp-action="ImportLegacyPhpReports" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-outline-dark w-100">Import Legacy PHP Reports</button>
+                                </form>
+                            }
+
+                            @if (selected.Key == "R49" && Model.PreviewableTemplates.Any())
+                            {
+                                <div class="border rounded p-3 bg-light">
+                                    <div class="fw-semibold mb-2">Previewable Templates</div>
+                                    <div class="d-flex flex-column gap-2 small">
+                                        @foreach (var template in Model.PreviewableTemplates)
+                                        {
+                                            <a href="@Url.Action("Preview", "Report", new { id = template.Id })">@template.Name</a>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-8">
+            <div class="card shadow-sm workspace-card">
+                <div class="card-header bg-white">
+                    <h2 class="h5 mb-0">Report Detail</h2>
+                </div>
+                <div class="card-body p-0">
+                    @if (selected == null)
+                    {
+                        <div class="p-4 text-muted">
+                            <p class="mb-2">The old dashboard-card report chooser has been replaced by the sidebar Reports dropdown.</p>
+                            <p class="mb-0">Select any report under Reports in the left sidebar and its detail panel will render here on the right.</p>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
+                    {
+                        <iframe src="@selected.EmbeddedUrl" title="@selected.Name" style="width:100%;min-height:900px;border:0;"></iframe>
+                    }
+                    else if (selected.IsLegacy)
+                    {
+                        <div class="p-4">
+                            <div class="alert alert-info mb-4">
+                                <div class="fw-semibold mb-1">Legacy PHP catalog entry</div>
+                                <div>This report is selectable from the unified 49-report list and tracked through the migrated legacy report workflow.</div>
+                            </div>
+
+                            @if (Model.MatchingTemplateId.HasValue)
+                            {
+                                <div class="card border-success mb-3">
+                                    <div class="card-body">
+                                        <h3 class="h6 text-success mb-2">Imported template found</h3>
+                                        <p class="mb-0">A matching template is already present in the ASP.NET report builder catalog for this legacy report.</p>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="card border-warning mb-3">
+                                    <div class="card-body">
+                                        <h3 class="h6 text-warning-emphasis mb-2">Template import pending</h3>
+                                        <p class="mb-0">This report is listed and selectable now. Import the legacy PHP catalog to create editable templates where a mapped source is available.</p>
+                                    </div>
+                                </div>
+                            }
+
+                            <div class="small text-muted">Current report: @selected.Key - @selected.Name</div>
+                        </div>
+                    }
+                    else if (selected.Key == "R48")
+                    {
+                        <div class="p-4">
+                            <div class="alert alert-dark">
+                                <div class="fw-semibold mb-1">Legacy PHP Report Import</div>
+                                <div>Import migrated PHP report templates so they become editable and previewable in the ASP.NET report builder flow.</div>
+                            </div>
+
+                            @if (Model.CanManageTemplates)
+                            {
+                                <form asp-action="ImportLegacyPhpReports" method="post" class="mb-3">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-dark">Import Legacy PHP Reports</button>
+                                </form>
+                            }
+
+                            <div class="text-muted small">Imported template count: @Model.ImportedLegacyTemplateCount</div>
+                        </div>
+                    }
+                    else if (selected.Key == "R49")
+                    {
+                        <div class="p-4">
+                            <div class="alert alert-primary mb-0">
+                                <div class="fw-semibold mb-1">Report Preview</div>
+                                <div>Use the preview links in the left panel to open saved or imported report template previews.</div>
                             </div>
                         </div>
-
-                        <!-- Financial Report -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-success">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-dollar-sign text-success"></i> Financial Report
-                                    </h5>
-                                    <p class="card-text">View revenue, payroll, and financial summary.</p>
-                                    <a href="@Url.Action("FinancialReport")" class="btn btn-success btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Report
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Occupancy Report -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-warning">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-hospital-bed text-warning"></i> Occupancy Report
-                                    </h5>
-                                    <p class="card-text">View bed occupancy and capacity status.</p>
-                                    <a href="@Url.Action("OccupancyReport")" class="btn btn-warning btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Report
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Staff Report -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-info">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-users text-info"></i> Staff Report
-                                    </h5>
-                                    <p class="card-text">View individual staff attendance and performance.</p>
-                                    <a href="@Url.Action("StaffReport")" class="btn btn-info btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Report
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Payroll Report -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-danger">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-money-bill text-danger"></i> Payroll Report
-                                    </h5>
-                                    <p class="card-text">View monthly payroll details and salaries.</p>
-                                    <a href="@Url.Action("PayrollReport")" class="btn btn-danger btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Report
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Generated Reports -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-secondary">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-file text-secondary"></i> Generated Reports
-                                    </h5>
-                                    <p class="card-text">View and manage previously generated reports.</p>
-                                    <a href="@Url.Action("GeneratedReports")" class="btn btn-secondary btn-sm">
-                                        <i class="fas fa-arrow-right"></i> View Reports
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Report Builder -->
-                        <div class="col-md-6 mb-4">
-                            <div class="card border-left-dark">
-                                <div class="card-body">
-                                    <h5 class="card-title">
-                                        <i class="fas fa-tools text-dark"></i> Report Builder
-                                    </h5>
-                                    <p class="card-text">Create, edit, and preview custom report templates and fields.</p>
-                                    <a href="@Url.Action("Builder")" class="btn btn-dark btn-sm">
-                                        <i class="fas fa-arrow-right"></i> Open Builder
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="mt-4">
-                        <a href="@Url.Action("ScheduleReport")" class="btn btn-outline-primary">
-                            <i class="fas fa-calendar"></i> Schedule Automatic Reports
-                        </a>
-                        @if (User.IsInRole("SuperAdmin"))
-                        {
-                            <form asp-action="ImportLegacyPhpReports" method="post" class="d-inline ms-2">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-outline-dark">
-                                    <i class="fas fa-file-import"></i> Import PHP Reports (Editable)
-                                </button>
-                            </form>
-                        }
-                    </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 text-muted">This report is cataloged and selectable, but it does not have an embedded ASP.NET page assigned yet.</div>
+                    }
                 </div>
             </div>
         </div>
@@ -141,25 +178,7 @@
 </div>
 
 <style>
-    .border-left-primary {
-        border-left: 4px solid #007bff !important;
-    }
-    .border-left-success {
-        border-left: 4px solid #28a745 !important;
-    }
-    .border-left-warning {
-        border-left: 4px solid #ffc107 !important;
-    }
-    .border-left-info {
-        border-left: 4px solid #17a2b8 !important;
-    }
-    .border-left-danger {
-        border-left: 4px solid #dc3545 !important;
-    }
-    .border-left-secondary {
-        border-left: 4px solid #6c757d !important;
-    }
-    .border-left-dark {
-        border-left: 4px solid #343a40 !important;
+    .workspace-card {
+        min-height: 75vh;
     }
 </style>

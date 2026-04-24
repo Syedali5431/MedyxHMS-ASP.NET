@@ -225,6 +225,7 @@ ViewModels/
  PatientViewModels.cs
  PayrollViewModels.cs
  RadiologyViewModels.cs
+ ReportCatalogViewModels.cs
  ReportViewModels.cs
  SiteViewModels.cs
  StaffViewModels.cs

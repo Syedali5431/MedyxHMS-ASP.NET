@@ -1,5 +1,6 @@
 ﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
+using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,9 +25,39 @@ namespace MedyxHMS.Controllers
         }
 
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? reportKey)
         {
-            return View();
+            var canManageTemplates = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            var items = ReportCatalogRegistry.GetVisibleItems(canManageTemplates);
+            var selected = string.IsNullOrWhiteSpace(reportKey)
+                ? null
+                : items.FirstOrDefault(item => item.Key.Equals(reportKey, StringComparison.OrdinalIgnoreCase));
+
+            var templates = await _reportTemplateService.GetAllTemplatesAsync();
+            var legacyTemplates = templates
+                .Where(t => string.Equals(t.ReportType, "LegacyPHP", StringComparison.OrdinalIgnoreCase))
+                .OrderBy(t => t.Name)
+                .ToList();
+
+            var matchingTemplate = selected?.TemplateLookupName == null
+                ? null
+                : legacyTemplates.FirstOrDefault(t => t.Name.Equals(selected.TemplateLookupName, StringComparison.OrdinalIgnoreCase));
+
+            var vm = new ReportsWorkspaceViewModel
+            {
+                Items = items,
+                SelectedReport = selected,
+                CanManageTemplates = canManageTemplates,
+                ImportedLegacyTemplateCount = legacyTemplates.Count,
+                MatchingTemplateId = matchingTemplate?.Id,
+                MatchingTemplateName = matchingTemplate?.Name,
+                PreviewableTemplates = legacyTemplates
+                    .Take(12)
+                    .Select(t => new ReportTemplateOption { Id = t.Id, Name = t.Name })
+                    .ToList()
+            };
+
+            return View(vm);
         }
 
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]

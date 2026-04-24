@@ -1,4 +1,5 @@
 using MedyxHMS.Services.Interfaces;
+using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
@@ -41,6 +42,11 @@ namespace MedyxHMS.Components
                 CurrentPath = HttpContext.Request.Path.ToString()
             };
 
+            vm.ReportCatalog = ReportCatalogRegistry.GetVisibleItems(vm.IsAdminOrSuper);
+            vm.CurrentReportKey = ReportCatalogRegistry.ResolveCurrentKey(
+                vm.CurrentPath,
+                HttpContext.Request.Query["reportKey"].ToString());
+
             return View(vm);
         }
     }
@@ -52,6 +58,8 @@ namespace MedyxHMS.Components
         public bool IsAdmin { get; set; }
         public Dictionary<string, bool> ModuleMap { get; set; } = new();
         public string CurrentPath { get; set; } = string.Empty;
+        public IReadOnlyList<ReportCatalogItem> ReportCatalog { get; set; } = Array.Empty<ReportCatalogItem>();
+        public string CurrentReportKey { get; set; } = string.Empty;
 
         /// <summary>Returns true if a module is enabled for the current user.</summary>
         public bool ModuleOn(string key) =>
