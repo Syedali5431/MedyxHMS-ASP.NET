@@ -8,9 +8,12 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Nurse,Doctor")]
+    [Authorize(Roles = BedManagementViewRoles)]
     public class BedManagementController : Controller
     {
+        private const string BedManagementViewRoles = "SuperAdmin,Admin,Doctor,Nurse,Pharmacist,Accountant,Receptionist,LabTechnician,Radiologist,Staff";
+        private const string BedManagementManageRoles = "SuperAdmin,Admin,Nurse";
+
         private readonly ApplicationDbContext _context;
         private readonly IBedService _bedService;
         private readonly IAuditService _audit;
@@ -60,6 +63,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /BedManagement/Assign ─────────────────────
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Assign(int bedId, int patientId)
         {
             // Determine the most-privileged role for ICU check
@@ -87,6 +91,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /BedManagement/Release ────────────────────
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Release(int bedId)
         {
             var (ok, error) = await _bedService.ReleaseBedAsync(bedId);
@@ -108,6 +113,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /BedManagement/Transfer ───────────────────
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Transfer(int fromBedId, int toBedId)
         {
             var (ok, error) = await _bedService.TransferBedAsync(fromBedId, toBedId);
@@ -128,6 +134,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /BedManagement/SetStatus ──────────────────
         [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> SetStatus(int bedId, string status)
         {
             // Validate allowed statuses
@@ -192,6 +199,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /api/beds/assign ─────────────────────────
         [HttpPost("/api/beds/assign")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> AssignBedApi([FromBody] AssignBedRequest request)
         {
             if (request.BedId <= 0 || request.PatientId <= 0)
@@ -216,6 +224,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /api/beds/release ────────────────────────
         [HttpPost("/api/beds/release")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> ReleaseBedApi([FromBody] ReleaseBedRequest request)
         {
             if (request.BedId <= 0)
@@ -235,6 +244,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /api/beds/transfer ───────────────────────
         [HttpPost("/api/beds/transfer")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> TransferBedApi([FromBody] TransferBedRequest request)
         {
             if (request.FromBedId <= 0 || request.ToBedId <= 0)
@@ -254,6 +264,7 @@ namespace MedyxHMS.Controllers
 
         // ── API: POST /api/beds/status ─────────────────────────
         [HttpPost("/api/beds/status")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> UpdateBedStatusApi([FromBody] UpdateBedStatusRequest request)
         {
             var allowed = new[] { "Available", "Cleaning", "Maintenance", "Blocked" };
@@ -283,14 +294,14 @@ namespace MedyxHMS.Controllers
         }
 
         // ── Admin-only: Create new bed ──────────────────────────
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Create()
         {
             ViewBag.Wards = await _context.Wards.Where(w => w.IsActive).OrderBy(w => w.Name).ToListAsync();
             return View(new Bed());
         }
 
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Create(Bed model)
         {
             if (!ModelState.IsValid)
@@ -318,7 +329,7 @@ namespace MedyxHMS.Controllers
         }
 
         // ── Admin-only: Edit bed ────────────────────────────────
-        [Authorize(Roles = "Admin,SuperAdmin")]
+        [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Edit(int id)
         {
             var bed = await _context.Beds.FindAsync(id);
@@ -327,7 +338,7 @@ namespace MedyxHMS.Controllers
             return View(bed);
         }
 
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Edit(int id, Bed model)
         {
             if (id != model.Id) return BadRequest();

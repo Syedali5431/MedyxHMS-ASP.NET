@@ -593,7 +593,10 @@
             <div id="sb-bedmgmt" class="collapse @(Model.IsActive("/BedManagement") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
                     <li><a href="/BedManagement" class="staff-sidebar-sublink">Bed Overview</a></li>
-                    <li><a href="/BedManagement/Create" class="staff-sidebar-sublink">Add Bed</a></li>
+                    @if (Model.IsSuperAdmin || Model.IsAdmin || Model.Roles.Contains("Nurse", StringComparer.OrdinalIgnoreCase))
+                    {
+                        <li><a href="/BedManagement/Create" class="staff-sidebar-sublink">Add Bed</a></li>
+                    }
                 </ul>
             </div>
         </li>

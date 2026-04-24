@@ -72,7 +72,7 @@ namespace MedyxHMS.Controllers
                     s.FirstName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     s.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     s.EmployeeId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                    s.User.Email.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+                    ((s.User?.Email ?? string.Empty).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)));
             }
 
             if (!string.IsNullOrWhiteSpace(departmentFilter))
@@ -97,7 +97,7 @@ namespace MedyxHMS.Controllers
                 EmployeeId = s.EmployeeId,
                 FirstName = s.FirstName,
                 LastName = s.LastName,
-                Email = s.User.Email,
+                Email = s.User?.Email ?? string.Empty,
                 Phone = s.Phone,
                 Department = s.Department,
                 Designation = s.Designation,
@@ -106,7 +106,7 @@ namespace MedyxHMS.Controllers
                 Address = s.Address,
                 IsActive = s.IsActive,
                 CreatedDate = s.CreatedDate,
-                LastLoginDate = s.User.LastLoginDate,
+                LastLoginDate = s.User?.LastLoginDate,
                 Roles = s.StaffRoles.Select(sr => sr.Role.Name).ToList(),
                 Permissions = new List<string>() // Will be populated if needed
             }).ToList();
@@ -167,7 +167,7 @@ namespace MedyxHMS.Controllers
                     EmployeeId = staff.EmployeeId,
                     FirstName = staff.FirstName,
                     LastName = staff.LastName,
-                    Email = staff.User.Email,
+                    Email = staff.User?.Email ?? string.Empty,
                     Phone = staff.Phone,
                     Department = staff.Department,
                     Designation = staff.Designation,
@@ -176,7 +176,7 @@ namespace MedyxHMS.Controllers
                     Address = staff.Address,
                     IsActive = staff.IsActive,
                     CreatedDate = staff.CreatedDate,
-                    LastLoginDate = staff.User.LastLoginDate,
+                    LastLoginDate = staff.User?.LastLoginDate,
                     Roles = staff.StaffRoles.Select(sr => sr.Role.Name).ToList(),
                     Permissions = (await _staffService.GetStaffPermissionsAsync(id)).ToList()
                 },

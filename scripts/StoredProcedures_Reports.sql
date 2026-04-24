@@ -19,7 +19,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    DECLARE @StartTimeMs BIGINT = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE());
+    DECLARE @StartTimeMs BIGINT = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE());
 
     SELECT 
         s.Id AS StaffId,
@@ -32,10 +32,10 @@ BEGIN
         CAST(COUNT(DISTINCT CASE WHEN sa.Status = 'Present' THEN sa.Id END) AS DECIMAL(5,2)) / 
             NULLIF(COUNT(DISTINCT sa.Id), 0) * 100 AS AttendancePercentage
     FROM Staff s
-    LEFT JOIN StaffAttendance sa ON s.Id = sa.StaffId 
+    LEFT JOIN StaffAttendances sa ON s.Id = sa.StaffId 
         AND sa.AttendanceDate >= @StartDate 
         AND sa.AttendanceDate <= @EndDate
-    LEFT JOIN LeaveRequest lr ON s.Id = lr.StaffId 
+    LEFT JOIN LeaveRequests lr ON s.Id = lr.StaffId 
         AND lr.Status = 'Approved' 
         AND lr.StartDate >= @StartDate 
         AND lr.EndDate <= @EndDate
@@ -43,7 +43,7 @@ BEGIN
     GROUP BY s.Id, s.FirstName, s.LastName, s.Department
     ORDER BY s.FirstName, s.LastName;
 
-    SET @StartTimeMs = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
+    SET @StartTimeMs = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
     SELECT @StartTimeMs AS ExecutionTimeMs;
 END;
 GO
@@ -63,7 +63,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
     
-    DECLARE @StartTimeMs BIGINT = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE());
+    DECLARE @StartTimeMs BIGINT = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE());
 
     SELECT 
         CONVERT(DATE, pr.CreatedDate) AS TransactionDate,
@@ -101,7 +101,7 @@ BEGIN
     GROUP BY CONVERT(DATE, p.PaymentDate)
     ORDER BY TransactionDate DESC;
 
-    SET @StartTimeMs = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
+    SET @StartTimeMs = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
     SELECT @StartTimeMs AS ExecutionTimeMs;
 END;
 GO
@@ -120,7 +120,7 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @StartTimeMs BIGINT = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE());
+    DECLARE @StartTimeMs BIGINT = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE());
 
     DECLARE @TotalBeds INT = (SELECT COUNT(*) FROM Beds WHERE IsActive = 1);
     DECLARE @OccupiedBeds INT = (
@@ -134,19 +134,19 @@ BEGIN
         @OccupiedBeds AS OccupiedBeds,
         @TotalBeds - @OccupiedBeds AS AvailableBeds,
         CAST(@OccupiedBeds AS DECIMAL(5,2)) / NULLIF(@TotalBeds, 0) * 100 AS OccupancyPercentage,
-        w.WardName,
+        w.Name AS WardName,
         COUNT(DISTINCT b.Id) AS WardBeds,
         COUNT(DISTINCT CASE WHEN ipa.DischargeDate IS NULL OR ipa.DischargeDate >= @ReportDate THEN ipa.Id END) AS OccupiedInWard
     FROM Beds b
-    LEFT JOIN Ward w ON b.WardId = w.Id
+    LEFT JOIN Wards w ON b.WardId = w.Id
     LEFT JOIN IPDAdmissions ipa ON b.Id = ipa.BedId 
         AND ipa.AdmissionDate <= @ReportDate 
         AND (ipa.DischargeDate IS NULL OR ipa.DischargeDate >= @ReportDate)
     WHERE b.IsActive = 1
-    GROUP BY w.Id, w.WardName
-    ORDER BY w.WardName;
+    GROUP BY w.Id, w.Name
+    ORDER BY w.Name;
 
-    SET @StartTimeMs = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
+    SET @StartTimeMs = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
     SELECT @StartTimeMs AS ExecutionTimeMs;
 END;
 GO
@@ -166,18 +166,18 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @StartTimeMs BIGINT = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE());
+    DECLARE @StartTimeMs BIGINT = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE());
 
     SELECT 
         COUNT(*) AS TotalPatients,
         SUM(CASE WHEN Gender = 'Male' THEN 1 ELSE 0 END) AS MalePatients,
         SUM(CASE WHEN Gender = 'Female' THEN 1 ELSE 0 END) AS FemalePatients,
         AVG(DATEDIFF(YEAR, DateOfBirth, GETUTCDATE())) AS AverageAge,
-        COUNT(DISTINCT CASE WHEN InsuranceId IS NOT NULL THEN Id END) AS InsuredPatients
-    FROM Patient
+        COUNT(DISTINCT CASE WHEN HasInsurance = 1 THEN Id END) AS InsuredPatients
+    FROM Patients
     WHERE CreatedDate >= @StartDate AND CreatedDate <= @EndDate;
 
-    SET @StartTimeMs = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
+    SET @StartTimeMs = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
     SELECT @StartTimeMs AS ExecutionTimeMs;
 END;
 GO
@@ -197,12 +197,12 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @StartTimeMs BIGINT = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE());
+    DECLARE @StartTimeMs BIGINT = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE());
 
     SELECT 
         'Total' AS Metric,
         COUNT(*) AS Value
-    FROM Appointment
+    FROM Appointments
     WHERE AppointmentDate >= @StartDate AND AppointmentDate <= @EndDate
 
     UNION ALL
@@ -210,7 +210,7 @@ BEGIN
     SELECT 
         CONCAT('Status_', Status),
         COUNT(*)
-    FROM Appointment
+    FROM Appointments
     WHERE AppointmentDate >= @StartDate AND AppointmentDate <= @EndDate
     GROUP BY Status
 
@@ -220,10 +220,10 @@ BEGIN
         'NoShow_Rate',
         CAST(SUM(CASE WHEN Status = 'NoShow' THEN 1 ELSE 0 END) AS DECIMAL(5,2)) / 
             NULLIF(COUNT(*), 0) * 100
-    FROM Appointment
+    FROM Appointments
     WHERE AppointmentDate >= @StartDate AND AppointmentDate <= @EndDate;
 
-    SET @StartTimeMs = DATEDIFF(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
+    SET @StartTimeMs = DATEDIFF_BIG(MILLISECOND, '1970-01-01', GETUTCDATE()) - @StartTimeMs;
     SELECT @StartTimeMs AS ExecutionTimeMs;
 END;
 GO

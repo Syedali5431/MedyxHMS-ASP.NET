@@ -411,6 +411,9 @@ OUTPUT EXPECTATION:
 - PASS: Sidebar module entry added for Bed Management with hospital bed icon and staff-facing navigation.
 - PASS: Dashboard module explorer includes Bed Management quick links aligned to existing module option patterns.
 - PASS: Bed Management page includes summary cards (Total, Available, Occupied, Cleaning, Maintenance) and a responsive bed table.
+- PASS: Bed Management access model now splits into read-only and manage scopes:
+	- `SuperAdmin`, `Admin`, and `Nurse` can add, edit, assign, transfer, release, and change bed status.
+	- Other staff roles can open the Bed Management overview in read-only mode but cannot mutate bed records.
 - PASS: Bed workflow actions implemented: Assign, Release, Transfer, and status updates (Available/Cleaning/Maintenance) with confirmation UX.
 - PASS: Core business rules implemented in service layer:
 	- Assign allowed only when bed status is Available.
@@ -425,9 +428,12 @@ OUTPUT EXPECTATION:
 	- POST `/api/beds/release`
 	- POST `/api/beds/transfer`
 	- POST `/api/beds/status`
+- PASS: Focused automated service coverage now exists in `tests/MedyxHMS.BedManagement.Tests/BedServiceTests.cs` for assign, ICU approval, release, transfer, and summary counting rules.
+- PASS: Focused controller/API authorization coverage now exists in `tests/MedyxHMS.BedManagement.Tests/BedManagementAuthorizationTests.cs` for class-level view roles and method-level manage-role enforcement.
 
 Bed Management Caveat:
-- Runtime E2E API smoke validation with role-specific tokens should be executed in staging as part of pre-go-live checks.
+- Fresh authenticated smoke from this workspace now reaches successful login for all seeded roles after hardening license signature validation handling in `LicenseFileService`.
+- Runtime smoke from this workspace now completes with zero route failures for all seeded staff roles and patient role after script reliability fixes and route-alignment updates.
 
 
 ## Tasks to perform to close project
@@ -445,14 +451,43 @@ Bed Management Caveat:
 	- POST `/api/beds/transfer`
 	- POST `/api/beds/status`
 - PASS: Current compile state after module updates remains stable (0 errors; warning-only build).
-- PASS: Authenticated runtime role smoke executed successfully via `scripts/Run-RoleModuleSmoke.ps1` against LocalDB-backed app instance.
-	- Staff/admin roles validated: SuperAdmin, Admin, Doctor, Nurse, Accountant, Receptionist, Multi-role (Doctor/Nurse).
-	- Patient portal role validated: Patient.
-	- Result: 0 failing routes across all tested role-route matrices (staff: 88 routes each, patient: 5 routes).
-	- Evidence artifact: `temp_build_output/uat-role-run-current.json`.
+- PASS: Focused Bed Management service tests pass in the current workspace via `dotnet test tests/MedyxHMS.BedManagement.Tests/MedyxHMS.BedManagement.Tests.csproj`.
+	- Result: 5 tests passed covering assign availability, ICU approval, release, transfer, and summary aggregation rules.
+- PASS: Focused Bed Management authorization tests now pass in the same project.
+	- Result: 3 additional tests validate controller-level role constraints for read-only versus manage endpoints.
+- PASS: Fresh authenticated runtime role smoke rerun from this workspace now completes successfully with zero failures across all seeded role matrices.
+	- Current smoke summary from `temp_build_output/uat-role-run-current.json`: SuperAdmin `88/0`, Admin `88/0`, Doctor `88/0`, Nurse `88/0`, Accountant `88/0`, Receptionist `88/0`, Multi-role Doctor `88/0`, Multi-role Nurse `88/0`, Patient `5/0` (Total/Fails).
+	- Supporting fixes included:
+		- `Controllers/StaffController.cs`: null-safe staff/user projections to prevent `/Staff` runtime 500 in sparse local data.
+		- `scripts/Run-RoleModuleSmoke.ps1`: resilient redirect/HTTP-status handling plus patient portal route alignment to `/Index` actions.
+		- `scripts/StoredProcedures_Reports.sql`: corrected table/column mismatches and replaced `DATEDIFF` with `DATEDIFF_BIG` in timing metrics to prevent overflow/runtime SQL failures during report pages.
+	- Bed Management checks remain passing for intended read-only/manage boundaries in this run (`/BedManagement` visible; manage mutations restricted by role gates and treated per smoke acceptability rules).
+	- Historical artifact: `temp_build_output/uat-role-run4-results.json` remains available for prior comparison.
+- PASS: Expanded automated route-matrix coverage beyond Bed Management now exists in `tests/MedyxHMS.BedManagement.Tests/PatientPortalRouteContractTests.cs`.
+	- Result: Patient portal controller area/route/auth contracts are now enforced in CI-oriented tests.
+	- Current Bed Management + route-contract suite result: `23` tests passed.
 
 Validation Caveat:
 - This pass is static and compile-time verification. Authenticated runtime workflow UAT per role is still required for full go-live confidence.
+
+### 2026-04-24 Review Update
+
+Confirmed in current workspace:
+- Module seed inventory still includes 30 modules in `Services/Implementations/DatabaseInitializer.cs`, including `BedManagement`.
+- Current project build remains warning-only from the latest local verification pass; no compile errors were surfaced in the captured build output.
+- Bed Management implementation is present across controller, service, sidebar, dashboard quick links, views, and API endpoints.
+- Existing machine-readable UAT evidence is still present at `temp_build_output/uat-role-run4-results.json` and supports the previously documented role-login smoke run.
+- `scripts/Run-RoleModuleSmoke.ps1` has been made workspace-portable and now resolves repo-relative paths from `$PSScriptRoot`.
+- Focused automated Bed Management coverage now exists in `tests/MedyxHMS.BedManagement.Tests` and passes locally.
+
+Gaps found during this review:
+- **Bed Management access model updated:** the previous Doctor edit-access mismatch has been corrected. Bed Management is now visible to staff in read-only mode, while mutation paths are restricted to `SuperAdmin`, `Admin`, and `Nurse`.
+- **License signature crash fixed for runtime login path:** malformed/legacy signature values now fail closed without throwing unhandled exceptions, so login and smoke execution proceed normally.
+- **Runtime smoke matrix is now clean for seeded role-route coverage:** latest workspace smoke run shows zero route failures across tested matrices.
+- **Automated coverage expanded:** Bed Management now has service tests, controller/API authorization tests, and patient-portal route-contract tests; broader cross-module business-flow automation can be added incrementally.
+
+Pending tasks before declaring all modules fully validated:
+- Validate Admin/SuperAdmin governance workflows end-to-end with business data assertions (module management, CMS administration, license management, user/module access administration).
 
 **Build & Quality Status:**
 - Clean compile: zero errors, pre-existing nullable reference warnings only
@@ -481,4 +516,4 @@ Validation Caveat:
 ---
 
 *Document generated from PHP source (`php-original/`) and ASP.NET source (`MedyxHMS-ASPNET/`) analysis.*
-*Last updated: 2026-04-23*
+*Last updated: 2026-04-24*

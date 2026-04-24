@@ -308,29 +308,44 @@ namespace MedyxHMS.Services.Implementations
             }
 
             var canonicalPayload = TryUnprotect(license.CanonicalPayloadJson);
-            var signatureHex = TryUnprotect(license.SignatureHex);
+            var signatureHex = NormalizeHex(TryUnprotect(license.SignatureHex));
 
             if (string.IsNullOrWhiteSpace(canonicalPayload) || string.IsNullOrWhiteSpace(signatureHex))
                 return false;
 
-            var modulusHex = license.PublicKeyModulusHex?.Trim();
-            var exponentHex = license.PublicKeyExponentHex?.Trim();
+            var modulusHex = NormalizeHex(license.PublicKeyModulusHex ?? string.Empty);
+            var exponentHex = NormalizeHex(license.PublicKeyExponentHex ?? string.Empty);
 
             // Backward compatibility for old records before public key persistence.
             if (string.IsNullOrWhiteSpace(modulusHex) || string.IsNullOrWhiteSpace(exponentHex))
             {
-                modulusHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyModulusHex"))?.Trim();
-                exponentHex = (await _settingService.GetSettingValueAsync("LicensePublicKeyExponentHex"))?.Trim();
+                modulusHex = NormalizeHex((await _settingService.GetSettingValueAsync("LicensePublicKeyModulusHex")) ?? string.Empty);
+                exponentHex = NormalizeHex((await _settingService.GetSettingValueAsync("LicensePublicKeyExponentHex")) ?? string.Empty);
             }
 
             if (string.IsNullOrWhiteSpace(modulusHex) || string.IsNullOrWhiteSpace(exponentHex))
+                return false;
+
+            if (!IsHex(signatureHex) || signatureHex.Length % 2 != 0 || !IsHex(modulusHex) || modulusHex.Length % 2 != 0 || !IsHex(exponentHex) || exponentHex.Length % 2 != 0)
                 return false;
 
             var expectedVerificationKey = LicenseCryptoUtility.ComputeVerificationKey(modulusHex, exponentHex);
             if (!string.Equals(license.VerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
                 return false;
 
-            var isValid = LicenseCryptoUtility.VerifyRsaSha256(canonicalPayload, signatureHex, modulusHex, exponentHex);
+            bool isValid;
+            try
+            {
+                isValid = LicenseCryptoUtility.VerifyRsaSha256(canonicalPayload, signatureHex, modulusHex, exponentHex);
+            }
+            catch (InvalidDataException)
+            {
+                isValid = false;
+            }
+            catch (System.Security.Cryptography.CryptographicException)
+            {
+                isValid = false;
+            }
             if (!isValid && license.IsSignatureValid)
             {
                 license.IsSignatureValid = false;

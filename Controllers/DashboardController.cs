@@ -205,6 +205,7 @@ namespace MedyxHMS.Controllers
                 return options;
 
             var isAdmin = roles.Contains("Admin", StringComparer.OrdinalIgnoreCase);
+            var canManageBeds = isAdmin || roles.Contains("Nurse", StringComparer.OrdinalIgnoreCase);
 
             return options.Where(item =>
             {
@@ -256,6 +257,13 @@ namespace MedyxHMS.Controllers
                     item.Action.Equals("Upload", StringComparison.OrdinalIgnoreCase))
                 {
                     return isAdmin;
+                }
+
+                if (item.Controller.Equals("BedManagement", StringComparison.OrdinalIgnoreCase) &&
+                    (item.Label.Equals("Assign Bed", StringComparison.OrdinalIgnoreCase) ||
+                     item.Label.Equals("Update Status", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return canManageBeds;
                 }
 
                 return true;

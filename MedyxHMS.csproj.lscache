@@ -62,6 +62,7 @@ Controllers/
  AppointmentController.cs
  AttendanceController.cs
  AuditController.cs
+ BedManagementController.cs
  BillingController.cs
  BirthDeathController.cs
  BloodBankController.cs
@@ -601,6 +602,24 @@ ViewModels/
 obj/Debug/net8.0/MedyxHMS.GeneratedMSBuildEditorConfig.editorconfig
 
 [additionalFiles]
+Areas/PatientPortal/Views/
+ Account/Register.cshtml
+ Appointments/
+  Book.cshtml
+  Index.cshtml
+ Bills/Index.cshtml
+ Dashboard/Index.cshtml
+ MedicalRecords/
+  Index.cshtml
+  LabResults.cshtml
+  Prescriptions.cshtml
+  RadiologyResults.cshtml
+ Settings/
+  Index.cshtml
+  Privacy.cshtml
+  Security.cshtml
+ Shared/_Layout.cshtml
+ _ViewImports.cshtml
 Views/Account/
  AccessDenied.cshtml
  LicenseExpired.cshtml
@@ -631,6 +650,10 @@ Views/
   Details.cshtml
   Index.cshtml
   UserActions.cshtml
+ BedManagement/
+  Create.cshtml
+  Edit.cshtml
+  Index.cshtml
  Billing/
   Create.cshtml
   Details.cshtml
@@ -821,6 +844,24 @@ Views/
  _ViewStart.cshtml
 
 [dynamicFiles]
+Areas/PatientPortal/Views/
+ Account/Register.cshtml
+ Appointments/
+  Book.cshtml
+  Index.cshtml
+ Bills/Index.cshtml
+ Dashboard/Index.cshtml
+ MedicalRecords/
+  Index.cshtml
+  LabResults.cshtml
+  Prescriptions.cshtml
+  RadiologyResults.cshtml
+ Settings/
+  Index.cshtml
+  Privacy.cshtml
+  Security.cshtml
+ Shared/_Layout.cshtml
+ _ViewImports.cshtml
 Views/Account/
  AccessDenied.cshtml
  LicenseExpired.cshtml
@@ -851,6 +892,10 @@ Views/
   Details.cshtml
   Index.cshtml
   UserActions.cshtml
+ BedManagement/
+  Create.cshtml
+  Edit.cshtml
+  Index.cshtml
  Billing/
   Create.cshtml
   Details.cshtml

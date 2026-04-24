@@ -1,10 +1,14 @@
 param(
     [string]$BaseUrl = "http://localhost:5044",
-    [string]$OutputPath = "e:\HMS\MedyxHMS-ASPNET\temp_build_output\uat-role-run-current.json"
+    [string]$OutputPath
 )
 
 $ErrorActionPreference = "Stop"
-$root = "e:\HMS\MedyxHMS-ASPNET"
+$root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+
+if ([string]::IsNullOrWhiteSpace($OutputPath)) {
+    $OutputPath = Join-Path $root "temp_build_output\uat-role-run-current.json"
+}
 
 $staffRoutes = (Get-Content "$root\Views\Shared\Components\SidebarNav\Default.cshtml" -Raw |
     Select-String -Pattern 'href="/[^"#]+' -AllMatches).Matches.Value |
@@ -15,10 +19,10 @@ $staffRoutes = $staffRoutes | Sort-Object -Unique
 
 $patientRoutes = @(
     '/PatientPortal/Dashboard',
-    '/PatientPortal/Appointments',
-    '/PatientPortal/Bills',
-    '/PatientPortal/MedicalRecords',
-    '/PatientPortal/Settings'
+    '/PatientPortal/Appointments/Index',
+    '/PatientPortal/Bills/Index',
+    '/PatientPortal/MedicalRecords/Index',
+    '/PatientPortal/Settings/Index'
 )
 
 $users = @(
@@ -94,21 +98,45 @@ foreach ($u in $users) {
             $status = 0
             $ok = $false
             $note = ''
+            $routeErr = $null
+            $resp = $null
+
             try {
-                $resp = Invoke-WebRequest -Uri ($BaseUrl + $r) -WebSession $sess -UseBasicParsing -TimeoutSec 20 -MaximumRedirection 0
-                $status = [int]$resp.StatusCode
-                $ok = ($status -eq 200)
+                $resp = Invoke-WebRequest -Uri ($BaseUrl + $r) -WebSession $sess -UseBasicParsing -TimeoutSec 20 -MaximumRedirection 0 -ErrorAction SilentlyContinue -ErrorVariable routeErr
             }
             catch {
-                if ($_.Exception.Response) {
-                    $status = [int]$_.Exception.Response.StatusCode.value__
-                    $ok = ($status -in 301, 302, 303, 307, 308, 401, 403)
-                    $note = $_.Exception.Message
+                $routeErr = @($_)
+            }
+
+            if ($resp -and $resp.StatusCode) {
+                $status = [int]$resp.StatusCode
+                $ok = ($status -eq 200 -or $status -in 301, 302, 303, 307, 308, 401, 403)
+                if ($routeErr) {
+                    $note = $routeErr[0].Exception.Message
                 }
-                else {
-                    $status = -1
-                    $note = $_.Exception.Message
+            }
+            elseif ($routeErr) {
+                $note = $routeErr[0].Exception.Message
+                $status = -1
+
+                try {
+                    if ($routeErr[0].Exception.Response -and $routeErr[0].Exception.Response.StatusCode) {
+                        $status = [int]$routeErr[0].Exception.Response.StatusCode
+                    }
                 }
+                catch {
+                    # Some web exceptions can throw while accessing Response/StatusCode.
+                }
+
+                if ($status -lt 0 -and $note -match '\((\d{3})\)') {
+                    $status = [int]$Matches[1]
+                }
+
+                $ok = ($status -in 301, 302, 303, 307, 308, 401, 403)
+            }
+            else {
+                $status = -1
+                $note = 'No response captured.'
             }
 
             $entry.RouteChecks += [ordered]@{

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {}
+    "c:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {}
   },
   "projects": {
-    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {
+    "c:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+        "projectUniqueName": "c:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
         "projectName": "MedyxHMS",
-        "projectPath": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
-        "packagesPath": "C:\\Users\\malin\\.nuget\\packages\\",
-        "outputPath": "E:\\HMS\\MedyxHMS-ASPNET\\obj\\",
+        "projectPath": "c:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+        "packagesPath": "C:\\Users\\alin\\.nuget\\packages\\",
+        "outputPath": "c:\\Databases\\Medyx-HMS\\MedyxHMS-ASPNET\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\malin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\alin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -93,7 +93,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.203/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
