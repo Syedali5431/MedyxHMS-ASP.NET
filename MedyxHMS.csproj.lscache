@@ -814,6 +814,7 @@ Views/
   _AppointmentReportPartial.cshtml
   _DailyTransactionReportPartial.cshtml
   _IPDReportPartial.cshtml
+  _LegacyReportDemoPartial.cshtml
   _OPDReportPartial.cshtml
  Shared/
   Components/SidebarNav/Default.cshtml
@@ -1061,6 +1062,7 @@ Views/
   _AppointmentReportPartial.cshtml
   _DailyTransactionReportPartial.cshtml
   _IPDReportPartial.cshtml
+  _LegacyReportDemoPartial.cshtml
   _OPDReportPartial.cshtml
  Shared/
   Components/SidebarNav/Default.cshtml

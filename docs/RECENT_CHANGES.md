@@ -1,13 +1,70 @@
 # Recent Changes & Maintenance Updates
 
-**Last Updated:** 2026-04-22  
-**Status:** Post-Comment Implementation Formatting Phase
+**Last Updated:** 2026-04-24  
+**Status:** Reports Module — Demo Data & Badge Cleanup
 
 ---
 
 ## 📋 Summary of Recent Changes
 
-### April 22, 2026 - Formatting & Encoding Pass
+### April 24, 2026 — Reports Workspace: Demo Data & UI Cleanup
+
+#### Objective
+Make all 49 reports render meaningful sample data in the Reports Workspace and clean up the header badge section.
+
+#### Files Modified
+
+**Views/Report/Index.cshtml**
+- Removed "40 PHP-originated" and "9 ASP.NET reports/features" badge `<span>` elements from the Reports Workspace header; kept only the "49 total reports" badge.
+- Updated the `else if (selected.IsLegacy)` rendering branch to set `ViewData["DemoReportKey"]` and `ViewData["DemoReportName"]`, then render the new `_LegacyReportDemoPartial` partial view.
+
+**Services/Implementations/ReportService.cs**
+- Added empty-result guard clauses in all 5 legacy report methods (R1–R5): if the DB query returns no rows, the service now returns pre-built demo `ViewModel` objects instead of empty state.
+- Added a new `#region Demo Data Builders (R1-R5)` section with 5 private static builder methods:
+  - `BuildDailyTransactionDemoData` — 6 rows, totals: $3,100 / 3 payments / 1 refund
+  - `BuildAllTransactionDemoData` — 8 rows spanning date range, $7,000 total
+  - `BuildAppointmentDemoData` — 7 appointments, 57% completion rate
+  - `BuildOPDDemoData` — 6 visits, $3,000 consultation fees, 4 paid / 2 pending
+  - `BuildIPDDemoData` — 5 admissions, avg LOS 8.0 days, $27,300 daily charges
+
+**Views/Report/_LegacyReportDemoPartial.cshtml** (new file)
+- Created comprehensive demo partial for R6–R40 legacy reports (35 reports).
+- Categorizes reports by key into 11 display categories with context-appropriate column headers and 5–6 sample rows each:
+  - `financial` (R6, R7, R10, R21–R24, R39): Patient/Date/Type/Amount/Balance/Status
+  - `clinical` (R8, R9, R12–R14, R38): Patient/Doctor/Procedure|Test|Scan/Date/Result/Status
+  - `blood` (R15–R17): Donor or Patient/BloodType/Units or Component/Date/Purpose/Status
+  - `hr` (R28–R30): Staff/Dept/Days or Salary/Absent or Allowances/Leave or Deductions/Net
+  - `log` (R31–R33): User or Recipient/Channel or Action/Module/DateTime/IP or Status
+  - `inventory` (R11, R34–R36): Item/Category/Qty/UnitPrice/Expiry or Stock or IssuedTo/Status
+  - `consultation` (R18, R19): Patient or Participant/Doctor or Host/Date/Duration/Platform/Status
+  - `tpa` (R20): Patient/InsuranceCo/PolicyNo/ClaimAmount/Approved/Status
+  - `ambulance` (R25): Patient/From/To/Date/Driver/Vehicle/Charge/Status
+  - `registry` (R26, R27): Name/Date/Father or AgeAtDeath/Doctor/Ward/CertificateNo
+  - `referral` (R40): Patient/ReferringDoctor/ReferredTo/Reason/Date/Status
+  - `generic`: fallback for unmatched keys
+- Each category shows: date range filter, 4 summary stat cards, Bootstrap table, export buttons, "Preview Mode" footer warning.
+
+#### Build Status
+`dotnet build` — 0 errors, 0 warnings (after Razor `@{ }` inside `else if` syntax fix applied to Index.cshtml)
+
+---
+
+### April 24, 2026 — Reports Workspace Stability Fix (R1-R49)
+
+#### Objective
+Remove runtime error pages when selecting report keys from the unified Reports Workspace.
+
+#### Fix Applied
+- Updated workspace model preload logic in `ReportController.Index` to set fallback models for R1-R5 when data retrieval fails.
+- Updated R1-R5 partial rendering in `Views/Report/Index.cshtml` to use safe `as` casts with default view-model fallbacks, preventing type mismatch crashes.
+- Preserved existing behavior for R6-R40 legacy sample rendering and R41-R49 feature routing while ensuring the workspace no longer hard-fails on missing model values.
+
+#### Validation
+- `dotnet build` succeeded.
+- Application relaunched successfully and is listening on port 5105 for verification.
+
+---
+
 
 #### Files Modified (20+ C# Source Files)
 

@@ -57,6 +57,58 @@ namespace MedyxHMS.Controllers
                     .ToList()
             };
 
+            // Pre-load R1-R5 models so partials rendered inside the workspace view get the right model type
+            if (selected != null)
+            {
+                var now = DateTime.UtcNow;
+                var rangeStart = now.AddMonths(-1).Date;
+                try
+                {
+                    switch (selected.Key)
+                    {
+                        case "R1":
+                            ViewData["R1Model"] = await _reportService.GenerateDailyTransactionReportAsync(now.Date);
+                            break;
+                        case "R2":
+                            ViewData["R2Model"] = await _reportService.GenerateAllTransactionReportAsync(rangeStart, now.Date);
+                            break;
+                        case "R3":
+                            ViewData["R3Model"] = await _reportService.GenerateAppointmentReportAsync(rangeStart, now.Date);
+                            break;
+                        case "R4":
+                            ViewData["R4Model"] = await _reportService.GenerateOPDReportAsync(rangeStart, now.Date);
+                            break;
+                        case "R5":
+                            ViewData["R5Model"] = await _reportService.GenerateIPDReportAsync(rangeStart, now.Date);
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error pre-loading report model for key {Key} in workspace", selected.Key);
+
+                    // Keep workspace rendering stable even if data retrieval fails.
+                    switch (selected.Key)
+                    {
+                        case "R1":
+                            ViewData["R1Model"] = new DailyTransactionReportViewModel { ReportDate = now.Date };
+                            break;
+                        case "R2":
+                            ViewData["R2Model"] = new AllTransactionReportViewModel { StartDate = rangeStart, EndDate = now.Date };
+                            break;
+                        case "R3":
+                            ViewData["R3Model"] = new AppointmentReportViewModel { StartDate = rangeStart, EndDate = now.Date };
+                            break;
+                        case "R4":
+                            ViewData["R4Model"] = new OPDReportViewModel { StartDate = rangeStart, EndDate = now.Date };
+                            break;
+                        case "R5":
+                            ViewData["R5Model"] = new IPDReportViewModel { StartDate = rangeStart, EndDate = now.Date };
+                            break;
+                    }
+                }
+            }
+
             return View(vm);
         }
 

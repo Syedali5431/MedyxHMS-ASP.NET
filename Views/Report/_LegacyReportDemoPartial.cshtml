@@ -1,0 +1,444 @@
+@{
+    var key = ViewData["DemoReportKey"]?.ToString() ?? "";
+    var name = ViewData["DemoReportName"]?.ToString() ?? "Report";
+
+    var financialKeys  = new HashSet<string> { "R6","R7","R10","R21","R22","R23","R24","R39" };
+    var clinicalKeys   = new HashSet<string> { "R8","R9","R12","R13","R14","R38" };
+    var bloodKeys      = new HashSet<string> { "R15","R16","R17" };
+    var hrKeys         = new HashSet<string> { "R28","R29","R30" };
+    var logKeys        = new HashSet<string> { "R31","R32","R33" };
+    var inventoryKeys  = new HashSet<string> { "R11","R34","R35","R36" };
+
+    var cat = financialKeys.Contains(key)  ? "financial"
+            : clinicalKeys.Contains(key)   ? "clinical"
+            : bloodKeys.Contains(key)      ? "blood"
+            : hrKeys.Contains(key)         ? "hr"
+            : logKeys.Contains(key)        ? "log"
+            : inventoryKeys.Contains(key)  ? "inventory"
+            : key == "R18" || key == "R19" ? "consultation"
+            : key == "R20"                 ? "tpa"
+            : key == "R25"                 ? "ambulance"
+            : key == "R26" || key == "R27" ? "registry"
+            : key == "R40"                 ? "referral"
+            : "generic";
+}
+
+<div class="p-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h5 class="mb-0">
+            <i class="fas fa-file-alt me-2 text-primary"></i>@name (@key)
+        </h5>
+        <span class="badge bg-warning text-dark px-2 py-1">
+            <i class="fas fa-flask me-1"></i> Sample Data Preview
+        </span>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="card card-body bg-light border-0 mb-3 py-2">
+        <div class="row g-2 align-items-end">
+            <div class="col-auto">
+                <label class="form-label small mb-1">Start Date</label>
+                <input type="date" class="form-control form-control-sm" value="2026-03-24">
+            </div>
+            <div class="col-auto">
+                <label class="form-label small mb-1">End Date</label>
+                <input type="date" class="form-control form-control-sm" value="2026-04-24">
+            </div>
+            <div class="col-auto">
+                <button class="btn btn-primary btn-sm">Generate</button>
+            </div>
+            <div class="col-auto ms-auto">
+                <button class="btn btn-sm btn-outline-danger" onclick="alert('Export coming soon')"><i class="fas fa-file-pdf"></i> PDF</button>
+                <button class="btn btn-sm btn-outline-success" onclick="alert('Export coming soon')"><i class="fas fa-file-excel"></i> Excel</button>
+                <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            </div>
+        </div>
+    </div>
+
+    @if (cat == "financial")
+    {
+        <!-- Summary Cards -->
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Records</div><div class="h5 mb-0 text-primary">@(key == "R6" || key == "R7" ? "42" : "38")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Amount</div><div class="h5 mb-0 text-success">$84,250</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Paid</div><div class="h5 mb-0 text-info">$71,800</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Pending</div><div class="h5 mb-0 text-warning">$12,450</div></div></div>
+            </div>
+        </div>
+        <!-- Table -->
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Patient / Category</th><th>Date</th><th>Type</th><th>Amount</th><th>Balance</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>2026-03-26</td><td>Consultation</td><td>$500</td><td>$0</td><td><span class="badge bg-success">Paid</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>2026-03-28</td><td>Admission Fee</td><td>$1,200</td><td>$200</td><td><span class="badge bg-warning text-dark">Partial</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>2026-04-02</td><td>Pharmacy</td><td>$340</td><td>$0</td><td><span class="badge bg-success">Paid</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>2026-04-05</td><td>Lab Tests</td><td>$650</td><td>$650</td><td><span class="badge bg-danger">Pending</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>2026-04-10</td><td>Surgery</td><td>$8,500</td><td>$0</td><td><span class="badge bg-success">Paid</span></td></tr>
+                    <tr><td>6</td><td>Sana Mirza</td><td>2026-04-15</td><td>Radiology</td><td>$850</td><td>$0</td><td><span class="badge bg-success">Paid</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "clinical")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Patients</div><div class="h5 mb-0 text-primary">@(key == "R12" ? "28" : key == "R13" ? "19" : "34")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Discharged</div><div class="h5 mb-0 text-success">@(key == "R8" || key == "R9" ? "34" : "—")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Avg LOS (days)</div><div class="h5 mb-0 text-info">@(key == "R9" ? "5.2" : "3.1")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">This Month</div><div class="h5 mb-0 text-warning">12</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Patient</th><th>Doctor</th><th>@(key == "R14" ? "Procedure" : key == "R12" ? "Test Name" : key == "R13" ? "Scan Type" : "Diagnosis")</th><th>Date</th><th>@(key == "R8" || key == "R9" ? "Discharge Date" : "Result")</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>Dr. Sarah Khan</td><td>@(key == "R14" ? "Appendectomy" : key == "R12" ? "CBC Blood Test" : key == "R13" ? "Chest X-Ray" : "Hypertension")</td><td>2026-03-27</td><td>@(key == "R8" || key == "R9" ? "2026-03-31" : "Normal")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>Dr. Ahmed Malik</td><td>@(key == "R14" ? "C-Section" : key == "R12" ? "Liver Function" : key == "R13" ? "MRI Brain" : "Type 2 Diabetes")</td><td>2026-03-30</td><td>@(key == "R8" || key == "R9" ? "2026-04-05" : "Abnormal")</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Dr. Usman Ali</td><td>@(key == "R14" ? "Hernia Repair" : key == "R12" ? "Urine Analysis" : key == "R13" ? "CT Abdomen" : "Pneumonia")</td><td>2026-04-02</td><td>@(key == "R8" || key == "R9" ? "2026-04-08" : "Normal")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>Dr. Sarah Khan</td><td>@(key == "R14" ? "Laparoscopy" : key == "R12" ? "HbA1c" : key == "R13" ? "Ultrasound" : "Fracture L-2")</td><td>2026-04-07</td><td>@(key == "R8" || key == "R9" ? "2026-04-12" : "Elevated")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Dr. Ahmed Malik</td><td>@(key == "R14" ? "Cholecystectomy" : key == "R12" ? "Thyroid Panel" : key == "R13" ? "PET Scan" : "Asthma")</td><td>2026-04-12</td><td>@(key == "R8" || key == "R9" ? "2026-04-17" : "Normal")</td><td><span class="badge bg-info">In Progress</span></td></tr>
+                    <tr><td>6</td><td>Bilal Ahmed</td><td>Dr. Usman Ali</td><td>@(key == "R14" ? "CABG" : key == "R12" ? "Biopsy" : key == "R13" ? "Echocardiogram" : "Hepatitis B")</td><td>2026-04-18</td><td>@(key == "R8" || key == "R9" ? "2026-04-24" : "Pending")</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "blood")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total @(key == "R17" ? "Donors" : "Issues")</div><div class="h5 mb-0 text-danger">@(key == "R17" ? "18" : "24")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Units @(key == "R17" ? "Collected" : "Issued")</div><div class="h5 mb-0 text-primary">@(key == "R17" ? "36" : "48")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">A+ Type</div><div class="h5 mb-0 text-info">12</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">O- Type</div><div class="h5 mb-0 text-warning">6</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>@(key == "R17" ? "Donor Name" : "Patient")</th><th>Blood Type</th><th>@(key == "R16" ? "Component" : "Units")</th><th>Date</th><th>Purpose</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>@(key == "R17" ? "Kamran Asif" : "Ali Raza")</td><td>A+</td><td>@(key == "R16" ? "Plasma" : "2")</td><td>2026-03-28</td><td>@(key == "R17" ? "Voluntary" : "Surgery")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>2</td><td>@(key == "R17" ? "Nadia Haq" : "Fatima Sheikh")</td><td>O+</td><td>@(key == "R16" ? "Platelets" : "1")</td><td>2026-04-02</td><td>@(key == "R17" ? "Voluntary" : "Anaemia")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>3</td><td>@(key == "R17" ? "Tariq Jameel" : "Hassan Butt")</td><td>B+</td><td>@(key == "R16" ? "RBC" : "3")</td><td>2026-04-05</td><td>@(key == "R17" ? "Camp" : "Emergency")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>4</td><td>@(key == "R17" ? "Amna Malik" : "Zainab Qureshi")</td><td>AB+</td><td>@(key == "R16" ? "Plasma" : "2")</td><td>2026-04-10</td><td>@(key == "R17" ? "Voluntary" : "Trauma")</td><td><span class="badge bg-warning text-dark">Processing</span></td></tr>
+                    <tr><td>5</td><td>@(key == "R17" ? "Faisal Rana" : "Omar Farooq")</td><td>O-</td><td>@(key == "R16" ? "Whole Blood" : "4")</td><td>2026-04-15</td><td>@(key == "R17" ? "Patient Directed" : "Surgery")</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>6</td><td>@(key == "R17" ? "Sara Iqbal" : "Bilal Ahmed")</td><td>A-</td><td>@(key == "R16" ? "Cryoprecipitate" : "2")</td><td>2026-04-20</td><td>@(key == "R17" ? "Voluntary" : "Haemophilia")</td><td><span class="badge bg-info">Pending</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "hr")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Staff</div><div class="h5 mb-0 text-primary">@(key == "R30" ? "47" : "42")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R30" ? "Present Days" : "Gross Payroll")</div><div class="h5 mb-0 text-success">@(key == "R30" ? "94%" : "$182,400")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R30" ? "Absent Days" : "Deductions")</div><div class="h5 mb-0 text-danger">@(key == "R30" ? "6%" : "$14,200")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R30" ? "On Leave" : "Net Payroll")</div><div class="h5 mb-0 text-info">@(key == "R30" ? "3" : "$168,200")</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Staff Name</th><th>Department</th><th>@(key == "R30" ? "Days Present" : "Basic Salary")</th><th>@(key == "R30" ? "Days Absent" : "Allowances")</th><th>@(key == "R30" ? "Leave Days" : "Deductions")</th><th>@(key == "R30" ? "Attendance %" : "Net Pay")</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Dr. Sarah Khan</td><td>OPD</td><td>@(key == "R30" ? "26" : "$8,500")</td><td>@(key == "R30" ? "0" : "$1,200")</td><td>@(key == "R30" ? "2" : "$850")</td><td>@(key == "R30" ? "100%" : "$8,850")</td></tr>
+                    <tr><td>2</td><td>Dr. Ahmed Malik</td><td>IPD</td><td>@(key == "R30" ? "24" : "$9,200")</td><td>@(key == "R30" ? "2" : "$1,500")</td><td>@(key == "R30" ? "2" : "$920")</td><td>@(key == "R30" ? "92%" : "$9,780")</td></tr>
+                    <tr><td>3</td><td>Nurse Aisha Bano</td><td>Nursing</td><td>@(key == "R30" ? "28" : "$3,200")</td><td>@(key == "R30" ? "0" : "$600")</td><td>@(key == "R30" ? "0" : "$320")</td><td>@(key == "R30" ? "100%" : "$3,480")</td></tr>
+                    <tr><td>4</td><td>Raza Pharmacist</td><td>Pharmacy</td><td>@(key == "R30" ? "25" : "$3,800")</td><td>@(key == "R30" ? "1" : "$700")</td><td>@(key == "R30" ? "2" : "$380")</td><td>@(key == "R30" ? "96%" : "$4,120")</td></tr>
+                    <tr><td>5</td><td>Lab Technician Ali</td><td>Pathology</td><td>@(key == "R30" ? "26" : "$3,400")</td><td>@(key == "R30" ? "0" : "$500")</td><td>@(key == "R30" ? "2" : "$340")</td><td>@(key == "R30" ? "100%" : "$3,560")</td></tr>
+                    <tr><td>6</td><td>Admin Farhan</td><td>Admin</td><td>@(key == "R30" ? "23" : "$4,200")</td><td>@(key == "R30" ? "3" : "$800")</td><td>@(key == "R30" ? "2" : "$420")</td><td>@(key == "R30" ? "88%" : "$4,580")</td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "log")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Entries</div><div class="h5 mb-0 text-primary">@(key == "R33" ? "142" : "87")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R33" ? "Emails Sent" : "Logins")</div><div class="h5 mb-0 text-success">@(key == "R33" ? "98" : "63")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R33" ? "SMS Sent" : "Failed Logins")</div><div class="h5 mb-0 text-warning">@(key == "R33" ? "44" : "8")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Unique Users</div><div class="h5 mb-0 text-info">31</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>@(key == "R33" ? "Recipient" : "User")</th><th>@(key == "R33" ? "Channel" : "Action")</th><th>@(key == "R33" ? "Subject / Message" : "Module")</th><th>Date &amp; Time</th><th>@(key == "R32" ? "IP Address" : "Status")</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>@(key == "R33" ? "ali.raza@email.com" : "admin")</td><td>@(key == "R33" ? "Email" : "Login")</td><td>@(key == "R33" ? "Appointment Confirmation" : "Dashboard")</td><td>2026-04-24 08:12</td><td><span class="badge bg-success">@(key == "R32" ? "192.168.1.10" : "Success")</span></td></tr>
+                    <tr><td>2</td><td>@(key == "R33" ? "+92-300-1234567" : "dr.sarah")</td><td>@(key == "R33" ? "SMS" : "View")</td><td>@(key == "R33" ? "OPD Reminder" : "Patient Records")</td><td>2026-04-24 09:05</td><td><span class="badge bg-success">@(key == "R32" ? "10.0.0.5" : "Success")</span></td></tr>
+                    <tr><td>3</td><td>@(key == "R33" ? "fatima@hospital.com" : "accountant")</td><td>@(key == "R33" ? "Email" : "Export")</td><td>@(key == "R33" ? "Invoice Ready" : "Billing")</td><td>2026-04-24 10:30</td><td><span class="badge bg-success">@(key == "R32" ? "192.168.1.22" : "Success")</span></td></tr>
+                    <tr><td>4</td><td>@(key == "R33" ? "billing@email.com" : "unknown")</td><td>@(key == "R33" ? "Email" : "Login")</td><td>@(key == "R33" ? "Payment Receipt" : "Auth")</td><td>2026-04-24 11:15</td><td><span class="badge bg-danger">@(key == "R32" ? "45.32.11.99" : "Failed")</span></td></tr>
+                    <tr><td>5</td><td>@(key == "R33" ? "+92-321-7654321" : "nurse.aisha")</td><td>@(key == "R33" ? "SMS" : "Update")</td><td>@(key == "R33" ? "Lab Result Ready" : "IPD")</td><td>2026-04-24 13:40</td><td><span class="badge bg-success">@(key == "R32" ? "192.168.1.18" : "Success")</span></td></tr>
+                    <tr><td>6</td><td>@(key == "R33" ? "admin@hospital.com" : "superadmin")</td><td>@(key == "R33" ? "Email" : "Delete")</td><td>@(key == "R33" ? "Monthly Report" : "Settings")</td><td>2026-04-24 16:00</td><td><span class="badge bg-info">@(key == "R32" ? "127.0.0.1" : "Info")</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "inventory")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Items</div><div class="h5 mb-0 text-primary">@(key == "R11" ? "12" : "86")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R11" ? "Expiring Soon" : "Total Value")</div><div class="h5 mb-0 text-@(key == "R11" ? "danger" : "success")">@(key == "R11" ? "5" : "$24,800")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R36" ? "Issued Today" : "Categories")</div><div class="h5 mb-0 text-info">@(key == "R36" ? "14" : "8")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">@(key == "R34" ? "Low Stock" : "Active Entries")</div><div class="h5 mb-0 text-warning">@(key == "R34" ? "7" : "68")</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Item Name</th><th>Category</th><th>Quantity</th><th>Unit Price</th><th>@(key == "R11" ? "Expiry Date" : key == "R36" ? "Issued To" : "In Stock")</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Paracetamol 500mg</td><td>Medicine</td><td>500</td><td>$0.10</td><td>@(key == "R11" ? "2026-05-15" : key == "R36" ? "Ward A" : "450")</td><td><span class="badge @(key == "R11" ? "bg-warning text-dark" : "bg-success")">@(key == "R11" ? "Expiring" : "OK")</span></td></tr>
+                    <tr><td>2</td><td>Surgical Gloves (L)</td><td>Consumables</td><td>200</td><td>$0.50</td><td>@(key == "R11" ? "2026-06-30" : key == "R36" ? "OT" : "180")</td><td><span class="badge bg-success">OK</span></td></tr>
+                    <tr><td>3</td><td>Amoxicillin 250mg</td><td>Antibiotic</td><td>150</td><td>$0.25</td><td>@(key == "R11" ? "2026-04-30" : key == "R36" ? "Pharmacy" : "100")</td><td><span class="badge bg-danger">@(key == "R11" ? "Critical" : "Low")</span></td></tr>
+                    <tr><td>4</td><td>IV Cannula 18G</td><td>Consumables</td><td>300</td><td>$0.75</td><td>@(key == "R11" ? "2027-01-15" : key == "R36" ? "ICU" : "280")</td><td><span class="badge bg-success">OK</span></td></tr>
+                    <tr><td>5</td><td>Glucose 5% 500ml</td><td>IV Fluids</td><td>80</td><td>$1.50</td><td>@(key == "R11" ? "2026-09-20" : key == "R36" ? "General Ward" : "60")</td><td><span class="badge bg-warning text-dark">Reorder</span></td></tr>
+                    <tr><td>6</td><td>Metformin 850mg</td><td>Medicine</td><td>400</td><td>$0.15</td><td>@(key == "R11" ? "2026-03-10" : key == "R36" ? "Pharmacy" : "350")</td><td><span class="badge bg-danger">@(key == "R11" ? "Expired" : "Low")</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "consultation")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total @(key == "R18" ? "Sessions" : "Meetings")</div><div class="h5 mb-0 text-primary">@(key == "R18" ? "34" : "18")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Completed</div><div class="h5 mb-0 text-success">@(key == "R18" ? "28" : "14")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Avg Duration</div><div class="h5 mb-0 text-info">22 min</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Cancelled</div><div class="h5 mb-0 text-warning">@(key == "R18" ? "6" : "4")</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>@(key == "R18" ? "Patient" : "Participant")</th><th>@(key == "R18" ? "Doctor" : "Host")</th><th>Date</th><th>Duration</th><th>Platform</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>Dr. Sarah Khan</td><td>2026-03-28 10:00</td><td>25 min</td><td>Zoom</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>Dr. Ahmed Malik</td><td>2026-04-02 11:30</td><td>18 min</td><td>Teams</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Dr. Usman Ali</td><td>2026-04-05 14:00</td><td>30 min</td><td>Zoom</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>Dr. Sarah Khan</td><td>2026-04-10 09:00</td><td>22 min</td><td>WebRTC</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Dr. Ahmed Malik</td><td>2026-04-15 16:00</td><td>15 min</td><td>Teams</td><td><span class="badge bg-danger">Cancelled</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "tpa")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Claims</div><div class="h5 mb-0 text-primary">22</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Approved</div><div class="h5 mb-0 text-success">$41,200</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Pending</div><div class="h5 mb-0 text-warning">$12,800</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Rejected</div><div class="h5 mb-0 text-danger">$3,400</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Patient</th><th>Insurance Company</th><th>Policy No</th><th>Claim Amount</th><th>Approved</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>State Life</td><td>SL-2024-00341</td><td>$8,500</td><td>$7,200</td><td><span class="badge bg-success">Approved</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>EFU General</td><td>EFU-2023-11052</td><td>$12,000</td><td>$10,500</td><td><span class="badge bg-success">Approved</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Jubilee Insurance</td><td>JB-2024-00871</td><td>$5,200</td><td>—</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>State Life</td><td>SL-2022-00199</td><td>$3,400</td><td>$0</td><td><span class="badge bg-danger">Rejected</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Allianz EFU</td><td>AL-2024-05321</td><td>$9,800</td><td>—</td><td><span class="badge bg-warning text-dark">Under Review</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "ambulance")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Trips</div><div class="h5 mb-0 text-primary">18</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Emergency</div><div class="h5 mb-0 text-danger">11</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Revenue</div><div class="h5 mb-0 text-success">$9,200</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Avg Response</div><div class="h5 mb-0 text-info">8 min</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Patient</th><th>From</th><th>To</th><th>Date</th><th>Driver</th><th>Vehicle</th><th>Charge</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>Home</td><td>Hospital</td><td>2026-03-28 02:15</td><td>Khalid</td><td>AMB-01</td><td>$500</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>Hospital</td><td>Home</td><td>2026-04-02 14:00</td><td>Aslam</td><td>AMB-02</td><td>$300</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Accident Site</td><td>Hospital</td><td>2026-04-08 09:35</td><td>Khalid</td><td>AMB-01</td><td>$700</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>Home</td><td>Hospital</td><td>2026-04-15 22:00</td><td>Tariq</td><td>AMB-03</td><td>$500</td><td><span class="badge bg-warning text-dark">Billed</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Hospital</td><td>Rehab Center</td><td>2026-04-20 10:00</td><td>Aslam</td><td>AMB-02</td><td>$400</td><td><span class="badge bg-success">Completed</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "registry")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total @(key == "R26" ? "Births" : "Deaths")</div><div class="h5 mb-0 text-@(key == "R26" ? "primary" : "secondary")">@(key == "R26" ? "24" : "8")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Male</div><div class="h5 mb-0 text-info">@(key == "R26" ? "13" : "5")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Female</div><div class="h5 mb-0 text-pink" style="color:#e91e8c;">@(key == "R26" ? "11" : "3")</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Certificates Issued</div><div class="h5 mb-0 text-success">@(key == "R26" ? "22" : "8")</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Name</th><th>Date</th><th>@(key == "R26" ? "Father" : "Age at Death")</th><th>Doctor</th><th>Ward</th><th>Certificate No</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>@(key == "R26" ? "Baby M. Raza" : "Ahmed Khan")</td><td>2026-03-27</td><td>@(key == "R26" ? "M. Raza" : "68 yrs")</td><td>Dr. Sarah Khan</td><td>@(key == "R26" ? "Maternity" : "ICU")</td><td>@(key == "R26" ? "BC-2026-001" : "DC-2026-001")</td></tr>
+                    <tr><td>2</td><td>@(key == "R26" ? "Baby F. Ali" : "Nadia Iqbal")</td><td>2026-04-02</td><td>@(key == "R26" ? "F. Ali" : "45 yrs")</td><td>Dr. Usman Ali</td><td>@(key == "R26" ? "Maternity" : "General Ward")</td><td>@(key == "R26" ? "BC-2026-002" : "DC-2026-002")</td></tr>
+                    <tr><td>3</td><td>@(key == "R26" ? "Baby H. Sheikh" : "Tariq Butt")</td><td>2026-04-08</td><td>@(key == "R26" ? "H. Sheikh" : "72 yrs")</td><td>Dr. Ahmed Malik</td><td>@(key == "R26" ? "Maternity" : "ICU")</td><td>@(key == "R26" ? "BC-2026-003" : "DC-2026-003")</td></tr>
+                    <tr><td>4</td><td>@(key == "R26" ? "Baby Z. Qureshi" : "Saba Malik")</td><td>2026-04-14</td><td>@(key == "R26" ? "Z. Qureshi" : "55 yrs")</td><td>Dr. Sarah Khan</td><td>@(key == "R26" ? "Maternity" : "Emergency")</td><td>@(key == "R26" ? "BC-2026-004" : "DC-2026-004")</td></tr>
+                    <tr><td>5</td><td>@(key == "R26" ? "Baby O. Farooq" : "Imran Hussain")</td><td>2026-04-20</td><td>@(key == "R26" ? "O. Farooq" : "61 yrs")</td><td>Dr. Ahmed Malik</td><td>@(key == "R26" ? "Maternity" : "General Ward")</td><td>@(key == "R26" ? "BC-2026-005" : "DC-2026-005")</td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else if (cat == "referral")
+    {
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Referrals</div><div class="h5 mb-0 text-primary">16</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Internal</div><div class="h5 mb-0 text-info">9</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">External</div><div class="h5 mb-0 text-warning">7</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Accepted</div><div class="h5 mb-0 text-success">13</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark">
+                    <tr><th>#</th><th>Patient</th><th>Referring Doctor</th><th>Referred To</th><th>Reason</th><th>Date</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>Dr. Sarah Khan</td><td>Cardiology Dept</td><td>Chest Pain Workup</td><td>2026-03-28</td><td><span class="badge bg-success">Accepted</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>Dr. Ahmed Malik</td><td>City Heart Hospital</td><td>Advanced Cardiac Care</td><td>2026-04-02</td><td><span class="badge bg-success">Accepted</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Dr. Usman Ali</td><td>Neuro Department</td><td>Seizure Evaluation</td><td>2026-04-05</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>Dr. Sarah Khan</td><td>Oncology Center</td><td>Biopsy Results Review</td><td>2026-04-10</td><td><span class="badge bg-success">Accepted</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Dr. Ahmed Malik</td><td>Kidney Foundation</td><td>Dialysis Assessment</td><td>2026-04-18</td><td><span class="badge bg-info">Under Review</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <!-- Generic fallback for any unrecognized keys -->
+        <div class="row g-3 mb-3">
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Total Records</div><div class="h5 mb-0 text-primary">36</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">This Month</div><div class="h5 mb-0 text-success">12</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Active</div><div class="h5 mb-0 text-info">28</div></div></div>
+            </div>
+            <div class="col-6 col-md-3">
+                <div class="card text-center border-0 shadow-sm"><div class="card-body py-2"><div class="small text-muted">Pending</div><div class="h5 mb-0 text-warning">8</div></div></div>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-striped table-bordered mb-0">
+                <thead class="table-dark"><tr><th>#</th><th>Name</th><th>Department</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>1</td><td>Ali Raza</td><td>OPD</td><td>2026-03-28</td><td>$500</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>2</td><td>Fatima Sheikh</td><td>IPD</td><td>2026-04-02</td><td>$1,200</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>3</td><td>Hassan Butt</td><td>Lab</td><td>2026-04-08</td><td>$350</td><td><span class="badge bg-warning text-dark">Pending</span></td></tr>
+                    <tr><td>4</td><td>Zainab Qureshi</td><td>Radiology</td><td>2026-04-12</td><td>$850</td><td><span class="badge bg-success">Completed</span></td></tr>
+                    <tr><td>5</td><td>Omar Farooq</td><td>Pharmacy</td><td>2026-04-18</td><td>$220</td><td><span class="badge bg-info">Processing</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <!-- Footer notice -->
+    <div class="alert alert-warning border-0 mt-3 mb-0 py-2 px-3 small rounded-2">
+        <i class="fas fa-info-circle me-1"></i>
+        <strong>Preview Mode</strong> — Showing sample data. This report is pending full ASP.NET migration from the legacy PHP system.
+    </div>
+</div>

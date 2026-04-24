@@ -12,9 +12,6 @@
         </div>
         <div class="d-flex gap-2 flex-wrap">
             <span class="badge text-bg-dark">49 total reports</span>
-            <span class="badge text-bg-secondary">40 PHP-originated</span>
-            <span class="badge text-bg-primary">9 ASP.NET reports/features</span>
-            <span class="badge text-bg-success">@Model.ImportedLegacyTemplateCount imported legacy templates</span>
         </div>
     </div>
 
@@ -108,27 +105,27 @@
                     else if (selected.Key == "R1")
                     {
                         <!-- R1: Daily Transaction Report -->
-                        @await Html.PartialAsync("_DailyTransactionReportPartial")
+                        @await Html.PartialAsync("_DailyTransactionReportPartial", ViewData["R1Model"] as MedyxHMS.ViewModels.DailyTransactionReportViewModel ?? new MedyxHMS.ViewModels.DailyTransactionReportViewModel { ReportDate = DateTime.UtcNow.Date })
                     }
                     else if (selected.Key == "R2")
                     {
                         <!-- R2: All Transaction Report -->
-                        @await Html.PartialAsync("_AllTransactionReportPartial")
+                        @await Html.PartialAsync("_AllTransactionReportPartial", ViewData["R2Model"] as MedyxHMS.ViewModels.AllTransactionReportViewModel ?? new MedyxHMS.ViewModels.AllTransactionReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
                     }
                     else if (selected.Key == "R3")
                     {
                         <!-- R3: Appointment Report -->
-                        @await Html.PartialAsync("_AppointmentReportPartial")
+                        @await Html.PartialAsync("_AppointmentReportPartial", ViewData["R3Model"] as MedyxHMS.ViewModels.AppointmentReportViewModel ?? new MedyxHMS.ViewModels.AppointmentReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
                     }
                     else if (selected.Key == "R4")
                     {
                         <!-- R4: OPD Report -->
-                        @await Html.PartialAsync("_OPDReportPartial")
+                        @await Html.PartialAsync("_OPDReportPartial", ViewData["R4Model"] as MedyxHMS.ViewModels.OPDReportViewModel ?? new MedyxHMS.ViewModels.OPDReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
                     }
                     else if (selected.Key == "R5")
                     {
                         <!-- R5: IPD Report -->
-                        @await Html.PartialAsync("_IPDReportPartial")
+                        @await Html.PartialAsync("_IPDReportPartial", ViewData["R5Model"] as MedyxHMS.ViewModels.IPDReportViewModel ?? new MedyxHMS.ViewModels.IPDReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
                     }
                     else if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
                     {
@@ -136,33 +133,9 @@
                     }
                     else if (selected.IsLegacy)
                     {
-                        <div class="p-4">
-                            <div class="alert alert-info mb-4">
-                                <div class="fw-semibold mb-1">Legacy PHP catalog entry</div>
-                                <div>This report is selectable from the unified 49-report list and tracked through the migrated legacy report workflow.</div>
-                            </div>
-
-                            @if (Model.MatchingTemplateId.HasValue)
-                            {
-                                <div class="card border-success mb-3">
-                                    <div class="card-body">
-                                        <h3 class="h6 text-success mb-2">Imported template found</h3>
-                                        <p class="mb-0">A matching template is already present in the ASP.NET report builder catalog for this legacy report.</p>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="card border-warning mb-3">
-                                    <div class="card-body">
-                                        <h3 class="h6 text-warning-emphasis mb-2">Template import pending</h3>
-                                        <p class="mb-0">This report is listed and selectable now. Import the legacy PHP catalog to create editable templates where a mapped source is available.</p>
-                                    </div>
-                                </div>
-                            }
-
-                            <div class="small text-muted">Current report: @selected.Key - @selected.Name</div>
-                        </div>
+                        ViewData["DemoReportKey"] = selected.Key;
+                        ViewData["DemoReportName"] = selected.Name;
+                        @await Html.PartialAsync("_LegacyReportDemoPartial")
                     }
                     else if (selected.Key == "R48")
                     {

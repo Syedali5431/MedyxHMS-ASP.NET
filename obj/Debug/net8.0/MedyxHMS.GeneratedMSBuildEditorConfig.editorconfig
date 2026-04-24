@@ -702,6 +702,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XF9JUERSZXBvcnRQYXJ0aWFsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
+[C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/_LegacyReportDemoPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XF9MZWdhY3lSZXBvcnREZW1vUGFydGlhbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
 [C:/Databases/Medyx-HMS/MedyxHMS-ASPNET/Views/Report/_OPDReportPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0XF9PUERSZXBvcnRQYXJ0aWFsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 

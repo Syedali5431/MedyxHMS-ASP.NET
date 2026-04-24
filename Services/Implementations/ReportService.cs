@@ -348,6 +348,8 @@ namespace MedyxHMS.Services.Implementations
                 .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
 
+            if (!transactions.Any()) return BuildDailyTransactionDemoData(reportDate);
+
             var transactionData = transactions.Select(t => (dynamic)new
             {
                 t.Id,
@@ -391,6 +393,8 @@ namespace MedyxHMS.Services.Implementations
                 .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
                 .OrderByDescending(t => t.TransactionDate)
                 .ToListAsync();
+
+            if (!transactions.Any()) return BuildAllTransactionDemoData(startDate, endDate);
 
             var transactionData = transactions.Select(t => (dynamic)new
             {
@@ -441,6 +445,8 @@ namespace MedyxHMS.Services.Implementations
                 .Include(a => a.Doctor)
                 .OrderByDescending(a => a.AppointmentDate)
                 .ToListAsync();
+
+            if (!appointments.Any()) return BuildAppointmentDemoData(startDate, endDate);
 
             var appointmentData = appointments.Select(a => (dynamic)new
             {
@@ -499,6 +505,8 @@ namespace MedyxHMS.Services.Implementations
                 .OrderByDescending(v => v.VisitDate)
                 .ToListAsync();
 
+            if (!visits.Any()) return BuildOPDDemoData(startDate, endDate);
+
             var visitData = visits.Select(v => (dynamic)new
             {
                 v.Id,
@@ -556,6 +564,8 @@ namespace MedyxHMS.Services.Implementations
                 .OrderByDescending(a => a.AdmissionDate)
                 .ToListAsync();
 
+            if (!admissions.Any()) return BuildIPDDemoData(startDate, endDate);
+
             var admissionData = admissions.Select(a => (dynamic)new
             {
                 a.Id,
@@ -609,6 +619,83 @@ namespace MedyxHMS.Services.Implementations
 
             await _cacheService.SetAsync(cacheKey, result, 15);
             return result;
+        }
+
+        #endregion
+
+        #region Demo Data Builders (R1-R5)
+
+        private static DailyTransactionReportViewModel BuildDailyTransactionDemoData(DateTime reportDate)
+        {
+            var d = reportDate.Date;
+            var data = new List<dynamic>
+            {
+                new { Id=1, TransactionId="TXN-0041", TransactionType="Payment", Amount=(decimal)500.00, Description="OPD Consultation Fee", ReferenceNumber="OPD-101", TransactionDate=d.AddHours(9).AddMinutes(15).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Reception", Status="Completed" },
+                new { Id=2, TransactionId="TXN-0042", TransactionType="Payment", Amount=(decimal)1200.00, Description="IPD Admission Deposit", ReferenceNumber="IPD-045", TransactionDate=d.AddHours(10).AddMinutes(30).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Admin", Status="Completed" },
+                new { Id=3, TransactionId="TXN-0043", TransactionType="Payment", Amount=(decimal)350.00, Description="Pathology Lab Tests", ReferenceNumber="LAB-220", TransactionDate=d.AddHours(11).AddMinutes(0).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Lab Tech", Status="Completed" },
+                new { Id=4, TransactionId="TXN-0044", TransactionType="Refund", Amount=(decimal)150.00, Description="Medicine Return", ReferenceNumber="MED-033", TransactionDate=d.AddHours(12).AddMinutes(45).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Pharmacist", Status="Completed" },
+                new { Id=5, TransactionId="TXN-0045", TransactionType="Payment", Amount=(decimal)800.00, Description="Emergency Services", ReferenceNumber="EMR-007", TransactionDate=d.AddHours(14).AddMinutes(20).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Admin", Status="Completed" },
+                new { Id=6, TransactionId="TXN-0046", TransactionType="Payment", Amount=(decimal)250.00, Description="Pharmacy Purchase", ReferenceNumber="PHA-088", TransactionDate=d.AddHours(15).AddMinutes(10).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Pharmacist", Status="Completed" },
+            };
+            return new DailyTransactionReportViewModel { TransactionData = data, ReportDate = reportDate.Date, TotalTransactions = 3100m, TotalPayments = 2950m, TotalRefunds = 150m, TransactionCount = 6 };
+        }
+
+        private static AllTransactionReportViewModel BuildAllTransactionDemoData(DateTime startDate, DateTime endDate)
+        {
+            var data = new List<dynamic>
+            {
+                new { Id=1, TransactionId="TXN-0041", TransactionType="Payment", Amount=(decimal)500.00, Description="OPD Consultation", ReferenceNumber="OPD-101", TransactionDate=startDate.AddDays(1).ToString("yyyy-MM-dd"), ProcessedBy="Reception", Status="Completed" },
+                new { Id=2, TransactionId="TXN-0042", TransactionType="Payment", Amount=(decimal)1200.00, Description="IPD Admission Deposit", ReferenceNumber="IPD-045", TransactionDate=startDate.AddDays(3).ToString("yyyy-MM-dd"), ProcessedBy="Admin", Status="Completed" },
+                new { Id=3, TransactionId="TXN-0043", TransactionType="Payment", Amount=(decimal)3500.00, Description="Surgical Procedure", ReferenceNumber="SRG-012", TransactionDate=startDate.AddDays(5).ToString("yyyy-MM-dd"), ProcessedBy="Admin", Status="Completed" },
+                new { Id=4, TransactionId="TXN-0044", TransactionType="Refund", Amount=(decimal)400.00, Description="Overpayment Refund", ReferenceNumber="REF-071", TransactionDate=startDate.AddDays(7).ToString("yyyy-MM-dd"), ProcessedBy="Accountant", Status="Completed" },
+                new { Id=5, TransactionId="TXN-0045", TransactionType="Payment", Amount=(decimal)850.00, Description="Radiology Scan", ReferenceNumber="RAD-054", TransactionDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), ProcessedBy="Lab Tech", Status="Completed" },
+                new { Id=6, TransactionId="TXN-0046", TransactionType="Payment", Amount=(decimal)200.00, Description="Pharmacy Medicines", ReferenceNumber="PHA-101", TransactionDate=startDate.AddDays(14).ToString("yyyy-MM-dd"), ProcessedBy="Pharmacist", Status="Completed" },
+                new { Id=7, TransactionId="TXN-0047", TransactionType="Payment", Amount=(decimal)750.00, Description="Blood Bank Services", ReferenceNumber="BBK-009", TransactionDate=startDate.AddDays(18).ToString("yyyy-MM-dd"), ProcessedBy="Admin", Status="Completed" },
+                new { Id=8, TransactionId="TXN-0048", TransactionType="Refund", Amount=(decimal)250.00, Description="Cancelled Appointment", ReferenceNumber="APT-022", TransactionDate=startDate.AddDays(22).ToString("yyyy-MM-dd"), ProcessedBy="Reception", Status="Completed" },
+            };
+            return new AllTransactionReportViewModel { TransactionData = data, StartDate = startDate, EndDate = endDate, TotalAmount = 7000m, TotalPayments = 7000m, TotalRefunds = 650m, TransactionCount = 8, BreakdownByType = new Dictionary<string, decimal> { ["Payment"] = 7000m, ["Refund"] = 650m } };
+        }
+
+        private static AppointmentReportViewModel BuildAppointmentDemoData(DateTime startDate, DateTime endDate)
+        {
+            var data = new List<dynamic>
+            {
+                new { Id=1, AppointmentId="APT-1001", PatientName="Ali Raza", DoctorName="Dr. Sarah Khan", AppointmentDate=startDate.AddDays(1).ToString("yyyy-MM-dd"), AppointmentTime="09:00", Status="Completed", AppointmentType="General Checkup", Priority="Normal" },
+                new { Id=2, AppointmentId="APT-1002", PatientName="Fatima Sheikh", DoctorName="Dr. Ahmed Malik", AppointmentDate=startDate.AddDays(2).ToString("yyyy-MM-dd"), AppointmentTime="10:30", Status="Completed", AppointmentType="Follow-up", Priority="Normal" },
+                new { Id=3, AppointmentId="APT-1003", PatientName="Hassan Butt", DoctorName="Dr. Sarah Khan", AppointmentDate=startDate.AddDays(4).ToString("yyyy-MM-dd"), AppointmentTime="11:00", Status="Scheduled", AppointmentType="Consultation", Priority="High" },
+                new { Id=4, AppointmentId="APT-1004", PatientName="Zainab Qureshi", DoctorName="Dr. Usman Ali", AppointmentDate=startDate.AddDays(6).ToString("yyyy-MM-dd"), AppointmentTime="14:00", Status="Cancelled", AppointmentType="General Checkup", Priority="Normal" },
+                new { Id=5, AppointmentId="APT-1005", PatientName="Omar Farooq", DoctorName="Dr. Ahmed Malik", AppointmentDate=startDate.AddDays(8).ToString("yyyy-MM-dd"), AppointmentTime="09:30", Status="Completed", AppointmentType="Emergency", Priority="Urgent" },
+                new { Id=6, AppointmentId="APT-1006", PatientName="Sana Mirza", DoctorName="Dr. Usman Ali", AppointmentDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), AppointmentTime="11:30", Status="Completed", AppointmentType="Follow-up", Priority="Normal" },
+                new { Id=7, AppointmentId="APT-1007", PatientName="Bilal Ahmed", DoctorName="Dr. Sarah Khan", AppointmentDate=startDate.AddDays(12).ToString("yyyy-MM-dd"), AppointmentTime="15:00", Status="Scheduled", AppointmentType="Consultation", Priority="Normal" },
+            };
+            return new AppointmentReportViewModel { AppointmentData = data, StartDate = startDate, EndDate = endDate, TotalAppointments = 7, CompletedAppointments = 4, CancelledAppointments = 1, ScheduledAppointments = 2, CompletionRate = 57.1m, AppointmentsByType = new Dictionary<string, int> { ["General Checkup"] = 2, ["Follow-up"] = 2, ["Consultation"] = 2, ["Emergency"] = 1 }, AppointmentsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 3, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 } };
+        }
+
+        private static OPDReportViewModel BuildOPDDemoData(DateTime startDate, DateTime endDate)
+        {
+            var data = new List<dynamic>
+            {
+                new { Id=1, PatientName="Ali Raza", DoctorName="Dr. Sarah Khan", VisitDate=startDate.AddDays(1).ToString("yyyy-MM-dd"), Diagnosis="Hypertension", ConsultationFee=(decimal)500.00, PaymentStatus="Paid", CreatedBy="Reception" },
+                new { Id=2, PatientName="Fatima Sheikh", DoctorName="Dr. Ahmed Malik", VisitDate=startDate.AddDays(2).ToString("yyyy-MM-dd"), Diagnosis="Type 2 Diabetes", ConsultationFee=(decimal)600.00, PaymentStatus="Paid", CreatedBy="Reception" },
+                new { Id=3, PatientName="Hassan Butt", DoctorName="Dr. Usman Ali", VisitDate=startDate.AddDays(4).ToString("yyyy-MM-dd"), Diagnosis="Respiratory Infection", ConsultationFee=(decimal)400.00, PaymentStatus="Pending", CreatedBy="Reception" },
+                new { Id=4, PatientName="Zainab Qureshi", DoctorName="Dr. Sarah Khan", VisitDate=startDate.AddDays(6).ToString("yyyy-MM-dd"), Diagnosis="Migraine", ConsultationFee=(decimal)500.00, PaymentStatus="Paid", CreatedBy="Reception" },
+                new { Id=5, PatientName="Omar Farooq", DoctorName="Dr. Ahmed Malik", VisitDate=startDate.AddDays(8).ToString("yyyy-MM-dd"), Diagnosis="Acute Gastritis", ConsultationFee=(decimal)550.00, PaymentStatus="Pending", CreatedBy="Reception" },
+                new { Id=6, PatientName="Sana Mirza", DoctorName="Dr. Usman Ali", VisitDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), Diagnosis="Allergic Rhinitis", ConsultationFee=(decimal)450.00, PaymentStatus="Paid", CreatedBy="Reception" },
+            };
+            return new OPDReportViewModel { OPDVisitData = data, StartDate = startDate, EndDate = endDate, TotalVisits = 6, UniquePatients = 6, TotalConsultationFees = 3000m, AverageConsultationFee = 500m, PaidVisits = 4, PendingPaymentVisits = 2, VisitsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 2, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 } };
+        }
+
+        private static IPDReportViewModel BuildIPDDemoData(DateTime startDate, DateTime endDate)
+        {
+            var data = new List<dynamic>
+            {
+                new { Id=1, PatientName="Ali Raza", DoctorName="Dr. Sarah Khan", WardName="General Ward", BedNumber="G-12", AdmissionDate=startDate.AddDays(1).ToString("yyyy-MM-dd"), DischargeDate=startDate.AddDays(5).ToString("yyyy-MM-dd"), LengthOfStay=4, AdmissionType="Emergency", Diagnosis="Pneumonia", Status="Discharged", DailyCharges=(decimal)3500.00 },
+                new { Id=2, PatientName="Fatima Sheikh", DoctorName="Dr. Ahmed Malik", WardName="Surgical Ward", BedNumber="S-03", AdmissionDate=startDate.AddDays(2).ToString("yyyy-MM-dd"), DischargeDate=startDate.AddDays(8).ToString("yyyy-MM-dd"), LengthOfStay=6, AdmissionType="Planned", Diagnosis="Appendectomy", Status="Discharged", DailyCharges=(decimal)5200.00 },
+                new { Id=3, PatientName="Hassan Butt", DoctorName="Dr. Usman Ali", WardName="ICU", BedNumber="ICU-02", AdmissionDate=startDate.AddDays(3).ToString("yyyy-MM-dd"), DischargeDate="Still Admitted", LengthOfStay=18, AdmissionType="Emergency", Diagnosis="Cardiac Arrest", Status="Admitted", DailyCharges=(decimal)12000.00 },
+                new { Id=4, PatientName="Zainab Qureshi", DoctorName="Dr. Sarah Khan", WardName="Maternity Ward", BedNumber="M-05", AdmissionDate=startDate.AddDays(7).ToString("yyyy-MM-dd"), DischargeDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), LengthOfStay=3, AdmissionType="Planned", Diagnosis="Normal Delivery", Status="Discharged", DailyCharges=(decimal)2100.00 },
+                new { Id=5, PatientName="Omar Farooq", DoctorName="Dr. Ahmed Malik", WardName="General Ward", BedNumber="G-08", AdmissionDate=startDate.AddDays(12).ToString("yyyy-MM-dd"), DischargeDate="Still Admitted", LengthOfStay=9, AdmissionType="Emergency", Diagnosis="Hepatitis B", Status="Admitted", DailyCharges=(decimal)4500.00 },
+            };
+            return new IPDReportViewModel { IPDAdmissionData = data, StartDate = startDate, EndDate = endDate, TotalAdmissions = 5, DischargedPatients = 3, CurrentlyAdmitted = 2, AverageLengthOfStay = 8.0, TotalDailyCharges = 27300m, AdmissionsByType = new Dictionary<string, int> { ["Emergency"] = 3, ["Planned"] = 2 }, AdmissionsByWard = new Dictionary<string, int> { ["General Ward"] = 2, ["Surgical Ward"] = 1, ["ICU"] = 1, ["Maternity Ward"] = 1 } };
         }
 
         #endregion
