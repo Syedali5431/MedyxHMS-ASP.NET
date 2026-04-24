@@ -241,7 +241,7 @@ namespace MedyxHMS.Extensions
                 }
 
                 // Check for required API key or bearer token
-                if (!context.Request.Headers.ContainsKey("Authorization"))
+                if (!context.Request.Headers.ContainsKey("Authorization") && !HasAppAuthCookie(context))
                 {
                     context.Response.StatusCode = StatusCodes.Status401Unauthorized;
                     await context.Response.WriteAsync("Authorization header required");
@@ -259,6 +259,20 @@ namespace MedyxHMS.Extensions
             }
 
             await _next(context);
+        }
+
+        private static bool HasAppAuthCookie(HttpContext context)
+        {
+            foreach (var cookie in context.Request.Cookies.Keys)
+            {
+                if (cookie.Contains("Identity.Application", StringComparison.OrdinalIgnoreCase) ||
+                    cookie.Contains(".AspNetCore.Cookies", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 

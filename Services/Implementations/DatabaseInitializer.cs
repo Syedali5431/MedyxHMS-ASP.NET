@@ -1403,6 +1403,15 @@ IF COL_LENGTH(N'[dbo].[Beds]', N'RequiresAdminApproval') IS NULL
 IF COL_LENGTH(N'[dbo].[Beds]', N'LastUpdated') IS NULL
     ALTER TABLE [dbo].[Beds] ADD [LastUpdated] DATETIME2 NULL;
 
+IF COL_LENGTH(N'[dbo].[Beds]', N'Block') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [Block] NVARCHAR(100) NOT NULL CONSTRAINT [DF_Beds_Block] DEFAULT('');
+
+IF COL_LENGTH(N'[dbo].[Beds]', N'Floor') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [Floor] NVARCHAR(50) NOT NULL CONSTRAINT [DF_Beds_Floor] DEFAULT('');
+
+IF COL_LENGTH(N'[dbo].[Beds]', N'RoomNumber') IS NULL
+    ALTER TABLE [dbo].[Beds] ADD [RoomNumber] NVARCHAR(50) NOT NULL CONSTRAINT [DF_Beds_RoomNumber] DEFAULT('');
+
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Beds_Patients_PatientId')
 AND OBJECT_ID(N'[dbo].[Patients]', N'U') IS NOT NULL
     ALTER TABLE [dbo].[Beds] ADD CONSTRAINT [FK_Beds_Patients_PatientId]

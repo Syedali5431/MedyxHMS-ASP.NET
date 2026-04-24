@@ -1,533 +1,666 @@
+﻿
 @model IEnumerable<MedyxHMS.Models.Bed>
 @using MedyxHMS.Services.Interfaces
+@using System.Text.Json
 @{
-    ViewData["Title"] = "Bed Management";
-    var summary = ViewBag.Summary as BedManagementSummary ?? new BedManagementSummary();
-    var wards   = (ViewBag.Wards   as IEnumerable<MedyxHMS.Models.Ward>)   ?? Enumerable.Empty<MedyxHMS.Models.Ward>();
-    var patients= (ViewBag.Patients as System.Collections.IEnumerable) ?? Array.Empty<object>();
-    var canManageBeds = User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Nurse");
+	ViewData["Title"] = "Bed Management";
+	var summary  = ViewBag.Summary  as BedManagementSummary ?? new BedManagementSummary();
+	var wards    = (ViewBag.Wards   as IEnumerable<MedyxHMS.Models.Ward>)  ?? Enumerable.Empty<MedyxHMS.Models.Ward>();
+	var patients = (ViewBag.Patients as System.Collections.IEnumerable) ?? Array.Empty<object>();
+	var canManageBeds = User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Nurse");
+
+	var jsonOpts = new JsonSerializerOptions
+	{
+		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.Default
+	};
+	var bedsJson = JsonSerializer.Serialize(Model.Select(b => new
+	{
+		id                   = b.Id,
+		bedNumber            = b.BedNumber,
+		block                = b.Block ?? "",
+		floor                = b.Floor ?? "",
+		roomNumber           = b.RoomNumber ?? "",
+		ward                 = b.Ward != null ? b.Ward.Name : "",
+		wardId               = b.WardId,
+		bedType              = b.BedType,
+		status               = b.Status,
+		patientId            = b.PatientId,
+		patientName          = b.Patient != null ? (b.Patient.FirstName + " " + b.Patient.LastName) : (string?)null,
+		isIsolation          = b.IsIsolation,
+		requiresAdminApproval = b.RequiresAdminApproval,
+		dailyCharges         = b.DailyCharges
+	}), jsonOpts);
 }
+
+<style>
+/* ── Bed icon grid ─────────────────────────────────────────── */
+.bed-icon-grid { display: flex; flex-wrap: wrap; gap: 8px; padding: 8px 0; min-height: 80px; }
+.bed-icon {
+	display: inline-flex; flex-direction: column;
+	align-items: center; justify-content: center;
+	width: 84px; height: 72px;
+	border-radius: 8px; border: 2px solid transparent;
+	cursor: pointer; transition: transform .15s, border-color .15s;
+	user-select: none;
+}
+.bed-icon:hover  { transform: scale(1.08); border-color: #0d6efd; }
+.bed-icon .bi-icon { font-size: 1.65rem; }
+.bed-icon .bed-lbl { font-size: 0.62rem; font-weight: 700; margin-top: 3px; text-align: center; word-break: break-all; max-width: 78px; }
+.bed-icon.s-available   { background: #d1e7dd; color: #0a3622; }
+.bed-icon.s-occupied    { background: #f8d7da; color: #58151c; }
+.bed-icon.s-cleaning    { background: #fff3cd; color: #664d03; }
+.bed-icon.s-maintenance { background: #e2e3e5; color: #41464b; }
+.bed-icon.s-blocked     { background: #c8c9ca; color: #1c1c1e; }
+/* Right-click context menu */
+#bedCtxMenu {
+	position: fixed; z-index: 9999; background: #fff;
+	border: 1px solid #dee2e6; border-radius: 6px;
+	box-shadow: 0 3px 12px rgba(0,0,0,.18);
+	min-width: 185px; display: none; padding: 4px 0;
+}
+.cm-item { padding: 7px 14px; cursor: pointer; font-size: .85rem; display: flex; align-items: center; gap: 8px; }
+.cm-item:hover  { background: #f8f9fa; }
+.cm-item.cm-info { cursor: default; font-weight: 600; }
+.cm-item.cm-info:hover { background: transparent; }
+.cm-divider { height: 1px; background: #dee2e6; margin: 4px 0; }
+/* Room row */
+.room-row:hover     { background: #f0f4ff !important; cursor: pointer; }
+.room-row.active-room { background: #dde8fe !important; font-weight: 600; }
+</style>
 
 <div class="container-fluid">
 
-    <!-- Page Header -->
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <div>
-            <h1 class="h3 mb-0 text-gray-800"><i class="fas fa-bed me-2"></i>Bed Management</h1>
-            <p class="text-muted mb-0">Real-time bed availability and patient assignment</p>
-        </div>
-        <div class="d-flex gap-2">
-            <button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
-                <i class="fas fa-sync-alt me-1"></i>Refresh
-            </button>
-            @if (canManageBeds)
-            {
-                <a asp-action="Create" class="btn btn-primary btn-sm">
-                    <i class="fas fa-plus me-1"></i>Add Bed
-                </a>
-            }
-        </div>
-    </div>
+	<!-- Page Header -->
+	<div class="d-flex justify-content-between align-items-center mb-4">
+		<div>
+			<h1 class="h3 mb-0 text-gray-800"><i class="fas fa-bed me-2"></i>Bed Management</h1>
+			<p class="text-muted mb-0">Real-time bed availability and patient assignment</p>
+		</div>
+		<div class="d-flex gap-2">
+			<button class="btn btn-outline-secondary btn-sm" onclick="location.reload()">
+				<i class="fas fa-sync-alt me-1"></i>Refresh
+			</button>
+			@if (canManageBeds)
+			{
+				<a asp-action="Create" class="btn btn-primary btn-sm">
+					<i class="fas fa-plus me-1"></i>Add Beds
+				</a>
+			}
+		</div>
+	</div>
 
-    <!-- Alerts -->
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
+	<!-- Alerts -->
+	@if (TempData["SuccessMessage"] != null)
+	{
+		<div class="alert alert-success alert-dismissible fade show" role="alert">
+			<i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+	}
+	@if (TempData["ErrorMessage"] != null)
+	{
+		<div class="alert alert-danger alert-dismissible fade show" role="alert">
+			<i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+	}
 
-    <!-- Summary Cards -->
-    <div class="row mb-4">
-        <div class="col-xl col-md-4 col-6 mb-3">
-            <div class="card border-start border-primary border-4 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-0">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Beds</div>
-                            <div class="h4 mb-0 fw-bold">@summary.TotalBeds</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-bed fa-2x text-secondary opacity-50"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl col-md-4 col-6 mb-3">
-            <div class="card border-start border-success border-4 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-0">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-success text-uppercase mb-1">Available</div>
-                            <div class="h4 mb-0 fw-bold text-success">@summary.AvailableBeds</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-check-circle fa-2x text-success opacity-50"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl col-md-4 col-6 mb-3">
-            <div class="card border-start border-danger border-4 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-0">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">Occupied</div>
-                            <div class="h4 mb-0 fw-bold text-danger">@summary.OccupiedBeds</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-user-injured fa-2x text-danger opacity-50"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl col-md-4 col-6 mb-3">
-            <div class="card border-start border-warning border-4 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-0">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">Cleaning</div>
-                            <div class="h4 mb-0 fw-bold text-warning">@summary.CleaningBeds</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-broom fa-2x text-warning opacity-50"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-xl col-md-4 col-6 mb-3">
-            <div class="card border-start border-secondary border-4 shadow-sm h-100">
-                <div class="card-body py-3">
-                    <div class="row align-items-center g-0">
-                        <div class="col">
-                            <div class="text-xs fw-bold text-secondary text-uppercase mb-1">Maintenance</div>
-                            <div class="h4 mb-0 fw-bold text-secondary">@summary.MaintenanceBeds</div>
-                        </div>
-                        <div class="col-auto"><i class="fas fa-tools fa-2x text-secondary opacity-50"></i></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+	<!-- Summary Cards -->
+	<div class="row mb-4">
+		<div class="col-xl col-md-4 col-6 mb-3">
+			<div class="card border-start border-primary border-4 shadow-sm h-100">
+				<div class="card-body py-3">
+					<div class="row align-items-center g-0">
+						<div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Beds</div><div class="h4 mb-0 fw-bold">@summary.TotalBeds</div></div>
+						<div class="col-auto"><i class="fas fa-bed fa-2x text-secondary opacity-50"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl col-md-4 col-6 mb-3">
+			<div class="card border-start border-success border-4 shadow-sm h-100">
+				<div class="card-body py-3">
+					<div class="row align-items-center g-0">
+						<div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Available</div><div class="h4 mb-0 fw-bold text-success">@summary.AvailableBeds</div></div>
+						<div class="col-auto"><i class="fas fa-check-circle fa-2x text-success opacity-50"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl col-md-4 col-6 mb-3">
+			<div class="card border-start border-danger border-4 shadow-sm h-100">
+				<div class="card-body py-3">
+					<div class="row align-items-center g-0">
+						<div class="col"><div class="text-xs fw-bold text-danger text-uppercase mb-1">Occupied</div><div class="h4 mb-0 fw-bold text-danger">@summary.OccupiedBeds</div></div>
+						<div class="col-auto"><i class="fas fa-user-injured fa-2x text-danger opacity-50"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl col-md-4 col-6 mb-3">
+			<div class="card border-start border-warning border-4 shadow-sm h-100">
+				<div class="card-body py-3">
+					<div class="row align-items-center g-0">
+						<div class="col"><div class="text-xs fw-bold text-warning text-uppercase mb-1">Cleaning</div><div class="h4 mb-0 fw-bold text-warning">@summary.CleaningBeds</div></div>
+						<div class="col-auto"><i class="fas fa-broom fa-2x text-warning opacity-50"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl col-md-4 col-6 mb-3">
+			<div class="card border-start border-secondary border-4 shadow-sm h-100">
+				<div class="card-body py-3">
+					<div class="row align-items-center g-0">
+						<div class="col"><div class="text-xs fw-bold text-secondary text-uppercase mb-1">Maintenance</div><div class="h4 mb-0 fw-bold text-secondary">@summary.MaintenanceBeds</div></div>
+						<div class="col-auto"><i class="fas fa-tools fa-2x text-secondary opacity-50"></i></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    <!-- Filter Bar -->
-    <div class="card shadow-sm mb-3">
-        <div class="card-body py-2">
-            <div class="row g-2 align-items-center">
-                <div class="col-md-3">
-                    <input type="text" id="bedSearchInput" class="form-control form-control-sm" placeholder="Search bed number, ward, patient…">
-                </div>
-                <div class="col-md-2">
-                    <select id="statusFilter" class="form-select form-select-sm">
-                        <option value="">All Statuses</option>
-                        <option value="Available">Available</option>
-                        <option value="Occupied">Occupied</option>
-                        <option value="Cleaning">Cleaning</option>
-                        <option value="Maintenance">Maintenance</option>
-                        <option value="Blocked">Blocked</option>
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select id="wardFilter" class="form-select form-select-sm">
-                        <option value="">All Wards</option>
-                        @foreach (var ward in wards)
-                        {
-                            <option value="@ward.Name">@ward.Name</option>
-                        }
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <select id="typeFilter" class="form-select form-select-sm">
-                        <option value="">All Types</option>
-                        <option value="General">General</option>
-                        <option value="ICU">ICU</option>
-                        <option value="Private">Private</option>
-                        <option value="Semi-private">Semi-private</option>
-                        <option value="Isolation">Isolation</option>
-                        <option value="Emergency">Emergency</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-    </div>
+	<!-- Filter Dropdowns -->
+	<div class="card shadow-sm mb-3">
+		<div class="card-header py-2 fw-semibold text-muted" style="font-size:.8rem;letter-spacing:.05em">
+			<i class="fas fa-filter me-1"></i>FILTER BEDS — select any combination (all optional)
+		</div>
+		<div class="card-body py-2">
+			<div class="row g-2 align-items-end">
+				<div class="col-md-3">
+					<label class="form-label mb-1 fw-semibold" style="font-size:.78rem">Block Name</label>
+					<select id="filterBlock" class="form-select form-select-sm">
+						<option value="">All Blocks</option>
+					</select>
+				</div>
+				<div class="col-md-2">
+					<label class="form-label mb-1 fw-semibold" style="font-size:.78rem">Floor No</label>
+					<select id="filterFloor" class="form-select form-select-sm">
+						<option value="">All Floors</option>
+					</select>
+				</div>
+				<div class="col-md-3">
+					<label class="form-label mb-1 fw-semibold" style="font-size:.78rem">Ward Name</label>
+					<select id="filterWard" class="form-select form-select-sm">
+						<option value="">All Wards</option>
+						@foreach (var w in wards)
+						{
+							<option value="@w.Name">@w.Name</option>
+						}
+					</select>
+				</div>
+				<div class="col-md-2">
+					<label class="form-label mb-1 fw-semibold" style="font-size:.78rem">Room Number</label>
+					<select id="filterRoom" class="form-select form-select-sm">
+						<option value="">All Rooms</option>
+					</select>
+				</div>
+				<div class="col-md-2">
+					<button id="clearFilters" class="btn btn-outline-secondary btn-sm w-100">
+						<i class="fas fa-times me-1"></i>Clear Filters
+					</button>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    <!-- Bed List Table -->
-    <div class="card shadow mb-4">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-bordered mb-0" id="bedsTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Bed #</th>
-                            <th>Ward</th>
-                            <th>Type</th>
-                            <th>Status</th>
-                            <th>Assigned Patient</th>
-                            <th>Daily Rate</th>
-                            <th>Last Updated</th>
-                            <th class="text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (!Model.Any())
-                        {
-                            <tr>
-                                <td colspan="8" class="text-center text-muted py-4">
-                                    <i class="fas fa-bed fa-2x mb-2 d-block opacity-25"></i>
-                                    No beds found. @(canManageBeds ? "Click \"Add Bed\" to get started." : "")
-                                </td>
-                            </tr>
-                        }
-                        @foreach (var bed in Model)
-                        {
-                            <tr class="bed-row"
-                                data-status="@bed.Status"
-                                data-ward="@bed.Ward?.Name"
-                                data-type="@bed.BedType"
-                                data-search="@bed.BedNumber @bed.Ward?.Name @bed.BedType @bed.Patient?.FirstName @bed.Patient?.LastName">
-                                <td class="fw-bold">
-                                    @bed.BedNumber
-                                    @if (bed.IsIsolation)
-                                    {
-                                        <span class="badge bg-purple ms-1 text-white" style="background:#6f42c1!important" title="Isolation Bed"><i class="fas fa-shield-virus"></i></span>
-                                    }
-                                    @if (bed.RequiresAdminApproval)
-                                    {
-                                        <span class="badge bg-info ms-1" title="ICU — Admin approval required"><i class="fas fa-lock"></i></span>
-                                    }
-                                </td>
-                                <td>@bed.Ward?.Name</td>
-                                <td>
-                                    <span class="badge @GetTypeBadge(bed.BedType)">@bed.BedType</span>
-                                </td>
-                                <td>
-                                    @{
-                                        var (badgeCss, icon) = GetStatusBadge(bed.Status);
-                                    }
-                                    <span class="badge @badgeCss">
-                                        <i class="@icon me-1"></i>@bed.Status
-                                    </span>
-                                </td>
-                                <td>
-                                    @if (bed.Patient != null)
-                                    {
-                                        <span>@bed.Patient.FirstName @bed.Patient.LastName</span>
-                                        <small class="text-muted d-block">ID: @bed.Patient.PatientId</small>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">—</span>
-                                    }
-                                </td>
-                                <td>@bed.DailyCharges.ToString("C")</td>
-                                <td>
-                                    @if (bed.LastUpdated.HasValue)
-                                    {
-                                        <small>@bed.LastUpdated.Value.ToLocalTime().ToString("dd MMM yyyy HH:mm")</small>
-                                    }
-                                    else
-                                    {
-                                        <small class="text-muted">—</small>
-                                    }
-                                </td>
-                                <td class="text-center text-nowrap">
-                                    @if (canManageBeds)
-                                    {
-                                        if (bed.Status == "Available")
-                                        {
-                                            <button class="btn btn-success btn-sm me-1"
-                                                    data-bs-toggle="modal" data-bs-target="#assignModal"
-                                                    data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
-                                                    data-requires-admin="@bed.RequiresAdminApproval.ToString().ToLower()"
-                                                    title="Assign to patient">
-                                                <i class="fas fa-user-plus"></i>
-                                            </button>
-                                        }
-                                        if (bed.Status == "Occupied")
-                                        {
-                                            <button class="btn btn-warning btn-sm me-1"
-                                                    data-bs-toggle="modal" data-bs-target="#releaseModal"
-                                                    data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
-                                                    data-patient="@bed.Patient?.FirstName @bed.Patient?.LastName"
-                                                    title="Release bed">
-                                                <i class="fas fa-sign-out-alt"></i>
-                                            </button>
-                                            <button class="btn btn-info btn-sm me-1 text-white"
-                                                    data-bs-toggle="modal" data-bs-target="#transferModal"
-                                                    data-bed-id="@bed.Id" data-bed-number="@bed.BedNumber"
-                                                    title="Transfer patient">
-                                                <i class="fas fa-exchange-alt"></i>
-                                            </button>
-                                        }
-                                        if (bed.Status != "Occupied")
-                                        {
-                                            <div class="btn-group me-1">
-                                                <button type="button" class="btn btn-outline-secondary btn-sm dropdown-toggle"
-                                                        data-bs-toggle="dropdown" title="Set status">
-                                                    <i class="fas fa-cog"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    @if (bed.Status != "Available")
-                                                    {
-                                                        <li>
-                                                            <form method="post" asp-action="SetStatus">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="bedId" value="@bed.Id" />
-                                                                <input type="hidden" name="status" value="Available" />
-                                                                <button type="submit" class="dropdown-item text-success">
-                                                                    <i class="fas fa-check-circle me-2"></i>Mark Available
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    }
-                                                    @if (bed.Status != "Cleaning")
-                                                    {
-                                                        <li>
-                                                            <form method="post" asp-action="SetStatus">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="bedId" value="@bed.Id" />
-                                                                <input type="hidden" name="status" value="Cleaning" />
-                                                                <button type="submit" class="dropdown-item text-warning">
-                                                                    <i class="fas fa-broom me-2"></i>Mark Cleaning
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    }
-                                                    @if (bed.Status != "Maintenance")
-                                                    {
-                                                        <li>
-                                                            <form method="post" asp-action="SetStatus">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="bedId" value="@bed.Id" />
-                                                                <input type="hidden" name="status" value="Maintenance" />
-                                                                <button type="submit" class="dropdown-item text-secondary">
-                                                                    <i class="fas fa-tools me-2"></i>Mark Maintenance
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    }
-                                                    @if (bed.Status != "Blocked")
-                                                    {
-                                                        <li>
-                                                            <form method="post" asp-action="SetStatus">
-                                                                @Html.AntiForgeryToken()
-                                                                <input type="hidden" name="bedId" value="@bed.Id" />
-                                                                <input type="hidden" name="status" value="Blocked" />
-                                                                <button type="submit" class="dropdown-item text-secondary">
-                                                                    <i class="fas fa-ban me-2"></i>Mark Blocked
-                                                                </button>
-                                                            </form>
-                                                        </li>
-                                                    }
-                                                </ul>
-                                            </div>
-                                        }
-                                        <a asp-action="Edit" asp-route-id="@bed.Id"
-                                           class="btn btn-outline-primary btn-sm" title="Edit bed">
-                                            <i class="fas fa-edit"></i>
-                                        </a>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">Read only</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
+	<!-- Room Summary Table -->
+	<div class="card shadow mb-3">
+		<div class="card-header py-2 fw-semibold text-muted" style="font-size:.8rem;letter-spacing:.05em">
+			<i class="fas fa-table me-1"></i>ROOM OVERVIEW — click a row to view individual beds below
+		</div>
+		<div class="card-body p-0">
+			<div class="table-responsive">
+				<table class="table table-bordered table-hover mb-0" id="roomTable">
+					<thead class="table-light" style="font-size:.82rem">
+						<tr>
+							<th>Block</th>
+							<th>Floor</th>
+							<th>Ward</th>
+							<th>Room No.</th>
+							<th class="text-center">Total Beds</th>
+							<th class="text-center"><span class="text-success">Available</span></th>
+							<th class="text-center"><span class="text-danger">Occupied</span></th>
+							<th class="text-center"><span class="text-warning">Cleaning</span></th>
+							<th class="text-center"><span class="text-secondary">Maint./Blocked</span></th>
+						</tr>
+					</thead>
+					<tbody id="roomTableBody">
+						<tr><td colspan="9" class="text-center text-muted py-4">Loading&hellip;</td></tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<!-- Bed Icon Grid (shown when a room row is selected) -->
+	<div id="bedIconSection" class="card shadow mb-4" style="display:none">
+		<div class="card-header py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+			<div>
+				<i class="fas fa-bed me-1 text-primary"></i>
+				<span class="fw-semibold text-muted" style="font-size:.8rem;letter-spacing:.05em">BEDS IN ROOM &mdash; </span>
+				<span id="bedGridRoomLabel" class="fw-bold" style="font-size:.85rem"></span>
+			</div>
+			<div class="d-flex gap-2 flex-wrap" style="font-size:.75rem">
+				<span class="badge" style="background:#d1e7dd;color:#0a3622;border:1px solid #a3cfbb">&#9632; Available</span>
+				<span class="badge" style="background:#f8d7da;color:#58151c;border:1px solid #f1aeb5">&#9632; Occupied</span>
+				<span class="badge" style="background:#fff3cd;color:#664d03;border:1px solid #ffe69c">&#9632; Cleaning</span>
+				<span class="badge" style="background:#e2e3e5;color:#41464b;border:1px solid #c4c8cb">&#9632; Maintenance/Blocked</span>
+				@if (canManageBeds)
+				{
+					<span class="text-muted fst-italic">Right-click a bed icon to change its status</span>
+				}
+			</div>
+		</div>
+		<div class="card-body">
+			<div id="bedIconGrid" class="bed-icon-grid"></div>
+		</div>
+	</div>
 
 </div>
 
-<!-- ── Assign Modal ─────────────────────────────────────────── -->
+<!-- Right-Click Context Menu -->
+<div id="bedCtxMenu"></div>
+
+<!-- Toast for inline feedback (no page reload) -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:11000">
+	<div id="statusToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-atomic="true">
+		<div class="d-flex">
+			<div class="toast-body" id="statusToastBody">Done.</div>
+			<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+		</div>
+	</div>
+</div>
+
+<!-- Assign Modal -->
 <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-action="Assign">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="bedId" id="assignBedId" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="assignModalLabel">
-                        <i class="fas fa-user-plus me-2"></i>Assign Bed
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <div id="icuWarning" class="alert alert-warning d-none">
-                        <i class="fas fa-lock me-2"></i>This is an <strong>ICU bed</strong> — Admin approval is required.
-                    </div>
-                    <p>Assigning bed: <strong id="assignBedNumber"></strong></p>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Select Patient</label>
-                        <select name="patientId" class="form-select" required>
-                            <option value="">— Choose a patient —</option>
-                            @foreach (dynamic pt in patients)
-                            {
-                                <option value="@pt.Id">@pt.Name (@pt.PatientId)</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-user-plus me-1"></i>Assign
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="post" asp-action="Assign">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="bedId" id="assignBedId" />
+				<div class="modal-header">
+					<h5 class="modal-title" id="assignModalLabel"><i class="fas fa-user-plus me-2"></i>Assign Bed</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<div id="icuWarning" class="alert alert-warning d-none">
+						<i class="fas fa-lock me-2"></i>This is an <strong>ICU bed</strong> &mdash; Admin approval is required.
+					</div>
+					<p>Assigning bed: <strong id="assignBedNumber"></strong></p>
+					<div class="mb-3">
+						<label class="form-label fw-bold">Select Patient</label>
+						<select name="patientId" class="form-select" required>
+							<option value="">— Choose a patient —</option>
+							@foreach (dynamic pt in patients)
+							{
+								<option value="@pt.Id">@pt.Name (@pt.PatientId)</option>
+							}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-success"><i class="fas fa-user-plus me-1"></i>Assign</button>
+				</div>
+			</form>
+		</div>
+	</div>
 </div>
 
-<!-- ── Release Modal ────────────────────────────────────────── -->
+<!-- Release Modal -->
 <div class="modal fade" id="releaseModal" tabindex="-1" aria-labelledby="releaseModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-action="Release">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="bedId" id="releaseBedId" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="releaseModalLabel">
-                        <i class="fas fa-sign-out-alt me-2"></i>Release Bed
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Release bed <strong id="releaseBedNumber"></strong>?</p>
-                    <p>Patient: <strong id="releasePatientName"></strong></p>
-                    <div class="alert alert-info mb-0">
-                        <i class="fas fa-info-circle me-2"></i>The bed will be set to <strong>Cleaning</strong> status after release.
-                        Mark it <strong>Available</strong> once cleaned.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-sign-out-alt me-1"></i>Confirm Release
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="post" asp-action="Release">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="bedId" id="releaseBedId" />
+				<div class="modal-header">
+					<h5 class="modal-title" id="releaseModalLabel"><i class="fas fa-sign-out-alt me-2"></i>Release Bed</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<p>Release bed <strong id="releaseBedNumber"></strong>?</p>
+					<p>Patient: <strong id="releasePatientName"></strong></p>
+					<div class="alert alert-info mb-0">
+						<i class="fas fa-info-circle me-2"></i>Bed will be set to <strong>Cleaning</strong> after release.
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-warning"><i class="fas fa-sign-out-alt me-1"></i>Confirm Release</button>
+				</div>
+			</form>
+		</div>
+	</div>
 </div>
 
-<!-- ── Transfer Modal ───────────────────────────────────────── -->
+<!-- Transfer Modal -->
 <div class="modal fade" id="transferModal" tabindex="-1" aria-labelledby="transferModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-action="Transfer">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="fromBedId" id="transferFromBedId" />
-                <div class="modal-header">
-                    <h5 class="modal-title" id="transferModalLabel">
-                        <i class="fas fa-exchange-alt me-2"></i>Transfer Patient
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <p>Transfer patient from bed: <strong id="transferFromBedNumber"></strong></p>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Target Bed (Available only)</label>
-                        <select name="toBedId" class="form-select" required>
-                            <option value="">— Choose target bed —</option>
-                            @foreach (var bed in Model.Where(b => b.Status == "Available"))
-                            {
-                                <option value="@bed.Id">@bed.BedNumber — @bed.Ward?.Name (@bed.BedType)</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-info text-white">
-                        <i class="fas fa-exchange-alt me-1"></i>Transfer
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<form method="post" asp-action="Transfer">
+				@Html.AntiForgeryToken()
+				<input type="hidden" name="fromBedId" id="transferFromBedId" />
+				<div class="modal-header">
+					<h5 class="modal-title" id="transferModalLabel"><i class="fas fa-exchange-alt me-2"></i>Transfer Patient</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body">
+					<p>Transfer patient from bed: <strong id="transferFromBedNumber"></strong></p>
+					<div class="mb-3">
+						<label class="form-label fw-bold">Target Bed (Available only)</label>
+						<select name="toBedId" class="form-select" required>
+							<option value="">— Choose target bed —</option>
+							@foreach (var bed in Model.Where(b => b.Status == "Available"))
+							{
+								<option value="@bed.Id">@bed.BedNumber — @bed.Ward?.Name (@bed.BedType)</option>
+							}
+						</select>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+					<button type="submit" class="btn btn-info text-white"><i class="fas fa-exchange-alt me-1"></i>Transfer</button>
+				</div>
+			</form>
+		</div>
+	</div>
 </div>
 
 @section Scripts {
-    <script>
-        // ── Modal wiring ──────────────────────────────────────────
-        document.getElementById('assignModal').addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('assignBedId').value     = btn.getAttribute('data-bed-id');
-            document.getElementById('assignBedNumber').textContent = btn.getAttribute('data-bed-number');
-            var requiresAdmin = btn.getAttribute('data-requires-admin') === 'true';
-            document.getElementById('icuWarning').classList.toggle('d-none', !requiresAdmin);
-        });
+<script>
+// Bed data embedded server-side (HTML-safe)
+var bedsData = @Html.Raw(bedsJson);
+var canManage = @(canManageBeds ? "true" : "false");
 
-        document.getElementById('releaseModal').addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('releaseBedId').value          = btn.getAttribute('data-bed-id');
-            document.getElementById('releaseBedNumber').textContent = btn.getAttribute('data-bed-number');
-            document.getElementById('releasePatientName').textContent = btn.getAttribute('data-patient');
-        });
-
-        document.getElementById('transferModal').addEventListener('show.bs.modal', function (e) {
-            var btn = e.relatedTarget;
-            document.getElementById('transferFromBedId').value          = btn.getAttribute('data-bed-id');
-            document.getElementById('transferFromBedNumber').textContent = btn.getAttribute('data-bed-number');
-        });
-
-        // ── Table filtering ───────────────────────────────────────
-        function filterTable() {
-            var search = document.getElementById('bedSearchInput').value.toLowerCase();
-            var status = document.getElementById('statusFilter').value;
-            var ward   = document.getElementById('wardFilter').value;
-            var type   = document.getElementById('typeFilter').value;
-
-            document.querySelectorAll('.bed-row').forEach(function (row) {
-                var matchSearch = !search || row.getAttribute('data-search').toLowerCase().includes(search);
-                var matchStatus = !status || row.getAttribute('data-status') === status;
-                var matchWard   = !ward   || row.getAttribute('data-ward') === ward;
-                var matchType   = !type   || row.getAttribute('data-type') === type;
-                row.style.display = (matchSearch && matchStatus && matchWard && matchType) ? '' : 'none';
-            });
-        }
-
-        document.getElementById('bedSearchInput').addEventListener('input', filterTable);
-        document.getElementById('statusFilter').addEventListener('change', filterTable);
-        document.getElementById('wardFilter').addEventListener('change', filterTable);
-        document.getElementById('typeFilter').addEventListener('change', filterTable);
-
-        // Auto-dismiss alerts
-        setTimeout(function () {
-            document.querySelectorAll('.alert.alert-success, .alert.alert-danger').forEach(function (el) {
-                var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
-                bsAlert.close();
-            });
-        }, 4000);
-    </script>
+// ── Filter helpers ────────────────────────────────────────────
+function selVal(id) { return document.getElementById(id).value; }
+function esc(v) {
+	return String(v ?? '')
+		.replace(/&/g, '&amp;')
+		.replace(/</g, '&lt;')
+		.replace(/>/g, '&gt;')
+		.replace(/"/g, '&quot;')
+		.replace(/'/g, '&#39;');
 }
 
-@functions {
-    static (string css, string icon) GetStatusBadge(string status) => status switch
-    {
-        "Available"   => ("bg-success", "fas fa-check-circle"),
-        "Occupied"    => ("bg-danger",  "fas fa-user-injured"),
-        "Cleaning"    => ("bg-warning text-dark", "fas fa-broom"),
-        "Maintenance" => ("bg-secondary", "fas fa-tools"),
-        "Blocked"     => ("bg-secondary", "fas fa-ban"),
-        _             => ("bg-light text-dark", "fas fa-question-circle")
-    };
-
-    static string GetTypeBadge(string type) => type switch
-    {
-        "ICU"        => "bg-danger",
-        "Emergency"  => "bg-danger",
-        "Isolation"  => "bg-purple text-white",
-        "Private"    => "bg-info text-white",
-        "General"    => "bg-light text-dark border",
-        _            => "bg-light text-dark border"
-    };
+function getFiltered() {
+	var bl = selVal('filterBlock'), fl = selVal('filterFloor'),
+		wa = selVal('filterWard'),  ro = selVal('filterRoom');
+	return bedsData.filter(function(b) {
+		return (!bl || b.block      === bl) &&
+			   (!fl || b.floor      === fl) &&
+			   (!wa || b.ward       === wa) &&
+			   (!ro || b.roomNumber === ro);
+	});
 }
+
+function populateFilters() {
+	fillSel('filterBlock',  distinct('block'));
+	fillSel('filterFloor',  distinct('floor'));
+	fillSel('filterRoom',   distinct('roomNumber'));
+}
+
+function distinct(key) {
+	var seen = {}, out = [];
+	bedsData.forEach(function(b) { if (b[key] && !seen[b[key]]) { seen[b[key]] = 1; out.push(b[key]); } });
+	return out.sort(function(a,b){ return a.localeCompare(b, undefined, {numeric:true}); });
+}
+
+function fillSel(id, vals) {
+	var el = document.getElementById(id), cur = el.value;
+	while (el.children.length > 1) el.removeChild(el.lastChild);
+	vals.forEach(function(v) { var o = new Option(v,v); el.appendChild(o); });
+	if (vals.indexOf(cur) !== -1) el.value = cur;
+}
+
+// ── Room grouping ─────────────────────────────────────────────
+function groupByRoom(beds) {
+	var map = {}, order = [];
+	beds.forEach(function(b) {
+		var k = b.block + '||' + b.floor + '||' + b.ward + '||' + b.roomNumber;
+		if (!map[k]) { map[k] = {block:b.block,floor:b.floor,ward:b.ward,room:b.roomNumber,beds:[]}; order.push(k); }
+		map[k].beds.push(b);
+	});
+	return order.map(function(k){ return map[k]; });
+}
+
+// ── Room table ────────────────────────────────────────────────
+var _activeKey = null;
+
+function renderRoomTable() {
+	var rooms  = groupByRoom(getFiltered());
+	var tbody  = document.getElementById('roomTableBody');
+	tbody.innerHTML = '';
+
+	if (rooms.length === 0) {
+		tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">' +
+			'<i class="fas fa-search fa-lg mb-2 d-block opacity-25"></i>No rooms match the selected filters.</td></tr>';
+		hideBedGrid(); return;
+	}
+
+	rooms.forEach(function(r) {
+		var av = r.beds.filter(function(b){return b.status==='Available';}).length;
+		var oc = r.beds.filter(function(b){return b.status==='Occupied';}).length;
+		var cl = r.beds.filter(function(b){return b.status==='Cleaning';}).length;
+		var mt = r.beds.filter(function(b){return b.status==='Maintenance'||b.status==='Blocked';}).length;
+		var k  = r.block+'||'+r.floor+'||'+r.ward+'||'+r.room;
+		var blockCell = r.block ? esc(r.block) : '<span class="text-muted">\u2014</span>';
+		var floorCell = r.floor ? esc(r.floor) : '<span class="text-muted">\u2014</span>';
+		var wardCell = esc(r.ward);
+		var roomCell = r.room ? esc(r.room) : '<span class="text-muted">\u2014</span>';
+
+		var tr = document.createElement('tr');
+		tr.className = 'room-row' + (k === _activeKey ? ' active-room' : '');
+		tr.dataset.key = k;
+		tr.innerHTML =
+			'<td>'+blockCell+'</td>'+
+			'<td>'+floorCell+'</td>'+
+			'<td>'+wardCell+'</td>'+
+			'<td><strong>'+roomCell+'</strong></td>'+
+			'<td class="text-center"><span class="badge bg-primary">'+r.beds.length+'</span></td>'+
+			'<td class="text-center"><span class="badge bg-success">'+av+'</span></td>'+
+			'<td class="text-center"><span class="badge bg-danger">'+oc+'</span></td>'+
+			'<td class="text-center"><span class="badge bg-warning text-dark">'+cl+'</span></td>'+
+			'<td class="text-center"><span class="badge bg-secondary">'+mt+'</span></td>';
+
+		tr.addEventListener('click', function(){ selectRoom(k, r.beds, tr); });
+		tbody.appendChild(tr);
+	});
+
+	if (_activeKey) {
+		var m = rooms.find(function(r){ return r.block+'||'+r.floor+'||'+r.ward+'||'+r.room===_activeKey; });
+		if (m) renderBedGrid(m.beds); else hideBedGrid();
+	}
+}
+
+function selectRoom(key, beds, tr) {
+	_activeKey = key;
+	document.querySelectorAll('.room-row').forEach(function(r){ r.classList.remove('active-room'); });
+	tr.classList.add('active-room');
+	renderBedGrid(beds);
+	document.getElementById('bedIconSection').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── Bed icon grid ─────────────────────────────────────────────
+function renderBedGrid(beds) {
+	if (!beds.length) { hideBedGrid(); return; }
+	var lbl = document.getElementById('bedGridRoomLabel');
+	var parts = [];
+	var f = beds[0];
+	if (f.block)      parts.push('Block: '+f.block);
+	if (f.floor)      parts.push('Floor: '+f.floor);
+	if (f.ward)       parts.push('Ward: '+f.ward);
+	if (f.roomNumber) parts.push('Room: '+f.roomNumber);
+	lbl.textContent = parts.join('  |  ');
+
+	var grid = document.getElementById('bedIconGrid');
+	grid.innerHTML = '';
+	beds.slice().sort(function(a,b){ return a.bedNumber.localeCompare(b.bedNumber,undefined,{numeric:true}); })
+		.forEach(function(bed) {
+			var d = document.createElement('div');
+			d.className = 'bed-icon s-'+bed.status.toLowerCase();
+			d.dataset.bedId       = bed.id;
+			d.dataset.bedNumber   = bed.bedNumber;
+			d.dataset.status      = bed.status;
+			d.dataset.patientId   = bed.patientId  || '';
+			d.dataset.patientName = bed.patientName || '';
+			d.dataset.reqAdmin    = bed.requiresAdminApproval ? '1' : '0';
+			d.title = 'Bed '+bed.bedNumber+' \u2014 '+bed.status+(bed.patientName?' \u2014 '+bed.patientName:'');
+			d.innerHTML = '<i class="fas fa-bed bi-icon"></i><span class="bed-lbl">'+esc(bed.bedNumber)+'</span>';
+			grid.appendChild(d);
+		});
+	document.getElementById('bedIconSection').style.display = '';
+}
+
+function hideBedGrid() {
+	document.getElementById('bedIconSection').style.display = 'none';
+	_activeKey = null;
+}
+
+// ── Context menu ──────────────────────────────────────────────
+var ctxMenu = document.getElementById('bedCtxMenu');
+var ctxBed  = null;
+
+document.addEventListener('contextmenu', function(e) {
+	var icon = e.target.closest ? e.target.closest('.bed-icon') : null;
+	hideCtx();
+	if (!icon) return;
+	e.preventDefault();
+	ctxBed = {
+		id:          parseInt(icon.dataset.bedId, 10),
+		number:      icon.dataset.bedNumber,
+		status:      icon.dataset.status,
+		patientId:   icon.dataset.patientId,
+		patientName: icon.dataset.patientName,
+		reqAdmin:    icon.dataset.reqAdmin === '1',
+		el:          icon
+	};
+	buildCtx(ctxBed);
+	ctxMenu.style.left    = Math.min(e.clientX, window.innerWidth  - 220)+'px';
+	ctxMenu.style.top     = Math.min(e.clientY, window.innerHeight - 260)+'px';
+	ctxMenu.style.display = 'block';
+});
+document.addEventListener('click',   hideCtx);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape') hideCtx(); });
+function hideCtx() { ctxMenu.style.display = 'none'; }
+
+function buildCtx(bed) {
+	ctxMenu.innerHTML = '';
+	// Info rows (non-clickable)
+	ci(null, '<strong>'+esc(bed.number)+'</strong>', null, true);
+	var sc = {Available:'text-success',Occupied:'text-danger',Cleaning:'text-warning',Maintenance:'text-secondary',Blocked:'text-secondary'};
+	ci(null, '<span class="'+(sc[bed.status]||'text-muted')+'">'+esc(bed.status)+'</span>', null, true);
+	if (bed.patientName) ci('fas fa-user text-muted', esc(bed.patientName), null, true);
+
+	if (canManage) {
+		cd();
+		if (bed.status !== 'Occupied') {
+			[{s:'Available',i:'fas fa-check-circle text-success'},
+			 {s:'Cleaning',i:'fas fa-broom text-warning'},
+			 {s:'Maintenance',i:'fas fa-tools text-secondary'},
+			 {s:'Blocked',i:'fas fa-ban text-secondary'}]
+			.filter(function(x){ return x.s!==bed.status; })
+			.forEach(function(x){
+				(function(s,ic){ ci(ic,'Mark '+s, function(){ setStatus(bed.id,s,bed.el); }); })(x.s,x.i);
+			});
+			cd();
+		}
+		if (bed.status === 'Available') {
+			ci('fas fa-user-plus text-success', 'Assign Patient', function(){
+				document.getElementById('assignBedId').value = bed.id;
+				document.getElementById('assignBedNumber').textContent = bed.number;
+				document.getElementById('icuWarning').classList.toggle('d-none', !bed.reqAdmin);
+				new bootstrap.Modal(document.getElementById('assignModal')).show();
+			});
+		}
+		if (bed.status === 'Occupied') {
+			ci('fas fa-sign-out-alt text-warning', 'Release Bed', function(){
+				document.getElementById('releaseBedId').value = bed.id;
+				document.getElementById('releaseBedNumber').textContent = bed.number;
+				document.getElementById('releasePatientName').textContent = bed.patientName;
+				new bootstrap.Modal(document.getElementById('releaseModal')).show();
+			});
+			ci('fas fa-exchange-alt text-info', 'Transfer Patient', function(){
+				document.getElementById('transferFromBedId').value = bed.id;
+				document.getElementById('transferFromBedNumber').textContent = bed.number;
+				new bootstrap.Modal(document.getElementById('transferModal')).show();
+			});
+		}
+		cd();
+		ci('fas fa-edit text-primary', 'Edit Bed', function(){ window.location.href='/BedManagement/Edit/'+bed.id; });
+	}
+}
+
+function ci(iconCls, label, onClick, isInfo) {
+	var d = document.createElement('div');
+	d.className = 'cm-item'+(isInfo?' cm-info':'');
+	d.innerHTML = (iconCls?'<i class="'+iconCls+'"></i> ':'')+label;
+	if (onClick) d.addEventListener('click', function(){ hideCtx(); onClick(); });
+	ctxMenu.appendChild(d);
+}
+function cd() { var d=document.createElement('div'); d.className='cm-divider'; ctxMenu.appendChild(d); }
+
+// ── AJAX status change (no page reload) ───────────────────────
+function setStatus(bedId, newStatus, iconEl) {
+	fetch('/api/beds/status', {
+		method: 'POST',
+		headers: {'Content-Type':'application/json'},
+		body: JSON.stringify({bedId:bedId, status:newStatus})
+	}).then(function(r) {
+		if (!r.ok) {
+			return r.text().then(function(text){
+				try {
+					var parsed = JSON.parse(text);
+					throw (parsed.error || parsed.message || 'Update failed.');
+				} catch (parseErr) {
+					throw (text && text.trim()) || 'Update failed.';
+				}
+			});
+		}
+		var bed = bedsData.find(function(b){ return b.id===bedId; });
+		if (bed) {
+			bed.status = newStatus;
+			if (newStatus === 'Available') { bed.patientId = null; bed.patientName = null; }
+		}
+		iconEl.className = 'bed-icon s-'+newStatus.toLowerCase();
+		iconEl.dataset.status = newStatus;
+		iconEl.title = 'Bed '+iconEl.dataset.bedNumber+' \u2014 '+newStatus;
+		renderRoomTable();
+		toast('Bed '+iconEl.dataset.bedNumber+' marked '+newStatus, 'success');
+	}).catch(function(err){
+		toast(typeof err==='string'?err:'Network error.','danger');
+	});
+}
+
+// ── Toast ─────────────────────────────────────────────────────
+function toast(msg, type) {
+	var el = document.getElementById('statusToast');
+	el.className = 'toast align-items-center text-bg-'+type+' border-0';
+	document.getElementById('statusToastBody').textContent = msg;
+	bootstrap.Toast.getOrCreateInstance(el,{delay:3000}).show();
+}
+
+// ── Filter wiring ─────────────────────────────────────────────
+['filterBlock','filterFloor','filterWard','filterRoom'].forEach(function(id){
+	document.getElementById(id).addEventListener('change', renderRoomTable);
+});
+document.getElementById('clearFilters').addEventListener('click', function(){
+	['filterBlock','filterFloor','filterWard','filterRoom'].forEach(function(id){ document.getElementById(id).value=''; });
+	renderRoomTable();
+});
+
+// Auto-dismiss server alerts
+setTimeout(function(){
+	document.querySelectorAll('.alert.alert-success, .alert.alert-danger').forEach(function(el){
+		bootstrap.Alert.getOrCreateInstance(el).close();
+	});
+}, 4000);
+
+// Init
+populateFilters();
+renderRoomTable();
+</script>
+}
+

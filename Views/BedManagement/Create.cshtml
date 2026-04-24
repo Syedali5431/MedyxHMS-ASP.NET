@@ -31,12 +31,6 @@
                 <div asp-validation-summary="ModelOnly" class="alert alert-danger mb-3"></div>
 
                 <div class="mb-3">
-                    <label asp-for="BedNumber" class="form-label fw-bold">Bed Number <span class="text-danger">*</span></label>
-                    <input asp-for="BedNumber" class="form-control" placeholder="e.g. W1-B01" required />
-                    <span asp-validation-for="BedNumber" class="text-danger"></span>
-                </div>
-
-                <div class="mb-3">
                     <label asp-for="WardId" class="form-label fw-bold">Ward <span class="text-danger">*</span></label>
                     <select asp-for="WardId" class="form-select" required>
                         <option value="">— Select Ward —</option>
@@ -47,6 +41,48 @@
                     </select>
                     <span asp-validation-for="WardId" class="text-danger"></span>
                 </div>
+
+                @* Location hierarchy fields — shown for both Create and Edit *@
+                <div class="row g-2 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="Block" class="form-label fw-bold">Block Name <span class="text-danger">*</span></label>
+                        <input asp-for="Block" class="form-control" placeholder="e.g. A, Block 1" maxlength="100" required />
+                        <span asp-validation-for="Block" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Floor" class="form-label fw-bold">Floor No <span class="text-danger">*</span></label>
+                        <input asp-for="Floor" class="form-control" placeholder="e.g. 1, Ground, G1" maxlength="50" required />
+                        <span asp-validation-for="Floor" class="text-danger"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="RoomNumber" class="form-label fw-bold">Room Number <span class="text-danger">*</span></label>
+                        <input asp-for="RoomNumber" class="form-control" placeholder="e.g. 101, ICU-1" maxlength="50" required />
+                        <span asp-validation-for="RoomNumber" class="text-danger"></span>
+                    </div>
+                </div>
+
+                @* Number of Beds — only shown on Create; beds are auto-numbered from Room + sequence *@
+                @if (!isEdit)
+                {
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Number of Beds to Add <span class="text-danger">*</span></label>
+                        <input name="numberOfBeds" type="number" min="1" max="50" value="1" class="form-control" required
+                               style="max-width:140px" />
+                        <div class="form-text">
+                            Beds will be auto-numbered as <strong>&lt;Room&gt;-B01</strong>, <strong>&lt;Room&gt;-B02</strong>, &hellip;
+                            If the room already has beds they will continue from the next available number.
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @* On Edit allow bed number correction *@
+                    <div class="mb-3">
+                        <label asp-for="BedNumber" class="form-label fw-bold">Bed Number</label>
+                        <input asp-for="BedNumber" class="form-control" />
+                        <span asp-validation-for="BedNumber" class="text-danger"></span>
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label asp-for="BedType" class="form-label fw-bold">Bed Type <span class="text-danger">*</span></label>
@@ -85,7 +121,7 @@
 
                 <div class="d-flex gap-2 mt-3">
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i>@(isEdit ? "Save Changes" : "Create Bed")
+                        <i class="fas fa-save me-1"></i>@(isEdit ? "Save Changes" : "Create Beds")
                     </button>
                     <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
                 </div>

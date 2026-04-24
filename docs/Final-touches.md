@@ -489,6 +489,25 @@ Gaps found during this review:
 Pending tasks before declaring all modules fully validated:
 - Validate Admin/SuperAdmin governance workflows end-to-end with business data assertions (module management, CMS administration, license management, user/module access administration).
 
+### 2026-04-24 Bed Management UI Enhancement
+
+**Location Hierarchy Added to Bed Model:**
+- `Block`, `Floor`, `RoomNumber` fields added to the `Bed` entity (`Models/OPD.cs`).
+- SQL migrations added to `DatabaseInitializer` to backfill columns on existing databases.
+
+**Add Beds Form (`Views/BedManagement/Create.cshtml`):**
+- Form now collects: Block Name, Floor No, Ward, Room Number, Bed Type, Number of Beds (1–50), Daily Charges.
+- Bulk creation: entering NumberOfBeds > 1 creates that many beds auto-numbered as `<Room>-B01`, `<Room>-B02`, etc., continuing from any existing beds in the same room.
+- Edit form retains Block/Floor/Room fields for correction, with editable BedNumber.
+
+**Bed Management Dashboard (`Views/BedManagement/Index.cshtml`) — full redesign:**
+- **Filter bar**: 4 independent dropdowns (Block, Floor, Ward, Room) — any combination, none required. Options populated client-side from live bed data.
+- **Room Summary Table**: interactive table showing Block | Floor | Ward | Room | Total/Available/Occupied/Cleaning/Maintenance counts per room. Clicking a row highlights it and reveals the bed icon grid below.
+- **Bed Icon Grid**: visual grid of bed icons (colour-coded by status) for the selected room. Right-clicking any icon shows a context menu.
+- **Right-click context menu** (managers only): Mark Available / Cleaning / Maintenance / Blocked, Assign Patient, Release Bed, Transfer Patient, Edit Bed — status changes execute via AJAX (no full page reload) and refresh the room table counts in-place.
+- Existing Assign / Release / Transfer modals preserved and wired from the context menu.
+- Summary cards and all business-rule gates (ICU approval, isolation flags) remain unchanged.
+
 **Build & Quality Status:**
 - Clean compile: zero errors, pre-existing nullable reference warnings only
 - All 12 decimal properties across new modules configured with HasPrecision(18,2)
@@ -499,6 +518,36 @@ Pending tasks before declaring all modules fully validated:
 - Fresh build completed with clean database initialization
 - 20/20 module routes passed smoke test (HTTP 200, no errors, no redirects)
 - All module list/index pages loaded successfully with existing SQL Server database
+
+### 2026-04-24 Bed Management Runtime Validation Update
+
+- PASS: Application launched successfully at `http://localhost:5044` after the Bed Management hierarchy/dashboard changes.
+- PASS: Startup completed with report SQL deployment confirmation logged:
+	- `[INF] Report stored procedures and indexes ensured from ...\scripts\StoredProcedures_Reports.sql`
+- PASS: Fresh authenticated runtime smoke rerun completed with zero route failures using `scripts/Run-RoleModuleSmoke.ps1`.
+	- SuperAdmin `88/0`
+	- Admin `88/0`
+	- Doctor `88/0`
+	- Nurse `88/0`
+	- Accountant `88/0`
+	- Receptionist `88/0`
+	- Multi-role Doctor `88/0`
+	- Multi-role Nurse `88/0`
+	- Patient `5/0`
+- PASS: Bed Management route checks are clean in the generated runtime artifact `temp_build_output/uat-role-run-current.json`.
+	- `/BedManagement` returned `200` for staff roles exercised in the smoke run.
+	- `/bed-management` returned `200` for staff roles exercised in the smoke run.
+	- `/BedManagement/Create` returned `200` for manage role validation (`Nurse`) and redirected for read-only roles such as `Doctor` and `Receptionist`, preserving the intended access boundary.
+- PASS: Build remains clean after the Bed Management form/controller/view updates.
+	- Latest local build result: `Build succeeded in 1.2s`.
+- PASS: Bed Management right-click status changes now work for cookie-authenticated staff UI sessions.
+	- Root cause was `ApiSecurityMiddleware` rejecting internal `/api/beds/status` AJAX calls with `401 Authorization header required` because those calls use the normal ASP.NET Identity application cookie rather than an explicit `Authorization` header.
+	- Middleware now allows same-app authenticated cookie requests to proceed to normal ASP.NET auth/role checks, while external header-based API protection remains intact.
+	- `Views/BedManagement/Index.cshtml` now also surfaces plain-text server error responses instead of collapsing non-JSON failures into a generic `Network error.` toast.
+	- Live validation completed against the running Bed Management page for status changes to `Cleaning`, `Maintenance`, `Blocked`, and back to `Available`.
+
+Validation Caveat:
+- This run validates startup, authenticated route coverage, and Bed Management authorization boundaries. It does not yet include full business-data UAT for create/assign/release/transfer workflows with seeded dummy patient/bed records.
 - Schema backfill applied on startup via DatabaseInitializer.EnsureNewModuleTablesAsync()
 
 **Remaining Pre-Go-Live Work:**

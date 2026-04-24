@@ -65,6 +65,10 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
         public int WardId { get; set; }
         public string BedNumber { get; set; } = string.Empty;
+        // Location hierarchy: Block → Floor → Ward → Room
+        public string Block { get; set; } = string.Empty;
+        public string Floor { get; set; } = string.Empty;
+        public string RoomNumber { get; set; } = string.Empty;
         public string BedType { get; set; } = string.Empty; // General, ICU, Private, Semi-private, Isolation, Emergency
         public decimal DailyCharges { get; set; }
         // Status: Available, Occupied, Cleaning, Maintenance

@@ -38,7 +38,10 @@ namespace MedyxHMS.Controllers
                 .Include(b => b.Ward)
                 .Include(b => b.Patient)
                 .Where(b => b.IsActive)
-                .OrderBy(b => b.Ward.Name)
+                .OrderBy(b => b.Block)
+                .ThenBy(b => b.Floor)
+                .ThenBy(b => b.Ward.Name)
+                .ThenBy(b => b.RoomNumber)
                 .ThenBy(b => b.BedNumber)
                 .ToListAsync();
 
@@ -50,6 +53,18 @@ namespace MedyxHMS.Controllers
                 .OrderBy(w => w.Name)
                 .ToListAsync();
             ViewBag.Wards = wards;
+
+            // Distinct location values for filter dropdowns (populated client-side from JSON too,
+            // but pre-populating here keeps the dropdowns stable even before JS runs)
+            ViewBag.Blocks = await _context.Beds
+                .Where(b => b.IsActive && b.Block != null && b.Block != "")
+                .Select(b => b.Block).Distinct().OrderBy(x => x).ToListAsync();
+            ViewBag.Floors = await _context.Beds
+                .Where(b => b.IsActive && b.Floor != null && b.Floor != "")
+                .Select(b => b.Floor).Distinct().OrderBy(x => x).ToListAsync();
+            ViewBag.Rooms = await _context.Beds
+                .Where(b => b.IsActive && b.RoomNumber != null && b.RoomNumber != "")
+                .Select(b => b.RoomNumber).Distinct().OrderBy(x => x).ToListAsync();
 
             var availablePatients = await _context.Patients
                 .Where(p => p.IsActive)
@@ -177,13 +192,20 @@ namespace MedyxHMS.Controllers
                 .Include(b => b.Ward)
                 .Include(b => b.Patient)
                 .Where(b => b.IsActive)
-                .OrderBy(b => b.Ward.Name)
+                .OrderBy(b => b.Block)
+                .ThenBy(b => b.Floor)
+                .ThenBy(b => b.Ward.Name)
+                .ThenBy(b => b.RoomNumber)
                 .ThenBy(b => b.BedNumber)
                 .Select(b => new
                 {
                     b.Id,
                     b.BedNumber,
+                    b.Block,
+                    b.Floor,
+                    b.RoomNumber,
                     Ward = b.Ward.Name,
+                    b.WardId,
                     b.BedType,
                     b.Status,
                     b.PatientId,
@@ -293,7 +315,7 @@ namespace MedyxHMS.Controllers
             return Ok(new { success = true });
         }
 
-        // ── Admin-only: Create new bed ──────────────────────────
+        // ── Admin-only: Create new bed(s) ──────────────────────
         [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Create()
         {
@@ -302,29 +324,67 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = BedManagementManageRoles)]
-        public async Task<IActionResult> Create(Bed model)
+        public async Task<IActionResult> Create(Bed model, int numberOfBeds = 1)
         {
+            // Remove BedNumber from validation — it is auto-generated for bulk creates
+            ModelState.Remove(nameof(Bed.BedNumber));
+
+            // Normalize location fields to keep room grouping and sequencing consistent.
+            model.Block = (model.Block ?? string.Empty).Trim();
+            model.Floor = (model.Floor ?? string.Empty).Trim();
+            model.RoomNumber = (model.RoomNumber ?? string.Empty).Trim();
+
             if (!ModelState.IsValid)
             {
                 ViewBag.Wards = await _context.Wards.Where(w => w.IsActive).OrderBy(w => w.Name).ToListAsync();
                 return View(model);
             }
 
-            model.Status = "Available";
-            model.CreatedDate = DateTime.UtcNow;
-            model.LastUpdated = DateTime.UtcNow;
-            // ICU and Isolation beds require admin approval
-            if (model.BedType == "ICU") model.RequiresAdminApproval = true;
-            if (model.BedType == "Isolation") model.IsIsolation = true;
+            numberOfBeds = Math.Clamp(numberOfBeds, 1, 50);
 
-            _context.Beds.Add(model);
+            // Determine how many beds already exist in this room so we continue numbering
+            var existingCount = await _context.Beds
+                .CountAsync(b => b.WardId == model.WardId
+                              && b.Block == model.Block
+                              && b.Floor == model.Floor
+                              && b.RoomNumber == model.RoomNumber);
+
+            var created = new List<Bed>();
+            for (int i = 1; i <= numberOfBeds; i++)
+            {
+                var bed = new Bed
+                {
+                    WardId = model.WardId,
+                    Block = model.Block,
+                    Floor = model.Floor,
+                    RoomNumber = model.RoomNumber,
+                    BedNumber = string.IsNullOrWhiteSpace(model.RoomNumber)
+                        ? $"B{(existingCount + i):D2}"
+                        : $"{model.RoomNumber}-B{(existingCount + i):D2}",
+                    BedType = model.BedType,
+                    DailyCharges = model.DailyCharges,
+                    IsActive = model.IsActive,
+                    Status = "Available",
+                    CreatedDate = DateTime.UtcNow,
+                    LastUpdated = DateTime.UtcNow,
+                    RequiresAdminApproval = model.BedType == "ICU",
+                    IsIsolation = model.BedType == "Isolation"
+                };
+                _context.Beds.Add(bed);
+                created.Add(bed);
+            }
+
             await _context.SaveChangesAsync();
 
             await _audit.LogActivityAsync(
                 User.FindFirstValue(ClaimTypes.NameIdentifier),
-                "CREATE", "Bed", model.Id.ToString(), null, model.BedNumber);
+                "CREATE", "Bed", string.Join(",", created.Select(b => b.Id.ToString())), null,
+                $"{numberOfBeds} bed(s) added — Block:{model.Block} Floor:{model.Floor} Ward:{model.WardId} Room:{model.RoomNumber}");
 
-            TempData["SuccessMessage"] = $"Bed {model.BedNumber} created successfully.";
+            TempData["SuccessMessage"] = numberOfBeds == 1
+                ? $"Bed {created[0].BedNumber} created successfully."
+                : $"{numberOfBeds} beds created in Room {model.RoomNumber} (Block {model.Block}, Floor {model.Floor}).";
+
             return RedirectToAction(nameof(Index));
         }
 
