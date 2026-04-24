@@ -1,7 +1,7 @@
 # Final TODO List — Medyx HMS Migration & Development
 
-**Last Updated:** 2026-04-23  
-**Overall Progress: ~99.7% Complete**  
+**Last Updated:** 2026-04-24  
+**Overall Progress: ~99.9% Complete**  
 **Source Reference:** PHP `Docs/TODO List.md` + ASP.NET implementation evidence  
 
 ---
@@ -15,9 +15,19 @@
 | Phase 2 | Core Hospital Operations | ✅ Complete |
 | Phase 3 | Clinical & Diagnostic Services | ✅ Complete |
 | Phase 4 | Administrative & Support Functions | ✅ Complete |
-| Phase 5 | Integration & Deployment | 🔄 Partially Complete |
+| Phase 5 | Integration & Deployment | ✅ Complete |
 | Phase 6 | Licensing & Commercial Control | ✅ Complete |
 | Phase 7 | AI Chatbot & OpenAI Assistance | ✅ Complete |
+
+### 2026-04-24 Stage Closure Snapshot
+- [x] Stage 1 complete: Full role-based UAT execution and evidence capture.
+- [x] Stage 2 complete: Report output certification for Department/Occupancy/Staff/Payroll.
+- [x] Stage 3 complete: Admin/SuperAdmin governance E2E validation.
+- [x] Stage 4 complete: Cutover rehearsal and rollback drill.
+- [x] Stage 5 complete: Notification production readiness, soak tests, and credential onboarding.
+- [x] Stage 6 complete: Deferred enhancements converted into approved phased backlog.
+- [ ] Stage 7 pending execution by phased plan (4 phases).
+- [ ] Stage 8 pending execution by phased plan (4 phases).
 
 ### 2026-04-22 Maintenance Update
 - [x] Added concise purpose comments across ASP.NET C# source files to improve onboarding and code readability
@@ -170,7 +180,7 @@
 
 ---
 
-## 🔄 Phase 5: Integration & Deployment *(Partially Complete)*
+## ✅ Phase 5: Integration & Deployment *(Complete)*
 
 ### STEP 5.1 — Integrations & Third-Party Services
 
@@ -181,8 +191,8 @@
 - [x] Africa's Talking SMS provider support with runtime routing
 - [x] Recipient-level email and SMS opt-out enforcement with CMS-managed lists
 - [x] Mobile API compatibility layer — backward-compatible endpoints (`/App/Index`, `/api/v1/app`, `/api/v2/app/config`)
-- [ ] **PENDING** — Full production credential onboarding for selected SMS provider and SMTP
-- [ ] **PENDING** — Staging soak test for notification retries, opt-outs, and provider failover behavior
+- [x] **COMPLETE** — Full production credential onboarding for selected SMS provider and SMTP
+- [x] **COMPLETE** — Staging soak test for notification retries, opt-outs, and provider failover behavior
 
 ### STEP 5.2 — Testing, Deployment & Go-Live
 
@@ -196,10 +206,10 @@
 - [x] User training and documentation — user docs, admin docs, training plan
 - [x] Production support plan — escalation procedures, incident response, post-launch monitoring, feedback collection
 - [x] **COMPLETE** — Execute full role-based business UAT with seeded production-like data and role credentials (automation scope complete; evidence in UAT run logs)
-- [ ] **PENDING** — Validate report outputs for Department, Occupancy, Staff, and Payroll reports
-- [ ] **PENDING** — Validate Admin/SuperAdmin governance workflows end-to-end
-- [ ] **PENDING** — Record pass/fail UAT evidence and defects in UAT evidence artifacts
-- [ ] **PENDING** — Go-live cutover rehearsal and rollback validation before release
+- [x] **COMPLETE** — Validate report outputs for Department, Occupancy, Staff, and Payroll reports
+- [x] **COMPLETE** — Validate Admin/SuperAdmin governance workflows end-to-end
+- [x] **COMPLETE** — Record pass/fail UAT evidence and defects in UAT evidence artifacts
+- [x] **COMPLETE** — Go-live cutover rehearsal and rollback validation before release
 
 ---
 
@@ -288,19 +298,19 @@
 
 | # | Item | Area |
 |---|------|------|
-| 1 | Execute full role-based business UAT with seeded production-like data | Testing |
-| 2 | Validate report outputs: Department, Occupancy, Staff, Payroll | Reports |
-| 3 | Validate Admin/SuperAdmin governance workflows end-to-end | Auth |
-| 4 | Record UAT pass/fail evidence and defects | Testing |
-| 5 | Go-live cutover rehearsal and rollback validation | Deployment |
+| 1 | Stage 7 Phase 1: System Management core infrastructure and menu | System Management |
+| 2 | Stage 7 Phase 2: Report Management subsection implementation | System Management |
+| 3 | Stage 7 Phase 3: User Management subsection implementation | System Management |
+| 4 | Stage 7 Phase 4: Theme Management subsection implementation | System Management |
+| 5 | Stage 8 Phase 1: Certificates foundation and menu | Certificates |
 
 ### Medium Priority (Deployment Readiness)
 
 | # | Item | Area |
 |---|------|------|
-| 6 | Onboard production SMS provider credentials (Twilio or Africa's Talking) | Notifications |
-| 7 | Onboard production SMTP credentials | Notifications |
-| 8 | Staging soak test: notification retries, opt-outs, provider failover | Notifications |
+| 6 | Stage 8 Phase 2: Birth and Death certificate generators | Certificates |
+| 7 | Stage 8 Phase 3: Certificate design integration in Report Editor | Certificates |
+| 8 | Stage 8 Phase 4: MS Word template import and final QA | Certificates |
 | 9 | Close runtime-risk warning triage batches in controllers/services (nullability) | Code Quality |
 
 ### Low Priority (Post Go-Live)
@@ -311,6 +321,17 @@
 | 11 | Additional payment gateways beyond top 5 | Payments |
 | 12 | Expand language support beyond top 3–5 | Localization |
 | 13 | Additional SMS providers beyond Twilio / Africa's Talking | Notifications |
+
+### Stage Execution Ledger (from Final-touches)
+
+- [x] Stage 1 completed — role UAT evidence captured
+- [x] Stage 2 completed — report output certification captured
+- [x] Stage 3 completed — governance E2E evidence captured
+- [x] Stage 4 completed — cutover rehearsal and rollback evidence captured
+- [x] Stage 5 completed — notification production readiness evidence captured
+- [x] Stage 6 completed — deferred enhancements backlog approved
+- [ ] Stage 7 in phased execution plan (4 phases)
+- [ ] Stage 8 in phased execution plan (4 phases)
 
 ---
 

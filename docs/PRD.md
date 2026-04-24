@@ -2,7 +2,7 @@
 ## Medyx Hospital Management System — ASP.NET Core Edition
 
 **Version:** 1.0  
-**Date:** 2026-04-22  
+**Date:** 2026-04-24  
 **Status:** Live / Post-Stabilization  
 **Platform:** ASP.NET Core 8 MVC + SQL Server  
 
@@ -396,12 +396,32 @@ See full feature list in [Final-touches.md — CB1–CB12](Final-touches.md).
 
 ---
 
-## 8. Linked Documents
+## 8. Program Stage Tracking (Final-touches Alignment)
+
+As of 2026-04-24, staged execution status is:
+
+| Stage | Name | Status | Evidence |
+|-------|------|--------|----------|
+| Stage 1 | Role-Based Business UAT | Completed | `temp_build_output/uat-role-stage1-2026-04-24.json` |
+| Stage 2 | Report Output Certification | Completed | `temp_build_output/stage2-report-cert-2026-04-24.json` |
+| Stage 3 | Admin/SuperAdmin Governance E2E | Completed | `temp_build_output/stage3-governance-e2e-2026-04-24.json` |
+| Stage 4 | Cutover Rehearsal and Rollback Drill | Completed | `temp_build_output/stage4-cutover-rehearsal-2026-04-24.json` |
+| Stage 5 | Notification Production Readiness | Completed | `temp_build_output/stage5-notification-readiness-2026-04-24.json` |
+| Stage 6 | Deferred Enhancements Backlog | Completed | `temp_build_output/stage6-deferred-enhancements-backlog-2026-04-24.json` |
+| Stage 7 | System Management | Planned in Phases | See `Final-touches.md` Stage 7 phased plan |
+| Stage 8 | Certificates | Planned in Phases | See `Final-touches.md` Stage 8 phased plan |
+
+Execution sequencing and phase-level details for Stage 7 and Stage 8 are governed by `Final-touches.md` and must be reflected in execution checklists before implementation starts.
+
+---
+
+## 9. Linked Documents
 
 | Document                                           | Purpose                                                        |
 |----------------------------------------------------|----------------------------------------------------------------|
 | [Final-touches.md](Final-touches.md)              | Staged inventories: roles, portals, menus, modules, reports, AI |
 | [Final-TODOList.md](Final-TODOList.md)            | Consolidated completed + pending phase task list               |
+| [UPDATED-TODO-LIST-2026-04-22.md](UPDATED-TODO-LIST-2026-04-22.md) | Short-form active execution priorities |
 | [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md)    | Step-by-step deployment and rollback procedures                |
 | [ADMIN-GUIDE.md](ADMIN-GUIDE.md)                  | Admin user guide                                               |
 | [USER-GUIDE.md](USER-GUIDE.md)                    | End-user documentation                                         |
@@ -416,4 +436,4 @@ See full feature list in [Final-touches.md — CB1–CB12](Final-touches.md).
 
 ---
 
-*PRD maintained by the Medyx HMS project team. Last updated: 2026-04-22.*
+*PRD maintained by the Medyx HMS project team. Last updated: 2026-04-24.*
