@@ -12,10 +12,14 @@ namespace MedyxHMS.Components
     public class SidebarNavViewComponent : ViewComponent
     {
         private readonly IModuleService _moduleService;
+        private readonly IReportCatalogVisibilityService _reportCatalogVisibilityService;
 
-        public SidebarNavViewComponent(IModuleService moduleService)
+        public SidebarNavViewComponent(
+            IModuleService moduleService,
+            IReportCatalogVisibilityService reportCatalogVisibilityService)
         {
             _moduleService = moduleService;
+            _reportCatalogVisibilityService = reportCatalogVisibilityService;
         }
 
         public async Task<IViewComponentResult> InvokeAsync()
@@ -42,7 +46,7 @@ namespace MedyxHMS.Components
                 CurrentPath = HttpContext.Request.Path.ToString()
             };
 
-            vm.ReportCatalog = ReportCatalogRegistry.GetVisibleItems(vm.IsAdminOrSuper);
+            vm.ReportCatalog = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(vm.IsAdminOrSuper, vm.IsSuperAdmin);
             vm.CurrentReportKey = ReportCatalogRegistry.ResolveCurrentKey(
                 vm.CurrentPath,
                 HttpContext.Request.Query["reportKey"].ToString());

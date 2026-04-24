@@ -12,15 +12,18 @@ namespace MedyxHMS.Controllers
     {
         private readonly IReportService _reportService;
         private readonly IReportTemplateService _reportTemplateService;
+        private readonly IReportCatalogVisibilityService _reportCatalogVisibilityService;
         private readonly ILogger<ReportController> _logger;
 
         public ReportController(
             IReportService reportService,
             IReportTemplateService reportTemplateService,
+            IReportCatalogVisibilityService reportCatalogVisibilityService,
             ILogger<ReportController> logger)
         {
             _reportService = reportService;
             _reportTemplateService = reportTemplateService;
+            _reportCatalogVisibilityService = reportCatalogVisibilityService;
             _logger = logger;
         }
 
@@ -28,7 +31,8 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Index(string? reportKey)
         {
             var canManageTemplates = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-            var items = ReportCatalogRegistry.GetVisibleItems(canManageTemplates);
+            var isSuperAdmin = User.IsInRole("SuperAdmin");
+            var items = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(canManageTemplates, isSuperAdmin);
             var selected = string.IsNullOrWhiteSpace(reportKey)
                 ? null
                 : items.FirstOrDefault(item => item.Key.Equals(reportKey, StringComparison.OrdinalIgnoreCase));

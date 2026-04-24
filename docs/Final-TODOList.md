@@ -299,7 +299,7 @@
 | # | Item | Area |
 |---|------|------|
 | 1 | Stage 7 Phase 1: System Management core infrastructure and menu | System Management |
-| 2 | Stage 7 Phase 2: Report Management subsection implementation | System Management |
+| 2 | Stage 7 Phase 2: Report Management subsection Part A completed; Parts B/C/D pending | System Management |
 | 3 | Stage 7 Phase 3: User Management subsection implementation | System Management |
 | 4 | Stage 7 Phase 4: Theme Management subsection implementation | System Management |
 | 5 | Stage 8 Phase 1: Certificates foundation and menu | Certificates |

@@ -101,6 +101,7 @@ Controllers/
  ReportController.cs
  SiteController.cs
  StaffController.cs
+ SystemManagementController.cs
  TpaController.cs
 Data/ApplicationDbContext.cs
 DTOs/
@@ -194,6 +195,7 @@ Services/
   PublicBookingNotificationService.cs
   RadiologyService.cs
   ReferralService.cs
+  ReportCatalogVisibilityService.cs
   ReportService.cs
   ReportTemplateService.cs
   SettingService.cs
@@ -205,7 +207,9 @@ Services/
   SystemNotificationService.cs
   TwilioSmsNotificationProvider.cs
   WardService.cs
- Interfaces/IServices.cs
+ Interfaces/
+  IReportCatalogVisibilityService.cs
+  IServices.cs
 ViewModels/
  AccountViewModels.cs
  AppointmentViewModels.cs
@@ -229,6 +233,7 @@ ViewModels/
  ReportViewModels.cs
  SiteViewModels.cs
  StaffViewModels.cs
+ SystemManagementViewModels.cs
 
 [metadataReferences]
 <DOTNET>/packs/Microsoft.AspNetCore.App.Ref/8.0.26/ref/net8.0/
@@ -841,6 +846,7 @@ Views/
   Details.cshtml
   Edit.cshtml
   Index.cshtml
+ SystemManagement/ReportManagement.cshtml
  Tpa/
   Claims.cshtml
   Create.cshtml
@@ -1089,6 +1095,7 @@ Views/
   Details.cshtml
   Edit.cshtml
   Index.cshtml
+ SystemManagement/ReportManagement.cshtml
  Tpa/
   Claims.cshtml
   Create.cshtml

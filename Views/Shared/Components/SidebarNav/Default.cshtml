@@ -702,4 +702,24 @@
 
     }
 
+    @* Stage 7 · System Management (non-patient roles) *@
+    @if (!Model.Roles.Contains("Patient", StringComparer.OrdinalIgnoreCase))
+    {
+        <li class="nav-item">
+            <a href="#sb-systemmgmt"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActive("/SystemManagement") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActive("/SystemManagement") ? "true" : "false")">
+                <i class="fas fa-sliders-h staff-sidebar-icon"></i>
+                <span class="flex-grow-1">System Management</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-systemmgmt" class="collapse @(Model.IsActive("/SystemManagement") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report List</a></li>
+                </ul>
+            </div>
+        </li>
+    }
+
 </ul>

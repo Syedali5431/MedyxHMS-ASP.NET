@@ -1,0 +1,169 @@
+@model MedyxHMS.ViewModels.SystemManagementReportListViewModel
+
+@{
+    ViewData["Title"] = "System Management - Report List";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="mb-0">System Management - Report List</h4>
+            <small class="text-muted">Stage 7 Part A: Report visibility management</small>
+        </div>
+        <span class="badge bg-secondary">Active @Model.ActiveReports / @Model.TotalReports</span>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success py-2">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger py-2">@errorMessage</div>
+    }
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-8 col-md-6 col-lg-4">
+            <input type="text"
+                   name="search"
+                   value="@Model.SearchTerm"
+                   class="form-control"
+                   placeholder="Search report by key, name, or purpose" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a href="/SystemManagement/ReportManagement" class="btn btn-outline-secondary">Reset</a>
+        </div>
+    </form>
+
+    @if (Model.IsSuperAdmin)
+    {
+        <p class="text-muted small mb-2">Right-click a report row to mark Active or Inactive.</p>
+    }
+    else
+    {
+        <p class="text-muted small mb-2">Read-only view: only Active reports are shown for non-SuperAdmin roles.</p>
+    }
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle" id="reportListTable">
+            <thead class="table-light">
+                <tr>
+                    <th style="width: 80px;">Sr#</th>
+                    <th>Report Name</th>
+                    <th>Purpose</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Rows.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-center text-muted py-4">No reports found.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var row in Model.Rows)
+                    {
+                        <tr class="report-row"
+                            data-key="@row.Key"
+                            data-active="@(row.IsActive ? "true" : "false")">
+                            <td>@row.SerialNo</td>
+                            <td>
+                                <strong>@row.Name</strong>
+                                <div class="small text-muted">@row.Key</div>
+                                @if (!row.IsActive)
+                                {
+                                    <span class="badge bg-warning text-dark">Inactive</span>
+                                }
+                            </td>
+                            <td>@row.Purpose</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@if (Model.IsSuperAdmin)
+{
+    <div id="reportCtxMenu" class="card shadow-sm" style="display:none; position:fixed; z-index:2000; min-width:190px;">
+        <div class="list-group list-group-flush" id="reportCtxMenuItems"></div>
+    </div>
+
+    <form id="setReportStateForm" method="post" action="/SystemManagement/SetReportActive" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="reportKey" id="reportKeyInput" />
+        <input type="hidden" name="isActive" id="isActiveInput" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+    </form>
+
+    <script>
+        (function () {
+            var menu = document.getElementById('reportCtxMenu');
+            var menuItems = document.getElementById('reportCtxMenuItems');
+            var selected = null;
+
+            function hideMenu() {
+                menu.style.display = 'none';
+                selected = null;
+            }
+
+            function buildMenu(isActive) {
+                menuItems.innerHTML = '';
+
+                var makeItem = function (label, activeState) {
+                    var a = document.createElement('button');
+                    a.type = 'button';
+                    a.className = 'list-group-item list-group-item-action';
+                    a.textContent = label;
+                    a.addEventListener('click', function () {
+                        if (!selected) {
+                            return;
+                        }
+
+                        document.getElementById('reportKeyInput').value = selected.key;
+                        document.getElementById('isActiveInput').value = activeState ? 'true' : 'false';
+                        document.getElementById('setReportStateForm').submit();
+                    });
+                    return a;
+                };
+
+                if (isActive) {
+                    menuItems.appendChild(makeItem('Mark Inactive', false));
+                } else {
+                    menuItems.appendChild(makeItem('Mark Active', true));
+                }
+            }
+
+            document.addEventListener('contextmenu', function (e) {
+                var row = e.target.closest ? e.target.closest('.report-row') : null;
+                hideMenu();
+                if (!row) {
+                    return;
+                }
+
+                e.preventDefault();
+
+                selected = {
+                    key: row.getAttribute('data-key'),
+                    isActive: row.getAttribute('data-active') === 'true'
+                };
+
+                buildMenu(selected.isActive);
+                menu.style.left = Math.min(e.clientX, window.innerWidth - 220) + 'px';
+                menu.style.top = Math.min(e.clientY, window.innerHeight - 180) + 'px';
+                menu.style.display = 'block';
+            });
+
+            document.addEventListener('click', hideMenu);
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    hideMenu();
+                }
+            });
+        })();
+    </script>
+}

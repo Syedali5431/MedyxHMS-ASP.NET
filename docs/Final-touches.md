@@ -1297,6 +1297,53 @@ Created comprehensive backlog with 3 strategic epics, each with full security, c
 7. Add filter bar: Status dropdown (All, Active, Inactive)
 8. Add search box: filter by report name
 
+**Status:** Completed (2026-04-24)
+
+**Execution Update (2026-04-24):**
+- Implemented MVP for Stage 7 Part A in ASP.NET:
+	- Added `SystemManagementController.ReportManagement` and `SetReportActive` actions.
+	- Added `Views/SystemManagement/ReportManagement.cshtml` with 3-column table (Sr#, Report Name, Purpose).
+	- Added SuperAdmin-only right-click action flow for Mark Active / Mark Inactive.
+	- Added report visibility persistence using settings key `SystemManagement.ReportCatalog.InactiveKeys`.
+	- Wired inactive-report filtering into sidebar and report workspace for non-SuperAdmin users.
+	- Added `System Management -> Report List` sidebar entry for non-patient roles.
+
+**Implementation Summary:**
+- Introduced a report visibility service (`IReportCatalogVisibilityService`) and implementation (`ReportCatalogVisibilityService`) to persist active/inactive keys in settings storage.
+- Added Stage 7 Part A controller surface in `SystemManagementController`:
+	- `GET /SystemManagement/ReportManagement` for list/search rendering.
+	- `POST /SystemManagement/SetReportActive` for SuperAdmin-only active/inactive state updates.
+- Added dedicated view model types (`SystemManagementReportListViewModel`, `SystemManagementReportRowViewModel`) for the Report List experience.
+- Implemented report list UX in `Views/SystemManagement/ReportManagement.cshtml`:
+	- Required 3-column table (Sr#, Report Name, Purpose).
+	- Search box by key/name/purpose.
+	- SuperAdmin right-click context actions for Mark Active/Mark Inactive.
+	- Read-only rendering guidance for non-SuperAdmin roles.
+- Wired visibility rules across existing report surfaces:
+	- Sidebar report catalog (`SidebarNavViewComponent`) now hides inactive reports for non-SuperAdmin users.
+	- Report workspace (`ReportController.Index`) now hides inactive reports for non-SuperAdmin users.
+- Added System Management menu entry in sidebar for non-patient users with Report List sub-item.
+
+**Validation Summary:**
+
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| SuperAdmin access to `/SystemManagement/ReportManagement` | HTTP 200 | HTTP 200 | ✅ PASS |
+| Admin access to `/SystemManagement/ReportManagement` | HTTP 200 | HTTP 200 | ✅ PASS |
+| Patient access denied | Redirect/deny | HTTP 302 deny flow | ✅ PASS |
+| SuperAdmin sees context-menu guidance | Visible | Visible | ✅ PASS |
+| Admin sees read-only guidance | Visible | Visible | ✅ PASS |
+| Toggle inactive (`R41`) as SuperAdmin | Update succeeds | HTTP 200 | ✅ PASS |
+| Non-SuperAdmin list hides inactive report | Hidden | `Department Report` hidden for Admin | ✅ PASS |
+| SuperAdmin still sees inactive report | Visible | `R41` still visible + inactive badge | ✅ PASS |
+| Toggle active restore (`R41`) | Update succeeds | HTTP 200 | ✅ PASS |
+| Restore reflects for Admin | Visible again | `Department Report` visible | ✅ PASS |
+
+**Fix Applied During Validation:**
+- Resolved 500 error on first toggle attempt by updating `SettingService.UpdateSettingAsync` to populate required `Description` and `ModifiedBy` fields when auto-creating a new setting record.
+
+**Part A Outcome:** Completed and runtime-verified. Remaining in Phase 2: sections B/C/D (Create, Edit, Download) and optional status-filter UX enhancement.
+
 ### B. Create Report
 1. Create CreateReportViewModel (ReportName, Title, Description, Fields, Style, Font)
 2. Create CreateReport view with two tabs:

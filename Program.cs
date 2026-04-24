@@ -125,6 +125,7 @@ builder.Services.AddScoped<IFrontOfficeService, FrontOfficeService>();
 builder.Services.AddScoped<ICertificateService, CertificateService>();
 builder.Services.AddScoped<IReportService, ReportService>();
 builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
+builder.Services.AddScoped<IReportCatalogVisibilityService, ReportCatalogVisibilityService>();
 
 builder.Services.AddScoped<DatabaseInitializer>();
 

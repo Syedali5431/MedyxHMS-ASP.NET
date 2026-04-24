@@ -86,8 +86,10 @@ namespace MedyxHMS.Services.Implementations
                     Value = value,
                     Type = "string",
                     Category = "General",
+                    Description = $"Auto-created setting for key '{key}'",
                     IsSystem = false,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.UtcNow,
+                    ModifiedBy = "System"
                 };
                 _context.Settings.Add(setting);
             }
