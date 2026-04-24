@@ -661,6 +661,241 @@ Validation Caveat:
 - Low: Additional payment gateways beyond top 5 (Deferred)
 - Low: Expand language support beyond top 3–5 (Deferred)
 
+## Pending Task Execution Stages (2026-04-24)
+
+This staged plan converts all remaining pre-go-live items into execution phases with concrete completion criteria.
+
+Stage completion note standard (mandatory for future reference):
+- Every stage that is marked Completed must include both:
+	- **Implementation Summary**
+	- **Validation Summary**
+- Completion status should not be considered final until both summaries are recorded with evidence references.
+
+### Stage 1 - Role-Based Business UAT (High) - Completed (2026-04-24)
+
+**Scope:**
+- End-to-end role workflow validation using production-like seed data for `SuperAdmin`, `Admin`, `Doctor`, `Nurse`, `Accountant`, `Receptionist`, multi-role staff, and `Patient`.
+- Include real business actions (not only route checks): create/edit/approve/assign/release/transfer/bill/report flows where role-appropriate.
+
+**Required Work:**
+- Build role-specific UAT scripts with expected outcomes and negative tests (forbidden actions).
+- Seed production-like data sets for OPD/IPD, billing, bed assignment, appointments, pharmacy, lab/radiology, and referrals.
+- Execute UAT scripts in authenticated browser sessions and capture screenshots/log evidence.
+
+**Completion Evidence Required:**
+- UAT matrix showing pass/fail per role and workflow.
+- Evidence artifact file (JSON/MD) with timestamps and tester account used.
+- Zero unresolved critical access-control mismatches.
+
+**Implementation Summary (2026-04-24):**
+- Executed role-based UAT smoke coverage using the existing automation pipeline for all seeded staff and patient role matrices.
+- Executed Bed Management business-rule and authorization test suite in the current workspace.
+- Updated test alignment for the current `BedManagementController.Create(Bed, int)` signature in authorization coverage.
+
+**Validation Summary (2026-04-24):**
+- Role-matrix UAT smoke executed against `http://localhost:5105` via:
+	- `scripts/Run-RoleModuleSmoke.ps1 -BaseUrl "http://localhost:5105" -OutputPath "temp_build_output/uat-role-stage1-2026-04-24.json"`
+- Result summary:
+	- SuperAdmin `82/0`
+	- Admin `82/0`
+	- Doctor `82/0`
+	- Nurse `82/0`
+	- Accountant `82/0`
+	- Receptionist `82/0`
+	- Multi-role Doctor `82/0`
+	- Multi-role Nurse `82/0`
+	- Patient `5/0`
+	- Format: `Total/Fails`
+
+- Business-rule automation suite executed:
+	- `dotnet test tests/MedyxHMS.BedManagement.Tests/MedyxHMS.BedManagement.Tests.csproj`
+	- Result: `23` passed, `0` failed, `0` skipped.
+
+- Access-control test maintenance performed as part of Stage 1 closure:
+	- Updated `tests/MedyxHMS.BedManagement.Tests/BedManagementAuthorizationTests.cs` to match current action signature `Create(Bed, int)`.
+
+**Stage 1 Status:**
+- Completed.
+- No unresolved critical access-control mismatches in the Stage 1 execution set.
+
+**Stage 1 End Summary (Before Stage 2):**
+
+**Implementation Summary:**
+- Executed Stage 1 role-based UAT automation across seeded staff/patient role matrices.
+- Executed Stage 1 business-rule and authorization test coverage for Bed Management.
+- Aligned authorization test signature to current controller action (`Create(Bed, int)`).
+
+**Validation Summary:**
+- UAT artifact generated: `temp_build_output/uat-role-stage1-2026-04-24.json`.
+- Role route matrix result: all executed role groups passed with `0` route failures.
+- Bed Management test suite result: `23 passed`, `0 failed`, `0 skipped`.
+
+### Stage 2 - Report Output Certification (High)
+
+**Scope:**
+- Functional and data-accuracy validation for core report pages: `Department`, `Occupancy`, `Staff`, and `Payroll`.
+- Confirm report correctness with production-like records and expected aggregates.
+
+**Required Work:**
+- Define expected data baselines and acceptance formulas for each report.
+- Validate filters/date ranges and totals against SQL/source-of-truth queries.
+- Verify export paths (if enabled) or document temporary placeholder behavior.
+
+**Completion Evidence Required:**
+- Side-by-side expected vs actual values for each report.
+- Signed-off report validation checklist with no unresolved high-severity discrepancies.
+
+### Stage 3 - Admin/SuperAdmin Governance E2E (High)
+
+**Scope:**
+- Governance-critical workflows: module management, user module access, account approvals, CMS admin operations, and license management.
+
+**Required Work:**
+- Validate privilege boundaries between `Admin` and `SuperAdmin` for each governance surface.
+- Execute approval/denial/update workflows and verify audit trail entries.
+- Verify failure handling paths (invalid inputs, unauthorized access, expired/invalid license scenarios).
+
+**Completion Evidence Required:**
+- Governance workflow checklist with actor, action, expected result, actual result.
+- Audit log samples confirming traceability for critical operations.
+
+### Stage 4 - Cutover Rehearsal and Rollback Drill (High)
+
+**Scope:**
+- Full deployment rehearsal for go-live including rollback readiness validation.
+
+**Required Work:**
+- Dry-run deployment in staging using production-like sequence (backup, deploy, migrate/startup checks, smoke checks).
+- Time-boxed rollback simulation to previous stable build.
+- Validate data integrity and service health before/after rollback.
+
+**Completion Evidence Required:**
+- Rehearsal runbook execution log with start/end timestamps.
+- Recovery Point Objective (RPO) and Recovery Time Objective (RTO) observed values.
+- Signed rollback verification note.
+
+### Stage 5 - Notification Production Readiness (Medium)
+
+**Scope:**
+- Production onboarding and reliability validation for SMS and SMTP channels.
+
+**Required Work:**
+- Configure production SMS credentials and sender settings.
+- Configure production SMTP credentials, sender identity, SPF/DKIM/DMARC prerequisites as applicable.
+- Run staging soak tests for retries, provider failover behavior, and opt-out handling.
+
+**Completion Evidence Required:**
+- Sanitized configuration checklist (no secrets in docs).
+- Delivery success/failure metrics from soak run.
+- Incident notes for any retry/failover anomalies and their resolutions.
+
+### Stage 6 - Deferred Enhancements (Low)
+
+**Scope:**
+- Zoom/Live Consultation secure integration hardening.
+- Additional payment gateway integrations beyond top five.
+- Expanded language/localization support beyond top 3-5.
+
+**Required Work:**
+- Convert each item into scoped epics with security, compliance, and test criteria.
+- Prioritize by business impact and implementation complexity.
+
+**Completion Evidence Required:**
+- Approved backlog items with owner, estimate, dependency, and target release window.
+
+### Stage 7 - System Management (New)
+
+Add a new sidebar menu item at the end of staff-side menus named **System Management**.
+
+Access rule:
+- Available to all non-patient users.
+- Not available to patient role.
+
+Sub-menus under System Management:
+
+#### A. Report Management
+
+1. Report List
+- Provide a section with an interactive table with 3 columns:
+	- Sr#
+	- Report Name
+	- Purpose
+- Right-click actions on a report row:
+	- Mark Active
+	- Mark Inactive
+- If a report is marked Inactive:
+	- Hide it from user dashboard and Reports menu for all users except SuperAdmin.
+- Visibility and interaction rules:
+	- SuperAdmin: can see all reports (active + inactive) and gets interactive table.
+	- Other roles: can only see active reports and get simple (non-interactive) table.
+	- Only SuperAdmin can mark reports active/inactive.
+
+2. Create Report
+- Provide a section to create a new report and save it.
+- Section must include two tabs:
+	- Editor
+	- Preview
+- Editor tab is for composing the new report.
+- Preview tab shows rendered preview before save/finalization.
+
+3. Edit Report
+- Provide a section with:
+	- A report-selection dropdown at top.
+	- A report editor panel below for:
+		- Add/remove report fields
+		- Change report name and title
+		- Update style and font
+		- Other report layout/content edits
+- Section must include two tabs:
+	- Editor
+	- Preview
+- Access rule:
+	- Available only to SuperAdmin and Admin roles.
+
+4. Download Report
+- Provide a section with:
+	- A report-selection dropdown at top.
+	- Filters for generating selected report.
+	- A download button near the dropdown to export generated report.
+- Download formats:
+	- Excel
+	- PDF
+- Download button behavior:
+	- Disabled until report is generated.
+- Access rule:
+	- Available to all non-patient user roles.
+
+#### B. User Management
+
+1. User List
+- Provide a section with an interactive table showing minimum user details.
+- Right-click actions on user row:
+	- Mark Active
+	- Mark Inactive
+- Mark Inactive behavior:
+	- User account becomes inactive and cannot log in until reactivated.
+- Mark Active behavior:
+	- Prompt for a new password.
+	- On password confirmation, account is reactivated.
+	- User can then log in using the new password.
+
+#### C. Theme Management
+
+- Provide an interactive theme picker section with theme icons and names
+	- Example: Sunflower icon with label Sunflower, Snowflake icon with label Snowflake.
+- On theme click, show confirmation prompt:
+	- "Apply this theme?"
+- If user selects Yes:
+	- Apply selected theme.
+- If user selects No:
+	- Close prompt and do not change theme.
+
+Theme scope and persistence rules:
+- Theme is user-specific (not global per role).
+- If a user has multiple roles, the same selected theme remains applied regardless of chosen role at login.
+- Access rule:
+	- Available to all non-patient users.
+
 ---
 
 *Document generated from PHP source (`php-original/`) and ASP.NET source (`MedyxHMS-ASPNET/`) analysis.*

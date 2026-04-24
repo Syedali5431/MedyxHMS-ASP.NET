@@ -31,7 +31,7 @@ public class BedManagementAuthorizationTests
         AssertRequiresManageRoles(nameof(BedManagementController.TransferBedApi), typeof(BedManagementController.TransferBedRequest));
         AssertRequiresManageRoles(nameof(BedManagementController.UpdateBedStatusApi), typeof(BedManagementController.UpdateBedStatusRequest));
         AssertRequiresManageRoles(nameof(BedManagementController.Create));
-        AssertRequiresManageRoles(nameof(BedManagementController.Create), typeof(MedyxHMS.Models.Bed));
+        AssertRequiresManageRoles(nameof(BedManagementController.Create), typeof(MedyxHMS.Models.Bed), typeof(int));
         AssertRequiresManageRoles(nameof(BedManagementController.Edit), typeof(int));
         AssertRequiresManageRoles(nameof(BedManagementController.Edit), typeof(int), typeof(MedyxHMS.Models.Bed));
     }
