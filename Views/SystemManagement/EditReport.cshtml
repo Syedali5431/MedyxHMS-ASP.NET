@@ -1,0 +1,404 @@
+@model MedyxHMS.ViewModels.EditReportViewModel
+
+@{
+    ViewData["Title"] = "Edit Report";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="mb-0">Edit Report</h4>
+            <small class="text-muted">Stage 7 Phase 2C: Update report template fields and styling</small>
+        </div>
+        <a asp-action="ReportManagement" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Report List
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success py-2">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger py-2">@errorMessage</div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <label class="form-label fw-semibold">Select Report to Edit</label>
+            <select class="form-select" id="templateSelector" onchange="switchTemplate(this.value)">
+                @foreach (var item in Model.AvailableReports)
+                {
+                    if (item.Id == Model.TemplateId)
+                    {
+                        <option value="@item.Id" selected>
+                            @item.Name (@item.ReportType) @(item.IsActive ? "" : "[Inactive]")
+                        </option>
+                    }
+                    else
+                    {
+                        <option value="@item.Id">
+                            @item.Name (@item.ReportType) @(item.IsActive ? "" : "[Inactive]")
+                        </option>
+                    }
+                }
+            </select>
+        </div>
+    </div>
+
+    <form asp-action="EditReport" method="post" id="editReportForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="TemplateId" />
+        <input type="hidden" asp-for="FieldsJson" id="fieldsJsonInput" />
+
+        <ul class="nav nav-tabs mb-3" id="reportTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="editor-tab" data-bs-toggle="tab" data-bs-target="#editorPane" type="button" role="tab">
+                    <i class="bi bi-pencil-square"></i> Editor
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="preview-tab" data-bs-toggle="tab" data-bs-target="#previewPane" type="button" role="tab" onclick="renderPreview()">
+                    <i class="bi bi-eye"></i> Preview
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane fade show active" id="editorPane" role="tabpanel">
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header fw-semibold">Report Details</div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <label asp-for="ReportName" class="form-label fw-semibold">Report Name <span class="text-danger">*</span></label>
+                                    <input asp-for="ReportName" class="form-control" />
+                                    <span asp-validation-for="ReportName" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Title" class="form-label">Display Title</label>
+                                    <input asp-for="Title" class="form-control" />
+                                    <span asp-validation-for="Title" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="ReportType" class="form-label fw-semibold">Report Type <span class="text-danger">*</span></label>
+                                    <select asp-for="ReportType" class="form-select">
+                                        <option value="Patient">Patient</option>
+                                        <option value="Billing">Billing</option>
+                                        <option value="Department">Department</option>
+                                        <option value="HR">HR / Staff</option>
+                                        <option value="Inventory">Inventory</option>
+                                        <option value="Occupancy">Occupancy</option>
+                                        <option value="Financial">Financial</option>
+                                        <option value="Custom">Custom</option>
+                                    </select>
+                                    <span asp-validation-for="ReportType" class="text-danger small"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Description" class="form-label">Description</label>
+                                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                                    <span asp-validation-for="Description" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-6">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header fw-semibold">Style &amp; Layout</div>
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label asp-for="ColorScheme" class="form-label">Color Scheme</label>
+                                        <select asp-for="ColorScheme" class="form-select" id="colorSchemeSelect">
+                                            <option value="default">Default</option>
+                                            <option value="professional">Professional (Blue)</option>
+                                            <option value="colorful">Colorful</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="PageOrientation" class="form-label">Page Orientation</label>
+                                        <select asp-for="PageOrientation" class="form-select">
+                                            <option value="portrait">Portrait</option>
+                                            <option value="landscape">Landscape</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="HeaderFont" class="form-label">Header Font</label>
+                                        <select asp-for="HeaderFont" class="form-select">
+                                            <option value="Arial">Arial</option>
+                                            <option value="Helvetica">Helvetica</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Times New Roman">Times New Roman</option>
+                                            <option value="Courier New">Courier New</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label asp-for="BodyFont" class="form-label">Body Font</label>
+                                        <select asp-for="BodyFont" class="form-select">
+                                            <option value="Arial">Arial</option>
+                                            <option value="Helvetica">Helvetica</option>
+                                            <option value="Georgia">Georgia</option>
+                                            <option value="Times New Roman">Times New Roman</option>
+                                            <option value="Courier New">Courier New</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-12">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" asp-for="ShowGridLines" />
+                                            <label class="form-check-label" asp-for="ShowGridLines">Show grid lines</label>
+                                        </div>
+                                        <div class="form-check form-switch mt-1">
+                                            <input class="form-check-input" type="checkbox" asp-for="ShowAlternatingRows" id="showAltRows" />
+                                            <label class="form-check-label" asp-for="ShowAlternatingRows">Alternating row colors</label>
+                                        </div>
+                                        <div class="form-check form-switch mt-1">
+                                            <input class="form-check-input" type="checkbox" asp-for="ShowTotals" />
+                                            <label class="form-check-label" asp-for="ShowTotals">Show totals row</label>
+                                        </div>
+                                        <div class="form-check form-switch mt-1">
+                                            <input class="form-check-input" type="checkbox" asp-for="IncludeTimestamp" />
+                                            <label class="form-check-label" asp-for="IncludeTimestamp">Include timestamp in report</label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="card shadow-sm">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold">Field Editor</span>
+                                <button type="button" class="btn btn-sm btn-success" onclick="addField()">
+                                    <i class="bi bi-plus-circle"></i> Add Field
+                                </button>
+                            </div>
+                            <div class="card-body p-2">
+                                <span asp-validation-for="FieldsJson" class="text-danger small"></span>
+                                <div class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th style="width:36px">#</th>
+                                                <th>Field Name <span class="text-danger">*</span></th>
+                                                <th>Column / Key</th>
+                                                <th style="width:110px">Data Type</th>
+                                                <th style="width:90px">Alignment</th>
+                                                <th style="width:70px">Sortable</th>
+                                                <th style="width:70px">Visible</th>
+                                                <th style="width:90px">Order</th>
+                                                <th style="width:40px"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="fieldRows"></tbody>
+                                    </table>
+                                </div>
+                                <div class="text-muted small mt-2" id="noFieldsMsg">No fields configured.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-primary" onclick="serializeFields()">
+                        <i class="bi bi-save"></i> Save Changes
+                    </button>
+                    <a asp-action="ReportManagement" class="btn btn-outline-secondary">Back</a>
+                    <button type="button" class="btn btn-outline-info ms-auto" onclick="renderPreview(); document.getElementById('preview-tab').click();">
+                        <i class="bi bi-eye"></i> Preview
+                    </button>
+                </div>
+            </div>
+
+            <div class="tab-pane fade" id="previewPane" role="tabpanel">
+                <div class="card shadow-sm">
+                    <div class="card-header fw-semibold">Preview</div>
+                    <div class="card-body" id="previewContainer">
+                        <p class="text-muted">Click Preview to render current edits with live sample data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        let fields = [];
+        let fieldCounter = 0;
+
+        function switchTemplate(id) {
+            window.location.href = `/SystemManagement/EditReport?templateId=${encodeURIComponent(id)}`;
+        }
+
+        function addField() {
+            fieldCounter++;
+            fields.push({ id: fieldCounter, fieldName: '', columnName: '', dataType: 'string', alignment: 'left', isSortable: true, isVisible: true, sortOrder: fields.length + 1 });
+            renderFieldTable();
+        }
+
+        function removeField(id) {
+            fields = fields.filter(f => f.id !== id);
+            renumberFields();
+            renderFieldTable();
+        }
+
+        function moveField(id, direction) {
+            const idx = fields.findIndex(f => f.id === id);
+            const swapIdx = idx + direction;
+            if (swapIdx < 0 || swapIdx >= fields.length) return;
+            [fields[idx], fields[swapIdx]] = [fields[swapIdx], fields[idx]];
+            renumberFields();
+            renderFieldTable();
+        }
+
+        function renumberFields() {
+            fields.forEach((f, i) => f.sortOrder = i + 1);
+        }
+
+        function collectFieldValues() {
+            fields.forEach(f => {
+                const fn = document.getElementById(`fn_${f.id}`);
+                const cn = document.getElementById(`cn_${f.id}`);
+                const dt = document.getElementById(`dt_${f.id}`);
+                const al = document.getElementById(`al_${f.id}`);
+                const so = document.getElementById(`so_${f.id}`);
+                const sv = document.getElementById(`sv_${f.id}`);
+                const si = document.getElementById(`si_${f.id}`);
+                if (fn) f.fieldName = fn.value.trim();
+                if (cn) f.columnName = cn.value.trim();
+                if (dt) f.dataType = dt.value;
+                if (al) f.alignment = al.value;
+                if (so) f.sortOrder = parseInt(so.value) || f.sortOrder;
+                if (sv) f.isVisible = sv.checked;
+                if (si) f.isSortable = si.checked;
+            });
+        }
+
+        function renderFieldTable() {
+            const tbody = document.getElementById('fieldRows');
+            const noMsg = document.getElementById('noFieldsMsg');
+            noMsg.style.display = fields.length === 0 ? '' : 'none';
+            tbody.innerHTML = fields.map((f, i) => `
+                <tr>
+                    <td class="text-muted small">${i + 1}</td>
+                    <td><input id="fn_${f.id}" class="form-control form-control-sm" value="${escHtml(f.fieldName)}" /></td>
+                    <td><input id="cn_${f.id}" class="form-control form-control-sm" value="${escHtml(f.columnName)}" /></td>
+                    <td>
+                        <select id="dt_${f.id}" class="form-select form-select-sm">
+                            ${['string','int','decimal','datetime'].map(t => `<option value="${t}" ${f.dataType === t ? 'selected' : ''}>${t}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td>
+                        <select id="al_${f.id}" class="form-select form-select-sm">
+                            ${['left','center','right'].map(a => `<option value="${a}" ${f.alignment === a ? 'selected' : ''}>${a}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td class="text-center"><input type="checkbox" id="si_${f.id}" class="form-check-input" ${f.isSortable ? 'checked' : ''} /></td>
+                    <td class="text-center"><input type="checkbox" id="sv_${f.id}" class="form-check-input" ${f.isVisible ? 'checked' : ''} /></td>
+                    <td><input id="so_${f.id}" type="number" class="form-control form-control-sm" value="${f.sortOrder}" min="1" style="width:60px" /></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary py-0 px-1" onclick="collectFieldValues(); moveField(${f.id}, -1)">▲</button>
+                            <button type="button" class="btn btn-outline-secondary py-0 px-1" onclick="collectFieldValues(); moveField(${f.id}, 1)">▼</button>
+                            <button type="button" class="btn btn-outline-danger py-0 px-1" onclick="removeField(${f.id})">✕</button>
+                        </div>
+                    </td>
+                </tr>`).join('');
+        }
+
+        function serializeFields() {
+            collectFieldValues();
+            document.getElementById('fieldsJsonInput').value = JSON.stringify(fields.map(f => ({
+                fieldName: f.fieldName,
+                columnName: f.columnName || f.fieldName,
+                dataType: f.dataType,
+                alignment: f.alignment,
+                isVisible: f.isVisible,
+                isSortable: f.isSortable,
+                sortOrder: f.sortOrder
+            })));
+        }
+
+        async function renderPreview() {
+            collectFieldValues();
+            const reportType = document.querySelector('[name="ReportType"]')?.value || 'Custom';
+            const colorScheme = document.getElementById('colorSchemeSelect')?.value || 'default';
+            const altRows = document.getElementById('showAltRows')?.checked;
+            const title = document.querySelector('[name="Title"]')?.value || document.querySelector('[name="ReportName"]')?.value || 'Preview';
+            const headerFont = document.querySelector('[name="HeaderFont"]')?.value || 'Arial';
+            const bodyFont = document.querySelector('[name="BodyFont"]')?.value || 'Arial';
+
+            let rows = [];
+            try {
+                const response = await fetch(`/SystemManagement/PreviewReportData?reportType=${encodeURIComponent(reportType)}`);
+                if (response.ok) {
+                    const payload = await response.json();
+                    if (payload?.rows) rows = payload.rows;
+                }
+            } catch {}
+
+            const map = {
+                default: { head: '#343a40', text: '#fff', alt: '#f8f9fa' },
+                professional: { head: '#0d6efd', text: '#fff', alt: '#e7f1ff' },
+                colorful: { head: '#198754', text: '#fff', alt: '#d1e7dd' }
+            };
+            const colors = map[colorScheme] || map.default;
+            const visibleFields = fields.filter(f => f.isVisible);
+            const headers = visibleFields.map(f => `<th style="background:${colors.head};color:${colors.text};padding:6px">${escHtml(f.fieldName)}</th>`).join('');
+            const bodyRows = (rows.length ? rows.slice(0, 3) : [{}, {}, {}]).map((r, i) => {
+                const bg = altRows && i % 2 ? colors.alt : '#fff';
+                const tds = visibleFields.map(f => {
+                    const key = normalizeKey(f.columnName || f.fieldName);
+                    return `<td style="padding:6px;background:${bg};font-family:${bodyFont}">${escHtml(String(r[key] ?? ''))}</td>`;
+                }).join('');
+                return `<tr>${tds}</tr>`;
+            }).join('');
+
+            document.getElementById('previewContainer').innerHTML = `
+                <h5 style="font-family:${headerFont}">${escHtml(title)}</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead><tr>${headers || '<th>No fields selected</th>'}</tr></thead>
+                        <tbody>${bodyRows}</tbody>
+                    </table>
+                </div>
+                <small class="text-muted">Source: ${escHtml(reportType)} (${rows.length ? 'live sample data' : 'no sample rows'})</small>`;
+        }
+
+        function normalizeKey(v) {
+            return String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        }
+
+        function escHtml(v) {
+            return String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        (function init() {
+            try {
+                const initial = @Html.Raw(Model.FieldsJson);
+                if (Array.isArray(initial)) {
+                    fields = initial.map((f, i) => ({
+                        id: i + 1,
+                        fieldName: f.fieldName || f.FieldName || '',
+                        columnName: f.columnName || f.ColumnName || '',
+                        dataType: f.dataType || f.DataType || 'string',
+                        alignment: f.alignment || f.Alignment || 'left',
+                        isSortable: f.isSortable ?? f.IsSortable ?? true,
+                        isVisible: f.isVisible ?? f.IsVisible ?? true,
+                        sortOrder: f.sortOrder || f.SortOrder || i + 1
+                    }));
+                    fieldCounter = fields.length;
+                }
+            } catch {
+                fields = [];
+            }
+            renderFieldTable();
+        })();
+    </script>
+}

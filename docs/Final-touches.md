@@ -1379,6 +1379,47 @@ Created comprehensive backlog with 3 strategic epics, each with full security, c
 7. Implement PDF export: use PDF library (iTextSharp, SelectPdf, etc.)
 8. Add progress indicator: show generation status (Generating... 25%... 50%...)
 
+### Stage 7 Phase 2 Execution Update (2026-04-24)
+
+**Status:** Completed (Parts A + B + C + D)
+
+**Implementation Summary:**
+- Completed **Part B (Create Report)** in `SystemManagementController` and `Views/SystemManagement/CreateReport.cshtml`:
+	- Two-tab Editor/Preview UX with field builder, style editor, and report persistence.
+	- Server-side validation: required name/type, unique report name, at least one field, at least one visible field.
+	- Live preview data source via `GET /SystemManagement/PreviewReportData?reportType=...`.
+- Completed **Part C (Edit Report)** in `SystemManagementController` and `Views/SystemManagement/EditReport.cshtml`:
+	- Dropdown selector for editable templates.
+	- Two-tab Editor/Preview UX with add/remove/reorder fields.
+	- SuperAdmin/Admin-only access enforced.
+	- Save logic updates existing `ReportTemplate`, `ReportField`, and `ReportDesign` records.
+	- Change tracking implemented in `AuditLogs` with old/new JSON snapshots, actor, IP, user agent, and timestamp.
+- Completed **Part D (Download Report)** in `SystemManagementController` and `Views/SystemManagement/DownloadReport.cshtml`:
+	- Report selector + filter panel (date range, department, custom key/value filters).
+	- Visibility rule: SuperAdmin sees all templates; other staff see active templates only.
+	- Generate step produces preview rows and enables download button.
+	- Export implemented:
+		- Excel-compatible CSV via `IExportService.BuildCsv`.
+		- PDF via `IExportService.BuildPdfTable` (QuestPDF-based implementation).
+	- Progress indicator implemented in UI (Generating 25/50/75/100%).
+- Navigation updates:
+	- `Report Management` page now links to Create/Edit/Download actions.
+	- Sidebar `System Management` submenu now includes `Create Report`, `Edit Report` (admin-level), and `Download Report`.
+
+**Validation Summary (Current Workspace):**
+
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| Build after B/C/D implementation | 0 errors | Warning-only build | ✅ PASS |
+| Create report save path | Persists template + fields + style | Implemented and compiled | ✅ PASS |
+| Edit report access control | SuperAdmin/Admin only | `[Authorize(Roles = "SuperAdmin,Admin")]` | ✅ PASS |
+| Edit report change tracking | Capture who/what/when | `AuditLogs` entries on update | ✅ PASS |
+| Download visibility rule | SuperAdmin all / others active-only | Implemented in controller filtering | ✅ PASS |
+| Download exports | Excel + PDF outputs | CSV + PDF file responses implemented | ✅ PASS |
+| Generate-before-download UX | Download disabled until generated | Implemented in view | ✅ PASS |
+
+**Phase 2 Outcome:** Completed and code-validated in this workspace.
+
 **Dependencies:**
 - Phase 1 (Core Infrastructure) must be completed first
 - Report data models and ReportService (already exist from Stage 2)

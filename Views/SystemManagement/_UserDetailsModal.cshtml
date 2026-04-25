@@ -1,0 +1,101 @@
+@model UserDetailsViewModel
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label text-muted small">Email Address</label>
+            <p class="fw-semibold">@Model.Email</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Employee ID</label>
+            <p class="fw-semibold">@(string.IsNullOrEmpty(Model.EmployeeId) ? "—" : Model.EmployeeId)</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Full Name</label>
+            <p class="fw-semibold">@Model.FullName</p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Phone Number</label>
+            <p class="fw-semibold">@(string.IsNullOrEmpty(Model.PhoneNumber) ? "—" : Model.PhoneNumber)</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label text-muted small">Roles</label>
+            <p class="fw-semibold">
+                @if (!string.IsNullOrEmpty(Model.RolesList))
+                {
+                    @foreach (var role in Model.RolesList.Split(", "))
+                    {
+                        <span class="badge bg-info">@role</span>
+                    }
+                }
+                else
+                {
+                    <span class="text-muted">No roles assigned</span>
+                }
+            </p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Account Status</label>
+            <p class="fw-semibold">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">Active</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">Inactive</span>
+                }
+            </p>
+        </div>
+        <div class="mb-3">
+            <label class="form-label text-muted small">Total Logins</label>
+            <p class="fw-semibold">@Model.TotalLogins</p>
+        </div>
+    </div>
+</div>
+
+<hr>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label text-muted small">Account Created</label>
+            <p class="fw-semibold">@Model.CreatedDate.ToString("MMM dd, yyyy hh:mm tt")</p>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="mb-3">
+            <label class="form-label text-muted small">First Login</label>
+            <p class="fw-semibold">
+                @if (Model.FirstLoginDate.HasValue)
+                {
+                    @Model.FirstLoginDate.Value.ToString("MMM dd, yyyy hh:mm tt")
+                }
+                else
+                {
+                    <span class="text-muted">Never logged in</span>
+                }
+            </p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="mb-3">
+            <label class="form-label text-muted small">Last Login</label>
+            <p class="fw-semibold">
+                @if (Model.LastLoginDate.HasValue)
+                {
+                    @Model.LastLoginDate.Value.ToString("MMM dd, yyyy hh:mm tt")
+                }
+                else
+                {
+                    <span class="text-muted">Never logged in</span>
+                }
+            </p>
+        </div>
+    </div>
+</div>

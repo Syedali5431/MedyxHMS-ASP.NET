@@ -830,6 +830,26 @@ namespace MedyxHMS.Services.Implementations
 
         #endregion
 
+        #region Custom Report Builder
+
+        public async Task<int> CreateReportTemplateAsync(ReportTemplate template)
+        {
+            template.CreatedDate = DateTime.UtcNow;
+            _context.ReportTemplates.Add(template);
+            await _context.SaveChangesAsync();
+            return template.Id;
+        }
+
+        public async Task<bool> IsReportNameUniqueAsync(string name, int? excludeId = null)
+        {
+            var query = _context.ReportTemplates.Where(rt => rt.Name == name);
+            if (excludeId.HasValue)
+                query = query.Where(rt => rt.Id != excludeId.Value);
+            return !await query.AnyAsync();
+        }
+
+        #endregion
+
         #region Helper Methods
 
         private DateTime? CalculateNextRunDate(ReportSchedule schedule)

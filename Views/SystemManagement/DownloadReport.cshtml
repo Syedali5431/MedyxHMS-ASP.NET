@@ -1,0 +1,180 @@
+@model MedyxHMS.ViewModels.DownloadReportViewModel
+
+@{
+    ViewData["Title"] = "Download Report";
+}
+
+<div class="container-fluid py-3">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+        <div>
+            <h4 class="mb-0">Download Report</h4>
+            <small class="text-muted">Stage 7 Phase 2D: Generate report with filters and export to Excel/PDF</small>
+        </div>
+        <a asp-action="ReportManagement" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Back to Report List
+        </a>
+    </div>
+
+    @if (TempData["SuccessMessage"] is string successMessage)
+    {
+        <div class="alert alert-success py-2">@successMessage</div>
+    }
+    @if (TempData["ErrorMessage"] is string errorMessage)
+    {
+        <div class="alert alert-danger py-2">@errorMessage</div>
+    }
+
+    <form asp-action="DownloadReport" method="post" id="downloadForm">
+        @Html.AntiForgeryToken()
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">Report Selector</div>
+            <div class="card-body row g-3">
+                <div class="col-md-6">
+                    <label asp-for="TemplateId" class="form-label fw-semibold">Report Template</label>
+                    <select asp-for="TemplateId" class="form-select" asp-items="@(new SelectList(Model.AvailableReports, "Id", "Name"))">
+                        <option value="">-- Select Report --</option>
+                    </select>
+                    <span asp-validation-for="TemplateId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="ExportFormat" class="form-label fw-semibold">Export Format</label>
+                    <select asp-for="ExportFormat" class="form-select" id="exportFormat">
+                        <option value="Excel">Excel (CSV)</option>
+                        <option value="PDF">PDF</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold">Filter Panel</div>
+            <div class="card-body row g-3">
+                <div class="col-md-3">
+                    <label asp-for="StartDate" class="form-label">Start Date</label>
+                    <input asp-for="StartDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="EndDate" class="form-label">End Date</label>
+                    <input asp-for="EndDate" type="date" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Department" class="form-label">Department</label>
+                    <input asp-for="Department" class="form-control" placeholder="Optional" />
+                </div>
+                <div class="col-md-12">
+                    <label asp-for="CustomFilters" class="form-label">Custom Filters (key=value per line)</label>
+                    <textarea asp-for="CustomFilters" class="form-control" rows="3" placeholder="status=Active&#10;ward=ICU"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header fw-semibold d-flex justify-content-between align-items-center">
+                <span>Generation Progress</span>
+                <small class="text-muted" id="progressLabel">Idle</small>
+            </div>
+            <div class="card-body">
+                <div class="progress" style="height: 20px;">
+                    <div id="progressBar" class="progress-bar progress-bar-striped" role="progressbar" style="width:0%">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-3">
+            <button type="submit" class="btn btn-primary" id="generateBtn">
+                <i class="bi bi-gear"></i> Generate
+            </button>
+            <button type="button" class="btn btn-success" id="downloadBtn" @(Model.IsGenerated ? "" : "disabled") onclick="downloadReport()">
+                <i class="bi bi-download"></i> Download
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="window.location.reload()">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+        </div>
+    </form>
+
+    @if (Model.IsGenerated)
+    {
+        <div class="alert alert-info py-2">
+            <strong>Generated:</strong> @Model.GeneratedRowCount rows.
+            @if (!string.IsNullOrWhiteSpace(Model.PreviewMessage))
+            {
+                <span class="ms-2">@Model.PreviewMessage</span>
+            }
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header fw-semibold">Preview (Top 25 Rows)</div>
+            <div class="card-body p-2">
+                <div class="table-responsive">
+                    <table class="table table-sm table-striped mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                @foreach (var header in Model.PreviewHeaders)
+                                {
+                                    <th>@header</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var row in Model.PreviewRows)
+                            {
+                                <tr>
+                                    @foreach (var cell in row)
+                                    {
+                                        <td>@cell</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        document.getElementById('downloadForm').addEventListener('submit', function () {
+            const bar = document.getElementById('progressBar');
+            const label = document.getElementById('progressLabel');
+            const steps = [25, 50, 75, 100];
+            let idx = 0;
+            label.textContent = 'Generating...';
+            const timer = setInterval(() => {
+                const value = steps[idx++];
+                bar.style.width = value + '%';
+                bar.textContent = value + '%';
+                if (value >= 100 || idx >= steps.length) {
+                    clearInterval(timer);
+                    label.textContent = 'Generated';
+                }
+            }, 250);
+        });
+
+        function downloadReport() {
+            const templateId = document.querySelector('[name="TemplateId"]').value;
+            const format = document.getElementById('exportFormat').value;
+            const startDate = document.querySelector('[name="StartDate"]').value;
+            const endDate = document.querySelector('[name="EndDate"]').value;
+            const department = document.querySelector('[name="Department"]').value;
+            const customFilters = document.querySelector('[name="CustomFilters"]').value;
+
+            if (!templateId) {
+                alert('Select a report template first.');
+                return;
+            }
+
+            const url = `/SystemManagement/DownloadReportFile?templateId=${encodeURIComponent(templateId)}` +
+                `&format=${encodeURIComponent(format)}` +
+                `&startDate=${encodeURIComponent(startDate || '')}` +
+                `&endDate=${encodeURIComponent(endDate || '')}` +
+                `&department=${encodeURIComponent(department || '')}` +
+                `&customFilters=${encodeURIComponent(customFilters || '')}`;
+            window.location.href = url;
+        }
+    </script>
+}

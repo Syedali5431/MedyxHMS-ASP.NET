@@ -611,6 +611,10 @@ namespace MedyxHMS.Services.Interfaces
         Task<OPDReportViewModel> GenerateOPDReportAsync(DateTime startDate, DateTime endDate);
         Task<IPDReportViewModel> GenerateIPDReportAsync(DateTime startDate, DateTime endDate);
 
+        // Custom Report Builder
+        Task<int> CreateReportTemplateAsync(MedyxHMS.Models.ReportTemplate template);
+        Task<bool> IsReportNameUniqueAsync(string name, int? excludeId = null);
+
         // General Report Management
         Task<GeneratedReport> SaveReportAsync(GeneratedReport report);
         Task<GeneratedReport?> GetGeneratedReportByIdAsync(int reportId);

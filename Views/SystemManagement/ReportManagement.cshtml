@@ -11,7 +11,24 @@
             <h4 class="mb-0">System Management - Report List</h4>
             <small class="text-muted">Stage 7 Part A: Report visibility management</small>
         </div>
-        <span class="badge bg-secondary">Active @Model.ActiveReports / @Model.TotalReports</span>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge bg-secondary">Active @Model.ActiveReports / @Model.TotalReports</span>
+            @if (User.IsInRole("SuperAdmin") || User.IsInRole("Admin"))
+            {
+                <a asp-action="CreateReport" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-circle"></i> Create Report
+                </a>
+                <a asp-action="EditReport" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i> Edit Report
+                </a>
+                <a asp-action="UserManagement" class="btn btn-sm btn-outline-info">
+                    <i class="bi bi-people"></i> User Management
+                </a>
+            }
+            <a asp-action="DownloadReport" class="btn btn-sm btn-outline-success">
+                <i class="bi bi-download"></i> Download Report
+            </a>
+        </div>
     </div>
 
     @if (TempData["SuccessMessage"] is string successMessage)

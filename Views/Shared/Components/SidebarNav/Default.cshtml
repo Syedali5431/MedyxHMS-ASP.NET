@@ -717,6 +717,16 @@
             <div id="sb-systemmgmt" class="collapse @(Model.IsActive("/SystemManagement") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
                     <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report List</a></li>
+                    @if (Model.IsSuperAdmin || Model.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+                    {
+                        <li><a href="/SystemManagement/CreateReport" class="staff-sidebar-sublink">Create Report</a></li>
+                        <li><a href="/SystemManagement/EditReport" class="staff-sidebar-sublink">Edit Report</a></li>
+                    }
+                    <li><a href="/SystemManagement/DownloadReport" class="staff-sidebar-sublink">Download Report</a></li>
+                    @if (Model.IsSuperAdmin || Model.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
+                    {
+                        <li><a href="/SystemManagement/UserManagement" class="staff-sidebar-sublink">User Management</a></li>
+                    }
                 </ul>
             </div>
         </li>
