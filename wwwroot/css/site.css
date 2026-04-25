@@ -266,6 +266,29 @@ body {
     background: rgba(255, 255, 255, 0.06);
 }
 
+/* Theme management preview blocks */
+.theme-preview {
+    height: 92px;
+    border-radius: 0.8rem;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+
+.theme-preview::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 45%);
+}
+
+.theme-sunflower { background: linear-gradient(135deg, #ffd166, #f4a261 60%, #c77d00); }
+.theme-snowflake { background: linear-gradient(135deg, #caf0f8, #90e0ef 60%, #2a6f97); }
+.theme-ocean { background: linear-gradient(135deg, #ade8f4, #48cae4 60%, #0077b6); }
+.theme-forest { background: linear-gradient(135deg, #b7e4c7, #74c69d 60%, #2d6a4f); }
+.theme-midnight { background: linear-gradient(135deg, #1d3557, #274c77 60%, #3a86ff); }
+.theme-sunset { background: linear-gradient(135deg, #ffcad4, #f4a261 60%, #d1495b); }
+
 /* ── Main content area (right of sidebar) ── */
 .staff-main-content {
     flex: 1;

@@ -1,0 +1,30 @@
+:root {
+    --hms-primary: #3a86ff;
+    --hms-primary-dark: #2c6ed3;
+    --hms-accent: #00d4ff;
+    --hms-bg: #0f1724;
+    --hms-text: #dfe9ff;
+
+    --sb-bg: #0a1220;
+    --sb-border: rgba(255, 255, 255, 0.12);
+    --sb-text: #b7c8ff;
+    --sb-text-muted: #7f95c9;
+    --sb-text-hover: #ffffff;
+    --sb-active-bg: rgba(58, 134, 255, 0.28);
+    --sb-active-bar: #3a86ff;
+    --sb-hover-bg: rgba(255, 255, 255, 0.08);
+}
+
+body {
+    background: linear-gradient(180deg, #121a2b 0%, var(--hms-bg) 100%);
+}
+
+.card {
+    background-color: #18263b;
+    border-color: #263852;
+    color: var(--hms-text);
+}
+
+.footer {
+    background-color: #111a2a;
+}

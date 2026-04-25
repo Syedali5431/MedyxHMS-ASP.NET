@@ -146,4 +146,22 @@ namespace MedyxHMS.ViewModels
         public string PhoneNumber { get; init; } = string.Empty;
         public int TotalLogins { get; init; }
     }
+
+    // ── D. Theme Management ────────────────────────────────────────────────
+
+    public sealed class ThemeOptionViewModel
+    {
+        public string ThemeId { get; init; } = string.Empty;
+        public string Name { get; init; } = string.Empty;
+        public string Description { get; init; } = string.Empty;
+        public string PreviewClass { get; init; } = string.Empty;
+    }
+
+    public sealed class ThemeManagementViewModel
+    {
+        public string CurrentUserTheme { get; init; } = "sunflower";
+        public DateTime? PreferenceSince { get; init; }
+        public List<ThemeOptionViewModel> AvailableThemes { get; init; } = new();
+        public string SelectedTheme { get; set; } = "sunflower";
+    }
 }

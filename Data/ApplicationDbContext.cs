@@ -127,6 +127,7 @@ namespace MedyxHMS.Data
         public DbSet<SystemModule> SystemModules { get; set; }
         public DbSet<UserModuleAccess> UserModuleAccesses { get; set; }
         public DbSet<AccountApprovalRequest> AccountApprovalRequests { get; set; }
+        public DbSet<UserThemePreference> UserThemePreferences { get; set; }
 
             // Report Templates & Customization (STEP 5.3)
             public DbSet<ReportTemplate> ReportTemplates { get; set; }
@@ -166,6 +167,16 @@ namespace MedyxHMS.Data
 
             modelBuilder.Entity<PatientInsurance>()
                 .HasIndex(i => new { i.PatientId, i.IsActive, i.ValidTo });
+
+            modelBuilder.Entity<UserThemePreference>()
+                .HasOne(p => p.User)
+                .WithMany()
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserThemePreference>()
+                .HasIndex(p => p.UserId)
+                .IsUnique();
 
             // Appointment relationships
             modelBuilder.Entity<Appointment>()

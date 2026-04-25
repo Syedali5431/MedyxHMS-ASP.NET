@@ -1575,6 +1575,47 @@ Created comprehensive backlog with 3 strategic epics, each with full security, c
 - No CSS conflicts with existing application styling ✅
 - Performance: theme switching < 500ms ✅
 
+### Stage 7 Phase 4 Execution Update (2026-04-25)
+
+**Status:** Implemented, compile-validated; runtime validation blocked by local SQL Server availability
+
+**Implementation Summary:**
+- Added user theme persistence entity `UserThemePreference` and registered it in `ApplicationDbContext`.
+- Added startup schema ensure path in `DatabaseInitializer` for idempotent `UserThemePreferences` table/index creation.
+- Implemented `SystemManagementController` theme actions:
+	- `ThemeManagement` (picker UI + current selection)
+	- `SelectTheme` (POST + antiforgery + persistence + audit)
+	- `ThemeStylesheet` (user-specific stylesheet resolution)
+- Added Phase 4 view contracts in `SystemManagementViewModels` and new `Views/SystemManagement/ThemeManagement.cshtml` picker experience.
+- Wired dynamic theme stylesheet load in shared layout and added System Management navigation entry points.
+- Added theme assets under `wwwroot/css/themes/`: `sunflower.css`, `snowflake.css`, `ocean.css`, `forest.css`, `midnight.css`, `sunset.css`.
+
+**Validation Summary (2026-04-25):**
+
+| Check | Expected | Actual | Status |
+|-------|----------|--------|--------|
+| Build validation | Project compiles | `Build succeeded with 1101 warning(s)` | ✅ PASS |
+| Runtime app startup | App starts on `http://localhost:5044` | Startup fails in `DatabaseInitializer` due SQL connection error (`Server=localhost`) | ⚠️ BLOCKED |
+| Role smoke (`Run-RoleModuleSmoke.ps1`) | Auth + route matrix executes | All logins failed with connection error because app did not start | ⚠️ BLOCKED |
+| Theme persistence smoke (logout/login, multi-role switch) | Same theme retained | Not executable until DB connectivity is restored | ⚠️ BLOCKED |
+| Theme stylesheet endpoint verification | Selected theme CSS served | Not executable until app startup succeeds | ⚠️ BLOCKED |
+
+**Runtime Blocker Details:**
+- Exception: `Microsoft.Data.SqlClient.SqlException` during startup.
+- Message: SQL Server instance on `localhost` was not found or not accessible.
+- Impact: Application process exits before HTTP listener is available, so all runtime smoke subtasks are blocked.
+
+**Unblock Requirements:**
+1. Ensure reachable SQL Server instance for `Server=localhost` (or update connection string to an available instance).
+2. Start application successfully (`dotnet run --project e:\HMS\MedyxHMS-ASPNET\MedyxHMS.csproj --no-build --urls http://localhost:5044`).
+3. Re-run smoke evidence script:
+	 `./scripts/Run-RoleModuleSmoke.ps1 -BaseUrl "http://localhost:5044" -OutputPath "temp_build_output/uat-role-phase4-2026-04-25.json"`.
+4. Execute focused Phase 4 runtime checks (theme select, logout/login persistence, multi-role persistence, stylesheet endpoint resolution).
+
+**Evidence Artifacts:**
+- Runtime smoke output: `temp_build_output/uat-role-phase4-2026-04-25.json`.
+- Build validation: `dotnet build e:\HMS\MedyxHMS-ASPNET\MedyxHMS.csproj --no-incremental -nologo "-clp:ErrorsOnly;Summary"`.
+
 **Deliverables:**
 - ThemeManagementController with action: Index, SelectTheme
 - ThemeManagementViewModel

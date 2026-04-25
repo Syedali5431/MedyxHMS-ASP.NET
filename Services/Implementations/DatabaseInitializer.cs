@@ -45,6 +45,7 @@ namespace MedyxHMS.Services.Implementations
             await EnsureAccountApprovalTableAsync();
             await EnsureClinicalEnhancementTablesAsync();
             await EnsureNewModuleTablesAsync();
+            await EnsureUserThemePreferenceTableAsync();
             await EnsureUserIdentityConstraintsAsync();
             await EnsureReportStoredProceduresAsync();
 
@@ -485,6 +486,24 @@ BEGIN
         CONSTRAINT [FK_CmsMenuItems_CmsPages_CmsPageId] FOREIGN KEY ([CmsPageId]) REFERENCES [dbo].[CmsPages]([Id]) ON DELETE SET NULL
     );
     CREATE INDEX [IX_CmsMenuItems_CmsPageId] ON [dbo].[CmsMenuItems]([CmsPageId]);
+END");
+        }
+
+        private async Task EnsureUserThemePreferenceTableAsync()
+        {
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[UserThemePreferences]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[UserThemePreferences] (
+        [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
+        [UserId] NVARCHAR(450) NOT NULL,
+        [ThemeId] NVARCHAR(50) NOT NULL,
+        [PreferenceSince] DATETIME2 NOT NULL,
+        [IsDefault] BIT NOT NULL DEFAULT(0),
+        CONSTRAINT [FK_UserThemePreferences_AspNetUsers_UserId]
+            FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [UX_UserThemePreferences_UserId] ON [dbo].[UserThemePreferences]([UserId]);
 END");
         }
 

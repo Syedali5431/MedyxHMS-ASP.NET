@@ -23,6 +23,15 @@ namespace MedyxHMS.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<SystemManagementController> _logger;
+        private static readonly IReadOnlyList<ThemeOptionViewModel> StaffThemes = new List<ThemeOptionViewModel>
+        {
+            new() { ThemeId = "sunflower", Name = "Sunflower", Description = "Warm and optimistic with bright highlights.", PreviewClass = "theme-sunflower" },
+            new() { ThemeId = "snowflake", Name = "Snowflake", Description = "Clean, crisp and high-clarity clinical palette.", PreviewClass = "theme-snowflake" },
+            new() { ThemeId = "ocean", Name = "Ocean", Description = "Cool blue-green tones for calm focus.", PreviewClass = "theme-ocean" },
+            new() { ThemeId = "forest", Name = "Forest", Description = "Balanced green palette for long shifts.", PreviewClass = "theme-forest" },
+            new() { ThemeId = "midnight", Name = "Midnight", Description = "Low-light dark scheme with high contrast text.", PreviewClass = "theme-midnight" },
+            new() { ThemeId = "sunset", Name = "Sunset", Description = "Soft orange-red accent style with warm depth.", PreviewClass = "theme-sunset" }
+        };
 
         public SystemManagementController(
             ApplicationDbContext context,
@@ -1018,6 +1027,118 @@ namespace MedyxHMS.Controllers
             };
 
             return PartialView("_UserDetailsModal", vm);
+        }
+
+        // ── D. Theme Management ─────────────────────────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> ThemeManagement()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var preference = await _context.UserThemePreferences
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.UserId == userId);
+
+            var currentTheme = NormalizeThemeId(preference?.ThemeId);
+            var vm = new ThemeManagementViewModel
+            {
+                CurrentUserTheme = currentTheme,
+                SelectedTheme = currentTheme,
+                PreferenceSince = preference?.PreferenceSince,
+                AvailableThemes = StaffThemes.ToList()
+            };
+
+            return View(vm);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SelectTheme(string themeId)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var normalizedTheme = NormalizeThemeId(themeId);
+            if (!StaffThemes.Any(t => string.Equals(t.ThemeId, normalizedTheme, StringComparison.OrdinalIgnoreCase)))
+            {
+                TempData["ErrorMessage"] = "Selected theme is not supported.";
+                return RedirectToAction(nameof(ThemeManagement));
+            }
+
+            var preference = await _context.UserThemePreferences.FirstOrDefaultAsync(p => p.UserId == userId);
+            var previousTheme = preference?.ThemeId ?? "sunflower";
+
+            if (preference == null)
+            {
+                preference = new UserThemePreference
+                {
+                    UserId = userId,
+                    ThemeId = normalizedTheme,
+                    PreferenceSince = DateTime.UtcNow,
+                    IsDefault = false
+                };
+                _context.UserThemePreferences.Add(preference);
+            }
+            else
+            {
+                preference.ThemeId = normalizedTheme;
+                preference.PreferenceSince = DateTime.UtcNow;
+                preference.IsDefault = false;
+            }
+
+            _context.AuditLogs.Add(new AuditLog
+            {
+                UserId = userId,
+                Action = "THEME_UPDATE",
+                EntityName = "UserThemePreference",
+                EntityId = preference.Id.ToString(),
+                OldValues = JsonSerializer.Serialize(new { ThemeId = previousTheme }),
+                NewValues = JsonSerializer.Serialize(new { ThemeId = normalizedTheme }),
+                IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
+                UserAgent = Request.Headers.UserAgent.ToString(),
+                SessionId = HttpContext.Session?.Id ?? string.Empty,
+                Timestamp = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Theme updated successfully.";
+
+            return RedirectToAction(nameof(ThemeManagement));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ThemeStylesheet()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var themeId = "sunflower";
+
+            if (!string.IsNullOrWhiteSpace(userId))
+            {
+                var preference = await _context.UserThemePreferences
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(p => p.UserId == userId);
+                themeId = NormalizeThemeId(preference?.ThemeId);
+            }
+
+            return Redirect($"/css/themes/{themeId}.css");
+        }
+
+        private static string NormalizeThemeId(string? input)
+        {
+            var candidate = (input ?? string.Empty).Trim().ToLowerInvariant();
+            return candidate switch
+            {
+                "snowflake" => "snowflake",
+                "ocean" => "ocean",
+                "forest" => "forest",
+                "midnight" => "midnight",
+                "sunset" => "sunset",
+                _ => "sunflower"
+            };
         }
 
         private static string GenerateTemporaryPassword(int length = 12)
