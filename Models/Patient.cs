@@ -26,7 +26,7 @@ namespace MedyxHMS.Models
         public string GuardianPhone { get; set; } = string.Empty;
         public string MaritalStatus { get; set; } = string.Empty;
         public string Occupation { get; set; } = string.Empty;
-        public string UserId { get; set; } = string.Empty;
+        public string? UserId { get; set; }
         public string ProfileImagePath { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public bool HasInsurance { get; set; }

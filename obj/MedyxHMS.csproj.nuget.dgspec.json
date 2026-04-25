@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {}
+    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {}
   },
   "projects": {
-    "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {
+    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+        "projectUniqueName": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
         "projectName": "MedyxHMS",
-        "projectPath": "e:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
+        "projectPath": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS.csproj",
         "packagesPath": "C:\\Users\\malin\\.nuget\\packages\\",
-        "outputPath": "e:\\HMS\\MedyxHMS-ASPNET\\obj\\",
+        "outputPath": "E:\\HMS\\MedyxHMS-ASPNET\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

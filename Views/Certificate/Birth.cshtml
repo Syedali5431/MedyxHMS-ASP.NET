@@ -1,0 +1,101 @@
+@model CertificateIndexViewModel
+@{
+    ViewData["Title"] = "Birth Certificate Management";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2><i class="fas fa-baby me-2"></i>Birth Certificate Management</h2>
+            <p class="text-muted mb-0">Generate, track, and print birth certificates for patients registered with the hospital</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Birth Certificate Workflow</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Phase 1 Status:</strong> Birth certificate generation module is under development. 
+                        Generation forms and templates will be available in the next phase.
+                    </div>
+
+                    <h6 class="mb-3">Process Overview</h6>
+                    <ol class="list-group list-group-numbered">
+                        <li class="list-group-item">
+                            <strong>Enter Birth Details</strong>
+                            <p class="text-muted mb-0 mt-1">Fill in child, parent, and birth event information</p>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Select Template</strong>
+                            <p class="text-muted mb-0 mt-1">Choose a birth certificate template (default or custom)</p>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Preview & Generate</strong>
+                            <p class="text-muted mb-0 mt-1">Review the certificate and generate the document</p>
+                        </li>
+                        <li class="list-group-item">
+                            <strong>Print & Archive</strong>
+                            <p class="text-muted mb-0 mt-1">Print the certificate and store in the patient record</p>
+                        </li>
+                    </ol>
+
+                    <hr class="my-4" />
+
+                    <h6 class="mb-3">Available Actions</h6>
+                    <div class="alert alert-warning">
+                        <p class="mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            <strong>Coming Soon:</strong> Birth certificate generation will be enabled in Phase 2. 
+                            Check back soon for full functionality.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Quick Reference</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6>Required Information</h6>
+                        <ul class="small text-muted">
+                            <li>Child's full name</li>
+                            <li>Date of birth</li>
+                            <li>Time of birth (optional)</li>
+                            <li>Place of birth</li>
+                            <li>Father's name & details</li>
+                            <li>Mother's name & details</li>
+                            <li>Attending physician</li>
+                            <li>Registration details</li>
+                        </ul>
+                    </div>
+                    <hr />
+                    <div>
+                        <h6>Compliance Notes</h6>
+                        <p class="small text-muted mb-0">
+                            All birth certificates are digitally tracked and audited for compliance with hospital standards.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.list-group-item {
+    border-left: 4px solid #0d6efd;
+    padding-left: 1.5rem;
+}
+.list-group-item strong {
+    color: #212529;
+}
+</style>

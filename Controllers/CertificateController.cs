@@ -7,7 +7,12 @@ using System.Security.Claims;
 // Purpose: Contains application code for CertificateController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff")]
+    /// <summary>
+    /// Certificates & ID Cards module controller.
+    /// Accessible to all non-Patient roles: Admin, SuperAdmin, Doctor, Nurse, Pharmacist, Accountant, Receptionist, Staff, LabTechnician, Radiologist.
+    /// Patient role is blocked by the [Authorize] gate.
+    /// </summary>
+    [Authorize(Roles = "Admin,SuperAdmin,Doctor,Nurse,Pharmacist,Accountant,Receptionist,LabTechnician,Radiologist,Staff")]
     public class CertificateController : Controller
     {
         private readonly ICertificateService _certificateService;
@@ -38,7 +43,31 @@ namespace MedyxHMS.Controllers
 
             return View(viewModel);
         }
+        /// <summary>
+        /// Birth Certificate landing page (Phase 1 stub; Phase 2 will add popup form).
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Birth()
+        {
+            var viewModel = new CertificateIndexViewModel
+            {
+                StaffOptions = (await _staffService.GetAllStaffAsync()).OrderBy(s => s.FirstName).ThenBy(s => s.LastName).ToList(),
+            };
+            return View(viewModel);
+        }
 
+        /// <summary>
+        /// Death Certificate landing page (Phase 1 stub; Phase 2 will add popup form).
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> Death()
+        {
+            var viewModel = new CertificateIndexViewModel
+            {
+                StaffOptions = (await _staffService.GetAllStaffAsync()).OrderBy(s => s.FirstName).ThenBy(s => s.LastName).ToList(),
+            };
+            return View(viewModel);
+        }
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> GenerateCertificate()

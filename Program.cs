@@ -128,6 +128,7 @@ builder.Services.AddScoped<IReportTemplateService, ReportTemplateService>();
 builder.Services.AddScoped<IReportCatalogVisibilityService, ReportCatalogVisibilityService>();
 
 builder.Services.AddScoped<DatabaseInitializer>();
+builder.Services.AddScoped<DemoDataSeeder>();
 
 // Add HttpContext accessor for audit logging
 builder.Services.AddHttpContextAccessor();
@@ -205,6 +206,10 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     var initializer = services.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
+
+    // Seed demo/dummy data for development and testing
+    var demoSeeder = services.GetRequiredService<DemoDataSeeder>();
+    await demoSeeder.SeedAsync();
 }
 
 // Configure the HTTP request pipeline.

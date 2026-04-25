@@ -405,13 +405,15 @@
                class="staff-sidebar-link @(Model.IsActive("/Certificate") ? "" : "collapsed")"
                aria-expanded="@(Model.IsActive("/Certificate") ? "true" : "false")">
                 <i class="fas fa-id-card staff-sidebar-icon"></i>
-                <span class="flex-grow-1">Certificate</span>
+                <span class="flex-grow-1">Certificates</span>
                 <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
             </a>
             <div id="sb-certificate"
                  class="collapse @(Model.IsActive("/Certificate") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Certificate" class="staff-sidebar-sublink">Certificates</a></li>
+                    <li><a href="/Certificate" class="staff-sidebar-sublink">Overview</a></li>
+                    <li><a href="/Certificate/Birth" class="staff-sidebar-sublink">Birth Certificate</a></li>
+                    <li><a href="/Certificate/Death" class="staff-sidebar-sublink">Death Certificate</a></li>
                     @if (Model.IsAdminOrSuper)
                     {
                         <li><a href="/Certificate/GenerateCertificate" class="staff-sidebar-sublink">Generate Certificate</a></li>

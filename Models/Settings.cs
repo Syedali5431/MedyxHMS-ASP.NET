@@ -30,7 +30,7 @@ namespace MedyxHMS.Models
     public class AuditLog
     {
         public int Id { get; set; }
-        public string UserId { get; set; }
+        public string? UserId { get; set; }
         public string Action { get; set; } // CREATE, UPDATE, DELETE, LOGIN, etc.
         public string EntityName { get; set; } // Patient, Appointment, Bill, etc.
         public string EntityId { get; set; }
@@ -85,5 +85,6 @@ namespace MedyxHMS.Models
         public bool ReportsModule { get; set; }
         public bool PublicWebsite { get; set; }
         public bool MobileAPI { get; set; }
+        public bool CertificateModule { get; set; }
     }
 }

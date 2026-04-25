@@ -184,6 +184,11 @@ namespace MedyxHMS.Data
                 .WithMany(d => d.Appointments)
                 .HasForeignKey(a => a.DoctorId);
 
+            // Staff navigation on Appointment is a legacy compatibility shim that maps to DoctorId.
+            // Ignore it so EF Core does not create a spurious FK to the Staff table.
+            modelBuilder.Entity<Appointment>()
+                .Ignore(a => a.Staff);
+
             // OPD/IPD relationships
             modelBuilder.Entity<OPDVisit>()
                 .HasOne(o => o.Patient)

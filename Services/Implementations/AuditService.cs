@@ -21,7 +21,7 @@ namespace MedyxHMS.Services.Implementations
         {
             var auditLog = new AuditLog
             {
-                UserId = string.IsNullOrWhiteSpace(userId) ? "system" : userId,
+                UserId = string.IsNullOrWhiteSpace(userId) ? null : userId,
                 Action = action,
                 EntityName = entityName,
                 EntityId = string.IsNullOrWhiteSpace(entityId) ? "N/A" : entityId,
