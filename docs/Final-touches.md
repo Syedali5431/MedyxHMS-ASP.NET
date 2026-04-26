@@ -1,3 +1,52 @@
+---
+
+# Final User Acceptance Testing (UAT) Results — 2026-04-26
+
+## UAT Session Summary
+- All modules, workflows, and role-based access controls validated using the UAT checklist (`Docs/UAT-Checklist-2026-04-26.md`).
+- All items passed (see `Docs/UAT-Evidence-2026-04-26.md` for detailed results).
+- Automated and manual tests confirm:
+	- Sidebar/menu navigation for all roles
+	- Bed Management, Certificate, Appointment, Billing, Pharmacy, Lab, Radiology, Ambulance, Blood Bank, Inventory, Download Center, Messaging, Reports, CMS modules
+	- Governance/admin workflows (module management, license, user/role, CMS)
+	- Technical validation (API, logs, migrations, UI, notifications)
+- No unhandled exceptions or failed routes detected in smoke and UAT runs.
+- Evidence artifacts archived: `temp_build_output/uat-role-run-current.json`, `Docs/UAT-Evidence-2026-04-26.md`
+
+## Status
+- ✅ All UAT items checked and validated by project owner
+- ✅ System is ready for production deployment and go-live
+
+---
+---
+
+# Stage 9: Bed Management — Implementation & Validation Summary (2026-04-26)
+
+## Implementation Summary
+- Bed Management module is fully implemented and integrated into the staff portal sidebar (SuperAdmin, Admin, Nurse roles manage; others read-only).
+- Features include: summary cards, room/bed table, bed icon grid, right-click context menu, assign/release/transfer/status modals, bulk add, and location hierarchy (Block, Floor, Ward, Room).
+- All business rules enforced: assign only if available, release triggers cleaning, ICU assignment requires admin, isolation/blocked beds flagged, transfer only from occupied to available.
+- Backend: Entity model, API endpoints (`/api/beds`, `/api/beds/assign`, `/api/beds/release`, `/api/beds/transfer`, `/api/beds/status`), and service layer are present and tested.
+- UI: Responsive, real-time updates, confirmation dialogs, toast notifications, and error handling.
+- Automated tests: Service, controller, and authorization tests in `tests/MedyxHMS.BedManagement.Tests`.
+- Documentation: All requirements, business rules, and validation steps are documented here and in the UAT checklist.
+
+## Validation Summary
+- Sidebar and dashboard explorer show Bed Management for entitled roles; all links validated (HTTP 200, no errors).
+- All core workflows (assign, release, transfer, status change, bulk add) tested interactively and via automated tests.
+- Role-based access: SuperAdmin/Admin/Nurse can manage; others read-only.
+- API endpoints validated (manual and automated tests).
+- Build is clean, database schema is up to date, and all migrations applied.
+- Authenticated runtime smoke test: 88/0 pass for all staff roles; 5/0 for Patient.
+- Evidence: `temp_build_output/uat-role-run-current.json`, `tests/MedyxHMS.BedManagement.Tests/`.
+- UAT checklist created: `Docs/UAT-Checklist-2026-04-26.md`.
+
+## Next Stage
+- Perform final end-to-end UAT for all modules and governance workflows using the UAT checklist.
+- Validate Admin/SuperAdmin workflows (module management, CMS, license, user/module access).
+- Prepare for production deployment and go-live cutover after successful UAT.
+
+---
 # Final Touches — Medyx HMS Inventory
 
 A staged reference inventory of all roles, portals, menus, modules, reports, and AI features in the Medyx HMS system.
@@ -398,8 +447,53 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 | CB10 | Analytics Dashboard           | View chatbot usage statistics, session counts, and satisfaction scores   |
 | CB11 | Escalation Management         | List and manage all escalated chatbot sessions                           |
 | CB12 | Resolve Escalation            | Mark escalations as resolved; update ticket status                       |
+---
 
+# Extra Stages (Planned Phases) — 2026-04-27
 
+## Stage 7: Doctor Availability Management (Phase 1)
+**Goal:** Allow doctors to set themselves as available/unavailable (e.g., for vacation or leave).
+
+### Phase 1: Doctor Self-Service Availability
+- Add profile option for doctors to mark themselves "Available" or "Unavailable" (toggle or date range).
+- Update appointment scheduling to respect doctor availability (cannot book if unavailable).
+- Show availability status in doctor lists and appointment booking UI.
+
+### Phase 2: Admin/HR Override
+- Allow Admin/HR to override/set doctor availability for emergencies or planned leaves.
+- Audit log all changes to doctor availability.
+
+**Validation:**
+- Doctor can set/unset availability; status reflected in scheduling and UI.
+- Admin/HR can override; audit log entry created.
+
+## Stage 8: Bed Management — Ward Name Entry (Phase 1)
+**Goal:** Allow free-text entry of Ward name when adding new beds, and display these wards in Bed Management.
+
+### Phase 1: Bed Creation UI Update
+- Change "Ward" field to a text input when adding/editing beds.
+- On save, new ward names are added to the system and available for filtering/assignment.
+
+### Phase 2: Bed Management Display
+- Show all unique ward names in Bed Management filter and summary views.
+- Support searching/filtering by ward name (case-insensitive).
+
+**Validation:**
+- User can enter any ward name when adding a bed; it appears in Bed Management.
+- Filtering and summary reflect all wards, including new entries.
+
+## Stage 9: Sidebar Cleanup (Phase 1)
+**Goal:** Remove the extra "Allowed Modules" section and keep only the sidebar for module navigation.
+
+### Phase 1: UI Update
+- Remove the "Allowed Modules" section from all staff/admin portal views.
+- Ensure all navigation is via the persistent sidebar only.
+
+**Validation:**
+- "Allowed Modules" section is no longer visible anywhere in the UI.
+- Sidebar navigation remains fully functional for all roles.
+
+---
 ## 2026-04-23 — Module Implementation & Validation Complete
 
 **Modules Successfully Implemented & Validated:**

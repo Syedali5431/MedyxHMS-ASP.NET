@@ -1,4 +1,38 @@
-﻿using MedyxHMS.Models;
+﻿        // --- Certificate Template Registration (Phase 3 integration) ---
+        private static readonly (string Name, string Type, string Description)[] CertificateTemplates = new[]
+        {
+            ("Birth Certificate", "Certificate", "Birth certificate template for Report Editor integration"),
+            ("Death Certificate", "Certificate", "Death certificate template for Report Editor integration")
+        };
+
+        /// <summary>
+        /// Ensures certificate templates are registered in the Report Editor.
+        /// </summary>
+        private async Task EnsureCertificateTemplatesRegistered()
+        {
+            var existing = await _reportTemplateService.GetTemplatesByTypeAsync("Certificate");
+            var existingNames = existing.Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var now = DateTime.UtcNow;
+            var actor = User?.Identity?.Name ?? "System";
+            foreach (var tpl in CertificateTemplates)
+            {
+                if (!existingNames.Contains(tpl.Name))
+                {
+                    var template = new ReportTemplate
+                    {
+                        Name = tpl.Name,
+                        ReportType = tpl.Type,
+                        Description = tpl.Description,
+                        IsActive = true,
+                        IsDefault = false,
+                        CreatedBy = actor,
+                        CreatedDate = now
+                    };
+                    await _reportTemplateService.CreateTemplateAsync(template);
+                }
+            }
+        }
+using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -536,6 +570,9 @@ namespace MedyxHMS.Controllers
         [HttpGet]
         public async Task<IActionResult> Builder(string? reportType)
         {
+            // Ensure certificate templates are registered
+            await EnsureCertificateTemplatesRegistered();
+
             var templates = string.IsNullOrWhiteSpace(reportType)
                 ? await _reportTemplateService.GetAllTemplatesAsync()
                 : await _reportTemplateService.GetTemplatesByTypeAsync(reportType);
