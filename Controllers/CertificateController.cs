@@ -43,8 +43,9 @@ namespace MedyxHMS.Controllers
 
             return View(viewModel);
         }
+
         /// <summary>
-        /// Birth Certificate landing page (Phase 1 stub; Phase 2 will add popup form).
+        /// Birth Certificate landing page and generator.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> Birth()
@@ -56,8 +57,41 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateBirth([FromForm] MedyxHMS.Models.BirthRecord model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors in the form.";
+                return RedirectToAction("Birth");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CertificateNumber))
+                model.CertificateNumber = $"BR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+
+            model.CreatedDate = DateTime.UtcNow;
+            try
+            {
+                var db = HttpContext.RequestServices.GetService(typeof(MedyxHMS.Data.ApplicationDbContext)) as MedyxHMS.Data.ApplicationDbContext;
+                db.BirthRecords.Add(model);
+                await db.SaveChangesAsync();
+                await _auditService.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    "CREATE", "BirthRecord", model.Id.ToString(), null,
+                    $"Baby: {model.BabyName}, Mother: {model.MotherName}");
+                TempData["SuccessMessage"] = "Birth certificate generated.";
+                return RedirectToAction("BirthDetails", "BirthDeath", new { id = model.Id });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToAction("Birth");
+            }
+        }
+
+
         /// <summary>
-        /// Death Certificate landing page (Phase 1 stub; Phase 2 will add popup form).
+        /// Death Certificate landing page and generator.
         /// </summary>
         [HttpGet]
         public async Task<IActionResult> Death()
@@ -67,6 +101,38 @@ namespace MedyxHMS.Controllers
                 StaffOptions = (await _staffService.GetAllStaffAsync()).OrderBy(s => s.FirstName).ThenBy(s => s.LastName).ToList(),
             };
             return View(viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateDeath([FromForm] MedyxHMS.Models.DeathRecord model)
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["ErrorMessage"] = "Please correct the errors in the form.";
+                return RedirectToAction("Death");
+            }
+
+            if (string.IsNullOrWhiteSpace(model.CertificateNumber))
+                model.CertificateNumber = $"DR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
+
+            model.CreatedDate = DateTime.UtcNow;
+            try
+            {
+                var db = HttpContext.RequestServices.GetService(typeof(MedyxHMS.Data.ApplicationDbContext)) as MedyxHMS.Data.ApplicationDbContext;
+                db.DeathRecords.Add(model);
+                await db.SaveChangesAsync();
+                await _auditService.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier),
+                    "CREATE", "DeathRecord", model.Id.ToString(), null,
+                    $"Patient: {model.PatientName}, Cause: {model.CauseOfDeath}");
+                TempData["SuccessMessage"] = "Death certificate generated.";
+                return RedirectToAction("DeathDetails", "BirthDeath", new { id = model.Id });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+                return RedirectToAction("Death");
+            }
         }
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin")]

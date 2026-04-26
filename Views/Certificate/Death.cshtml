@@ -18,10 +18,24 @@
                     <h5 class="mb-0">Death Certificate Workflow</h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-info mb-4">
-                        <i class="fas fa-info-circle me-2"></i>
-                        <strong>Phase 1 Status:</strong> Death certificate generation module is under development. 
-                        Generation forms and templates will be available in the next phase.
+
+                    <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#deathCertModal">
+                        <i class="fas fa-plus me-1"></i>New Death Certificate
+                    </button>
+
+                    <!-- Modal for Death Certificate Generator -->
+                    <div class="modal fade" id="deathCertModal" tabindex="-1" aria-labelledby="deathCertModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deathCertModalLabel">New Death Certificate</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    @await Html.PartialAsync("~/Views/BirthDeath/CreateDeath.cshtml", new MedyxHMS.Models.DeathRecord { DateOfDeath = DateTime.Today })
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <h6 class="mb-3">Process Overview</h6>

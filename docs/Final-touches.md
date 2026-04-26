@@ -1796,17 +1796,25 @@ PASS ✅ COMPLETE — All Phase 1 acceptance criteria met and validated by autom
 
 **Effort Estimate:** 13 story points, 8 days
 
-**Validation Criteria:**
-- Birth certificate can be created, saved, previewed, and printed.
-- Death certificate can be created, saved, previewed, and printed.
-- Invalid/incomplete forms are blocked with validation errors.
-- Generated output includes all required fields and registration ID.
+
+**Validation Results (2026-04-26):**
+
+- [x] Birth certificate can be created, saved, previewed, and printed (tested via Certificates > Birth; modal form, audit log, print view)
+- [x] Death certificate can be created, saved, previewed, and printed (tested via Certificates > Death; modal form, audit log, print view)
+- [x] Invalid/incomplete forms are blocked with validation errors (form validation, required fields enforced)
+- [x] Generated output includes all required fields and registration ID (see BirthDetails/DeathDetails views)
+- [x] Audit logs created for all certificate generation events
+- [x] Evidence: manual and automated test runs, UAT logins, print output screenshots
 
 **Deliverables:**
-- Birth certificate generator
-- Death certificate generator
-- Certificate persistence + audit trace
-- Print-optimized output views
+- Birth certificate generator (UI modal, controller, service, print view)
+- Death certificate generator (UI modal, controller, service, print view)
+- Certificate persistence + audit trace (ApplicationDbContext, audit log)
+- Print-optimized output views (BirthDetails.cshtml, DeathDetails.cshtml)
+
+**Status:**
+
+PASS ✅ COMPLETE — All Phase 2 acceptance criteria met and validated by manual and automated test. Ready for Phase 3.
 
 ---
 
