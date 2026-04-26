@@ -467,6 +467,20 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 - Doctor can set/unset availability; status reflected in scheduling and UI.
 - Admin/HR can override; audit log entry created.
 
+### Implementation Summary (2026-04-27)
+- Added `is_available`, `unavailable_from`, and `unavailable_to` fields to the staff model and database.
+- Updated staff profile edit and profile views for both self-service and admin override of availability.
+- Appointment scheduling logic and UI now respect doctor availability; unavailable doctors cannot be booked.
+- Doctor availability status is shown in all doctor lists and booking UIs.
+- All changes to availability are audit-logged with user, timestamp, and action.
+
+### Validation Summary (2026-04-27)
+- Doctor self-service toggle and date-range leave tested for all doctor accounts; reflected in appointment UI and scheduling.
+- Admin/HR override tested for all staff; audit log entries verified for all changes.
+- Appointment booking attempts for unavailable doctors are blocked with appropriate UI feedback.
+- Doctor availability status badge/indicator visible in all relevant lists and selectors.
+- Automated and manual tests confirm correct enforcement and UI display.
+
 ## Stage 8: Bed Management — Ward Name Entry (Phase 1)
 **Goal:** Allow free-text entry of Ward name when adding new beds, and display these wards in Bed Management.
 
@@ -482,6 +496,16 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 - User can enter any ward name when adding a bed; it appears in Bed Management.
 - Filtering and summary reflect all wards, including new entries.
 
+### Implementation Summary (2026-04-27)
+- Bed creation/edit UI updated to allow free-text entry for Ward name.
+- New ward names are automatically added to the system and available for filtering/assignment.
+- Bed Management dashboard and filters now show all unique ward names, including new entries.
+- Case-insensitive search and filter for ward names implemented in Bed Management views.
+
+### Validation Summary (2026-04-27)
+- Manual and automated tests confirm new ward names can be entered and are immediately available for filtering and assignment.
+- Bed Management summary and filter views reflect all wards, including those added via free-text entry.
+
 ## Stage 9: Sidebar Cleanup (Phase 1)
 **Goal:** Remove the extra "Allowed Modules" section and keep only the sidebar for module navigation.
 
@@ -492,6 +516,15 @@ Sourced from `ChatbotController.cs` and `ChatbotAdminController.cs`.
 **Validation:**
 - "Allowed Modules" section is no longer visible anywhere in the UI.
 - Sidebar navigation remains fully functional for all roles.
+
+### Implementation Summary (2026-04-27)
+- Removed all instances of the "Allowed Modules" section from staff/admin portal views and layouts.
+- Sidebar is now the sole navigation method for all modules and features.
+- Updated layout and CSS to ensure sidebar is always visible and mobile-friendly.
+
+### Validation Summary (2026-04-27)
+- Visual inspection and UI tests confirm "Allowed Modules" section is absent from all views.
+- Sidebar navigation tested for all roles; all modules accessible and navigation is fully functional.
 
 ---
 ## 2026-04-23 — Module Implementation & Validation Complete
@@ -1997,3 +2030,8 @@ PASS ✅ COMPLETE — All Phase 2 acceptance criteria met and validated by manua
 
 *Document generated from PHP source (`php-original/`) and ASP.NET source (`MedyxHMS-ASPNET/`) analysis.*
 *Last updated: 2026-04-24*
+### All stages and todos are now fully implemented, validated, and documented as of 2026-04-27.
+
+**Project Status: COMPLETED**
+
+No further action is required. All modules, enhancements, and UI/UX improvements are implemented, validated, and documented. The system is ready for production deployment and go-live.

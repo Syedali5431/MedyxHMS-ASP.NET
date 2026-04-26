@@ -1579,3 +1579,7 @@ GO
 
 
 
+-- Deleted as per request. See new scripts for latest schema.
+
+
+
