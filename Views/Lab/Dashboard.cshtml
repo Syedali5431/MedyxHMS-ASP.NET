@@ -1,0 +1,201 @@
+@model MedyxHMS.ViewModels.LabDashboardViewModel
+@{
+    ViewData["Title"] = "Lab Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-flask"></i> Lab Dashboard</h2>
+            <p class="text-muted">Overview of laboratory tests and results</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Tests Today</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TodayTests</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Tests</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.PendingTests</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Completed Today</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CompletedToday</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Critical Results</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.CriticalResults</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Tests by Category</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.TestsByCategory != null && Model.TestsByCategory.Any())
+                    {
+                        <canvas id="categoryChart" width="100%" height="300"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-flask fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Category Data</h5>
+                            <p class="text-muted">No lab tests have been categorized yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Results by Status</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.ResultsByStatus != null && Model.ResultsByStatus.Any())
+                    {
+                        <canvas id="statusChart" width="100%" height="300"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-clipboard-list fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Status Data</h5>
+                            <p class="text-muted">No lab results have been recorded yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Critical Results Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Critical Results</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.CriticalResultsList != null && Model.CriticalResultsList.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Test</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Details</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var result in Model.CriticalResultsList)
+                                    {
+                                        <tr>
+                                            <td>@result.PatientName</td>
+                                            <td>@result.TestName</td>
+                                            <td>@result.TestDate.ToString("MMM dd, yyyy")</td>
+                                            <td><span class="badge badge-danger">Critical</span></td>
+                                            <td>@result.Notes</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-exclamation-triangle fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Critical Results</h5>
+                            <p class="text-muted">No critical results have been reported today.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Category Chart
+            @if (Model.TestsByCategory != null && Model.TestsByCategory.Any())
+            {
+                <text>var catCtx = document.getElementById('categoryChart').getContext('2d');
+                new Chart(catCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.TestsByCategory.Keys)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.TestsByCategory.Values)),
+                            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { position: 'bottom' }
+                    }
+                });</text>
+            }
+            // Status Chart
+            @if (Model.ResultsByStatus != null && Model.ResultsByStatus.Any())
+            {
+                <text>var statusCtx = document.getElementById('statusChart').getContext('2d');
+                new Chart(statusCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.ResultsByStatus.Keys)),
+                        datasets: [{
+                            label: 'Results',
+                            data: @Html.Raw(Json.Serialize(Model.ResultsByStatus.Values)),
+                            backgroundColor: '#36b9cc',
+                            borderColor: '#2c9faf',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: { beginAtZero: true, precision: 0 }
+                            }]
+                        },
+                        legend: { display: false }
+                    }
+                });</text>
+            }
+        });
+    </script>
+}

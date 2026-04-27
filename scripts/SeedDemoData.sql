@@ -14,11 +14,20 @@
 --        Run this script once on a clean or empty database.
 -- ============================================================
 
+
 USE [MedyxHMS];
 GO
 
 -- Disable FK constraints so demo data can be inserted without user accounts
 EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
+GO
+
+-- Insert a dummy user for FK references (for demo/testing)
+INSERT INTO [AspNetUsers] ([Id], [UserName], [NormalizedUserName], [Email], [NormalizedEmail], [EmailConfirmed], [PasswordHash], [SecurityStamp], [ConcurrencyStamp], [PhoneNumber], [PhoneNumberConfirmed], [TwoFactorEnabled], [LockoutEnd], [LockoutEnabled], [AccessFailedCount])
+SELECT * FROM (VALUES
+  ('demo-user', 'demouser', 'DEMOUSER', 'demo@medyx.local', 'DEMO@MEDYX.LOCAL', 1, 'AQAAAAEAACcQAAAAEDummyHash', 'DUMMYSECURITYSTAMP', 'DUMMYCONCURRENCY', NULL, 0, 0, NULL, 1, 0)
+) AS src([Id], [UserName], [NormalizedUserName], [Email], [NormalizedEmail], [EmailConfirmed], [PasswordHash], [SecurityStamp], [ConcurrencyStamp], [PhoneNumber], [PhoneNumberConfirmed], [TwoFactorEnabled], [LockoutEnd], [LockoutEnabled], [AccessFailedCount])
+WHERE NOT EXISTS (SELECT 1 FROM [AspNetUsers] u WHERE u.[Id] = 'demo-user');
 GO
 
 -- 1. DEPARTMENTS

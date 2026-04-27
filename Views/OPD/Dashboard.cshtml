@@ -1,0 +1,201 @@
+@model MedyxHMS.ViewModels.OPDDashboardViewModel
+@{
+    ViewData["Title"] = "OPD Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2><i class="fas fa-clinic-medical"></i> OPD Dashboard</h2>
+            <p class="text-muted">Overview of outpatient visits and revenue</p>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Visits Today</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TodayVisits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">This Week</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ThisWeekVisits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">This Month</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ThisMonthVisits</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Today Revenue</div>
+                    <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TodayRevenue.ToString("C")</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Visits by Department</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.VisitsByDepartment != null && Model.VisitsByDepartment.Any())
+                    {
+                        <canvas id="departmentChart" width="100%" height="300"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-building fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Department Data</h5>
+                            <p class="text-muted">No OPD visits have been categorized yet.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Top Doctors</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.TopDoctors != null && Model.TopDoctors.Any())
+                    {
+                        <canvas id="topDoctorsChart" width="100%" height="300"></canvas>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-md fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Doctor Data</h5>
+                            <p class="text-muted">No doctor performance data available.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Visits Table -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Recent OPD Visits</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.RecentVisits != null && Model.RecentVisits.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>Doctor</th>
+                                        <th>Date</th>
+                                        <th>Department</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var visit in Model.RecentVisits)
+                                    {
+                                        <tr>
+                                            <td>@visit.PatientName</td>
+                                            <td>@visit.DoctorName</td>
+                                            <td>@visit.VisitDate.ToString("MMM dd, yyyy")</td>
+                                            <td>@visit.Department</td>
+                                            <td><span class="badge badge-@visit.StatusBadgeClass">@visit.Status</span></td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-user-clock fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-500">No Recent Visits</h5>
+                            <p class="text-muted">No OPD visits have been recorded recently.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Department Chart
+            @if (Model.VisitsByDepartment != null && Model.VisitsByDepartment.Any())
+            {
+                <text>var deptCtx = document.getElementById('departmentChart').getContext('2d');
+                new Chart(deptCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.VisitsByDepartment.Keys)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.VisitsByDepartment.Values)),
+                            backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        legend: { position: 'bottom' }
+                    }
+                });</text>
+            }
+            // Top Doctors Chart
+            @if (Model.TopDoctors != null && Model.TopDoctors.Any())
+            {
+                <text>var docCtx = document.getElementById('topDoctorsChart').getContext('2d');
+                new Chart(docCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.TopDoctors.Select(d => d.FullName))),
+                        datasets: [{
+                            label: 'Visits',
+                            data: @Html.Raw(Json.Serialize(Model.TopDoctors.Select(d => d.VisitCount))),
+                            backgroundColor: '#36b9cc',
+                            borderColor: '#2c9faf',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            yAxes: [{
+                                ticks: { beginAtZero: true, precision: 0 }
+                            }]
+                        },
+                        legend: { display: false }
+                    }
+                });</text>
+            }
+        });
+    </script>
+}
