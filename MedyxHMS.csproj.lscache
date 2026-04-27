@@ -192,6 +192,7 @@ Services/
   OperationTheatreService.cs
   PatientPortalService.cs
   PatientService.cs
+  PaymentGatewayService.cs
   PayrollService.cs
   PrescriptionService.cs
   PublicBookingNotificationService.cs
@@ -210,6 +211,7 @@ Services/
   TwilioSmsNotificationProvider.cs
   WardService.cs
  Interfaces/
+  IPaymentGatewayService.cs
   IReportCatalogVisibilityService.cs
   IServices.cs
 ViewModels/
@@ -663,6 +665,7 @@ Views/
   Edit.cshtml
   Index.cshtml
  Billing/
+  Checkout.cshtml
   Create.cshtml
   Details.cshtml
   GatewaySettings.cshtml
@@ -925,6 +928,7 @@ Views/
   Edit.cshtml
   Index.cshtml
  Billing/
+  Checkout.cshtml
   Create.cshtml
   Details.cshtml
   GatewaySettings.cshtml

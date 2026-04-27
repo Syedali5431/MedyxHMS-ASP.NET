@@ -295,4 +295,19 @@ namespace MedyxHMS.ViewModels
             new() { Key = "easypaisa",   DisplayName = "EasyPaisa",    Logo = "easypaisa.png",   Website = "https://www.easypaisa.com.pk",        Region = "Pakistan" },
         };
     }
+
+    public class CheckoutViewModel
+    {
+        public int BillId { get; set; }
+        public string BillNumber { get; set; } = string.Empty;
+        public decimal Amount { get; set; }
+        public string Currency { get; set; } = "USD";
+        public string PatientName { get; set; } = string.Empty;
+        public string PatientEmail { get; set; } = string.Empty;
+        public string Gateway { get; set; } = string.Empty;
+        public string GatewayKey { get; set; } = string.Empty;    // public/publishable key
+        public string ClientToken { get; set; } = string.Empty;   // order token / snap token
+        public string ReturnUrl { get; set; } = string.Empty;
+        public string CallbackUrl { get; set; } = string.Empty;
+    }
 }

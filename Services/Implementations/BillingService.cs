@@ -60,7 +60,7 @@ namespace MedyxHMS.Services.Implementations
             existingBill.TotalAmount = bill.TotalAmount;
             existingBill.PaidAmount = bill.PaidAmount;
             existingBill.PendingAmount = bill.TotalAmount - bill.PaidAmount;
-            existingBill.Status = GetBillStatus(existingBill.PendingAmount);
+            existingBill.Status = GetBillStatus(existingBill.PendingAmount, existingBill.TotalAmount);
             existingBill.Notes = bill.Notes;
 
             await _context.SaveChangesAsync();
@@ -139,7 +139,7 @@ namespace MedyxHMS.Services.Implementations
                 {
                     bill.PaidAmount += payment.Amount;
                     bill.PendingAmount = bill.TotalAmount - bill.PaidAmount;
-                    bill.Status = GetBillStatus(bill.PendingAmount);
+                    bill.Status = GetBillStatus(bill.PendingAmount, bill.TotalAmount);
                 }
 
                 await _context.SaveChangesAsync();
@@ -181,11 +181,11 @@ namespace MedyxHMS.Services.Implementations
             return $"BILL{datePart}{sequentialNumber:D4}";
         }
 
-        private string GetBillStatus(decimal pendingAmount)
+        private string GetBillStatus(decimal pendingAmount, decimal totalAmount = 0)
         {
             if (pendingAmount <= 0)
                 return "Paid";
-            else if (pendingAmount > 0)
+            else if (totalAmount > 0 && pendingAmount < totalAmount)
                 return "Partially Paid";
             else
                 return "Unpaid";

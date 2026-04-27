@@ -31,6 +31,8 @@ namespace MedyxHMS.Controllers
 
         public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
         {
+            if (pageSize < 1) pageSize = 10;
+            if (page < 1) page = 1;
             var allTests = await _labService.GetAllLabTestsAsync();
             var tests = allTests
                 .Skip((page - 1) * pageSize)
@@ -133,6 +135,8 @@ namespace MedyxHMS.Controllers
 
         public async Task<IActionResult> Results(int page = 1, int pageSize = 10, string status = "All")
         {
+            if (pageSize < 1) pageSize = 10;
+            if (page < 1) page = 1;
             IEnumerable<LabResult> results;
 
             if (status == "All")

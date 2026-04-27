@@ -28,6 +28,7 @@ namespace MedyxHMS.DTOs
         public List<string> Roles { get; set; } = new();
         public List<string> Permissions { get; set; } = new();
         public string FormattedCreatedDate => CreatedDate.ToString("MMM dd, yyyy");
+        public int VisitCount { get; set; }
     }
 
     public class StaffCreateDto

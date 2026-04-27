@@ -170,7 +170,7 @@
                                             <td>@discharge.PatientName</td>
                                             <td>@discharge.WardName</td>
                                             <td>@discharge.BedNumber</td>
-                                            <td>@discharge.DischargeDate.ToString("MMM dd, yyyy")</td>
+                                            <td>@discharge.DischargeDate?.ToString("MMM dd, yyyy")</td>
                                             <td><span class="badge badge-@discharge.StatusBadgeClass">@discharge.Status</span></td>
                                         </tr>
                                     }

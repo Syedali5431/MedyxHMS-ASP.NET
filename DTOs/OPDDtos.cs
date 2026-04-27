@@ -20,6 +20,8 @@ namespace MedyxHMS.DTOs
         public string Notes { get; set; }
         public decimal ConsultationFee { get; set; }
         public string PaymentStatus { get; set; } // Paid, Pending, Waived
+        public string Department { get; set; }
+        public string Status { get; set; }
         public DateTime CreatedDate { get; set; }
         public string CreatedBy { get; set; }
         public string FormattedVisitDate => VisitDate.ToString("MMM dd, yyyy HH:mm");
@@ -28,6 +30,14 @@ namespace MedyxHMS.DTOs
             "Paid" => "badge-success",
             "Pending" => "badge-warning",
             "Waived" => "badge-info",
+            _ => "badge-secondary"
+        };
+        public string StatusBadgeClass => Status switch
+        {
+            "Completed" => "badge-success",
+            "In Progress" => "badge-info",
+            "Pending" => "badge-warning",
+            "Cancelled" => "badge-danger",
             _ => "badge-secondary"
         };
     }

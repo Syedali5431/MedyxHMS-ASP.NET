@@ -68,6 +68,7 @@ builder.Services.AddScoped<ISettingService, SettingService>();
 builder.Services.AddScoped<IPatientService, PatientService>();
 builder.Services.AddScoped<IAppointmentService, AppointmentService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
+builder.Services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
@@ -230,6 +231,9 @@ app.UseRouting();
 // Enable CORS
 app.UseCors("AllowConfiguredOrigins");
 
+// Enable Response Caching (must be before authentication/authorization)
+app.UseResponseCaching();
+
 // Enable Session
 app.UseSession();
 
@@ -240,9 +244,6 @@ app.UseMiddleware<LicenseEnforcementMiddleware>();
 // Entitlement check validates both admin toggles and license module availability.
 app.UseMiddleware<ModuleEntitlementMiddleware>();
 app.UseAuthorization();
-
-// Enable Response Caching
-app.UseResponseCaching();
 
 // Health Check endpoint
 app.MapHealthChecks("/health");

@@ -127,7 +127,7 @@ namespace MedyxHMS.Services.Implementations
             if (labResult == null)
                 throw new ArgumentNullException(nameof(labResult));
 
-            if (!string.IsNullOrEmpty(labResult.OrderNumber) == false)
+            if (string.IsNullOrEmpty(labResult.OrderNumber))
                 labResult.OrderNumber = $"LAB-{DateTime.UtcNow:yyyyMMddHHmmss}";
 
             labResult.CreatedDate = DateTime.UtcNow;

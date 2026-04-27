@@ -146,6 +146,9 @@ namespace MedyxHMS.ViewModels
     {
         public int Id { get; set; }
         public int LabTestId { get; set; }
+        public string PatientName { get; set; }
+        public string TestName { get; set; }
+        public DateTime TestDate { get; set; }
         public string Parameter { get; set; }
         public string Result { get; set; }
         public string Unit { get; set; }

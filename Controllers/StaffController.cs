@@ -478,7 +478,7 @@ namespace MedyxHMS.Controllers
                     EmployeeId = staff.EmployeeId,
                     FirstName = staff.FirstName,
                     LastName = staff.LastName,
-                    Email = staff.User.Email,
+                    Email = staff.User?.Email,
                     Phone = staff.Phone,
                     Department = staff.Department,
                     Designation = staff.Designation,
@@ -487,7 +487,7 @@ namespace MedyxHMS.Controllers
                     Address = staff.Address,
                     IsActive = staff.IsActive,
                     CreatedDate = staff.CreatedDate,
-                    LastLoginDate = staff.User.LastLoginDate,
+                    LastLoginDate = staff.User?.LastLoginDate,
                     Roles = staff.StaffRoles.Select(sr => sr.Role.Name).ToList()
                 }
             };
@@ -647,13 +647,12 @@ namespace MedyxHMS.Controllers
             {
                 PasswordChange = new StaffPasswordChangeDto { StaffId = id },
                 StaffName = $"{staff.FirstName} {staff.LastName}",
-                StaffEmail = staff.User.Email
+                StaffEmail = staff.User?.Email
             };
 
             return View(viewModel);
         }
 
-        // POST: Staff/ChangePassword/5
         [HttpPost]
         [ValidateAntiForgeryToken]
         [PermissionAuthorize("ManageUsers")]
@@ -697,7 +696,7 @@ namespace MedyxHMS.Controllers
             if (staff != null)
             {
                 viewModel.StaffName = $"{staff.FirstName} {staff.LastName}";
-                viewModel.StaffEmail = staff.User.Email;
+                viewModel.StaffEmail = staff.User?.Email;
             }
 
             return View(viewModel);

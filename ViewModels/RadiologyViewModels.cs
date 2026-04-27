@@ -142,6 +142,9 @@ namespace MedyxHMS.ViewModels
     {
         public int Id { get; set; }
         public int RadiologyTestId { get; set; }
+        public string PatientName { get; set; }
+        public string TestName { get; set; }
+        public DateTime TestDate { get; set; }
         public string Findings { get; set; }
         public string Impression { get; set; }
         public string Recommendations { get; set; }

@@ -1,0 +1,146 @@
+@model MedyxHMS.ViewModels.CheckoutViewModel
+@{
+    ViewData["Title"] = "Online Payment";
+    var gateway = Model.Gateway.ToLowerInvariant();
+}
+
+<div class="container py-4" style="max-width:520px">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Online Payment</h5>
+        </div>
+        <div class="card-body">
+            <dl class="row mb-3">
+                <dt class="col-5">Bill #</dt><dd class="col-7">@Model.BillNumber</dd>
+                <dt class="col-5">Patient</dt><dd class="col-7">@Model.PatientName</dd>
+                <dt class="col-5">Amount</dt><dd class="col-7 fw-bold text-success">@Model.Amount.ToString("0.00") @Model.Currency</dd>
+                <dt class="col-5">Gateway</dt><dd class="col-7 text-capitalize">@Model.Gateway</dd>
+            </dl>
+
+            @* ── Stripe ─────────────────────────────────────────────────────── *@
+            @if (gateway == "stripe")
+            {
+                <div id="stripe-error" class="alert alert-danger d-none"></div>
+                <div id="stripe-card-element" class="form-control mb-3" style="height:2.6rem;padding-top:.7rem;"></div>
+                <button id="stripe-pay-btn" class="btn btn-primary w-100">
+                    <span id="stripe-spinner" class="spinner-border spinner-border-sm d-none me-2"></span>
+                    Pay @Model.Amount.ToString("0.00") @Model.Currency
+                </button>
+                <script src="https://js.stripe.com/v3/"></script>
+                <script>
+                    const stripe = Stripe('@Model.GatewayKey');
+                    const elements = stripe.elements();
+                    const card = elements.create('card');
+                    card.mount('#stripe-card-element');
+                    document.getElementById('stripe-pay-btn').addEventListener('click', async () => {
+                        document.getElementById('stripe-spinner').classList.remove('d-none');
+                        const { error, paymentMethod } = await stripe.createPaymentMethod({ type: 'card', card });
+                        if (error) {
+                            document.getElementById('stripe-error').textContent = error.message;
+                            document.getElementById('stripe-error').classList.remove('d-none');
+                            document.getElementById('stripe-spinner').classList.add('d-none');
+                        } else {
+                            window.location = '@Model.ReturnUrl';
+                        }
+                    });
+                </script>
+            }
+
+            @* ── Razorpay ───────────────────────────────────────────────────── *@
+            @if (gateway == "razorpay")
+            {
+                <button id="rzp-btn" class="btn btn-primary w-100">Pay @Model.Amount.ToString("0.00") @Model.Currency with Razorpay</button>
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                <script>
+                    var options = {
+                        key: '@Model.GatewayKey',
+                        amount: @((long)(Model.Amount * 100)),
+                        currency: '@Model.Currency',
+                        name: 'Medyx HMS',
+                        description: 'Bill #@Model.BillNumber',
+                        order_id: '@Model.ClientToken',
+                        prefill: { name: '@Model.PatientName', email: '@Model.PatientEmail' },
+                        handler: function(response) {
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = '@Model.ReturnUrl';
+                            ['razorpay_payment_id','razorpay_order_id','razorpay_signature'].forEach(k => {
+                                var i = document.createElement('input');
+                                i.type = 'hidden'; i.name = k; i.value = response[k];
+                                form.appendChild(i);
+                            });
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    };
+                    document.getElementById('rzp-btn').onclick = function() { new Razorpay(options).open(); };
+                </script>
+            }
+
+            @* ── Paystack ───────────────────────────────────────────────────── *@
+            @if (gateway == "paystack")
+            {
+                <button id="ps-btn" class="btn btn-primary w-100">Pay @Model.Amount.ToString("0.00") @Model.Currency with Paystack</button>
+                <script src="https://js.paystack.co/v1/inline.js"></script>
+                <script>
+                    document.getElementById('ps-btn').onclick = function() {
+                        var handler = PaystackPop.setup({
+                            key: '@Model.GatewayKey',
+                            email: '@Model.PatientEmail',
+                            amount: @Model.ClientToken,
+                            currency: '@Model.Currency',
+                            ref: 'BILL@(Model.BillId)_' + Date.now(),
+                            callback: function(response) {
+                                window.location = '@Model.ReturnUrl' + '?reference=' + response.reference;
+                            },
+                            onClose: function() {}
+                        });
+                        handler.openIframe();
+                    };
+                </script>
+            }
+
+            @* ── Flutterwave ────────────────────────────────────────────────── *@
+            @if (gateway == "flutterwave")
+            {
+                <button id="fw-btn" class="btn btn-primary w-100">Pay @Model.Amount.ToString("0.00") @Model.Currency with Flutterwave</button>
+                <script src="https://checkout.flutterwave.com/v3.js"></script>
+                <script>
+                    document.getElementById('fw-btn').onclick = function() {
+                        FlutterwaveCheckout({
+                            public_key: '@Model.GatewayKey',
+                            tx_ref: 'BILL@(Model.BillId)',
+                            amount: @Model.Amount,
+                            currency: '@Model.Currency',
+                            customer: { email: '@Model.PatientEmail', name: '@Model.PatientName' },
+                            callback: function(data) {
+                                window.location = '@Model.ReturnUrl' + '?status=successful&transaction_id=' + data.transaction_id + '&tx_ref=' + data.tx_ref;
+                            },
+                            onclose: function() {}
+                        });
+                    };
+                </script>
+            }
+
+            @* ── Midtrans ───────────────────────────────────────────────────── *@
+            @if (gateway == "midtrans")
+            {
+                <button id="mt-btn" class="btn btn-primary w-100">Pay @Model.Amount.ToString("0.00") @Model.Currency with Midtrans</button>
+                <script src="https://app.midtrans.com/snap/snap.js" data-client-key="@Model.GatewayKey"></script>
+                <script>
+                    document.getElementById('mt-btn').onclick = function() {
+                        snap.pay('@Model.ClientToken', {
+                            onSuccess: function(result) { window.location = '@Model.ReturnUrl'; },
+                            onPending: function(result) { window.location = '@Model.ReturnUrl'; },
+                            onError: function(result) { alert('Payment failed.'); }
+                        });
+                    };
+                </script>
+            }
+
+            <a asp-action="Details" asp-controller="Billing" asp-route-id="@Model.BillId" class="btn btn-outline-secondary w-100 mt-2">
+                Cancel
+            </a>
+        </div>
+    </div>
+</div>

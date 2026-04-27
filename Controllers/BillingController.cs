@@ -17,12 +17,14 @@ namespace MedyxHMS.Controllers
         private readonly IBillingService _billingService;
         private readonly IExportService _exportService;
         private readonly ApplicationDbContext _db;
+        private readonly IPaymentGatewayService _gatewayService;
 
-        public BillingController(IBillingService billingService, IExportService exportService, ApplicationDbContext db)
+        public BillingController(IBillingService billingService, IExportService exportService, ApplicationDbContext db, IPaymentGatewayService gatewayService)
         {
             _billingService = billingService;
             _exportService = exportService;
             _db = db;
+            _gatewayService = gatewayService;
         }
 
         public async Task<IActionResult> Index(string filter = "all", int page = 1, int pageSize = 10)
@@ -504,6 +506,126 @@ namespace MedyxHMS.Controllers
 
             TempData["SuccessMessage"] = "Payment gateway settings saved successfully.";
             return RedirectToAction(nameof(GatewaySettings));
+        }
+
+        // ── Online Gateway Checkout ───────────────────────────────────────────────
+
+        [HttpGet]
+        public async Task<IActionResult> Checkout(int id, string gateway)
+        {
+            var bill = await _billingService.GetBillByIdAsync(id);
+            if (bill == null) return NotFound();
+
+            var activeGateway = await GetGwSetting("Payment:ActiveGateway") ?? "none";
+            if (string.IsNullOrWhiteSpace(gateway)) gateway = activeGateway;
+
+            var patientEmail = bill.Patient?.Email ?? string.Empty;
+            var patientPhone = bill.Patient?.Phone ?? string.Empty;
+            var patientName  = bill.Patient != null ? $"{bill.Patient.FirstName} {bill.Patient.LastName}".Trim() : "Patient";
+
+            var baseUrl  = $"{Request.Scheme}://{Request.Host}";
+            var returnUrl   = Url.Action("GatewayReturn",  "Billing", new { id, gateway }, Request.Scheme) ?? string.Empty;
+            var cancelUrl   = Url.Action("Details",        "Billing", new { id },          Request.Scheme) ?? string.Empty;
+            var callbackUrl = Url.Action("GatewayCallback","Billing", new { gateway },     Request.Scheme) ?? string.Empty;
+
+            var req = new PaymentGatewayRequest
+            {
+                BillId       = id,
+                BillNumber   = bill.BillNumber ?? id.ToString(),
+                Amount       = bill.PendingAmount,
+                Currency     = await GetGwSetting("Payment:Currency") ?? "USD",
+                PatientName  = patientName,
+                PatientEmail = patientEmail,
+                PatientPhone = patientPhone,
+                Gateway      = gateway,
+                ReturnUrl    = returnUrl,
+                CancelUrl    = cancelUrl,
+                CallbackUrl  = callbackUrl
+            };
+
+            var result = await _gatewayService.InitiateAsync(req);
+            if (!result.Success)
+            {
+                TempData["ErrorMessage"] = result.Error ?? "Payment initiation failed.";
+                return RedirectToAction(nameof(Details), new { id });
+            }
+
+            // JS-based gateways need a rendered page
+            if (!string.IsNullOrWhiteSpace(result.GatewayKey) && string.IsNullOrWhiteSpace(result.RedirectUrl))
+            {
+                var vm = new CheckoutViewModel
+                {
+                    BillId       = id,
+                    BillNumber   = bill.BillNumber ?? id.ToString(),
+                    Amount       = bill.PendingAmount,
+                    Currency     = req.Currency,
+                    PatientName  = patientName,
+                    PatientEmail = patientEmail,
+                    Gateway      = gateway,
+                    GatewayKey   = result.GatewayKey,
+                    ClientToken  = result.ClientToken ?? string.Empty,
+                    ReturnUrl    = returnUrl,
+                    CallbackUrl  = callbackUrl
+                };
+                return View(vm);
+            }
+
+            // POST-form gateways
+            if (!string.IsNullOrWhiteSpace(result.PostFormHtml))
+                return Content(result.PostFormHtml, "text/html");
+
+            // Redirect-based gateways
+            return Redirect(result.RedirectUrl!);
+        }
+
+        /// <summary>Return URL after gateway redirect (success/failure).</summary>
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GatewayReturn(int id, string gateway, [FromQuery] IQueryCollection? _ = null)
+        {
+            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, Request.Form);
+            return await FinalizeGatewayPayment(result, id);
+        }
+
+        /// <summary>Server-side IPN/webhook from gateway.</summary>
+        [HttpPost]
+        [AllowAnonymous]
+        [IgnoreAntiforgeryToken]
+        public async Task<IActionResult> GatewayCallback(string gateway)
+        {
+            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, Request.Form);
+            if (!result.Success)
+            {
+                return Ok(); // return 200 to gateway even on failure to prevent retries
+            }
+            await FinalizeGatewayPayment(result, result.BillId);
+            return Ok();
+        }
+
+        private async Task<IActionResult> FinalizeGatewayPayment(PaymentGatewayCallbackResult result, int fallbackBillId)
+        {
+            var billId = result.BillId > 0 ? result.BillId : fallbackBillId;
+            if (!result.Success)
+            {
+                TempData["ErrorMessage"] = result.Error ?? "Payment failed.";
+                return RedirectToAction(nameof(Details), new { id = billId });
+            }
+
+            var payment = new Payment
+            {
+                BillId        = billId,
+                Amount        = result.Amount > 0 ? result.Amount : (await _billingService.GetBillByIdAsync(billId))?.PendingAmount ?? 0,
+                PaymentMethod = "Online",
+                TransactionId = result.TransactionId,
+                PaymentGateway = result.Gateway,
+                Status        = "Completed",
+                Notes         = $"Online payment via {result.Gateway}",
+                PaymentDate   = DateTime.UtcNow,
+                ProcessedBy   = User?.Identity?.Name ?? "Gateway"
+            };
+            await _billingService.ProcessPaymentAsync(payment);
+            TempData["SuccessMessage"] = "Payment received successfully.";
+            return RedirectToAction(nameof(Details), new { id = billId });
         }
 
         private async Task<string?> GetGwSetting(string key)
