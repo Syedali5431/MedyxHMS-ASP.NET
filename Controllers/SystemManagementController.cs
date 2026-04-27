@@ -30,7 +30,16 @@ namespace MedyxHMS.Controllers
             new() { ThemeId = "ocean", Name = "Ocean", Description = "Cool blue-green tones for calm focus.", PreviewClass = "theme-ocean" },
             new() { ThemeId = "forest", Name = "Forest", Description = "Balanced green palette for long shifts.", PreviewClass = "theme-forest" },
             new() { ThemeId = "midnight", Name = "Midnight", Description = "Low-light dark scheme with high contrast text.", PreviewClass = "theme-midnight" },
-            new() { ThemeId = "sunset", Name = "Sunset", Description = "Soft orange-red accent style with warm depth.", PreviewClass = "theme-sunset" }
+            new() { ThemeId = "sunset", Name = "Sunset", Description = "Soft orange-red accent style with warm depth.", PreviewClass = "theme-sunset" },
+            new() { ThemeId = "lavender", Name = "Lavender", Description = "Gentle purple tones for a relaxing workspace.", PreviewClass = "theme-lavender" },
+            new() { ThemeId = "graphite", Name = "Graphite", Description = "Modern grayscale for minimal distraction.", PreviewClass = "theme-graphite" },
+            new() { ThemeId = "emerald", Name = "Emerald", Description = "Vivid green with energetic accents.", PreviewClass = "theme-emerald" },
+            new() { ThemeId = "peach", Name = "Peach", Description = "Soft peach and coral for a gentle look.", PreviewClass = "theme-peach" },
+            new() { ThemeId = "sky", Name = "Sky", Description = "Bright sky blue for clarity and focus.", PreviewClass = "theme-sky" },
+            new() { ThemeId = "rose", Name = "Rose", Description = "Elegant rose pink with subtle highlights.", PreviewClass = "theme-rose" },
+            new() { ThemeId = "sand", Name = "Sand", Description = "Earthy sand and beige for a neutral palette.", PreviewClass = "theme-sand" },
+            new() { ThemeId = "plum", Name = "Plum", Description = "Deep plum and violet for a bold look.", PreviewClass = "theme-plum" },
+            new() { ThemeId = "aqua", Name = "Aqua", Description = "Fresh aqua and teal for a modern feel.", PreviewClass = "theme-aqua" }
         };
 
         public SystemManagementController(
@@ -1132,11 +1141,21 @@ namespace MedyxHMS.Controllers
             var candidate = (input ?? string.Empty).Trim().ToLowerInvariant();
             return candidate switch
             {
+                "sunflower" => "sunflower",
                 "snowflake" => "snowflake",
                 "ocean" => "ocean",
                 "forest" => "forest",
                 "midnight" => "midnight",
                 "sunset" => "sunset",
+                "lavender" => "lavender",
+                "graphite" => "graphite",
+                "emerald" => "emerald",
+                "peach" => "peach",
+                "sky" => "sky",
+                "rose" => "rose",
+                "sand" => "sand",
+                "plum" => "plum",
+                "aqua" => "aqua",
                 _ => "sunflower"
             };
         }

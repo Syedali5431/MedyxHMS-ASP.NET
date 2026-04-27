@@ -1,9 +1,39 @@
-﻿        // --- Certificate Template Registration (Phase 3 integration) ---
+﻿// Removed stray closing brace
+using MedyxHMS.Models;
+using MedyxHMS.Services.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+
+// --- Certificate Template Registration (Phase 3 integration) ---
+// Purpose: Contains application code for ReportController and its related runtime behavior.
+namespace MedyxHMS.Controllers
+{
+
+    [Authorize]
+    public class ReportController : Controller
+    {
         private static readonly (string Name, string Type, string Description)[] CertificateTemplates = new[]
         {
             ("Birth Certificate", "Certificate", "Birth certificate template for Report Editor integration"),
             ("Death Certificate", "Certificate", "Death certificate template for Report Editor integration")
         };
+
+        private readonly IReportService _reportService;
+        private readonly IReportTemplateService _reportTemplateService;
+        private readonly IReportCatalogVisibilityService _reportCatalogVisibilityService;
+        private readonly ILogger<ReportController> _logger;
+
+        public ReportController(
+            IReportService reportService,
+            IReportTemplateService reportTemplateService,
+            IReportCatalogVisibilityService reportCatalogVisibilityService,
+            ILogger<ReportController> logger)
+        {
+            _reportService = reportService;
+            _reportTemplateService = reportTemplateService;
+            _reportCatalogVisibilityService = reportCatalogVisibilityService;
+            _logger = logger;
+        }
 
         /// <summary>
         /// Ensures certificate templates are registered in the Report Editor.
@@ -31,34 +61,6 @@
                     await _reportTemplateService.CreateTemplateAsync(template);
                 }
             }
-        }
-using MedyxHMS.Models;
-using MedyxHMS.Services.Interfaces;
-using MedyxHMS.ViewModels;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-
-// Purpose: Contains application code for ReportController and its related runtime behavior.
-namespace MedyxHMS.Controllers
-{
-    [Authorize]
-    public class ReportController : Controller
-    {
-        private readonly IReportService _reportService;
-        private readonly IReportTemplateService _reportTemplateService;
-        private readonly IReportCatalogVisibilityService _reportCatalogVisibilityService;
-        private readonly ILogger<ReportController> _logger;
-
-        public ReportController(
-            IReportService reportService,
-            IReportTemplateService reportTemplateService,
-            IReportCatalogVisibilityService reportCatalogVisibilityService,
-            ILogger<ReportController> logger)
-        {
-            _reportService = reportService;
-            _reportTemplateService = reportTemplateService;
-            _reportCatalogVisibilityService = reportCatalogVisibilityService;
-            _logger = logger;
         }
 
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
@@ -177,31 +179,6 @@ namespace MedyxHMS.Controllers
         }
 
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> FinancialReport(DateTime? startDate, DateTime? endDate)
-        {
-            if (!startDate.HasValue)
-                startDate = DateTime.UtcNow.AddMonths(-1);
-
-            if (!endDate.HasValue)
-                endDate = DateTime.UtcNow;
-
-            try
-            {
-                var report = await _reportService.GenerateFinancialReportAsync(startDate.Value, endDate.Value);
-
-                ViewData["StartDate"] = startDate;
-                ViewData["EndDate"] = endDate;
-
-                return View(report);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating financial report");
-                return View(new Dictionary<string, decimal>());
-            }
-        }
-
-        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
         public async Task<IActionResult> OccupancyReport(DateTime? date)
         {
             if (!date.HasValue)
@@ -272,37 +249,6 @@ namespace MedyxHMS.Controllers
         }
 
         #region Legacy Reports (R1-R5) - ASP.NET Converted
-
-        /// <summary>
-        /// R1: Daily Transaction Report
-        /// Shows all transactions for a specific date with payment breakdown
-        /// </summary>
-        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        [HttpGet]
-        public async Task<IActionResult> DailyTransactionReport(DateTime? reportDate)
-        {
-            if (!reportDate.HasValue)
-                reportDate = DateTime.UtcNow;
-
-            try
-            {
-                var report = await _reportService.GenerateDailyTransactionReportAsync(reportDate.Value.Date);
-                ViewData["ReportDate"] = reportDate;
-                return PartialView("_DailyTransactionReportPartial", report);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error generating daily transaction report");
-                return PartialView("_DailyTransactionReportPartial", new DailyTransactionReportViewModel { ReportDate = reportDate?.Date ?? DateTime.UtcNow.Date });
-            }
-        }
-
-        /// <summary>
-        /// R2: All Transaction Report
-        /// Shows all transactions within a date range
-        /// </summary>
-        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        [HttpGet]
         public async Task<IActionResult> AllTransactionReport(DateTime? startDate, DateTime? endDate)
         {
             if (!startDate.HasValue)
@@ -817,7 +763,11 @@ namespace MedyxHMS.Controllers
             ("Ambulance Report", "LegacyPHP", "application/views/admin/vehicle/ambulancereport.php"),
             ("Patient Pathology Print Partial", "LegacyPHP", "application/views/patient/pathology/_printPatientReportDetail.php"),
             ("Patient Radiology Print Partial", "LegacyPHP", "application/views/patient/radiology/_printPatientReportDetail.php")
+
+
+
         };
+        }
     }
 
     // Extension method for redirect with message (if not already defined)
@@ -829,4 +779,3 @@ namespace MedyxHMS.Controllers
             return redirect;
         }
     }
-}

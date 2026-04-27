@@ -3,6 +3,7 @@
 // Purpose: Contains application code for ReportViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
+
     public class ReportIndexViewModel
     {
         public int TotalReportsGenerated { get; set; }
