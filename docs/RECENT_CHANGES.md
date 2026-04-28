@@ -1,11 +1,47 @@
 # Recent Changes & Maintenance Updates
 
-**Last Updated:** 2026-05-15  
-**Status:** Charts Added to All Modules + PatientPortal Export Fixes + Dashboard Cleanup
+**Last Updated:** 2026-04-28  
+**Status:** Reports Workspace Exports Enabled + Role-Based Report Access + Sidebar Report List
 
 ---
 
 ## 📋 Summary of Recent Changes
+
+### April 28, 2026 — Reports Workspace Export + Access Controls
+
+#### 1) PDF/Excel export enabled for R1-R5
+- Replaced placeholder alerts in report partials with real export calls to backend action:
+  - `Views/Report/_DailyTransactionReportPartial.cshtml`
+  - `Views/Report/_AllTransactionReportPartial.cshtml`
+  - `Views/Report/_AppointmentReportPartial.cshtml`
+  - `Views/Report/_OPDReportPartial.cshtml`
+  - `Views/Report/_IPDReportPartial.cshtml`
+- Added backend export endpoint in `Controllers/ReportController.cs`:
+  - `ExportLegacyReport(reportKey, format, reportDate, startDate, endDate)`
+  - Supports `pdf` and `excel` using existing `IExportService.BuildPdfTable` and `IExportService.BuildExcel`.
+
+#### 2) Report Details table enhanced with Roles + Status controls
+- Extended Report Management table to columns:
+  - `Sr#`, `Report Name`, `Purpose`, `Roles`, `Status`
+- SuperAdmin can now:
+  - assign per-report role visibility (multi-select)
+  - set report `Active`/`Inactive`
+- Other users see read-only text values.
+- Files updated:
+  - `Views/SystemManagement/ReportManagement.cshtml`
+  - `Controllers/SystemManagementController.cs`
+  - `ViewModels/SystemManagementViewModels.cs`
+
+#### 3) Role-based report visibility + sidebar list replacement
+- Added role-map persistence for report visibility in settings storage:
+  - `SystemManagement.ReportCatalog.RoleMap`
+- Updated service API and implementation:
+  - `Services/Interfaces/IReportCatalogVisibilityService.cs`
+  - `Services/Implementations/ReportCatalogVisibilityService.cs`
+- Sidebar reports selector changed from dropdown to scrollable active report list:
+  - `Views/Shared/Components/SidebarNav/Default.cshtml`
+- Sidebar now shows `Report Details` link and filters report list by active state + assigned roles.
+
 
 ### May 2026 — Charts, Export Fixes & Dashboard Cleanup
 

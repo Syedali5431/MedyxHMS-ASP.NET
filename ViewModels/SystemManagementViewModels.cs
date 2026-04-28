@@ -91,6 +91,8 @@ namespace MedyxHMS.ViewModels
         public string Name { get; init; } = string.Empty;
         public string Purpose { get; init; } = string.Empty;
         public bool IsActive { get; init; }
+        public IReadOnlyList<string> AssignedRoles { get; init; } = Array.Empty<string>();
+        public string AssignedRolesText => AssignedRoles.Count == 0 ? "All Roles" : string.Join(", ", AssignedRoles);
     }
 
     public sealed class SystemManagementReportListViewModel
@@ -99,6 +101,7 @@ namespace MedyxHMS.ViewModels
         public string SearchTerm { get; init; } = string.Empty;
         public int TotalReports { get; init; }
         public int ActiveReports { get; init; }
+        public IReadOnlyList<string> AvailableRoles { get; init; } = Array.Empty<string>();
         public IReadOnlyList<SystemManagementReportRowViewModel> Rows { get; init; } = Array.Empty<SystemManagementReportRowViewModel>();
     }
 

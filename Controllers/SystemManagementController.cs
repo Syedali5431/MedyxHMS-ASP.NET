@@ -78,11 +78,18 @@ namespace MedyxHMS.Controllers
             var canSeeAdminOnly = User.IsInRole("Admin") || isSuperAdmin;
 
             var inactiveKeys = await _reportCatalogVisibilityService.GetInactiveKeysAsync();
-            var visibleItems = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(canSeeAdminOnly, isSuperAdmin);
+            var roleMap = await _reportCatalogVisibilityService.GetReportRoleMapAsync();
+            var allRoles = await _roleManager.Roles
+                .Select(r => r.Name)
+                .Where(r => r != null)
+                .OrderBy(r => r)
+                .ToListAsync();
+
+            var catalogItems = ReportCatalogRegistry.GetVisibleItems(canSeeAdminOnly);
 
             var filtered = string.IsNullOrWhiteSpace(search)
-                ? visibleItems
-                : visibleItems
+                ? catalogItems
+                : catalogItems
                     .Where(i => i.Name.Contains(search, StringComparison.OrdinalIgnoreCase)
                              || i.Summary.Contains(search, StringComparison.OrdinalIgnoreCase)
                              || i.Key.Contains(search, StringComparison.OrdinalIgnoreCase))
@@ -95,7 +102,10 @@ namespace MedyxHMS.Controllers
                     Key = item.Key,
                     Name = item.Name,
                     Purpose = item.Summary,
-                    IsActive = !inactiveKeys.Contains(item.Key)
+                    IsActive = !inactiveKeys.Contains(item.Key),
+                    AssignedRoles = roleMap.TryGetValue(item.Key, out var roles)
+                        ? roles
+                        : Array.Empty<string>()
                 })
                 .ToList();
 
@@ -105,6 +115,7 @@ namespace MedyxHMS.Controllers
                 SearchTerm = search ?? string.Empty,
                 TotalReports = rows.Count,
                 ActiveReports = rows.Count(r => r.IsActive),
+                AvailableRoles = allRoles,
                 Rows = rows
             };
 
@@ -126,6 +137,63 @@ namespace MedyxHMS.Controllers
             else
             {
                 TempData["SuccessMessage"] = $"Report {reportKey} marked {(isActive ? "Active" : "Inactive")}.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction(nameof(ReportManagement));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> SetReportRoles(string reportKey, List<string>? roles, string? returnUrl)
+        {
+            var updated = await _reportCatalogVisibilityService.SetReportRolesAsync(reportKey, roles ?? new List<string>());
+
+            if (!updated)
+            {
+                _logger.LogWarning("Failed to update report roles. Key: {ReportKey}", reportKey);
+                TempData["ErrorMessage"] = "Could not update report roles.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = $"Report {reportKey} roles updated.";
+            }
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return LocalRedirect(returnUrl);
+            }
+
+            return RedirectToAction(nameof(ReportManagement));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperAdmin")]
+        public async Task<IActionResult> UpdateReportAccess(string reportKey, bool isActive, List<string>? roles, string? returnUrl)
+        {
+            var normalizedRoles = roles ?? new List<string>();
+
+            var stateUpdated = await _reportCatalogVisibilityService.SetReportActiveStateAsync(reportKey, isActive);
+            var rolesUpdated = await _reportCatalogVisibilityService.SetReportRolesAsync(reportKey, normalizedRoles);
+
+            if (!stateUpdated || !rolesUpdated)
+            {
+                _logger.LogWarning(
+                    "Failed to update report access. Key: {ReportKey}, IsActive: {IsActive}, RolesCount: {RolesCount}",
+                    reportKey,
+                    isActive,
+                    normalizedRoles.Count);
+                TempData["ErrorMessage"] = "Could not update report access settings.";
+            }
+            else
+            {
+                TempData["SuccessMessage"] = $"Report {reportKey} access updated successfully.";
             }
 
             if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))

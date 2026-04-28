@@ -59,11 +59,11 @@
 
     @if (Model.IsSuperAdmin)
     {
-        <p class="text-muted small mb-2">Right-click a report row to mark Active or Inactive.</p>
+        <p class="text-muted small mb-2">SuperAdmin can update report visibility and assign role-based access per report.</p>
     }
     else
     {
-        <p class="text-muted small mb-2">Read-only view: only Active reports are shown for non-SuperAdmin roles.</p>
+        <p class="text-muted small mb-2">Read-only view: you can view report metadata but cannot modify role or status settings.</p>
     }
 
     <div class="table-responsive">
@@ -73,32 +73,89 @@
                     <th style="width: 80px;">Sr#</th>
                     <th>Report Name</th>
                     <th>Purpose</th>
+                    <th style="width: 280px;">Roles</th>
+                    <th style="width: 170px;">Status</th>
                 </tr>
             </thead>
             <tbody>
                 @if (!Model.Rows.Any())
                 {
                     <tr>
-                        <td colspan="3" class="text-center text-muted py-4">No reports found.</td>
+                        <td colspan="5" class="text-center text-muted py-4">No reports found.</td>
                     </tr>
                 }
                 else
                 {
                     @foreach (var row in Model.Rows)
                     {
-                        <tr class="report-row"
-                            data-key="@row.Key"
-                            data-active="@(row.IsActive ? "true" : "false")">
+                        <tr>
                             <td>@row.SerialNo</td>
                             <td>
                                 <strong>@row.Name</strong>
                                 <div class="small text-muted">@row.Key</div>
-                                @if (!row.IsActive)
-                                {
-                                    <span class="badge bg-warning text-dark">Inactive</span>
-                                }
                             </td>
                             <td>@row.Purpose</td>
+                            @if (Model.IsSuperAdmin)
+                            {
+                                <td>
+                                    <form method="post" action="/SystemManagement/SetReportRoles" class="d-flex flex-column gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="reportKey" value="@row.Key" />
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                        <select name="roles" multiple class="form-select form-select-sm" size="5">
+                                            @foreach (var role in Model.AvailableRoles)
+                                            {
+                                                if (row.AssignedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
+                                                {
+                                                    <option value="@role" selected>@role</option>
+                                                }
+                                                else
+                                                {
+                                                    <option value="@role">@role</option>
+                                                }
+                                            }
+                                        </select>
+                                        <div class="small text-muted">Leave empty to allow all roles</div>
+                                        <button type="submit" class="btn btn-sm btn-outline-primary w-100">Save Roles</button>
+                                    </form>
+                                </td>
+                                <td>
+                                    <form method="post" action="/SystemManagement/SetReportActive" class="d-flex flex-column gap-2">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="reportKey" value="@row.Key" />
+                                        <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                        <select name="isActive" class="form-select form-select-sm mb-2">
+                                            @if (row.IsActive)
+                                            {
+                                                <option value="true" selected>Active</option>
+                                                <option value="false">Inactive</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="true">Active</option>
+                                                <option value="false" selected>Inactive</option>
+                                            }
+                                        </select>
+                                        <button type="submit" class="btn btn-sm btn-primary w-100">Save Status</button>
+                                    </form>
+                                </td>
+                            }
+                            else
+                            {
+                                <td>
+                                    <span class="small">@row.AssignedRolesText</span>
+                                </td>
+                                <td>
+                                    @if (row.IsActive)
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Inactive</span>
+                                    }
+                                </td>
+                            }
                         </tr>
                     }
                 }
@@ -106,84 +163,3 @@
         </table>
     </div>
 </div>
-
-@if (Model.IsSuperAdmin)
-{
-    <div id="reportCtxMenu" class="card shadow-sm" style="display:none; position:fixed; z-index:2000; min-width:190px;">
-        <div class="list-group list-group-flush" id="reportCtxMenuItems"></div>
-    </div>
-
-    <form id="setReportStateForm" method="post" action="/SystemManagement/SetReportActive" class="d-none">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="reportKey" id="reportKeyInput" />
-        <input type="hidden" name="isActive" id="isActiveInput" />
-        <input type="hidden" name="returnUrl" value="@returnUrl" />
-    </form>
-
-    <script>
-        (function () {
-            var menu = document.getElementById('reportCtxMenu');
-            var menuItems = document.getElementById('reportCtxMenuItems');
-            var selected = null;
-
-            function hideMenu() {
-                menu.style.display = 'none';
-                selected = null;
-            }
-
-            function buildMenu(isActive) {
-                menuItems.innerHTML = '';
-
-                var makeItem = function (label, activeState) {
-                    var a = document.createElement('button');
-                    a.type = 'button';
-                    a.className = 'list-group-item list-group-item-action';
-                    a.textContent = label;
-                    a.addEventListener('click', function () {
-                        if (!selected) {
-                            return;
-                        }
-
-                        document.getElementById('reportKeyInput').value = selected.key;
-                        document.getElementById('isActiveInput').value = activeState ? 'true' : 'false';
-                        document.getElementById('setReportStateForm').submit();
-                    });
-                    return a;
-                };
-
-                if (isActive) {
-                    menuItems.appendChild(makeItem('Mark Inactive', false));
-                } else {
-                    menuItems.appendChild(makeItem('Mark Active', true));
-                }
-            }
-
-            document.addEventListener('contextmenu', function (e) {
-                var row = e.target.closest ? e.target.closest('.report-row') : null;
-                hideMenu();
-                if (!row) {
-                    return;
-                }
-
-                e.preventDefault();
-
-                selected = {
-                    key: row.getAttribute('data-key'),
-                    isActive: row.getAttribute('data-active') === 'true'
-                };
-
-                buildMenu(selected.isActive);
-                menu.style.left = Math.min(e.clientX, window.innerWidth - 220) + 'px';
-                menu.style.top = Math.min(e.clientY, window.innerHeight - 180) + 'px';
-                menu.style.display = 'block';
-            });
-
-            document.addEventListener('click', hideMenu);
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    hideMenu();
-                }
-            });
-        })();
-    </script>
-}

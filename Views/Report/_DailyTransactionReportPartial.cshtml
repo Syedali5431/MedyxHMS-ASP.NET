@@ -127,10 +127,12 @@ function reloadReport() {
 }
 
 function exportToPDF() {
-    alert('PDF export feature coming soon');
+    const reportDate = document.getElementById('reportDate').value;
+    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R1&format=pdf&reportDate=${reportDate}`;
 }
 
 function exportToExcel() {
-    alert('Excel export feature coming soon');
+    const reportDate = document.getElementById('reportDate').value;
+    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R1&format=excel&reportDate=${reportDate}`;
 }
 </script>

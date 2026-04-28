@@ -151,10 +151,14 @@ function reloadReport() {
 }
 
 function exportToPDF() {
-    alert('PDF export feature coming soon');
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R2&format=pdf&startDate=${startDate}&endDate=${endDate}`;
 }
 
 function exportToExcel() {
-    alert('Excel export feature coming soon');
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R2&format=excel&startDate=${startDate}&endDate=${endDate}`;
 }
 </script>

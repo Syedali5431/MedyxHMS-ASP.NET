@@ -46,7 +46,11 @@ namespace MedyxHMS.Components
                 CurrentPath = HttpContext.Request.Path.ToString()
             };
 
-            vm.ReportCatalog = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(vm.IsAdminOrSuper, vm.IsSuperAdmin);
+            vm.ReportCatalog = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(
+                vm.IsAdminOrSuper,
+                vm.IsSuperAdmin,
+                vm.Roles,
+                includeInactiveForSuperAdmin: false);
             vm.CurrentReportKey = ReportCatalogRegistry.ResolveCurrentKey(
                 vm.CurrentPath,
                 HttpContext.Request.Query["reportKey"].ToString());
