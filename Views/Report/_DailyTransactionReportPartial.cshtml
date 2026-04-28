@@ -16,7 +16,7 @@
                 <input type="date" id="reportDate" class="form-control" value="@Model.ReportDate.ToString("yyyy-MM-dd")" />
             </div>
             <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
+                <button type="button" class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
             </div>
         </div>
 
@@ -58,9 +58,9 @@
 
         <!-- Export Buttons -->
         <div class="mb-3">
-            <button class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-            <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
         </div>
 
         <!-- Transactions Table -->
@@ -126,13 +126,23 @@ function reloadReport() {
     location.href = `@Url.Action("DailyTransactionReport")?reportDate=${reportDate}`;
 }
 
-function exportToPDF() {
+function exportReport(format) {
     const reportDate = document.getElementById('reportDate').value;
-    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R1&format=pdf&reportDate=${reportDate}`;
+    window.reportDownloadHelper.downloadReport('@Url.Action("ExportLegacyReport", "Report")', {
+        format,
+        defaultFileName: 'daily_transaction_report',
+        query: {
+            reportKey: 'R1',
+            reportDate
+        }
+    });
+}
+
+function exportToPDF() {
+    exportReport('pdf');
 }
 
 function exportToExcel() {
-    const reportDate = document.getElementById('reportDate').value;
-    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R1&format=excel&reportDate=${reportDate}`;
+    exportReport('excel');
 }
 </script>

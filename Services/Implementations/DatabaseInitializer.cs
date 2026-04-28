@@ -62,6 +62,9 @@ namespace MedyxHMS.Services.Implementations
             await SeedSuperAdminUserAsync();
             await SeedUatRoleUsersAsync();
             await EnsureIdentityRolesMatchStaffRolesForAllUsersAsync();
+
+            // Seed dummy/demo data for all core HMS modules
+            await SeedDummyDataAsync();
         }
 
         private async Task EnsureReportStoredProceduresAsync()
@@ -2333,6 +2336,457 @@ END");
 
                 await _context.SaveChangesAsync();
             }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────
+        // Phase 4 – Dummy / Demo Data
+        // All sections are idempotent: each block checks AnyAsync before adding.
+        // ─────────────────────────────────────────────────────────────────────
+        private async Task SeedDummyDataAsync()
+        {
+            var now = DateTime.UtcNow;
+
+            // ── Departments ──────────────────────────────────────────────────
+            if (!await _context.Departments.AnyAsync())
+            {
+                _context.Departments.AddRange(
+                    new Department { Name = "General Medicine",    Description = "General outpatient and inpatient medicine",         HeadOfDepartment = "Dr. Arjun Sharma",   IsActive = true, CreatedDate = now },
+                    new Department { Name = "Cardiology",          Description = "Heart and cardiovascular diseases",                  HeadOfDepartment = "Dr. Priya Nair",     IsActive = true, CreatedDate = now },
+                    new Department { Name = "Orthopedics",         Description = "Bone, joint and musculoskeletal conditions",        HeadOfDepartment = "Dr. Rajesh Verma",   IsActive = true, CreatedDate = now },
+                    new Department { Name = "Pediatrics",          Description = "Medical care for infants, children and adolescents", HeadOfDepartment = "Dr. Sunita Patel",   IsActive = true, CreatedDate = now },
+                    new Department { Name = "Gynecology",          Description = "Women's reproductive health",                        HeadOfDepartment = "Dr. Meena Reddy",    IsActive = true, CreatedDate = now },
+                    new Department { Name = "Emergency Medicine",  Description = "Acute and emergency care",                          HeadOfDepartment = "Dr. Vikas Mehta",    IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            var departments = await _context.Departments.ToListAsync();
+            var deptMap = departments.ToDictionary(d => d.Name);
+
+            // ── Doctors ──────────────────────────────────────────────────────
+            if (!await _context.Doctors.AnyAsync())
+            {
+                _context.Doctors.AddRange(
+                    new Doctor { EmployeeId = "DOC001", FirstName = "Arjun",   LastName = "Sharma",  Specialization = "Internal Medicine",    LicenseNumber = "LIC-0001", Phone = "9810001001", Email = "arjun.sharma@medyx.local",   DepartmentId = deptMap["General Medicine"].Id,   IsActive = true, CreatedDate = now },
+                    new Doctor { EmployeeId = "DOC002", FirstName = "Priya",   LastName = "Nair",    Specialization = "Cardiology",           LicenseNumber = "LIC-0002", Phone = "9810001002", Email = "priya.nair@medyx.local",     DepartmentId = deptMap["Cardiology"].Id,         IsActive = true, CreatedDate = now },
+                    new Doctor { EmployeeId = "DOC003", FirstName = "Rajesh",  LastName = "Verma",   Specialization = "Orthopedics",          LicenseNumber = "LIC-0003", Phone = "9810001003", Email = "rajesh.verma@medyx.local",   DepartmentId = deptMap["Orthopedics"].Id,        IsActive = true, CreatedDate = now },
+                    new Doctor { EmployeeId = "DOC004", FirstName = "Sunita",  LastName = "Patel",   Specialization = "Pediatrics",           LicenseNumber = "LIC-0004", Phone = "9810001004", Email = "sunita.patel@medyx.local",   DepartmentId = deptMap["Pediatrics"].Id,         IsActive = true, CreatedDate = now },
+                    new Doctor { EmployeeId = "DOC005", FirstName = "Meena",   LastName = "Reddy",   Specialization = "Gynecology",           LicenseNumber = "LIC-0005", Phone = "9810001005", Email = "meena.reddy@medyx.local",    DepartmentId = deptMap["Gynecology"].Id,         IsActive = true, CreatedDate = now },
+                    new Doctor { EmployeeId = "DOC006", FirstName = "Vikas",   LastName = "Mehta",   Specialization = "Emergency Medicine",   LicenseNumber = "LIC-0006", Phone = "9810001006", Email = "vikas.mehta@medyx.local",    DepartmentId = deptMap["Emergency Medicine"].Id, IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            var doctors = await _context.Doctors.ToListAsync();
+
+            // ── Wards & Beds ─────────────────────────────────────────────────
+            if (!await _context.Wards.AnyAsync())
+            {
+                _context.Wards.AddRange(
+                    new Ward { Name = "General Ward",  Description = "Standard shared ward",      TotalBeds = 10, OccupiedBeds = 0, IsActive = true, CreatedDate = now },
+                    new Ward { Name = "ICU",            Description = "Intensive Care Unit",       TotalBeds = 6,  OccupiedBeds = 0, IsActive = true, CreatedDate = now },
+                    new Ward { Name = "Maternity Ward", Description = "Ante/postnatal ward",      TotalBeds = 8,  OccupiedBeds = 0, IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            var wards = await _context.Wards.ToListAsync();
+
+            if (!await _context.Beds.AnyAsync())
+            {
+                var beds = new List<Bed>();
+                foreach (var ward in wards)
+                {
+                    var bedType = ward.Name == "ICU" ? "ICU" : ward.Name == "Maternity Ward" ? "Semi-Private" : "General";
+                    for (var i = 1; i <= ward.TotalBeds; i++)
+                    {
+                        beds.Add(new Bed
+                        {
+                            WardId      = ward.Id,
+                            BedNumber   = $"{ward.Name[0]}{i:D2}",
+                            Block       = "A",
+                            Floor       = i <= 5 ? "Ground" : "First",
+                            RoomNumber  = $"R{i:D2}",
+                            BedType     = bedType,
+                            DailyCharges = bedType == "ICU" ? 5000m : bedType == "Semi-Private" ? 2000m : 800m,
+                            Status      = "Available",
+                            IsActive    = true,
+                            CreatedDate = now
+                        });
+                    }
+                }
+                _context.Beds.AddRange(beds);
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Patients ─────────────────────────────────────────────────────
+            if (!await _context.Patients.AnyAsync(p => p.PatientId.StartsWith("P")))
+            {
+                var patientData = new[]
+                {
+                    ("P00001", "Rahul",    "Gupta",     "rahul.gupta@mail.com",     "9900000001", "1985-03-12", "Male",   "O+",  "Hypertension"),
+                    ("P00002", "Anjali",   "Singh",     "anjali.singh@mail.com",    "9900000002", "1992-07-24", "Female", "A+",  ""),
+                    ("P00003", "Mohan",    "Kumar",     "mohan.kumar@mail.com",     "9900000003", "1970-11-05", "Male",   "B+",  "Diabetes"),
+                    ("P00004", "Lata",     "Mishra",    "lata.mishra@mail.com",     "9900000004", "1988-01-30", "Female", "AB+", ""),
+                    ("P00005", "Deepak",   "Sharma",    "deepak.sharma@mail.com",   "9900000005", "1995-06-15", "Male",   "O-",  "Asthma"),
+                    ("P00006", "Nisha",    "Yadav",     "nisha.yadav@mail.com",     "9900000006", "1999-09-20", "Female", "A-",  ""),
+                    ("P00007", "Suresh",   "Patel",     "suresh.patel@mail.com",    "9900000007", "1960-04-08", "Male",   "B-",  "Arthritis"),
+                    ("P00008", "Kavita",   "Mehta",     "kavita.mehta@mail.com",    "9900000008", "1975-12-17", "Female", "AB-", ""),
+                    ("P00009", "Arun",     "Nair",      "arun.nair@mail.com",       "9900000009", "2000-02-28", "Male",   "O+",  ""),
+                    ("P00010", "Preethi",  "Reddy",     "preethi.reddy@mail.com",   "9900000010", "1983-08-11", "Female", "A+",  "Migraine"),
+                    ("P00011", "Sanjay",   "Joshi",     "sanjay.joshi@mail.com",    "9900000011", "1968-05-22", "Male",   "B+",  "COPD"),
+                    ("P00012", "Rekha",    "Verma",     "rekha.verma@mail.com",     "9900000012", "1991-10-03", "Female", "O+",  ""),
+                    ("P00013", "Vijay",    "Desai",     "vijay.desai@mail.com",     "9900000013", "2005-07-14", "Male",   "A+",  ""),
+                    ("P00014", "Savitha",  "Krishnan",  "savitha.k@mail.com",       "9900000014", "1955-03-25", "Female", "B+",  "Hypertension, Diabetes"),
+                    ("P00015", "Ramesh",   "Iyer",      "ramesh.iyer@mail.com",     "9900000015", "1977-11-30", "Male",   "AB+", "")
+                };
+
+                foreach (var (pid, fn, ln, email, phone, dob, gender, bg, history) in patientData)
+                {
+                    _context.Patients.Add(new Patient
+                    {
+                        PatientId                = pid,
+                        FirstName                = fn,
+                        LastName                 = ln,
+                        Email                    = email,
+                        Phone                    = phone,
+                        DateOfBirth              = DateTime.Parse(dob),
+                        Gender                   = gender,
+                        BloodGroup               = bg,
+                        MedicalHistory           = history,
+                        Address                  = "123 Sample Street",
+                        City                     = "Mumbai",
+                        State                    = "Maharashtra",
+                        Country                  = "India",
+                        PostalCode               = "400001",
+                        EmergencyContactName     = "Family Member",
+                        EmergencyContactPhone    = "9911111111",
+                        EmergencyContactRelation = "Spouse",
+                        Allergies                = string.Empty,
+                        GuardianName             = string.Empty,
+                        GuardianPhone            = string.Empty,
+                        MaritalStatus            = "Married",
+                        Occupation               = "Service",
+                        ProfileImagePath         = string.Empty,
+                        IsActive                 = true,
+                        CreatedDate              = now.AddDays(-180),
+                        LastVisitDate            = now.AddDays(-7)
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            var patients = await _context.Patients
+                .Where(p => p.PatientId.StartsWith("P"))
+                .ToListAsync();
+
+            if (patients.Count == 0)
+            {
+                return; // safety guard – dependents below need patients
+            }
+
+            // ── Appointments ─────────────────────────────────────────────────
+            if (!await _context.Appointments.AnyAsync())
+            {
+                var apptStatuses = new[] { "Scheduled", "Confirmed", "Completed", "Cancelled" };
+                var apptTypes    = new[] { "OPD", "Consultation", "Follow-up" };
+
+                for (var i = 0; i < patients.Count; i++)
+                {
+                    var doctor = doctors[i % doctors.Count];
+                    _context.Appointments.Add(new Appointment
+                    {
+                        PatientId       = patients[i].Id,
+                        DoctorId        = doctor.Id,
+                        AppointmentDate = now.AddDays(-30 + i * 2).Date,
+                        AppointmentTime = new TimeSpan(9 + (i % 6), 0, 0),
+                        Status          = apptStatuses[i % apptStatuses.Length],
+                        AppointmentType = apptTypes[i % apptTypes.Length],
+                        Priority        = i % 4 == 0 ? "High" : "Normal",
+                        Symptoms        = "General check-up",
+                        Notes           = "Routine visit",
+                        CreatedDate     = now.AddDays(-31 + i * 2),
+                        CreatedBy       = "System"
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── OPD Visits ───────────────────────────────────────────────────
+            if (!await _context.OPDVisits.AnyAsync())
+            {
+                for (var i = 0; i < Math.Min(10, patients.Count); i++)
+                {
+                    var doctor = doctors[i % doctors.Count];
+                    _context.OPDVisits.Add(new OPDVisit
+                    {
+                        PatientId       = patients[i].Id,
+                        DoctorId        = doctor.Id,
+                        VisitDate       = now.AddDays(-20 + i),
+                        Symptoms        = i % 3 == 0 ? "Fever and headache" : i % 3 == 1 ? "Chest pain" : "Back pain",
+                        Diagnosis       = i % 3 == 0 ? "Viral fever" : i % 3 == 1 ? "Angina pectoris" : "Lumbar strain",
+                        Treatment       = "Medication prescribed",
+                        Prescription    = "Tab Paracetamol 500mg TID × 5 days",
+                        Notes           = "Follow up in 1 week if not improving",
+                        ConsultationFee = 500m,
+                        PaymentStatus   = i % 4 == 3 ? "Pending" : "Paid",
+                        CreatedDate     = now.AddDays(-20 + i),
+                        CreatedBy       = "System"
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── IPD Admissions ───────────────────────────────────────────────
+            var availableBeds = await _context.Beds
+                .Where(b => b.Status == "Available" && b.IsActive)
+                .Take(5)
+                .ToListAsync();
+
+            if (!await _context.IPDAdmissions.AnyAsync() && availableBeds.Count > 0)
+            {
+                for (var i = 0; i < Math.Min(5, patients.Count); i++)
+                {
+                    var bed    = i < availableBeds.Count ? availableBeds[i] : null;
+                    var doctor = doctors[i % doctors.Count];
+                    var admitted = now.AddDays(-10 + i);
+                    var discharged = i % 3 == 0 ? (DateTime?)null : admitted.AddDays(3);
+
+                    _context.IPDAdmissions.Add(new IPDAdmission
+                    {
+                        PatientId     = patients[i + 5].Id,
+                        DoctorId      = doctor.Id,
+                        BedId         = bed?.Id,
+                        AdmissionDate = admitted,
+                        DischargeDate = discharged,
+                        AdmissionType = i % 2 == 0 ? "Emergency" : "Planned",
+                        Diagnosis     = i % 2 == 0 ? "Acute myocardial infarction" : "Elective surgery",
+                        Treatment     = "IV medications and monitoring",
+                        Notes         = "Patient stable",
+                        Status        = discharged.HasValue ? "Discharged" : "Admitted",
+                        DailyCharges  = bed?.DailyCharges ?? 800m,
+                        CreatedDate   = admitted,
+                        CreatedBy     = "System"
+                    });
+
+                    if (bed != null)
+                    {
+                        bed.Status    = discharged.HasValue ? "Available" : "Occupied";
+                        bed.PatientId = discharged.HasValue ? null : patients[i + 5].Id;
+                    }
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Bills, BillItems & Payments ──────────────────────────────────
+            if (!await _context.Bills.AnyAsync())
+            {
+                var billTypes = new[] { "OPD", "IPD", "Pharmacy", "Lab" };
+                for (var i = 0; i < Math.Min(12, patients.Count); i++)
+                {
+                    var total  = 500m + i * 200m;
+                    var paid   = i % 3 == 2 ? 0m : total;
+                    var status = paid == 0m ? "Unpaid" : paid < total ? "Partially Paid" : "Paid";
+
+                    var bill = new Bill
+                    {
+                        BillNumber    = $"BILL{(i + 1):D5}",
+                        PatientId     = patients[i].Id,
+                        BillDate      = now.AddDays(-15 + i),
+                        DueDate       = now.AddDays(-15 + i + 30),
+                        TotalAmount   = total,
+                        PaidAmount    = paid,
+                        PendingAmount = total - paid,
+                        Status        = status,
+                        BillType      = billTypes[i % billTypes.Length],
+                        Notes         = string.Empty,
+                        CreatedDate   = now.AddDays(-15 + i),
+                        CreatedBy     = "System"
+                    };
+                    _context.Bills.Add(bill);
+                    await _context.SaveChangesAsync();
+
+                    _context.BillItems.Add(new BillItem
+                    {
+                        BillId      = bill.Id,
+                        ItemName    = "Consultation Fee",
+                        ItemType    = "Service",
+                        Quantity    = 1,
+                        UnitPrice   = total * 0.6m,
+                        TotalPrice  = total * 0.6m,
+                        Description = "Doctor consultation",
+                        CreatedDate = bill.BillDate
+                    });
+                    _context.BillItems.Add(new BillItem
+                    {
+                        BillId      = bill.Id,
+                        ItemName    = "Medicines",
+                        ItemType    = "Medicine",
+                        Quantity    = 1,
+                        UnitPrice   = total * 0.4m,
+                        TotalPrice  = total * 0.4m,
+                        Description = "Prescribed drugs",
+                        CreatedDate = bill.BillDate
+                    });
+
+                    if (paid > 0m)
+                    {
+                        _context.Payments.Add(new Payment
+                        {
+                            BillId        = bill.Id,
+                            PaymentMethod = i % 2 == 0 ? "Cash" : "Card",
+                            Amount        = paid,
+                            TransactionId = $"TXN{(i + 1):D6}",
+                            PaymentGateway = string.Empty,
+                            Status        = "Completed",
+                            Notes         = string.Empty,
+                            PaymentDate   = bill.BillDate,
+                            ProcessedBy   = "Receptionist"
+                        });
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // ── Transactions ─────────────────────────────────────────────────
+            if (!await _context.Transactions.AnyAsync())
+            {
+                for (var i = 1; i <= 10; i++)
+                {
+                    _context.Transactions.Add(new Transaction
+                    {
+                        TransactionId   = $"TRX{i:D6}",
+                        TransactionType = i % 3 == 0 ? "Refund" : "Payment",
+                        Amount          = 500m * i,
+                        Description     = i % 3 == 0 ? "Partial refund" : "Bill payment received",
+                        ReferenceNumber = $"BILL{i:D5}",
+                        TransactionDate = now.AddDays(-i),
+                        ProcessedBy     = "Admin",
+                        Status          = "Completed"
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Medicines ────────────────────────────────────────────────────
+            if (!await _context.Medicines.AnyAsync())
+            {
+                _context.Medicines.AddRange(
+                    new Medicine { Name = "Paracetamol 500mg",   GenericName = "Acetaminophen",   Category = "Analgesic",      DosageForm = "Tablet",    Strength = "500mg",  Manufacturer = "Sun Pharma",   UnitPrice = 2.50m,   StockQuantity = 500, MinStockLevel = 50, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT001", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Amoxicillin 250mg",   GenericName = "Amoxicillin",     Category = "Antibiotic",     DosageForm = "Capsule",   Strength = "250mg",  Manufacturer = "Cipla",        UnitPrice = 5.00m,   StockQuantity = 300, MinStockLevel = 30, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT002", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Metformin 500mg",     GenericName = "Metformin HCl",   Category = "Antidiabetic",   DosageForm = "Tablet",    Strength = "500mg",  Manufacturer = "Dr. Reddy",    UnitPrice = 3.50m,   StockQuantity = 400, MinStockLevel = 40, ExpiryDate = now.AddYears(3),  BatchNumber = "BAT003", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Atorvastatin 10mg",   GenericName = "Atorvastatin",    Category = "Statin",         DosageForm = "Tablet",    Strength = "10mg",   Manufacturer = "Lupin",        UnitPrice = 8.00m,   StockQuantity = 200, MinStockLevel = 20, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT004", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Omeprazole 20mg",     GenericName = "Omeprazole",      Category = "PPI",            DosageForm = "Capsule",   Strength = "20mg",   Manufacturer = "Torrent",      UnitPrice = 4.00m,   StockQuantity = 350, MinStockLevel = 35, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT005", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Salbutamol 100mcg",   GenericName = "Salbutamol",      Category = "Bronchodilator", DosageForm = "Inhaler",   Strength = "100mcg", Manufacturer = "GSK",          UnitPrice = 120.00m, StockQuantity = 100, MinStockLevel = 10, ExpiryDate = now.AddYears(1),  BatchNumber = "BAT006", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Ibuprofen 400mg",     GenericName = "Ibuprofen",       Category = "NSAID",          DosageForm = "Tablet",    Strength = "400mg",  Manufacturer = "Abbott",       UnitPrice = 3.00m,   StockQuantity = 450, MinStockLevel = 50, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT007", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Ceftriaxone 1g",      GenericName = "Ceftriaxone",     Category = "Antibiotic",     DosageForm = "Injection", Strength = "1g",     Manufacturer = "Pfizer",       UnitPrice = 80.00m,  StockQuantity = 150, MinStockLevel = 15, ExpiryDate = now.AddMonths(18), BatchNumber = "BAT008", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Ondansetron 4mg",     GenericName = "Ondansetron",     Category = "Antiemetic",     DosageForm = "Tablet",    Strength = "4mg",    Manufacturer = "Zydus",        UnitPrice = 6.50m,   StockQuantity = 250, MinStockLevel = 25, ExpiryDate = now.AddYears(2),  BatchNumber = "BAT009", IsActive = true, CreatedDate = now },
+                    new Medicine { Name = "Amlodipine 5mg",      GenericName = "Amlodipine",      Category = "Antihypertensive", DosageForm = "Tablet",  Strength = "5mg",    Manufacturer = "Cipla",        UnitPrice = 4.50m,   StockQuantity = 380, MinStockLevel = 40, ExpiryDate = now.AddYears(3),  BatchNumber = "BAT010", IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Lab Tests ────────────────────────────────────────────────────
+            if (!await _context.LabTests.AnyAsync())
+            {
+                _context.LabTests.AddRange(
+                    new LabTest { TestName = "Complete Blood Count",       TestCode = "CBC",    Category = "Hematology",    Description = "Full blood panel",           Price = 350m,  NormalRange = "RBC: 4.5-5.5 M/uL",   Unit = "M/uL",    PreparationTimeHours = 2, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Blood Glucose Fasting",      TestCode = "FBS",    Category = "Biochemistry",  Description = "Fasting blood sugar",        Price = 150m,  NormalRange = "70-110 mg/dL",         Unit = "mg/dL",   PreparationTimeHours = 1, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Lipid Profile",              TestCode = "LIPID",  Category = "Biochemistry",  Description = "Cholesterol & triglycerides", Price = 500m, NormalRange = "Total < 200 mg/dL",    Unit = "mg/dL",   PreparationTimeHours = 4, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Liver Function Test",        TestCode = "LFT",    Category = "Biochemistry",  Description = "Liver enzyme panel",         Price = 600m,  NormalRange = "ALT: 7-56 U/L",        Unit = "U/L",     PreparationTimeHours = 4, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Kidney Function Test",       TestCode = "KFT",    Category = "Biochemistry",  Description = "Renal panel",                Price = 600m,  NormalRange = "Creatinine: 0.7-1.3",  Unit = "mg/dL",   PreparationTimeHours = 4, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Thyroid Stimulating Hormone",TestCode = "TSH",    Category = "Endocrinology", Description = "Thyroid function",           Price = 400m,  NormalRange = "0.4-4.0 mIU/L",       Unit = "mIU/L",   PreparationTimeHours = 6, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "Urine Routine",              TestCode = "URINE",  Category = "Urology",       Description = "Routine urinalysis",         Price = 120m,  NormalRange = "pH 4.5-8.0",           Unit = "pH",      PreparationTimeHours = 1, IsActive = true, CreatedDate = now },
+                    new LabTest { TestName = "HbA1c",                      TestCode = "HBA1C",  Category = "Endocrinology", Description = "3-month glucose average",    Price = 450m,  NormalRange = "< 5.7%",               Unit = "%",       PreparationTimeHours = 4, IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Lab Results ──────────────────────────────────────────────────
+            if (!await _context.LabResults.AnyAsync())
+            {
+                var labTests = await _context.LabTests.ToListAsync();
+                var resultPatients = patients.Take(6).ToList();
+
+                foreach (var patient in resultPatients)
+                {
+                    var test = labTests[resultPatients.IndexOf(patient) % labTests.Count];
+                    _context.LabResults.Add(new LabResult
+                    {
+                        PatientId       = patient.Id,
+                        LabTestId       = test.Id,
+                        OrderNumber     = $"LAB{patient.Id:D5}",
+                        OrderDate       = now.AddDays(-5),
+                        ResultDate      = now.AddDays(-4),
+                        ResultValue     = "Within normal range",
+                        NormalRange     = test.NormalRange,
+                        Unit            = test.Unit,
+                        Interpretation  = "Normal",
+                        Status          = "Completed",
+                        PerformedBy     = "Lab Technician",
+                        VerifiedBy      = "Dr. Arjun Sharma",
+                        Notes           = string.Empty,
+                        CreatedDate     = now.AddDays(-5)
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Radiology Tests ──────────────────────────────────────────────
+            if (!await _context.RadiologyTests.AnyAsync())
+            {
+                _context.RadiologyTests.AddRange(
+                    new RadiologyTest { TestName = "Chest X-Ray",         TestCode = "CXR",   Category = "X-Ray",     Description = "Posteroanterior chest view",  Price = 300m,  PreparationTimeHours = 0, SpecialInstructions = string.Empty,         RequiresContrast = false, IsActive = true, CreatedDate = now },
+                    new RadiologyTest { TestName = "Abdominal Ultrasound", TestCode = "USG-A", Category = "Ultrasound", Description = "Upper abdomen sonography",   Price = 600m,  PreparationTimeHours = 6, SpecialInstructions = "Fasting required",   RequiresContrast = false, IsActive = true, CreatedDate = now },
+                    new RadiologyTest { TestName = "CT Scan Brain",        TestCode = "CT-B",  Category = "CT Scan",   Description = "Non-contrast CT head",        Price = 3500m, PreparationTimeHours = 0, SpecialInstructions = string.Empty,         RequiresContrast = false, IsActive = true, CreatedDate = now },
+                    new RadiologyTest { TestName = "MRI Spine",            TestCode = "MRI-S", Category = "MRI",       Description = "Lumbar spine MRI",            Price = 6000m, PreparationTimeHours = 0, SpecialInstructions = "Remove metal objects", RequiresContrast = false, IsActive = true, CreatedDate = now },
+                    new RadiologyTest { TestName = "Echocardiography",     TestCode = "ECHO",  Category = "Ultrasound", Description = "Cardiac ultrasound",         Price = 1500m, PreparationTimeHours = 0, SpecialInstructions = string.Empty,         RequiresContrast = false, IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Blood Inventory ──────────────────────────────────────────────
+            if (!await _context.BloodInventories.AnyAsync())
+            {
+                foreach (var bg in new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" })
+                {
+                    _context.BloodInventories.Add(new BloodInventory
+                    {
+                        BloodGroup       = bg,
+                        UnitsAvailable   = 10,
+                        UnitsReserved    = 2,
+                        MinimumLevel     = 5,
+                        LastUpdatedDate  = now,
+                        CreatedDate      = now
+                    });
+                }
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Leave Types ──────────────────────────────────────────────────
+            if (!await _context.LeaveTypes.AnyAsync())
+            {
+                _context.LeaveTypes.AddRange(
+                    new LeaveType { Name = "Annual Leave",     Description = "Earned paid leave",                   DefaultDaysPerYear = 21, IsActive = true, CreatedDate = now },
+                    new LeaveType { Name = "Sick Leave",       Description = "Leave for illness",                   DefaultDaysPerYear = 10, IsActive = true, CreatedDate = now },
+                    new LeaveType { Name = "Casual Leave",     Description = "Short-notice personal leave",         DefaultDaysPerYear = 7,  IsActive = true, CreatedDate = now },
+                    new LeaveType { Name = "Maternity Leave",  Description = "Maternity/paternity leave",           DefaultDaysPerYear = 84, IsActive = true, CreatedDate = now },
+                    new LeaveType { Name = "Emergency Leave",  Description = "Unplanned emergency absence",         DefaultDaysPerYear = 3,  IsActive = true, CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            // ── Ambulance Vehicles ───────────────────────────────────────────
+            if (!await _context.AmbulanceVehicles.AnyAsync())
+            {
+                _context.AmbulanceVehicles.AddRange(
+                    new AmbulanceVehicle { VehicleNumber = "MH-01-AB-1001", DriverName = "Ramesh Yadav",  DriverContact = "9800001001", Model = "Tata Winger", Status = "Available", Notes = "Basic life support unit", CreatedDate = now },
+                    new AmbulanceVehicle { VehicleNumber = "MH-01-AB-1002", DriverName = "Suresh Kadam",  DriverContact = "9800001002", Model = "Force Traveller", Status = "Available", Notes = "Advanced life support unit", CreatedDate = now }
+                );
+                await _context.SaveChangesAsync();
+            }
+
+            _logger.LogInformation("SeedDummyDataAsync completed successfully.");
         }
     }
 }

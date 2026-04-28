@@ -282,6 +282,8 @@ body {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 45%);
 }
 
+.theme-dark { background: linear-gradient(135deg, #000000, #121212 60%, #2f2f2f); }
+.theme-light { background: linear-gradient(135deg, #ffffff, #f4f4f4 60%, #d7d7d7); }
 .theme-sunflower { background: linear-gradient(135deg, #ffd166, #f4a261 60%, #c77d00); }
 .theme-snowflake { background: linear-gradient(135deg, #caf0f8, #90e0ef 60%, #2a6f97); }
 .theme-ocean { background: linear-gradient(135deg, #ade8f4, #48cae4 60%, #0077b6); }

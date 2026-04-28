@@ -1,0 +1,56 @@
+:root {
+    --hms-primary: #0f4c81;
+    --hms-primary-dark: #0b3a62;
+    --hms-accent: #38bdf8;
+    --hms-bg: #ffffff;
+    --hms-text: #0f172a;
+
+    --sb-bg: #ffffff;
+    --sb-border: rgba(15, 23, 42, 0.08);
+    --sb-text: #0f172a;
+    --sb-text-muted: #64748b;
+    --sb-text-hover: #020617;
+    --sb-active-bg: rgba(56, 189, 248, 0.12);
+    --sb-active-bar: #0f4c81;
+    --sb-hover-bg: rgba(15, 23, 42, 0.04);
+}
+
+body {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    color: var(--hms-text);
+}
+
+.card {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
+    color: var(--hms-text);
+}
+
+.table {
+    color: var(--hms-text);
+}
+
+.table-light,
+.table-light > th,
+.table-light > td {
+    background-color: #f8fafc;
+    color: var(--hms-text);
+}
+
+.list-group-item {
+    background-color: #ffffff;
+    border-color: #e2e8f0;
+    color: var(--hms-text);
+}
+
+.form-control,
+.form-select {
+    background-color: #ffffff;
+    border-color: #cbd5e1;
+    color: var(--hms-text);
+}
+
+.footer {
+    background-color: #ffffff;
+    color: var(--hms-text);
+}

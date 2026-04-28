@@ -26,6 +26,8 @@ namespace MedyxHMS.Controllers
         private readonly IWebHostEnvironment _env;
         private static readonly IReadOnlyList<ThemeOptionViewModel> StaffThemes = new List<ThemeOptionViewModel>
         {
+            new() { ThemeId = "dark", Name = "Dark", Description = "Pure black workspace theme with high-contrast text and controls.", PreviewClass = "theme-dark" },
+            new() { ThemeId = "light", Name = "Light", Description = "Clean white workspace theme with bright surfaces and crisp contrast.", PreviewClass = "theme-light" },
             new() { ThemeId = "sunflower", Name = "Sunflower", Description = "Warm and optimistic with bright highlights.", PreviewClass = "theme-sunflower" },
             new() { ThemeId = "snowflake", Name = "Snowflake", Description = "Clean, crisp and high-clarity clinical palette.", PreviewClass = "theme-snowflake" },
             new() { ThemeId = "ocean", Name = "Ocean", Description = "Cool blue-green tones for calm focus.", PreviewClass = "theme-ocean" },
@@ -1225,6 +1227,8 @@ namespace MedyxHMS.Controllers
             var candidate = (input ?? string.Empty).Trim().ToLowerInvariant();
             return candidate switch
             {
+                "dark" => "dark",
+                "light" => "light",
                 "sunflower" => "sunflower",
                 "snowflake" => "snowflake",
                 "ocean" => "ocean",

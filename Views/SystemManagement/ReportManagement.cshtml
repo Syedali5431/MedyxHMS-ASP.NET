@@ -102,20 +102,23 @@
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="reportKey" value="@row.Key" />
                                         <input type="hidden" name="returnUrl" value="@returnUrl" />
-                                        <select name="roles" multiple class="form-select form-select-sm" size="5">
+                                        <div class="border rounded p-2 bg-light-subtle" style="max-height: 180px; overflow-y: auto;">
                                             @foreach (var role in Model.AvailableRoles)
                                             {
-                                                if (row.AssignedRoles.Contains(role, StringComparer.OrdinalIgnoreCase))
-                                                {
-                                                    <option value="@role" selected>@role</option>
-                                                }
-                                                else
-                                                {
-                                                    <option value="@role">@role</option>
-                                                }
+                                                var isAssigned = row.AssignedRoles.Contains(role, StringComparer.OrdinalIgnoreCase);
+                                                var roleInputId = $"role_{row.Key}_{role}".Replace(" ", "_");
+                                                <div class="form-check mb-1">
+                                                    <input class="form-check-input"
+                                                           type="checkbox"
+                                                           name="roles"
+                                                           value="@role"
+                                                           id="@roleInputId"
+                                                           checked="@isAssigned" />
+                                                    <label class="form-check-label small" for="@roleInputId">@role</label>
+                                                </div>
                                             }
-                                        </select>
-                                        <div class="small text-muted">Leave empty to allow all roles</div>
+                                        </div>
+                                        <div class="small text-muted">Check one or more roles to restrict access. Leave all unchecked to allow all roles.</div>
                                         <button type="submit" class="btn btn-sm btn-outline-primary w-100">Save Roles</button>
                                     </form>
                                 </td>

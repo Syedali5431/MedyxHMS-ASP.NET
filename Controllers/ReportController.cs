@@ -3,6 +3,7 @@ using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Text.RegularExpressions;
 
 namespace MedyxHMS.Controllers
 {
@@ -155,7 +156,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> ExportLegacyReport(string reportKey, string format = "pdf", DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IActionResult> ExportLegacyReport(string reportKey, string format = "pdf", DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null, string? fileName = null)
         {
             var now = DateTime.UtcNow;
             var normalizedFormat = (format ?? "pdf").Trim().ToLowerInvariant();
@@ -283,14 +284,31 @@ namespace MedyxHMS.Controllers
             }
 
             var safeDate = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            var safeFileName = BuildSafeExportFileName(fileName, title, safeDate);
             if (normalizedFormat == "excel" || normalizedFormat == "xlsx")
             {
                 var bytes = _exportService.BuildExcel(reportKey, headers, rows);
-                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{reportKey}_{safeDate}.xlsx");
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{safeFileName}.xlsx");
             }
 
             var pdf = _exportService.BuildPdfTable(title, headers, rows);
-            return File(pdf, "application/pdf", $"{reportKey}_{safeDate}.pdf");
+            return File(pdf, "application/pdf", $"{safeFileName}.pdf");
+        }
+
+        private static string BuildSafeExportFileName(string? requestedFileName, string fallbackTitle, string timestamp)
+        {
+            var candidate = string.IsNullOrWhiteSpace(requestedFileName)
+                ? $"{fallbackTitle}_{timestamp}"
+                : requestedFileName.Trim();
+
+            candidate = Regex.Replace(candidate, @"\.[A-Za-z0-9]{2,5}$", string.Empty);
+            candidate = Regex.Replace(candidate, @"[^A-Za-z0-9\-_ ]", " ");
+            candidate = Regex.Replace(candidate, @"\s+", " ").Trim();
+
+            if (string.IsNullOrWhiteSpace(candidate))
+                candidate = $"report_{timestamp}";
+
+            return candidate.Replace(' ', '_');
         }
 
         [HttpGet]

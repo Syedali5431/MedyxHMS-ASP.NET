@@ -1,0 +1,62 @@
+:root {
+    --hms-primary: #f5f5f5;
+    --hms-primary-dark: #cfcfcf;
+    --hms-accent: #7dd3fc;
+    --hms-bg: #000000;
+    --hms-text: #f8fafc;
+
+    --sb-bg: #050505;
+    --sb-border: rgba(255, 255, 255, 0.08);
+    --sb-text: #f1f5f9;
+    --sb-text-muted: #94a3b8;
+    --sb-text-hover: #ffffff;
+    --sb-active-bg: rgba(125, 211, 252, 0.18);
+    --sb-active-bar: #7dd3fc;
+    --sb-hover-bg: rgba(255, 255, 255, 0.06);
+}
+
+body {
+    background: linear-gradient(180deg, #0a0a0a 0%, var(--hms-bg) 100%);
+    color: var(--hms-text);
+}
+
+.card {
+    background-color: #111111;
+    border-color: #262626;
+    color: var(--hms-text);
+}
+
+.table {
+    color: var(--hms-text);
+}
+
+.table-light,
+.table-light > th,
+.table-light > td {
+    background-color: #171717;
+    color: var(--hms-text);
+}
+
+.list-group-item {
+    background-color: #111111;
+    border-color: #262626;
+    color: var(--hms-text);
+}
+
+.form-control,
+.form-select {
+    background-color: #0f172a;
+    border-color: #334155;
+    color: var(--hms-text);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: #0f172a;
+    color: var(--hms-text);
+}
+
+.footer {
+    background-color: #050505;
+    color: var(--hms-text);
+}

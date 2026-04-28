@@ -20,7 +20,7 @@
                 <input type="date" id="endDate" class="form-control" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
             </div>
             <div class="col-md-4 d-flex align-items-end">
-                <button class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
+                <button type="button" class="btn btn-primary w-100" onclick="reloadReport()">Generate</button>
             </div>
         </div>
 
@@ -98,9 +98,9 @@
 
         <!-- Export Buttons -->
         <div class="mb-3">
-            <button class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
-            <button class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
-            <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportToPDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="exportToExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
         </div>
 
         <!-- OPD Visits Table -->
@@ -161,15 +161,25 @@ function reloadReport() {
     location.href = `@Url.Action("OPDLegacyReport")?startDate=${startDate}&endDate=${endDate}`;
 }
 
-function exportToPDF() {
+function exportReport(format) {
     const startDate = document.getElementById('startDate').value;
     const endDate = document.getElementById('endDate').value;
-    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R4&format=pdf&startDate=${startDate}&endDate=${endDate}`;
+    window.reportDownloadHelper.downloadReport('@Url.Action("ExportLegacyReport", "Report")', {
+        format,
+        defaultFileName: 'opd_report',
+        query: {
+            reportKey: 'R4',
+            startDate,
+            endDate
+        }
+    });
+}
+
+function exportToPDF() {
+    exportReport('pdf');
 }
 
 function exportToExcel() {
-    const startDate = document.getElementById('startDate').value;
-    const endDate = document.getElementById('endDate').value;
-    window.location.href = `@Url.Action("ExportLegacyReport", "Report")?reportKey=R4&format=excel&startDate=${startDate}&endDate=${endDate}`;
+    exportReport('excel');
 }
 </script>
