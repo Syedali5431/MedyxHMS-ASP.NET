@@ -954,3 +954,10 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\Irony.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\SixLabors.Fonts.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\System.IO.Packaging.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\XLParser.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\ClosedXML.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\ExcelNumberFormat.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\Irony.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\SixLabors.Fonts.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\System.IO.Packaging.dll
+e:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\XLParser.dll
