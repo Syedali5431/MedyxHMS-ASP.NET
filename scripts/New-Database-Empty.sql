@@ -1496,7 +1496,8 @@ CREATE INDEX [IX_UserActionLogs_StaffId] ON [UserActionLogs] ([StaffId]);
 GO
 
 
-/* =========================`r`n   Utility views
+/* =========================
+    Utility views
    ========================= */
 CREATE OR ALTER VIEW [dbo].[vw_StaffWithRoles]
 AS

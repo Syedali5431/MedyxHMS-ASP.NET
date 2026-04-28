@@ -23,6 +23,7 @@ namespace MedyxHMS.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly ILogger<SystemManagementController> _logger;
+        private readonly IWebHostEnvironment _env;
         private static readonly IReadOnlyList<ThemeOptionViewModel> StaffThemes = new List<ThemeOptionViewModel>
         {
             new() { ThemeId = "sunflower", Name = "Sunflower", Description = "Warm and optimistic with bright highlights.", PreviewClass = "theme-sunflower" },
@@ -39,7 +40,13 @@ namespace MedyxHMS.Controllers
             new() { ThemeId = "rose", Name = "Rose", Description = "Elegant rose pink with subtle highlights.", PreviewClass = "theme-rose" },
             new() { ThemeId = "sand", Name = "Sand", Description = "Earthy sand and beige for a neutral palette.", PreviewClass = "theme-sand" },
             new() { ThemeId = "plum", Name = "Plum", Description = "Deep plum and violet for a bold look.", PreviewClass = "theme-plum" },
-            new() { ThemeId = "aqua", Name = "Aqua", Description = "Fresh aqua and teal for a modern feel.", PreviewClass = "theme-aqua" }
+            new() { ThemeId = "aqua", Name = "Aqua", Description = "Fresh aqua and teal for a modern feel.", PreviewClass = "theme-aqua" },
+            new() { ThemeId = "crimson", Name = "Crimson", Description = "Bold red tones for a strong, energetic workspace.", PreviewClass = "theme-crimson" },
+            new() { ThemeId = "amber", Name = "Amber", Description = "Warm amber and golden orange for a rich palette.", PreviewClass = "theme-amber" },
+            new() { ThemeId = "arctic", Name = "Arctic", Description = "Icy blue tones for a crisp, cool clinical look.", PreviewClass = "theme-arctic" },
+            new() { ThemeId = "chocolate", Name = "Chocolate", Description = "Warm cocoa and golden accents for a cozy feel.", PreviewClass = "theme-chocolate" },
+            new() { ThemeId = "indigo", Name = "Indigo", Description = "Deep indigo and violet for a bold, immersive look.", PreviewClass = "theme-indigo" },
+            new() { ThemeId = "lime", Name = "Lime", Description = "Vibrant lime green for a fresh, energetic workspace.", PreviewClass = "theme-lime" }
         };
 
         public SystemManagementController(
@@ -50,7 +57,8 @@ namespace MedyxHMS.Controllers
             IExportService exportService,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
-            ILogger<SystemManagementController> logger)
+            ILogger<SystemManagementController> logger,
+            IWebHostEnvironment env)
         {
             _context = context;
             _reportCatalogVisibilityService = reportCatalogVisibilityService;
@@ -60,6 +68,7 @@ namespace MedyxHMS.Controllers
             _userManager = userManager;
             _roleManager = roleManager;
             _logger = logger;
+            _env = env;
         }
 
         [HttpGet]
@@ -1133,7 +1142,14 @@ namespace MedyxHMS.Controllers
                 themeId = NormalizeThemeId(preference?.ThemeId);
             }
 
-            return Redirect($"/css/themes/{themeId}.css");
+            var cssPath = Path.Combine(_env.WebRootPath, "css", "themes", $"{themeId}.css");
+            if (!System.IO.File.Exists(cssPath))
+                cssPath = Path.Combine(_env.WebRootPath, "css", "themes", "sunflower.css");
+
+            var cssContent = await System.IO.File.ReadAllTextAsync(cssPath);
+            Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
+            Response.Headers["Pragma"] = "no-cache";
+            return Content(cssContent, "text/css");
         }
 
         private static string NormalizeThemeId(string? input)
@@ -1156,6 +1172,12 @@ namespace MedyxHMS.Controllers
                 "sand" => "sand",
                 "plum" => "plum",
                 "aqua" => "aqua",
+                "crimson" => "crimson",
+                "amber" => "amber",
+                "arctic" => "arctic",
+                "chocolate" => "chocolate",
+                "indigo" => "indigo",
+                "lime" => "lime",
                 _ => "sunflower"
             };
         }

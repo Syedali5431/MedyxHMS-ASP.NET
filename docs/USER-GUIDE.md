@@ -1,9 +1,9 @@
 # User Guide
 
 
-> Last Updated: 2026-04-22
-> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
-> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+> Last Updated: 2026-04-28
+> Operational Baseline: production-ready — final UAT passed 2026-04-26; all 30 modules validated.
+> References: docs/UAT-Evidence-2026-04-26.md, docs/Final-touches.md, docs/RECENT_CHANGES.md
 
 ## Audience
 
@@ -38,6 +38,43 @@ Front-desk staff, clinicians, billing staff, and patient-facing operational user
 
 - Use OPD/IPD modules for visit/admission records.
 - Use pathology, radiology, and prescription modules for diagnostics and pharmacy workflows.
+
+### Bed Management
+
+- Nurses and Admins use the Bed Management module to assign, release, and transfer patients between beds.
+- View real-time bed availability per ward/room from the Bed Management dashboard.
+- Bulk-add beds during ward setup; right-click context menu for rapid status changes.
+
+### Birth & Death Records
+
+- Receptionists and Admins register birth and death events via the Front Office / Birth & Death module.
+- Each record links to the relevant patient and generates a numbered certificate.
+
+### Ambulance
+
+- Track ambulance dispatch and pickup from the Ambulance module.
+- Receptionist and Admin roles can log and monitor ambulance requests.
+
+### Messaging
+
+- Internal messaging between staff is available to all authenticated staff roles via the Messaging module.
+- Send direct messages to colleagues; view conversation threads.
+
+### Inventory
+
+- Manage medical supply stock levels, item categories, purchase orders, and usage logs via the Inventory module.
+- Pharmacist and Admin roles have full inventory management access.
+
+### Download Center
+
+- Access authorized document downloads (reports, forms, export files) via the Download Center.
+- Available to all staff roles; content is governed by Admin/SuperAdmin upload.
+
+### Live Consultation
+
+- Doctors can initiate and manage remote consultations via the Live Consultation module.
+- Patients can join sessions from their Patient Portal.
+- Sessions are scheduled through the Appointments module.
 
 ## Patient Portal Summary
 

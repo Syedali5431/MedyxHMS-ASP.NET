@@ -1,9 +1,9 @@
 # Admin Guide
 
 
-> Last Updated: 2026-04-22
-> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
-> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+> Last Updated: 2026-04-28
+> Operational Baseline: production-ready — final UAT passed 2026-04-26; all 30 modules validated.
+> References: docs/UAT-Evidence-2026-04-26.md, docs/Final-touches.md, docs/RECENT_CHANGES.md
 
 ## Audience
 
@@ -50,6 +50,45 @@ Administrators, SuperAdmin users, and system operators.
 - Review audit activity for create/update/delete paths after go-live.
 - Review failed notification sends and investigate provider configuration.
 - Escalate data-integrity mismatches immediately if seen after migration.
+
+## Module Access Reference (Admin Role)
+
+The Admin role has access to the following modules (all subject to license entitlement):
+
+| Module | Access Level |
+|--------|--------------|
+| Dashboard | Full |
+| Patient Management | Full |
+| Appointments | Full |
+| OPD | Full |
+| IPD | Full |
+| Billing | Full |
+| Pharmacy / Prescriptions | Full |
+| Lab (Pathology) | Full |
+| Radiology | Full |
+| Blood Bank | Full |
+| Operation Theatre | Full |
+| Front Office | Full |
+| Bed Management | Full — assign, release, transfer, bulk add |
+| Attendance | Full |
+| Leave | Full |
+| Payroll | Full |
+| Certificates | Full |
+| Referrals | Full |
+| Birth & Death Records | Full |
+| Ambulance | Full |
+| TPA (Third-Party Admin) | Full |
+| Messaging | Full |
+| Inventory | Full |
+| Download Center | Full |
+| Live Consultation | Full |
+| Reports | Full |
+| CMS | Full |
+| Accounts Approval | Full |
+| Audit | Read-only |
+| License | No access (SuperAdmin only) |
+| Module Management | No access (SuperAdmin only) |
+| Chatbot Admin | No access (SuperAdmin only) |
 
 ## Change Management
 

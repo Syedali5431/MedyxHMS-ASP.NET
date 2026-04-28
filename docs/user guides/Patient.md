@@ -2,7 +2,7 @@
 
 **Role:** Patient  
 **Portal:** Patient Portal (`/PatientPortal/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -239,6 +239,18 @@ The floating AI button (bottom-right corner) is available on all portal pages.
 **Important:** The AI assistant provides general guidance only. For medical advice about your condition, diagnosis, or treatment, always consult your doctor directly.
 
 If the chatbot cannot answer your question, it will offer to connect you with hospital support.
+
+---
+
+## 9a. Live Consultation
+
+If your doctor has scheduled a remote consultation, you can join from the Patient Portal.
+
+1. Navigate to **My Appointments**.
+2. Find the appointment marked as **Live Consultation**.
+3. Click **Join Session** when the session is active (button becomes available at the scheduled time).
+4. Your doctor will be present on the other end.
+5. After the session ends, the appointment record is updated automatically.
 
 ---
 

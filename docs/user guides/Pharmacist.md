@@ -2,7 +2,7 @@
 
 **Role:** Pharmacist  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -205,6 +205,34 @@ The floating AI button (bottom-right):
 
 ---
 
+## 11. Inventory Management
+
+Navigate to **Inventory** from the navigation (if licensed and access granted).
+
+- Manage general medical supply stock (consumables, equipment, non-medicine items).
+- Create purchase orders, receive deliveries, and log usage.
+- Monitor reorder levels and stock alerts.
+- Differs from the Pharmacy Stock module — Inventory covers non-medicine supplies.
+
+---
+
+## 12. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send direct messages to doctors, nurses, or admins about prescription or stock queries.
+- View your inbox and conversation threads.
+
+---
+
+## 13. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access and download pharmacy reference materials, dosage guidelines, and policy documents.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -216,3 +244,6 @@ The floating AI button (bottom-right):
 | View expiry alerts | Dashboard widget or Expiry Alerts |
 | Process pharmacy payment | Billing → Open Bill → Pay |
 | Run pharmacy report | Reports → Pharmacy Balance / Expiry / Stock |
+| Manage inventory supplies | Inventory |
+| Send a message | Messaging → New Message |
+| Download pharmacy forms | Download Center |

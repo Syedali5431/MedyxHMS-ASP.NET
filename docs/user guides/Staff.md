@@ -2,7 +2,7 @@
 
 **Role:** Staff  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -164,6 +164,25 @@ The floating AI button (bottom-right corner) is available on all pages:
 
 ---
 
+## 10. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send direct messages to colleagues and managers.
+- View your inbox and conversation threads.
+- Use messaging for quick coordination without leaving the system.
+
+---
+
+## 11. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access HR documents, policy manuals, and forms uploaded by Admin/SuperAdmin.
+- Download the documents you need for your role.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -175,6 +194,8 @@ The floating AI button (bottom-right corner) is available on all pages:
 | Download payslip PDF | Payroll → Open Month → Download PDF |
 | Read notifications | Notifications |
 | Change password | My Profile → Change Password |
+| Send a message | Messaging → New Message |
+| Download HR documents | Download Center |
 
 ---
 

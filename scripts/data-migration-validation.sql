@@ -1,4 +1,37 @@
+IF DB_ID(N'MedyxHMS') IS NULL
+BEGIN
+    RAISERROR('Database [MedyxHMS] was not found. Run New-Database.sql first.', 16, 1);
+    RETURN;
+END;
+GO
+
+USE [MedyxHMS];
+GO
+
 SET NOCOUNT ON;
+
+DECLARE @Missing TABLE ([TableName] sysname NOT NULL);
+
+INSERT INTO @Missing ([TableName])
+SELECT t.[name]
+FROM (VALUES
+    (N'Patients'),
+    (N'Doctors'),
+    (N'Appointments'),
+    (N'Bills'),
+    (N'BillItems'),
+    (N'Payments'),
+    (N'PublicAppointmentRequests'),
+    (N'Staff')
+) AS t([name])
+WHERE OBJECT_ID(QUOTENAME(N'dbo') + N'.' + QUOTENAME(t.[name]), N'U') IS NULL;
+
+IF EXISTS (SELECT 1 FROM @Missing)
+BEGIN
+    SELECT [TableName] AS MissingTable FROM @Missing ORDER BY [TableName];
+    RAISERROR('Required tables are missing in the selected database. Run database bootstrap scripts first.', 16, 1);
+    RETURN;
+END;
 
 PRINT '=== Record Counts ===';
 SELECT 'Patients' AS [CheckName], COUNT(*) AS [Value] FROM Patients

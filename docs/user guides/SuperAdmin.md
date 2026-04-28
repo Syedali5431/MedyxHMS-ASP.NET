@@ -2,7 +2,7 @@
 
 **Role:** SuperAdmin  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -169,6 +169,43 @@ See also: [MedyxHMS-LIC.md](MedyxHMS-LIC.md) for a complete technical explanatio
 ### 5.6 Exporting the Entitlement Matrix
 - Click **Export CSV** on the License screen to download a snapshot of all module entitlements.
 - Useful for record-keeping and compliance evidence.
+
+### 5.7 Full Module Catalog (30 modules)
+
+The following module keys are available in `MedyxHMS-Lic` when generating a license. All 30 are licensable; the 8 marked as **Initial Package** are always included by the vendor tool:
+
+| Module Key | Display Name | Initial Package |
+|------------|--------------|-----------------|
+| Dashboard | Dashboard | Yes |
+| Patient | Patient Management | Yes |
+| Appointment | Appointments | Yes |
+| Billing | Billing | Yes |
+| FrontOffice | Front Office | Yes |
+| Referral | Referrals | Yes |
+| Report | Reports | Yes |
+| PatientPortal | Patient Portal | Yes |
+| OPD | Outpatient Department | — |
+| IPD | Inpatient Department | — |
+| Prescription | Prescriptions / Pharmacy | — |
+| Lab | Pathology / Laboratory | — |
+| Radiology | Radiology | — |
+| BloodBank | Blood Bank | — |
+| OperationTheatre | Operation Theatre | — |
+| Attendance | Attendance | — |
+| Leave | Leave Management | — |
+| Payroll | Payroll | — |
+| Certificate | Certificates | — |
+| Ambulance | Ambulance | — |
+| Chatbot | AI Chatbot | — |
+| CMS | Content Management | — |
+| License | License Management | — |
+| BirthDeath | Birth & Death Records | — |
+| TPA | Third-Party Admin | — |
+| Messaging | Internal Messaging | — |
+| Inventory | Inventory Management | — |
+| DownloadCenter | Download Center | — |
+| LiveConsultation | Live Consultation | — |
+| BedManagement | Bed Management | — |
 
 ---
 

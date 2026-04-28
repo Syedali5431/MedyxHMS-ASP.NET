@@ -11,26 +11,14 @@ param(
     [string]$ExpiryChoice = '2',
     [string]$CustomExpiryDate,
     [int]$MaxConcurrentUsers = 5,
-    [string[]]$Modules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License')
+    [string[]]$Modules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License','BirthDeath','TPA','Messaging','Inventory','DownloadCenter','LiveConsultation','BedManagement')
 )
 
 $ErrorActionPreference = 'Stop'
 
-$allModules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License')
+$allModules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License','BirthDeath','TPA','Messaging','Inventory','DownloadCenter','LiveConsultation','BedManagement')
+$basicModules = @('Dashboard','Patient','Appointment','Billing','FrontOffice','Referral','Report','PatientPortal')
 New-Item -ItemType Directory -Force -Path $OutputDirectory | Out-Null
-
-$processInfo = New-Object System.Diagnostics.ProcessStartInfo
-$processInfo.FileName = 'dotnet'
-$processInfo.Arguments = ('run --project "{0}"' -f $ProjectPath)
-$processInfo.RedirectStandardInput = $true
-$processInfo.RedirectStandardOutput = $true
-$processInfo.RedirectStandardError = $true
-$processInfo.UseShellExecute = $false
-$processInfo.CreateNoWindow = $true
-
-$process = New-Object System.Diagnostics.Process
-$process.StartInfo = $processInfo
-$null = $process.Start()
 
 $inputLines = New-Object System.Collections.Generic.List[string]
 if ($Mode -eq 'GenerateKey') {
@@ -56,6 +44,10 @@ else {
     $inputLines.Add($MaxConcurrentUsers.ToString())
 
     foreach ($module in $allModules) {
+        if ($basicModules -contains $module) {
+            continue
+        }
+
         if ($Modules -contains $module) {
             $inputLines.Add('Y')
         }
@@ -68,21 +60,37 @@ else {
     $inputLines.Add('3')
 }
 
-foreach ($line in $inputLines) {
-    $process.StandardInput.WriteLine($line)
-}
-$process.StandardInput.Close()
+$sessionId = [Guid]::NewGuid().ToString('N')
+$stdinPath = Join-Path $OutputDirectory ("license-tool-input-{0}.txt" -f $sessionId)
+$stdoutPath = Join-Path $OutputDirectory ("license-tool-stdout-{0}.txt" -f $sessionId)
+$stderrPath = Join-Path $OutputDirectory ("license-tool-stderr-{0}.txt" -f $sessionId)
 
-$stdout = $process.StandardOutput.ReadToEnd()
-$stderr = $process.StandardError.ReadToEnd()
+[System.IO.File]::WriteAllLines($stdinPath, $inputLines)
+
+$process = Start-Process -FilePath 'dotnet' `
+    -ArgumentList @('run', '--project', $ProjectPath) `
+    -NoNewWindow `
+    -PassThru `
+    -RedirectStandardInput $stdinPath `
+    -RedirectStandardOutput $stdoutPath `
+    -RedirectStandardError $stderrPath
+
 $process.WaitForExit()
 
-if ($process.ExitCode -ne 0) {
-    throw "License tool failed with exit code $($process.ExitCode).`nSTDOUT:`n$stdout`nSTDERR:`n$stderr"
+$stdout = if (Test-Path $stdoutPath) { Get-Content -Raw -Path $stdoutPath } else { '' }
+$stderr = if (Test-Path $stderrPath) { Get-Content -Raw -Path $stderrPath } else { '' }
+
+$exitCode = 0
+if ($null -ne $process.ExitCode) {
+    $exitCode = [int]$process.ExitCode
+}
+
+if ($exitCode -ne 0) {
+    throw "License tool failed with exit code $exitCode.`nSTDOUT:`n$stdout`nSTDERR:`n$stderr"
 }
 
 [pscustomobject]@{
-    ExitCode = $process.ExitCode
+    ExitCode = $exitCode
     OutputDirectory = $OutputDirectory
     StdOut = $stdout
     StdErr = $stderr

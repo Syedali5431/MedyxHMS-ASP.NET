@@ -1,7 +1,7 @@
 # User Guides — Index
 
 **Medyx HMS User Guides**  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -63,6 +63,14 @@ This folder contains role-specific user guides for all Medyx HMS user roles. Eac
 | Blood Bank | ✅ | ✅ | ✅ | — | — | — | — | — | — | — | — |
 | Operation Theatre | ✅ | ✅ | ✅ | — | — | — | — | — | — | — | — |
 | Front Office | ✅ | ✅ | — | — | — | — | ✅ | — | — | — | — |
+| Bed Management | ✅ | ✅ | 👁 | ✅ | — | — | 👁 | — | — | — | — |
+| Birth & Death Records | ✅ | ✅ | — | — | — | — | ✅ | — | — | — | — |
+| Ambulance | ✅ | ✅ | — | — | — | — | ✅ | — | — | — | — |
+| TPA | ✅ | ✅ | 👁 | — | — | ✅ | 👁 | — | — | — | — |
+| Messaging | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | — |
+| Inventory | ✅ | ✅ | — | — | ✅ | 👁 | — | — | — | — | — |
+| Download Center | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Live Consultation | ✅ | ✅ | ✅ | 👁 | — | — | 👁 | — | — | — | ✅ |
 | Attendance | ✅ | ✅ | — | — | — | — | — | — | — | ✅ | — |
 | Leave | ✅ | ✅ | — | — | — | — | — | — | — | ✅ | — |
 | Payroll | ✅ | ✅ | — | — | — | ✅ | — | — | — | 👁 | — |

@@ -1,5 +1,8 @@
 # Deployment Runbook
 
+> **Last Updated:** 2026-04-28  
+> **Status:** Production-ready — final UAT passed 2026-04-26; all 30 modules validated and system cleared for go-live.
+
 ## Purpose
 
 This document covers the remaining Step 5.2 deployment-planning tasks:
@@ -53,6 +56,9 @@ Use a controlled short freeze cutover:
 - Public booking works.
 - PDF/CSV exports work.
 - Audit logging and notification logging write successfully.
+- Bed Management module accessible to Nurse/Admin roles.
+- License module accessible to SuperAdmin only.
+- Messaging, Inventory, and Download Center accessible to appropriate roles.
 
 ## Rollback Plan
 

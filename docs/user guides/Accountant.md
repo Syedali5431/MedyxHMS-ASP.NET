@@ -2,7 +2,7 @@
 
 **Role:** Accountant  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -220,6 +220,25 @@ The floating AI button (bottom-right):
 
 ---
 
+## 12. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send direct messages to colleagues.
+- View your inbox and conversation threads.
+- Use messaging to coordinate with billing staff, admins, or reception on payment queries.
+
+---
+
+## 13. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access and download authorized financial forms, billing templates, and policy documents.
+- Files are organized by category; use search to locate specific documents.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -232,3 +251,5 @@ The floating AI button (bottom-right):
 | Run financial report | Reports → Financial Report |
 | Run daily transactions | Reports → Daily Transaction Report |
 | View unpaid bills | Billing → filter by Unpaid |
+| Send a message | Messaging → New Message |
+| Download financial forms | Download Center |

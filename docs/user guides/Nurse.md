@@ -2,7 +2,7 @@
 
 **Role:** Nurse  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -121,11 +121,33 @@ When a doctor initiates a patient discharge:
 
 ---
 
-## 6. Ward & Bed Management (View Only)
+## 6. Ward & Bed Management
 
-Navigate to **IPD → Bed Management** (or via the Ward view):
-- View which beds are occupied, available, or under maintenance.
-- You cannot change bed assignments — this is done by Admins and Receptionists.
+Navigate to **Bed Management** from the navigation (or through the sidebar).
+
+Nurses have full operational access to the Bed Management module:
+
+### Viewing the Bed Map
+- The bed grid shows all rooms and wards with real-time status: **Available** (green), **Occupied** (red), **Cleaning** (yellow), **Maintenance** (grey), **ICU** / **Isolation** flagged.
+- Click any bed icon to view occupant details or bed status.
+
+### Assigning a Patient to a Bed
+1. Right-click the target bed (or use the **Assign** action).
+2. Search for and select the patient.
+3. Confirm. The bed status updates to **Occupied** immediately.
+
+> ICU bed assignment requires Admin approval.
+
+### Releasing a Bed
+1. Open the occupied bed record.
+2. Click **Release**. The bed status moves to **Cleaning** automatically.
+3. Once cleaning is confirmed, status returns to **Available**.
+
+### Transferring a Patient
+1. Open the currently occupied bed.
+2. Click **Transfer**.
+3. Select the destination bed (must be **Available**).
+4. Confirm. The source bed is released and the destination bed is updated.
 
 ---
 

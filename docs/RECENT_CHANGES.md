@@ -1,11 +1,50 @@
 # Recent Changes & Maintenance Updates
 
-**Last Updated:** 2026-04-24  
-**Status:** Reports Module — Demo Data & Badge Cleanup
+**Last Updated:** 2026-04-28  
+**Status:** Licensing Module Coverage Alignment + License Generation Validation
 
 ---
 
 ## 📋 Summary of Recent Changes
+
+### April 28, 2026 — HMS-Lic Module Coverage Recheck
+
+#### Objective
+Align MedyxHMS-Lic module checklist/options with the full runtime module catalog while preserving the initial package defaults.
+
+#### Files Modified
+
+**MedyxHMS-Lic/Program.cs**
+- Expanded `availableModules` from the prior set to the full 30-module runtime catalog by adding:
+  - `License`
+  - `BirthDeath`
+  - `TPA`
+  - `Messaging`
+  - `Inventory`
+  - `DownloadCenter`
+  - `LiveConsultation`
+  - `BedManagement`
+- Kept `basicModuleKeys` unchanged to preserve the initial package behavior.
+
+**scripts/Invoke-LicenseToolAutomation.ps1**
+- Updated parameter default module list and internal `$allModules` list to the same 30-module catalog used by MedyxHMS-Lic.
+
+**scripts/Invoke-UatSmoke.ps1**
+- Updated fallback module list used during license generation to include all 30 modules.
+
+**scripts/UAT-Smoke.config.template.json**
+- Updated template module array to include all newly aligned modules.
+
+#### Validation
+- Interactive MedyxHMS-Lic run completed:
+  - Key pair generated successfully.
+  - Signed encoded license file generated successfully (`MEDYX-LIC-V1:` format).
+- Decoded generated license payload confirmed:
+  - `LicensedModules` count = 30.
+  - Includes newly added modules (`BirthDeath`, `TPA`, `Messaging`, `Inventory`, `DownloadCenter`, `LiveConsultation`, `BedManagement`, and `License`).
+- `dotnet build MedyxHMS-Lic/MedyxHMS-Lic.csproj` completed successfully after stopping a stale locked process.
+
+---
 
 ### April 24, 2026 — Reports Workspace: Demo Data & UI Cleanup
 

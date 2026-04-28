@@ -3,13 +3,26 @@
 ## Purpose
 This index provides a phase-by-phase navigation map for the remediation, stabilization, and hardening work completed in the ASP.NET application.
 
-## Latest Operational Docs (2026-04-22)
+## Latest Operational Docs (2026-04-28)
 
+### 2026-04-28 — HMS-Lic Module Coverage Alignment
+- Recent changes log: [RECENT_CHANGES.md](RECENT_CHANGES.md)
+- Final inventory & touch list: [Final-touches.md](Final-touches.md)
+
+### 2026-04-26 — Final UAT & Bed Management
+- Final UAT checklist: [UAT-Checklist-2026-04-26.md](UAT-Checklist-2026-04-26.md)
+- Final UAT evidence: [UAT-Evidence-2026-04-26.md](UAT-Evidence-2026-04-26.md)
+- Stage 5 completion summary: [STEP_5_COMPLETION_SUMMARY.md](STEP_5_COMPLETION_SUMMARY.md)
+- Stage 5.2 handoff: [STAGE-5.2-HANDOFF.md](STAGE-5.2-HANDOFF.md)
+
+### 2026-04-24 — Reports & Demo Data
+- Final TODO list: [Final-TODOList.md](Final-TODOList.md)
+
+### 2026-04-22 — Stabilization Baseline
 - UAT checklist: [UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md](UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md)
 - UAT execution evidence: [UAT-EXECUTION-EVIDENCE-2026-04-22.md](UAT-EXECUTION-EVIDENCE-2026-04-22.md)
 - Updated PRD: [UPDATED-PRD-2026-04-22.md](UPDATED-PRD-2026-04-22.md)
 - Updated checklist: [UPDATED-CHECKLIST-2026-04-22.md](UPDATED-CHECKLIST-2026-04-22.md)
-- Updated TODO list: [UPDATED-TODO-LIST-2026-04-22.md](UPDATED-TODO-LIST-2026-04-22.md)
 - SQL script validation: [SQL-SCRIPT-VALIDATION-2026-04-22.md](SQL-SCRIPT-VALIDATION-2026-04-22.md)
 - Warning triage plan: [NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md](NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md)
 - Final stabilization status: [IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md](IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md)
@@ -282,6 +295,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 22. [PH22.md](PH22.md)
 23. [PH23.md](PH23.md)
 24. [PH24.md](PH24.md)
+25. [Final-touches.md](Final-touches.md) — Bed Management, UAT final pass, production readiness
+26. [RECENT_CHANGES.md](RECENT_CHANGES.md) — HMS-Lic 30-module alignment and automation updates
 
 ## Module-to-Phase Cross Reference
 - Build and compile recovery: [PH1.md](PH1.md), [PH2.md](PH2.md)
@@ -306,6 +321,8 @@ This index provides a phase-by-phase navigation map for the remediation, stabili
 - Theme preset selector and custom override behavior: [PH21.md](PH21.md)
 - Visual preset swatch card interactions: [PH22.md](PH22.md)
 - Password governance and account approval workflow: [PH23.md](PH23.md)
+- Bed Management module, final UAT, production readiness: [Final-touches.md](Final-touches.md)
+- Licensing module coverage alignment (30 modules): [RECENT_CHANGES.md](RECENT_CHANGES.md)
 
 ## Planned Design Docs
 

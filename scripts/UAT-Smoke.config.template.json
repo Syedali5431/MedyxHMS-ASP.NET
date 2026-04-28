@@ -27,6 +27,13 @@
     "Ambulance",
     "Chatbot",
     "CMS",
-    "License"
+    "License",
+    "BirthDeath",
+    "TPA",
+    "Messaging",
+    "Inventory",
+    "DownloadCenter",
+    "LiveConsultation",
+    "BedManagement"
   ]
 }

@@ -74,11 +74,26 @@ if (-not $SkipLicenseGeneration) {
                 $modules = [string[]]$config['Modules']
             }
             if ($modules.Count -eq 0) {
-                $modules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License')
+                $modules = @('Dashboard','Patient','Appointment','OPD','IPD','Billing','Prescription','Lab','Radiology','BloodBank','OperationTheatre','FrontOffice','Attendance','Leave','Payroll','Certificate','Referral','Report','PatientPortal','Ambulance','Chatbot','CMS','License','BirthDeath','TPA','Messaging','Inventory','DownloadCenter','LiveConsultation','BedManagement')
+            }
+
+            $tenantId = 'uat-tenant'
+            if ($config.ContainsKey('TenantId') -and -not [string]::IsNullOrWhiteSpace([string]$config['TenantId'])) {
+                $tenantId = [string]$config['TenantId']
+            }
+
+            $maxConcurrentUsers = 5
+            if ($config.ContainsKey('MaxConcurrentUsers') -and $null -ne $config['MaxConcurrentUsers']) {
+                $maxConcurrentUsers = [int]$config['MaxConcurrentUsers']
+            }
+
+            $expiryChoice = '2'
+            if ($config.ContainsKey('ExpiryChoice') -and -not [string]::IsNullOrWhiteSpace([string]$config['ExpiryChoice'])) {
+                $expiryChoice = [string]$config['ExpiryChoice']
             }
 
             $createRun = Invoke-Step -Name 'CreateLicense' -Action {
-                & (Join-Path $PSScriptRoot 'Invoke-LicenseToolAutomation.ps1') -Mode CreateLicense -PrivateKeyPath $privateKey.FullName -OutputDirectory $licenseOutput -TenantId ([string]($config['TenantId'] ?? 'uat-tenant')) -MaxConcurrentUsers ([int]($config['MaxConcurrentUsers'] ?? 5)) -ExpiryChoice ([string]($config['ExpiryChoice'] ?? '2')) -Modules $modules
+                & (Join-Path $PSScriptRoot 'Invoke-LicenseToolAutomation.ps1') -Mode CreateLicense -PrivateKeyPath $privateKey.FullName -OutputDirectory $licenseOutput -TenantId $tenantId -MaxConcurrentUsers $maxConcurrentUsers -ExpiryChoice $expiryChoice -Modules $modules
             }
             $results.LicenseTool.CreateLicense = $createRun
 

@@ -1183,7 +1183,7 @@ GO
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'AccessFailedCount', N'ConcurrencyStamp', N'CreatedDate', N'Email', N'EmailConfirmed', N'EmployeeId', N'FirstLoginDate', N'FirstName', N'IsActive', N'LastLoginDate', N'LastName', N'LockoutEnabled', N'LockoutEnd', N'NormalizedEmail', N'NormalizedUserName', N'PasswordHash', N'PhoneNumber', N'PhoneNumberConfirmed', N'ProfileImage', N'SecurityStamp', N'TwoFactorEnabled', N'UserName') AND [object_id] = OBJECT_ID(N'[AspNetUsers]'))
     SET IDENTITY_INSERT [AspNetUsers] ON;
 INSERT INTO [AspNetUsers] ([Id], [AccessFailedCount], [ConcurrencyStamp], [CreatedDate], [Email], [EmailConfirmed], [EmployeeId], [FirstLoginDate], [FirstName], [IsActive], [LastLoginDate], [LastName], [LockoutEnabled], [LockoutEnd], [NormalizedEmail], [NormalizedUserName], [PasswordHash], [PhoneNumber], [PhoneNumberConfirmed], [ProfileImage], [SecurityStamp], [TwoFactorEnabled], [UserName])
-VALUES (N'superadmin-user-id', 0, N'c46314b2-b32b-40bc-9f6a-8f86d9226883', '2026-04-20T10:12:33.8154378Z', N'superadmin@hospital.com', CAST(1 AS bit), N'SUPER001', NULL, N'Super', CAST(1 AS bit), NULL, N'Admin', CAST(0 AS bit), NULL, N'SUPERADMIN@HOSPITAL.COM', N'SUPERADMIN', NULL, NULL, CAST(0 AS bit), NULL, N'bd050a67-aef4-4356-8918-3a025db5f98f', CAST(0 AS bit), N'superadmin@hospital.com');
+VALUES (N'superadmin-user-id', 0, N'c46314b2-b32b-40bc-9f6a-8f86d9226883', '2026-04-20T10:12:33.8154378Z', N'superadmin@hospital.com', CAST(1 AS bit), N'SUPER001', NULL, N'Super', CAST(1 AS bit), NULL, N'Admin', CAST(0 AS bit), NULL, N'SUPERADMIN@HOSPITAL.COM', N'SUPERADMIN', N'AQAAAAIAAYagAAAAEMS6w8CTrZcauhNbwdrOImwTUx8Prh5M77Q46lHBV5hXhOKDC32WFC/BuDx8W7hMxw==', NULL, CAST(0 AS bit), NULL, N'bd050a67-aef4-4356-8918-3a025db5f98f', CAST(0 AS bit), N'superadmin@hospital.com');
 IF EXISTS (SELECT * FROM [sys].[identity_columns] WHERE [name] IN (N'Id', N'AccessFailedCount', N'ConcurrencyStamp', N'CreatedDate', N'Email', N'EmailConfirmed', N'EmployeeId', N'FirstLoginDate', N'FirstName', N'IsActive', N'LastLoginDate', N'LastName', N'LockoutEnabled', N'LockoutEnd', N'NormalizedEmail', N'NormalizedUserName', N'PasswordHash', N'PhoneNumber', N'PhoneNumberConfirmed', N'ProfileImage', N'SecurityStamp', N'TwoFactorEnabled', N'UserName') AND [object_id] = OBJECT_ID(N'[AspNetUsers]'))
     SET IDENTITY_INSERT [AspNetUsers] OFF;
 GO
@@ -1748,7 +1748,7 @@ BEGIN
     VALUES (
         N'1', N'SUPER001', N'Super', N'Admin', 1, @UtcNow,
         N'superadmin', N'SUPERADMIN', N'superadmin@hospital.com', N'SUPERADMIN@HOSPITAL.COM', 1,
-        N'AQAAAAIAAYagAAAAENmHyolAF/zZx5gv7PnxwRPXwKYJ6dA+0y562EPe7kUseYbGGAsFnGRJGAHxPhaUFw==', N'QHPBKFIVA5XXBP4VFMJV66ZU2JAKU7S7', N'26885701-f8ad-4c53-bde0-398cad55a639',
+        N'AQAAAAIAAYagAAAAEMS6w8CTrZcauhNbwdrOImwTUx8Prh5M77Q46lHBV5hXhOKDC32WFC/BuDx8W7hMxw==', N'QHPBKFIVA5XXBP4VFMJV66ZU2JAKU7S7', N'26885701-f8ad-4c53-bde0-398cad55a639',
         NULL, 0, 0, NULL, 1, 0
     );
 END
@@ -1764,7 +1764,7 @@ BEGIN
         [Email] = N'superadmin@hospital.com',
         [NormalizedEmail] = N'SUPERADMIN@HOSPITAL.COM',
         [EmailConfirmed] = 1,
-        [PasswordHash] = COALESCE(NULLIF([PasswordHash], N''), N'AQAAAAIAAYagAAAAENmHyolAF/zZx5gv7PnxwRPXwKYJ6dA+0y562EPe7kUseYbGGAsFnGRJGAHxPhaUFw=='),
+        [PasswordHash] = COALESCE(NULLIF([PasswordHash], N''), N'AQAAAAIAAYagAAAAEMS6w8CTrZcauhNbwdrOImwTUx8Prh5M77Q46lHBV5hXhOKDC32WFC/BuDx8W7hMxw=='),
         [SecurityStamp] = COALESCE(NULLIF([SecurityStamp], N''), N'QHPBKFIVA5XXBP4VFMJV66ZU2JAKU7S7'),
         [ConcurrencyStamp] = COALESCE(NULLIF([ConcurrencyStamp], N''), N'26885701-f8ad-4c53-bde0-398cad55a639')
     WHERE [Email] = N'superadmin@hospital.com';

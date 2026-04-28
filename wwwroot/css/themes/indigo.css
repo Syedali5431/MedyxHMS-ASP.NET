@@ -1,0 +1,16 @@
+:root {
+    --hms-primary: #4b0082;
+    --hms-primary-dark: #3a0066;
+    --hms-accent: #9b59b6;
+    --hms-bg: #f3eefa;
+    --hms-text: #1d0b3b;
+
+    --sb-bg: #1d0b3b;
+    --sb-border: rgba(255, 255, 255, 0.1);
+    --sb-text: #d8c4f0;
+    --sb-text-muted: #a07ac8;
+    --sb-text-hover: #ffffff;
+    --sb-active-bg: rgba(155, 89, 182, 0.22);
+    --sb-active-bar: #9b59b6;
+    --sb-hover-bg: rgba(255, 255, 255, 0.08);
+}

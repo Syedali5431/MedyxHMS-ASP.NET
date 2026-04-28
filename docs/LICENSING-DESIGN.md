@@ -1,6 +1,6 @@
 # Licensing Feature Technical Design
 
-**Status:** Implemented | **Target Phase:** Phase 6 | **Date:** April 2026
+**Status:** Implemented | **Target Phase:** Phase 6 | **Date:** April 2026 | **Last Updated:** 2026-04-28
 
 ## Objective
 
@@ -14,7 +14,15 @@ Add a secure, auditable licensing system that:
 
 The design must keep all enforcement server-side and avoid any client-controlled license state.
 
-## April 21, 2026 Security Update
+### April 28, 2026 — Full Module Catalog Alignment
+
+- `MedyxHMS-Lic/Program.cs` `availableModules` expanded from 22 to 30 entries to match the runtime `DatabaseInitializer.DefaultModules` catalog.
+- Newly added to vendor tool: `License`, `BirthDeath`, `TPA`, `Messaging`, `Inventory`, `DownloadCenter`, `LiveConsultation`, `BedManagement`.
+- `basicModuleKeys` (8 initial-package modules always included) unchanged: `Dashboard`, `Patient`, `Appointment`, `Billing`, `FrontOffice`, `Referral`, `Report`, `PatientPortal`.
+- `scripts/Invoke-LicenseToolAutomation.ps1` and `scripts/Invoke-UatSmoke.ps1` fallback module lists updated to 30 entries.
+- Automation validated: decoded `LicensedModules` count = 30 confirmed.
+
+### April 21, 2026 Security Update
 
 - Added a deterministic Verification Key fingerprint generated from RSA public key components in the vendor tool.
 - Each generated .lic now embeds VerificationKey inside the signed payload.

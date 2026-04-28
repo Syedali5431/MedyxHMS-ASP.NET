@@ -288,6 +288,21 @@ body {
 .theme-forest { background: linear-gradient(135deg, #b7e4c7, #74c69d 60%, #2d6a4f); }
 .theme-midnight { background: linear-gradient(135deg, #1d3557, #274c77 60%, #3a86ff); }
 .theme-sunset { background: linear-gradient(135deg, #ffcad4, #f4a261 60%, #d1495b); }
+.theme-lavender { background: linear-gradient(135deg, #e0d7ff, #b39ddb 60%, #7b5ea7); }
+.theme-graphite { background: linear-gradient(135deg, #d0d0d0, #9e9e9e 60%, #424242); }
+.theme-emerald { background: linear-gradient(135deg, #b9fbc0, #52b788 60%, #1b7d3e); }
+.theme-peach { background: linear-gradient(135deg, #ffd6c0, #f4a261 60%, #e07040); }
+.theme-sky { background: linear-gradient(135deg, #c0e8ff, #48b4f4 60%, #0072c6); }
+.theme-rose { background: linear-gradient(135deg, #ffd6e0, #f48fb1 60%, #c2185b); }
+.theme-sand { background: linear-gradient(135deg, #f5e6c8, #d4b896 60%, #8d6e63); }
+.theme-plum { background: linear-gradient(135deg, #e8caf0, #9c5fae 60%, #6a1b9a); }
+.theme-aqua { background: linear-gradient(135deg, #b2f0f0, #26c6da 60%, #00838f); }
+.theme-crimson { background: linear-gradient(135deg, #ffc0c0, #e74c3c 60%, #a93226); }
+.theme-amber { background: linear-gradient(135deg, #ffe0a0, #f39c12 60%, #ca6f1e); }
+.theme-arctic { background: linear-gradient(135deg, #d0eeff, #85c1e9 60%, #2471a3); }
+.theme-chocolate { background: linear-gradient(135deg, #f0d5b7, #d4a017 60%, #7b3f00); }
+.theme-indigo { background: linear-gradient(135deg, #d8c4f0, #9b59b6 60%, #3a0066); }
+.theme-lime { background: linear-gradient(135deg, #d4f5c0, #a9e04f 60%, #219150); }
 
 /* ── Main content area (right of sidebar) ── */
 .staff-main-content {

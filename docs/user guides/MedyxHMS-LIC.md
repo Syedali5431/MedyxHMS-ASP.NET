@@ -2,7 +2,7 @@
 
 **Document:** MedyxHMS-LIC.md  
 **Audience:** System Administrators, SuperAdmins, Medyx Vendor Team  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -162,10 +162,20 @@ MedyxHMS-Lic.exe
 | Attendance | Staff attendance tracking |
 | Leave | Staff leave management |
 | Payroll | Payroll and payslip management |
-| Certificate | Birth/death certificate management |
+| Certificate | Birth/death/general certificate management |
 | Ambulance | Ambulance dispatch tracking |
-| Chatbot | Patient and staff chatbot |
+| Chatbot | Patient and staff AI chatbot |
 | CMS | Public website / content management |
+| License | License management screen (SuperAdmin) |
+| BirthDeath | Birth and death records |
+| TPA | Third-party administration (insurance) |
+| Messaging | Internal staff messaging |
+| Inventory | Medical supply inventory management |
+| DownloadCenter | Hospital download center |
+| LiveConsultation | Remote/video consultation sessions |
+| BedManagement | Bed assignment, release, and transfer |
+
+> **Total catalog: 30 modules** (8 basic + 22 optional). All 30 keys are available in `MedyxHMS-Lic` as of April 28, 2026.
 
 ### License Payload Structure
 

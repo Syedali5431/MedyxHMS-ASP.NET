@@ -2,7 +2,7 @@
 
 **Role:** Doctor  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -258,6 +258,36 @@ The floating AI button (bottom-right corner) provides clinical and workflow guid
 
 ---
 
+## 14. Live Consultation
+
+Navigate to **Live Consultation** from the navigation (if licensed).
+
+- Schedule a remote consultation session linked to an appointment.
+- Start the session at the scheduled time — the patient joins from their Patient Portal.
+- All sessions are logged with start/end times for billing and audit purposes.
+
+---
+
+## 15. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send direct messages to colleagues (nurses, admins, pharmacists).
+- View your inbox and conversation threads.
+- Messages are internal only — not visible to patients.
+
+---
+
+## 16. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access authorized downloads: clinical forms, procedure guides, hospital protocols.
+- Download files uploaded by Admin/SuperAdmin.
+- Use search or filter by category to find the document you need.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -271,3 +301,6 @@ The floating AI button (bottom-right corner) provides clinical and workflow guid
 | View lab results | Lab → Open Order → View Result |
 | Discharge IPD patient | IPD → Open Admission → Discharge |
 | View patient history | Patients → Open Patient → Tabs |
+| Start live consultation | Live Consultation → Schedule or Start |
+| Send a message | Messaging → New Message |
+| Download clinical forms | Download Center |

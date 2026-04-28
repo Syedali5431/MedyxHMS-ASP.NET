@@ -2,7 +2,7 @@
 
 **Role:** Radiologist  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -197,6 +197,23 @@ The floating AI button (bottom-right):
 
 ---
 
+## 11. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send messages to referring doctors about imaging findings or scheduling queries.
+- View inbox and conversation threads.
+
+---
+
+## 12. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access radiology protocol guides, imaging reference materials, and department policies.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -208,4 +225,6 @@ The floating AI button (bottom-right):
 | Flag critical finding | Write Report → Check Critical Finding |
 | Print/download report | Radiology → Open Completed → Print Report |
 | Add exam to catalogue | Radiology → Examination Catalogue → Add |
+| Send a message | Messaging → New Message |
+| Download radiology protocols | Download Center |
 | Run radiology report | Reports → Radiology Patient Report |

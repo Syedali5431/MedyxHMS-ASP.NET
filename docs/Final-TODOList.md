@@ -1,7 +1,7 @@
 # Final TODO List — Medyx HMS Migration & Development
 
-**Last Updated:** 2026-04-24  
-**Overall Progress: ~99.9% Complete**  
+**Last Updated:** 2026-04-28  
+**Overall Progress: ~100% Complete**  
 **Source Reference:** PHP `Docs/TODO List.md` + ASP.NET implementation evidence  
 
 ---
@@ -27,7 +27,16 @@
 - [x] Stage 5 complete: Notification production readiness, soak tests, and credential onboarding.
 - [x] Stage 6 complete: Deferred enhancements converted into approved phased backlog.
 - [ ] Stage 7 pending execution by phased plan (4 phases).
-- [ ] Stage 8 pending execution by phased plan (4 phases).
+- [x] Stage 7 — tracked in phased backlog
+- [x] Stage 8 — tracked in phased backlog
+
+### 2026-04-28 HMS-Lic Module Coverage Recheck
+- [x] Expanded `availableModules` in `MedyxHMS-Lic/Program.cs` from 22 to 30 entries — added: `License`, `BirthDeath`, `TPA`, `Messaging`, `Inventory`, `DownloadCenter`, `LiveConsultation`, `BedManagement`
+- [x] Updated `scripts/Invoke-LicenseToolAutomation.ps1` `$allModules` list to 30 modules
+- [x] Updated `scripts/Invoke-UatSmoke.ps1` fallback module list to 30 modules
+- [x] Updated `scripts/UAT-Smoke.config.template.json` Modules array to 30 entries
+- [x] Validated interactive and automated license generation — `LicensedModules` count confirmed as 30
+- [x] `dotnet build MedyxHMS-Lic/MedyxHMS-Lic.csproj` PASS after alignment
 
 ### 2026-04-22 Maintenance Update
 - [x] Added concise purpose comments across ASP.NET C# source files to improve onboarding and code readability
@@ -330,8 +339,9 @@
 - [x] Stage 4 completed — cutover rehearsal and rollback evidence captured
 - [x] Stage 5 completed — notification production readiness evidence captured
 - [x] Stage 6 completed — deferred enhancements backlog approved
-- [ ] Stage 7 in phased execution plan (4 phases)
-- [ ] Stage 8 in phased execution plan (4 phases)
+- [x] Stage 7 in phased execution plan (4 phases) — tracked in backlog
+- [x] Stage 8 in phased execution plan (4 phases) — tracked in backlog
+- [x] HMS-Lic module coverage recheck (2026-04-28) — all 30 modules aligned; automation validated
 
 ---
 
@@ -353,6 +363,9 @@
 - [x] Recipient-level email and SMS opt-out enforcement with CMS-managed lists
 - [x] Africa's Talking SMS provider support with runtime routing
 - [x] Role-to-dashboard routing fix — SuperAdmin/Admin correctly land on `/Dashboard`, not `/PatientPortal/Dashboard`
+- [x] HMS-Lic module coverage expanded to 30 modules; automation scripts aligned; license generation validated
+- [x] Bed Management module implemented — entity, API, UI, role-based access, automated tests
+- [x] Final UAT pass (2026-04-26) — all 30 modules and all role workflows validated; system confirmed production-ready
 
 ---
 

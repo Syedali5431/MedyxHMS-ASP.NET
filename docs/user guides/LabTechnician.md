@@ -2,7 +2,7 @@
 
 **Role:** LabTechnician  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-22  
+**Last Updated:** 2026-04-28  
 
 ---
 
@@ -176,6 +176,23 @@ The floating AI button (bottom-right):
 
 ---
 
+## 10. Messaging
+
+Navigate to **Messaging** from the navigation.
+
+- Send messages to doctors regarding critical results, sample queries, or test order clarifications.
+- View inbox and conversation threads.
+
+---
+
+## 11. Download Center
+
+Navigate to **Download Center** from the navigation.
+
+- Access lab reference ranges, test procedure guides, and accreditation documents.
+
+---
+
 ## Quick Reference
 
 | Task | Where |
@@ -187,3 +204,5 @@ The floating AI button (bottom-right):
 | Print a lab report | Lab → Open Completed Order → Print Report |
 | Add a test to catalogue | Lab → Test Catalogue → Add Test |
 | Run pathology report | Reports → Pathology Patient Report |
+| Send a message | Messaging → New Message |
+| Download lab references | Download Center |

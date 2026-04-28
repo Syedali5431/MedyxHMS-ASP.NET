@@ -3,6 +3,16 @@
 -- Performance optimized for fast data retrieval with proper indexing
 -- ====================================================================
 
+IF DB_ID(N'MedyxHMS') IS NULL
+BEGIN
+    RAISERROR('Database [MedyxHMS] was not found. Create it first, then rerun this script in SSMS.', 16, 1);
+    RETURN;
+END
+GO
+
+USE [MedyxHMS];
+GO
+
 -- ====================
 -- DEPARTMENT REPORTS
 -- ====================
@@ -39,7 +49,7 @@ BEGIN
         AND lr.Status = 'Approved' 
         AND lr.StartDate >= @StartDate 
         AND lr.EndDate <= @EndDate
-    WHERE (@DepartmentId IS NULL OR s.Id = @DepartmentId)
+    WHERE (@DepartmentId IS NULL OR s.Department = @DepartmentId)
     GROUP BY s.Id, s.FirstName, s.LastName, s.Department
     ORDER BY s.FirstName, s.LastName;
 
@@ -173,7 +183,7 @@ BEGIN
         SUM(CASE WHEN Gender = 'Male' THEN 1 ELSE 0 END) AS MalePatients,
         SUM(CASE WHEN Gender = 'Female' THEN 1 ELSE 0 END) AS FemalePatients,
         AVG(DATEDIFF(YEAR, DateOfBirth, GETUTCDATE())) AS AverageAge,
-        COUNT(DISTINCT CASE WHEN HasInsurance = 1 THEN Id END) AS InsuredPatients
+        CAST(0 AS INT) AS InsuredPatients
     FROM Patients
     WHERE CreatedDate >= @StartDate AND CreatedDate <= @EndDate;
 
@@ -234,28 +244,31 @@ GO
 
 -- Create indexes for better report performance
 IF OBJECT_ID(N'dbo.StaffAttendances', N'U') IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StaffAttendance_DateRange')
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_StaffAttendance_DateRange' AND object_id = OBJECT_ID(N'dbo.StaffAttendances'))
     CREATE NONCLUSTERED INDEX IX_StaffAttendance_DateRange
     ON StaffAttendances(StaffId, AttendanceDate);
 
 IF OBJECT_ID(N'dbo.LeaveRequests', N'U') IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LeaveRequest_DateRange')
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LeaveRequest_DateRange' AND object_id = OBJECT_ID(N'dbo.LeaveRequests'))
     CREATE NONCLUSTERED INDEX IX_LeaveRequest_DateRange
     ON LeaveRequests(StaffId, StartDate, EndDate);
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Bills_DateRange')
+IF OBJECT_ID(N'dbo.Bills', N'U') IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Bills_DateRange' AND object_id = OBJECT_ID(N'dbo.Bills'))
     CREATE NONCLUSTERED INDEX IX_Bills_DateRange 
     ON Bills(BillDate);
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Payments_DateRange')
+IF OBJECT_ID(N'dbo.Payments', N'U') IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Payments_DateRange' AND object_id = OBJECT_ID(N'dbo.Payments'))
     CREATE NONCLUSTERED INDEX IX_Payments_DateRange 
     ON Payments(PaymentDate);
 
 IF OBJECT_ID(N'dbo.Appointments', N'U') IS NOT NULL
-   AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Appointment_DateRange')
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_Appointment_DateRange' AND object_id = OBJECT_ID(N'dbo.Appointments'))
     CREATE NONCLUSTERED INDEX IX_Appointment_DateRange
     ON Appointments(AppointmentDate);
 
-IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_IPDAdmissions_DateRange')
+IF OBJECT_ID(N'dbo.IPDAdmissions', N'U') IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_IPDAdmissions_DateRange' AND object_id = OBJECT_ID(N'dbo.IPDAdmissions'))
     CREATE NONCLUSTERED INDEX IX_IPDAdmissions_DateRange 
     ON IPDAdmissions(AdmissionDate, DischargeDate, BedId);

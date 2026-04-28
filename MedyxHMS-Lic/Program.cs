@@ -32,7 +32,15 @@ var availableModules = new (string Key, string Label)[]
     ("PatientPortal", "Patient Portal"),
     ("Ambulance", "Ambulance Management"),
     ("Chatbot", "Chatbot"),
-    ("CMS", "CMS and Public Website")
+    ("CMS", "CMS and Public Website"),
+    ("License", "License Management"),
+    ("BirthDeath", "Birth / Death Records"),
+    ("TPA", "TPA Management"),
+    ("Messaging", "Internal Messaging"),
+    ("Inventory", "Inventory Management"),
+    ("DownloadCenter", "Download Center"),
+    ("LiveConsultation", "Live Consultation"),
+    ("BedManagement", "Bed Management")
 };
 
 var basicModuleKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
