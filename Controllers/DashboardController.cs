@@ -98,6 +98,36 @@ namespace MedyxHMS.Controllers
                 ViewBag.Error = "Some dashboard data could not be loaded. Please check database connection.";
             }
 
+            // Build chart data: last 7 days
+            try
+            {
+                var today = DateTime.Today;
+                var labels = Enumerable.Range(6, 7).Select(i => today.AddDays(-(6 - i))).ToList();
+                var labelStrings = labels.Select(d => d.ToString("ddd dd MMM")).ToArray();
+
+                // Appointments per day
+                var allAppts = await _appointmentService.GetAllAppointmentsAsync();
+                var apptByDay = allAppts.GroupBy(a => a.AppointmentDate.Date)
+                    .ToDictionary(g => g.Key, g => g.Count());
+                var apptCounts = labels.Select(d => apptByDay.TryGetValue(d, out var c) ? c : 0).ToArray();
+
+                // Revenue per day
+                var allBillsList = await _billingService.GetAllBillsAsync();
+                var revenueByDay = allBillsList.GroupBy(b => b.BillDate.Date)
+                    .ToDictionary(g => g.Key, g => (double)g.Sum(b => b.TotalAmount));
+                var revenueCounts = labels.Select(d => revenueByDay.TryGetValue(d, out var r) ? r : 0.0).ToArray();
+
+                ViewBag.ChartLabels = System.Text.Json.JsonSerializer.Serialize(labelStrings);
+                ViewBag.ApptChartData = System.Text.Json.JsonSerializer.Serialize(apptCounts);
+                ViewBag.RevenueChartData = System.Text.Json.JsonSerializer.Serialize(revenueCounts);
+            }
+            catch
+            {
+                ViewBag.ChartLabels = "[]";
+                ViewBag.ApptChartData = "[]";
+                ViewBag.RevenueChartData = "[]";
+            }
+
             return View(dashboardViewModel);
         }
 

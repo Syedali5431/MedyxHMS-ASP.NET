@@ -193,6 +193,7 @@ namespace MedyxHMS.Services.Interfaces
     {
         byte[] BuildCsv(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
         byte[] BuildPdfTable(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
+        byte[] BuildExcel(string sheetName, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
     }
 
     public interface IChatbotModerationService

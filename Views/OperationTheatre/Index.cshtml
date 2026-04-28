@@ -64,4 +64,40 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">OT Schedule Status</h6></div>
+                <div class="card-body"><canvas id="otStatusChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">OT Overview</h6></div>
+                <div class="card-body"><canvas id="otBarChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var schedules = @Html.Raw(Json.Serialize(Model.Select(s => new { status = s.Status })));
+            var counts = {};
+            schedules.forEach(function(s) { counts[s.status] = (counts[s.status] || 0) + 1; });
+            new Chart(document.getElementById('otStatusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(counts).length > 0 ? Object.keys(counts) : ['No Data'], datasets: [{ data: Object.keys(counts).length > 0 ? Object.values(counts) : [1], backgroundColor: ['#f6c23e','#1cc88a','#e74a3b','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('otBarChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(counts).length > 0 ? Object.keys(counts) : ['No Data'], datasets: [{ label: 'Schedules', data: Object.keys(counts).length > 0 ? Object.values(counts) : [0], backgroundColor: ['#f6c23e','#1cc88a','#e74a3b','#858796'] }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

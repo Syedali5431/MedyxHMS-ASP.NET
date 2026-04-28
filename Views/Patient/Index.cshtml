@@ -83,6 +83,23 @@
     </div>
 
     <!-- Search and Filters -->
+    <!-- Patient Activity Charts -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chart-pie me-2"></i>Patient Status</h6></div>
+                <div class="card-body"><canvas id="patientStatusChart" height="200"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-8 col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chart-bar me-2"></i>Patient Overview</h6></div>
+                <div class="card-body"><canvas id="patientOverviewChart" height="90"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filters -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
             <div class="row align-items-center">
@@ -230,13 +247,31 @@
 
 @section Scripts {
     <script>
-        // Add any client-side functionality here
+        // Patient Charts
+        new Chart(document.getElementById('patientStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Active', 'Inactive'],
+                datasets: [{ data: [@Model.ActivePatients, @Model.InactivePatients], backgroundColor: ['#1cc88a','#e74a3b'], borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        new Chart(document.getElementById('patientOverviewChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Total', 'Active', 'Inactive'],
+                datasets: [{ label: 'Patients', data: [@Model.TotalPatients, @Model.ActivePatients, @Model.InactivePatients], backgroundColor: ['#4e73df','#1cc88a','#e74a3b'] }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
+        // DataTable
         $(document).ready(function() {
-            // Initialize DataTable only when plugin is available.
             if ($.fn && $.fn.DataTable) {
                 $('#dataTable').DataTable({
                     "pageLength": 25,
-                    "order": [[ 6, "desc" ]] // Sort by created date descending
+                    "order": [[ 6, "desc" ]]
                 });
             }
         });

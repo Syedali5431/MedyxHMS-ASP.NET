@@ -17,6 +17,9 @@
             <a href="@Url.Action("Export", "Bills", new { area = "PatientPortal", format = "csv", filter = Model.Filter })" class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-file-csv"></i> Export CSV
             </a>
+            <a href="@Url.Action("Export", "Bills", new { area = "PatientPortal", format = "excel", filter = Model.Filter })" class="btn btn-outline-success btn-sm">
+                <i class="fas fa-file-excel"></i> Export Excel
+            </a>
             <a href="@Url.Action("Export", "Bills", new { area = "PatientPortal", format = "pdf", filter = Model.Filter })" class="btn btn-outline-danger btn-sm">
                 <i class="fas fa-file-pdf"></i> Export PDF
             </a>

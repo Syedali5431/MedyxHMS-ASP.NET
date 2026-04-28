@@ -117,6 +117,22 @@
             }
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Tests by Category</h6></div>
+                <div class="card-body"><canvas id="radioCatChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Test Count Overview</h6></div>
+                <div class="card-body"><canvas id="radioCountChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -124,3 +140,23 @@
         background-color: #f5f5f5;
     }
 </style>
+
+@section Scripts {
+    <script>
+        (function() {
+            var tests = @Html.Raw(Json.Serialize(Model));
+            var catCounts = {};
+            tests.forEach(function(t) { var c = t.category || 'Uncategorized'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            new Chart(document.getElementById('radioCatChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(catCounts), datasets: [{ data: Object.values(catCounts), backgroundColor: ['#4e73df','#1cc88a','#f6c23e','#e74a3b','#36b9cc','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('radioCountChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(catCounts), datasets: [{ label: 'Tests', data: Object.values(catCounts), backgroundColor: '#36b9cc' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

@@ -92,4 +92,50 @@
             </div>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-danger">Blood Group Inventory</h6></div>
+                <div class="card-body"><canvas id="bloodInventoryChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Blood Issues by Group</h6></div>
+                <div class="card-body"><canvas id="bloodIssueChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var inventory = @Html.Raw(Json.Serialize(Model));
+            var issues = @Html.Raw(Json.Serialize(ViewBag.Issues as IEnumerable<dynamic> ?? new dynamic[0]));
+            var invLabels = inventory.map(function(i) { return i.bloodGroup; });
+            var invData = inventory.map(function(i) { return i.unitsAvailable; });
+            var issueCounts = {};
+            @{
+                var bbIssues = ViewBag.Issues as IEnumerable<MedyxHMS.Models.BloodIssue>;
+                if (bbIssues != null)
+                {
+                    <text>var issuesList = @Html.Raw(Json.Serialize(bbIssues.GroupBy(i => i.BloodGroup).Select(g => new { group = g.Key, count = g.Count() })));
+                    issuesList.forEach(function(i) { issueCounts[i.group] = i.count; });</text>
+                }
+            }
+            new Chart(document.getElementById('bloodInventoryChart'), {
+                type: 'bar',
+                data: { labels: invLabels, datasets: [{ label: 'Units', data: invData, backgroundColor: '#e74a3b' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+            new Chart(document.getElementById('bloodIssueChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(issueCounts).length > 0 ? Object.keys(issueCounts) : invLabels, datasets: [{ data: Object.keys(issueCounts).length > 0 ? Object.values(issueCounts) : invData.map(function() { return 0; }), backgroundColor: ['#4e73df','#1cc88a','#f6c23e','#e74a3b','#36b9cc','#858796','#fd7e14','#6610f2'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        })();
+    </script>
+}

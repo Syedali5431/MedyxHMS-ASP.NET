@@ -106,6 +106,22 @@
         </div>
     </div>
 
+    <!-- Appointment Charts -->
+    <div class="row mb-4">
+        <div class="col-xl-5 col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chart-pie me-2"></i>Appointments by Status</h6></div>
+                <div class="card-body"><canvas id="apptStatusChart" height="200"></canvas></div>
+            </div>
+        </div>
+        <div class="col-xl-7 col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary"><i class="fas fa-chart-bar me-2"></i>Appointment Overview</h6></div>
+                <div class="card-body"><canvas id="apptOverviewChart" height="120"></canvas></div>
+            </div>
+        </div>
+    </div>
+
     <!-- Filters and Search -->
     <div class="card shadow mb-4">
         <div class="card-header py-3">
@@ -287,6 +303,24 @@
 
 @section Scripts {
     <script>
+        // Appointment Charts
+        new Chart(document.getElementById('apptStatusChart'), {
+            type: 'doughnut',
+            data: {
+                labels: ['Today', 'Upcoming', 'Completed', 'Other'],
+                datasets: [{ data: [@Model.TodayAppointments, @Model.UpcomingAppointments, @Model.CompletedAppointments, Math.max(0,@Model.TotalAppointments-@Model.TodayAppointments-@Model.UpcomingAppointments-@Model.CompletedAppointments)], backgroundColor: ['#f6c23e','#36b9cc','#1cc88a','#858796'], borderWidth: 2 }]
+            },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+        new Chart(document.getElementById('apptOverviewChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Total', "Today's", 'Upcoming', 'Completed'],
+                datasets: [{ label: 'Count', data: [@Model.TotalAppointments, @Model.TodayAppointments, @Model.UpcomingAppointments, @Model.CompletedAppointments], backgroundColor: ['#4e73df','#f6c23e','#36b9cc','#1cc88a'] }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+        });
+
         $(document).ready(function() {
             // Initialize DataTable only when plugin is available.
             if ($.fn && $.fn.DataTable) {

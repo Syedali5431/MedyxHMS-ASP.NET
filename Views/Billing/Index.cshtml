@@ -125,6 +125,47 @@ else
     </div>
 }
 
+<!-- Charts Row -->
+<div class="row mb-4 mt-4">
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Bills by Status</h6></div>
+            <div class="card-body"><canvas id="billStatusChart" height="260"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Outstanding vs Paid</h6></div>
+            <div class="card-body"><canvas id="billAmountChart" height="260"></canvas></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var bills = @Html.Raw(Json.Serialize(Model.Bills.Select(b => new { status = b.Status, total = b.TotalAmount, outstanding = b.OutstandingAmount })));
+            var statusCounts = {};
+            var totalPaid = 0, totalOutstanding = 0;
+            bills.forEach(function(b) {
+                statusCounts[b.status] = (statusCounts[b.status] || 0) + 1;
+                totalPaid += (b.total - b.outstanding);
+                totalOutstanding += b.outstanding;
+            });
+            new Chart(document.getElementById('billStatusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#1cc88a','#f6c23e','#e74a3b','#858796','#36b9cc'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('billAmountChart'), {
+                type: 'bar',
+                data: { labels: ['Paid Amount', 'Outstanding Amount'], datasets: [{ label: 'Amount', data: [totalPaid.toFixed(2), totalOutstanding.toFixed(2)], backgroundColor: ['#1cc88a','#e74a3b'] }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        })();
+    </script>
+}
+
 @section Styles {
     <style>
         .page-title { font-weight: 600; }

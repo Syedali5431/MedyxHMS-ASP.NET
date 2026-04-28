@@ -112,4 +112,41 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Items by Category</h6></div>
+                <div class="card-body"><canvas id="invCatChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-warning">Stock Levels (Top 10)</h6></div>
+                <div class="card-body"><canvas id="invStockChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var items = @Html.Raw(Json.Serialize(Model.Select(i => new { cat = i.Category, name = i.Name, stock = i.CurrentStock, reorder = i.ReorderLevel })));
+            var catCounts = {};
+            items.forEach(function(i) { var c = i.cat || 'Other'; catCounts[c] = (catCounts[c] || 0) + 1; });
+            var top10 = items.slice().sort(function(a,b) { return b.stock - a.stock; }).slice(0, 10);
+            new Chart(document.getElementById('invCatChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(catCounts), datasets: [{ data: Object.values(catCounts), backgroundColor: ['#4e73df','#1cc88a','#f6c23e','#e74a3b','#36b9cc','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('invStockChart'), {
+                type: 'bar',
+                data: { labels: top10.map(function(i){ return i.name; }), datasets: [{ label: 'Stock', data: top10.map(function(i){ return i.stock; }), backgroundColor: '#1cc88a' }, { label: 'Reorder Level', data: top10.map(function(i){ return i.reorder; }), backgroundColor: 'rgba(231,74,59,0.5)' }] },
+                options: { responsive: true, scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 30 } } } }
+            });
+        })();
+    </script>
+}

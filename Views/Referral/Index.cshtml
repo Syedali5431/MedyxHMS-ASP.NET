@@ -65,4 +65,40 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Referral Status</h6></div>
+                <div class="card-body"><canvas id="refStatusChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Referral Overview</h6></div>
+                <div class="card-body"><canvas id="refBarChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var refs = @Html.Raw(Json.Serialize(Model.Select(r => new { status = r.Status })));
+            var counts = {};
+            refs.forEach(function(r) { counts[r.status] = (counts[r.status] || 0) + 1; });
+            new Chart(document.getElementById('refStatusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(counts).length > 0 ? Object.keys(counts) : ['No Data'], datasets: [{ data: Object.keys(counts).length > 0 ? Object.values(counts) : [1], backgroundColor: ['#f6c23e','#1cc88a','#e74a3b','#4e73df','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('refBarChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(counts).length > 0 ? Object.keys(counts) : ['No Data'], datasets: [{ label: 'Referrals', data: Object.keys(counts).length > 0 ? Object.values(counts) : [0], backgroundColor: '#4e73df' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

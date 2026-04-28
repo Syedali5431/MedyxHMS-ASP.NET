@@ -85,4 +85,43 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Top Medicines Prescribed</h6></div>
+                <div class="card-body"><canvas id="prescTopMedChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Prescriptions Overview</h6></div>
+                <div class="card-body"><canvas id="prescOverviewChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var prescriptions = @Html.Raw(Json.Serialize(Model.Prescriptions));
+            var medicineCounts = {};
+            prescriptions.forEach(function(p) {
+                var m = p.medicineName || 'Unknown'; medicineCounts[m] = (medicineCounts[m] || 0) + p.quantity;
+            });
+            var sortedEntries = Object.entries(medicineCounts).sort(function(a,b) { return b[1]-a[1]; }).slice(0, 8);
+            new Chart(document.getElementById('prescTopMedChart'), {
+                type: 'bar',
+                data: { labels: sortedEntries.map(function(e){ return e[0]; }), datasets: [{ label: 'Qty', data: sortedEntries.map(function(e){ return e[1]; }), backgroundColor: '#4e73df' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { maxRotation: 30 } } } }
+            });
+            new Chart(document.getElementById('prescOverviewChart'), {
+                type: 'doughnut',
+                data: { labels: ['Total Prescriptions', 'Unique Medicines'], datasets: [{ data: [prescriptions.length, Object.keys(medicineCounts).length], backgroundColor: ['#1cc88a','#f6c23e'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        })();
+    </script>
+}

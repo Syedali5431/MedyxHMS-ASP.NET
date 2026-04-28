@@ -76,4 +76,43 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Birth Records by Month</h6></div>
+                <div class="card-body"><canvas id="birthMonthChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Gender Distribution</h6></div>
+                <div class="card-body"><canvas id="birthGenderChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var records = @Html.Raw(Json.Serialize(Model.Select(b => new { month = b.DateOfBirth.ToString("MMM yyyy"), gender = b.Gender ?? "Unknown" })));
+            var monthCounts = {}, genderCounts = {};
+            records.forEach(function(r) {
+                monthCounts[r.month] = (monthCounts[r.month] || 0) + 1;
+                genderCounts[r.gender] = (genderCounts[r.gender] || 0) + 1;
+            });
+            new Chart(document.getElementById('birthMonthChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(monthCounts).length > 0 ? Object.keys(monthCounts) : ['No Data'], datasets: [{ label: 'Births', data: Object.keys(monthCounts).length > 0 ? Object.values(monthCounts) : [0], backgroundColor: '#4e73df' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { maxRotation: 30 } } } }
+            });
+            new Chart(document.getElementById('birthGenderChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(genderCounts).length > 0 ? Object.keys(genderCounts) : ['No Data'], datasets: [{ data: Object.keys(genderCounts).length > 0 ? Object.values(genderCounts) : [1], backgroundColor: ['#36b9cc','#e74a3b','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        })();
+    </script>
+}

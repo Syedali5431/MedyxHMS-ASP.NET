@@ -250,8 +250,8 @@ namespace MedyxHMS.Controllers.PatientPortal
         public async Task<IActionResult> Export(string format = "csv", string filter = "all")
         {
             format = (format ?? "csv").Trim().ToLowerInvariant();
-            if (format != "csv" && format != "pdf")
-                return BadRequest("Only CSV and PDF exports are supported.");
+            if (format != "csv" && format != "pdf" && format != "excel")
+                return BadRequest("Only CSV, Excel, and PDF exports are supported.");
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (string.IsNullOrEmpty(userId))
@@ -275,6 +275,12 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             var title = "Patient Bills Export";
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (format == "excel")
+            {
+                var bytes = _exportService.BuildExcel(title, headers, rows);
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"patient_bills_{stamp}.xlsx");
+            }
+
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv(title, headers, rows);

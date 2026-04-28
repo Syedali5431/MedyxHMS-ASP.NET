@@ -267,8 +267,8 @@ namespace MedyxHMS.Controllers.PatientPortal
             format = (format ?? "csv").Trim().ToLowerInvariant();
             section = (section ?? "appointments").Trim().ToLowerInvariant();
 
-            if (format != "csv" && format != "pdf")
-                return BadRequest("Only CSV and PDF exports are supported.");
+            if (format != "csv" && format != "pdf" && format != "excel")
+                return BadRequest("Only CSV, Excel, and PDF exports are supported.");
 
             if (section != "appointments" && section != "bills")
                 return BadRequest("Invalid dashboard section.");
@@ -320,6 +320,12 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
 
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if (format == "excel")
+            {
+                var bytes = _exportService.BuildExcel(title, headers, rows);
+                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{filePrefix}_{stamp}.xlsx");
+            }
+
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv(title, headers, rows);

@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Text;
+using ClosedXML.Excel;
 using MedyxHMS.Services.Interfaces;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -81,6 +83,40 @@ namespace MedyxHMS.Services.Implementations
                     });
                 });
             }).GeneratePdf();
+        }
+
+        public byte[] BuildExcel(string sheetName, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows)
+        {
+            using var workbook = new XLWorkbook();
+            var ws = workbook.Worksheets.Add(sheetName?.Length > 31 ? sheetName.Substring(0, 31) : (sheetName ?? "Sheet1"));
+
+            // Header row
+            for (var col = 0; col < headers.Count; col++)
+            {
+                var cell = ws.Cell(1, col + 1);
+                cell.Value = headers[col];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.FromHtml("#4472C4");
+                cell.Style.Font.FontColor = XLColor.White;
+            }
+
+            // Data rows
+            for (var row = 0; row < rows.Count; row++)
+            {
+                var dataRow = rows[row];
+                for (var col = 0; col < dataRow.Count; col++)
+                    ws.Cell(row + 2, col + 1).Value = dataRow[col] ?? string.Empty;
+
+                if (row % 2 == 1)
+                    ws.Row(row + 2).Style.Fill.BackgroundColor = XLColor.FromHtml("#F2F2F2");
+            }
+
+            ws.Columns().AdjustToContents();
+            ws.Row(1).Height = 18;
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            return stream.ToArray();
         }
 
         private static string EscapeCsv(string value)

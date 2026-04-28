@@ -189,4 +189,40 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Attendance Status Summary</h6></div>
+                <div class="card-body"><canvas id="attendStatusChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Attendance Breakdown</h6></div>
+                <div class="card-body"><canvas id="attendBarChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var summary = @Html.Raw(Json.Serialize(Model.Summary));
+            var labels = Object.keys(summary);
+            var data = Object.values(summary);
+            new Chart(document.getElementById('attendStatusChart'), {
+                type: 'doughnut',
+                data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#1cc88a','#e74a3b','#f6c23e','#4e73df','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('attendBarChart'), {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Staff', data: data, backgroundColor: ['#1cc88a','#e74a3b','#f6c23e','#4e73df','#858796'] }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

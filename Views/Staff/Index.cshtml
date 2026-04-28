@@ -357,6 +357,22 @@
     </div>
 </div>
 
+<!-- Charts Row -->
+<div class="row mb-4 mt-4">
+    <div class="col-lg-5 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Staff by Department</h6></div>
+            <div class="card-body"><canvas id="staffDeptChart" height="260"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-7 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Staff Overview</h6></div>
+            <div class="card-body"><canvas id="staffOverviewChart" height="260"></canvas></div>
+        </div>
+    </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
@@ -394,6 +410,23 @@
                 ]
             });
         });
+
+        // Staff Charts
+        (function() {
+            var staff = @Html.Raw(Json.Serialize(Model.Staff.Select(s => new { dept = s.Department, active = s.IsActive })));
+            var deptCounts = {};
+            staff.forEach(function(s) { var d = s.dept || 'Unknown'; deptCounts[d] = (deptCounts[d] || 0) + 1; });
+            new Chart(document.getElementById('staffDeptChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(deptCounts), datasets: [{ data: Object.values(deptCounts), backgroundColor: ['#4e73df','#1cc88a','#f6c23e','#e74a3b','#36b9cc','#858796','#fd7e14','#6610f2'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('staffOverviewChart'), {
+                type: 'bar',
+                data: { labels: ['Total','Active','Inactive','This Month'], datasets: [{ label: 'Staff', data: [@Model.TotalStaff, @Model.ActiveStaff, @Model.InactiveStaff, @Model.StaffThisMonth], backgroundColor: ['#4e73df','#1cc88a','#e74a3b','#36b9cc'] }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
 
         function confirmDelete(staffId, staffName) {
             $('#staffDetails').html(`

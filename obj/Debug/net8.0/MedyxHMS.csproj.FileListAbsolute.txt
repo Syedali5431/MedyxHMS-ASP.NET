@@ -769,7 +769,6 @@ e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Runtime.
 e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Security.Cryptography.ProtectedData.dll
 e:\HMS\MedyxHMS-ASPNET\temp_build_output\runtimes\win\lib\net6.0\System.Windows.Extensions.dll
 E:\HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\scripts\UAT-Smoke.config.template.json
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\MedyxHMS.exe
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
@@ -947,3 +946,11 @@ C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\refint\MedyxHMS.dll
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.pdb
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\MedyxHMS.genruntimeconfig.cache
 C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\obj\Debug\net8.0\ref\MedyxHMS.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\MedyxHMS.exe
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\ClosedXML.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\DocumentFormat.OpenXml.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\ExcelNumberFormat.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\Irony.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\SixLabors.Fonts.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\System.IO.Packaging.dll
+C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\bin\Debug\net8.0\XLParser.dll

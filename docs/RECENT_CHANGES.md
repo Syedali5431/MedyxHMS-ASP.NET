@@ -1,11 +1,83 @@
 # Recent Changes & Maintenance Updates
 
-**Last Updated:** 2026-04-28  
-**Status:** Licensing Module Coverage Alignment + License Generation Validation
+**Last Updated:** 2026-05-15  
+**Status:** Charts Added to All Modules + PatientPortal Export Fixes + Dashboard Cleanup
 
 ---
 
 ## 📋 Summary of Recent Changes
+
+### May 2026 — Charts, Export Fixes & Dashboard Cleanup
+
+#### Issue 1: Allowed Modules Section Removed from Dashboard
+- Removed the "Allowed Modules" accordion/explorer section and "Module Option Details" card from `Views/Dashboard/Index.cshtml` (replaced by proper sidebar navigation).
+
+#### Issue 2: PatientPortal Export Routing + Excel Export
+- Fixed export link routing bug in `Areas/PatientPortal/Views/Dashboard/Index.cshtml` — added missing `area = "PatientPortal"` to all export links.
+- Installed **ClosedXML 0.102.3** NuGet package.
+- Added `BuildExcel()` method to `Services/Implementations/ExportService.cs` using ClosedXML with styled headers and alternating row colors.
+- Added Excel (`.xlsx`) export support to all PatientPortal controllers: Dashboard, Bills, MedicalRecords.
+- Added Excel buttons to PatientPortal views: Dashboard, Bills/Index, MedicalRecords/Prescriptions, MedicalRecords/LabResults, MedicalRecords/RadiologyResults.
+
+#### Issue 3: Charts Added to All Modules
+- Added **Chart.js 4.4.4** via CDN to both `Views/Shared/_Layout.cshtml` and `Views/PatientPortal/Shared/_Layout.cshtml`.
+- Added charts to the following views (doughnut + bar pattern):
+  - `Views/Dashboard/Index.cshtml` — 7-day appointment line chart + revenue bar chart (uses ViewBag data from DB)
+  - `Views/Patient/Index.cshtml` — Active/Inactive doughnut + overview bar
+  - `Views/Appointment/Index.cshtml` — Status doughnut + overview bar
+  - `Views/OPD/Index.cshtml` — Visit status doughnut + payment status bar
+  - `Views/IPD/Index.cshtml` — Admission status doughnut + type bar
+  - `Views/BloodBank/Index.cshtml` — Inventory bar + issues doughnut
+  - `Views/Prescription/Index.cshtml` — Top medicines bar + overview doughnut
+  - `Views/Lab/Dashboard.cshtml` — Already had charts (category doughnut + status bar)
+  - `Views/Radiology/Index.cshtml` — Category doughnut + count bar
+  - `Views/Billing/Index.cshtml` — Bills by status doughnut + paid vs outstanding bar
+  - `Views/BedManagement/Index.cshtml` — Bed status doughnut + overview bar
+  - `Views/Attendance/Index.cshtml` — Status doughnut + bar (from Summary dictionary)
+  - `Views/Payroll/Index.cshtml` — Status doughnut + net salary bar
+  - `Views/Staff/Index.cshtml` — Staff by department doughnut + overview bar
+  - `Views/Inventory/Index.cshtml` — Category doughnut + stock level bar
+  - `Views/FrontOffice/Index.cshtml` — Visitor status doughnut + complaint status doughnut
+  - `Views/Referral/Index.cshtml` — Status doughnut + bar
+  - `Views/BirthDeath/Index.cshtml` — Monthly births bar + gender doughnut
+  - `Views/OperationTheatre/Index.cshtml` — OT schedule status doughnut + bar
+  - `Views/Messaging/Index.cshtml` — Read/unread doughnut + 7-day volume line chart
+
+---
+
+
+
+#### Objective
+Resolve runtime login failures (`HTTP 500`) caused by schema bootstrap mismatches and SQL instance targeting drift.
+
+#### Root Causes
+- App configuration targeted `Server=.\SQLEXPRESS`, but active local SQL service was `MSSQLSERVER`.
+- Bootstrap table creation used hardcoded `NVARCHAR(450)` for user foreign keys while `AspNetUsers.Id` length in this environment differs, causing FK creation failures.
+
+#### Files Modified
+
+**appsettings.json**
+- Updated connection strings from `Server=.\SQLEXPRESS` to `Server=.` for:
+  - `ConnectionStrings:DefaultConnection`
+  - `ConnectionStrings:MedyxHMSConnection`
+
+**Services/Implementations/DatabaseInitializer.cs**
+- Updated `EnsureUserThemePreferenceTableAsync` to derive `AspNetUsers.Id` length dynamically:
+  - `@UserIdLen = COALESCE(COL_LENGTH([AspNetUsers].[Id]) / 2, 450)`
+  - `UserThemePreferences.UserId` now uses dynamic length in generated SQL.
+
+**Services/Implementations/ConcurrentSessionService.cs**
+- Added defensive SQL exception handling for missing `UserSessions` table (`SqlException 208`) in:
+  - `TryRegisterLoginAsync`
+  - `MarkActivityAsync`
+  - `EndSessionAsync`
+- Added warning logging + graceful bypass behavior to prevent hard crash paths.
+
+#### Validation
+- `dotnet build /p:UseAppHost=false` succeeded.
+- Application startup completed database bootstrap without prior FK-length crash at `UserThemePreferences`.
+- Login page loads successfully at `http://localhost:5105/Account/Login`.
+- SuperAdmin sign-in test reached `/Dashboard` successfully (`POST /Account/Login` resolved to dashboard).
 
 ### April 28, 2026 — HMS-Lic Module Coverage Recheck
 

@@ -309,7 +309,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         }
 
         [HttpGet]
-        public async Task<IActionResult> DownloadReport(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IActionResult> DownloadReport(DateTime? startDate = null, DateTime? endDate = null, string format = "pdf")
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
@@ -327,13 +327,18 @@ namespace MedyxHMS.Controllers.PatientPortal
                 r.Treatment ?? string.Empty
             }).ToList();
 
-            var bytes = _exportService.BuildPdfTable("Patient Medical Report", headers, rows);
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
+            {
+                var excelBytes = _exportService.BuildExcel("Medical Records", headers, rows);
+                return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"medical_report_{stamp}.xlsx");
+            }
+            var bytes = _exportService.BuildPdfTable("Patient Medical Report", headers, rows);
             return File(bytes, "application/pdf", $"medical_report_{stamp}.pdf");
         }
 
         [HttpGet]
-        public async Task<IActionResult> DownloadPrescriptionsReport()
+        public async Task<IActionResult> DownloadPrescriptionsReport(string format = "pdf")
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
@@ -352,13 +357,18 @@ namespace MedyxHMS.Controllers.PatientPortal
                 p.TotalPrice.ToString("0.00")
             }).ToList();
 
-            var bytes = _exportService.BuildPdfTable("Patient Prescription Report", headers, rows);
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
+            {
+                var excelBytes = _exportService.BuildExcel("Prescriptions", headers, rows);
+                return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"prescriptions_report_{stamp}.xlsx");
+            }
+            var bytes = _exportService.BuildPdfTable("Patient Prescription Report", headers, rows);
             return File(bytes, "application/pdf", $"prescriptions_report_{stamp}.pdf");
         }
 
         [HttpGet]
-        public async Task<IActionResult> DownloadLabResultsReport(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IActionResult> DownloadLabResultsReport(DateTime? startDate = null, DateTime? endDate = null, string format = "pdf")
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
@@ -381,13 +391,18 @@ namespace MedyxHMS.Controllers.PatientPortal
                 r.Interpretation ?? r.Status ?? string.Empty
             }).ToList();
 
-            var bytes = _exportService.BuildPdfTable("Patient Pathology Report", headers, rows);
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
+            {
+                var excelBytes = _exportService.BuildExcel("Lab Results", headers, rows);
+                return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"pathology_report_{stamp}.xlsx");
+            }
+            var bytes = _exportService.BuildPdfTable("Patient Pathology Report", headers, rows);
             return File(bytes, "application/pdf", $"pathology_report_{stamp}.pdf");
         }
 
         [HttpGet]
-        public async Task<IActionResult> DownloadRadiologyResultsReport(DateTime? startDate = null, DateTime? endDate = null)
+        public async Task<IActionResult> DownloadRadiologyResultsReport(DateTime? startDate = null, DateTime? endDate = null, string format = "pdf")
         {
             var patientId = await ResolveCurrentPatientIdAsync();
             if (!patientId.HasValue)
@@ -409,8 +424,13 @@ namespace MedyxHMS.Controllers.PatientPortal
                 r.Status ?? string.Empty
             }).ToList();
 
-            var bytes = _exportService.BuildPdfTable("Patient Radiology Report", headers, rows);
             var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
+            {
+                var excelBytes = _exportService.BuildExcel("Radiology Results", headers, rows);
+                return File(excelBytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"radiology_report_{stamp}.xlsx");
+            }
+            var bytes = _exportService.BuildPdfTable("Patient Radiology Report", headers, rows);
             return File(bytes, "application/pdf", $"radiology_report_{stamp}.pdf");
         }
     }

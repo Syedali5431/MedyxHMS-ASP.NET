@@ -546,6 +546,10 @@ ViewModels/
 <NUGET>/
  azure.core/1.25.0/lib/net5.0/Azure.Core.dll
  azure.identity/1.7.0/lib/netstandard2.0/Azure.Identity.dll
+ closedxml/0.102.3/lib/netstandard2.1/ClosedXML.dll
+ documentformat.openxml/2.16.0/lib/netstandard2.0/DocumentFormat.OpenXml.dll
+ excelnumberformat/1.1.0/lib/netstandard2.0/ExcelNumberFormat.dll
+ irony.netcore/1.0.11/lib/netstandard1.6/Irony.dll
  microsoft.aspnetcore.identity.entityframeworkcore/8.0.0/lib/net8.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll
  microsoft.bcl.asyncinterfaces/6.0.0/lib/netstandard2.1/Microsoft.Bcl.AsyncInterfaces.dll
  microsoft.data.sqlclient/5.1.1/ref/net6.0/Microsoft.Data.SqlClient.dll
@@ -573,9 +577,12 @@ ViewModels/
  serilog.sinks.debug/2.0.0/lib/netstandard2.1/Serilog.Sinks.Debug.dll
  serilog.sinks.file/5.0.0/lib/net5.0/Serilog.Sinks.File.dll
  serilog/3.1.1/lib/net7.0/Serilog.dll
+ sixlabors.fonts/1.0.0/lib/netcoreapp3.1/SixLabors.Fonts.dll
  system.identitymodel.tokens.jwt/6.24.0/lib/net6.0/System.IdentityModel.Tokens.Jwt.dll
+ system.io.packaging/6.0.0/lib/net6.0/System.IO.Packaging.dll
  system.memory.data/1.0.2/lib/netstandard2.0/System.Memory.Data.dll
  system.security.cryptography.protecteddata/6.0.0/lib/net6.0/System.Security.Cryptography.ProtectedData.dll
+ xlparser/1.5.2/lib/netstandard1.6/XLParser.dll
 
 [analyzerReferences]
 <DOTNET>/packs/Microsoft.AspNetCore.App.Ref/8.0.26/analyzers/dotnet/cs/

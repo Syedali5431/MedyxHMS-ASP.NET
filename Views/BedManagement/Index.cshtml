@@ -160,6 +160,22 @@
 		</div>
 	</div>
 
+	<!-- Charts Row -->
+	<div class="row mb-4">
+		<div class="col-lg-5 mb-4">
+			<div class="card shadow">
+				<div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Bed Status Distribution</h6></div>
+				<div class="card-body"><canvas id="bedStatusChart" height="260"></canvas></div>
+			</div>
+		</div>
+		<div class="col-lg-7 mb-4">
+			<div class="card shadow">
+				<div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Bed Overview</h6></div>
+				<div class="card-body"><canvas id="bedOverviewChart" height="260"></canvas></div>
+			</div>
+		</div>
+	</div>
+
 	<!-- Filter Dropdowns -->
 	<div class="card shadow-sm mb-3">
 		<div class="card-header py-2 fw-semibold text-muted" style="font-size:.8rem;letter-spacing:.05em">
@@ -661,6 +677,20 @@ setTimeout(function(){
 // Init
 populateFilters();
 renderRoomTable();
+
+// Bed Charts
+(function() {
+	new Chart(document.getElementById('bedStatusChart'), {
+		type: 'doughnut',
+		data: { labels: ['Available','Occupied','Cleaning','Maintenance'], datasets: [{ data: [@summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#1cc88a','#e74a3b','#f6c23e','#858796'], borderWidth: 2 }] },
+		options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+	});
+	new Chart(document.getElementById('bedOverviewChart'), {
+		type: 'bar',
+		data: { labels: ['Total','Available','Occupied','Cleaning','Maintenance'], datasets: [{ label: 'Beds', data: [@summary.TotalBeds, @summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#4e73df','#1cc88a','#e74a3b','#f6c23e','#858796'] }] },
+		options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+	});
+})();
 </script>
 }
 

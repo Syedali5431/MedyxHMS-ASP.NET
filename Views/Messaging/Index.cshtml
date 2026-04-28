@@ -85,4 +85,46 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Messages by Read Status</h6></div>
+                <div class="card-body"><canvas id="msgReadChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Message Volume (Last 7 Days)</h6></div>
+                <div class="card-body"><canvas id="msgVolumeChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var messages = @Html.Raw(Json.Serialize(Model.Select(m => new { isRead = m.IsRead, sent = m.SentAt.ToString("yyyy-MM-dd") })));
+            var readCount = 0, unreadCount = 0;
+            var dayCounts = {};
+            var today = new Date();
+            for (var i = 6; i >= 0; i--) { var d = new Date(today); d.setDate(d.getDate()-i); dayCounts[d.toISOString().slice(0,10)] = 0; }
+            messages.forEach(function(m) {
+                if (m.isRead) readCount++; else unreadCount++;
+                if (dayCounts.hasOwnProperty(m.sent)) dayCounts[m.sent]++;
+            });
+            new Chart(document.getElementById('msgReadChart'), {
+                type: 'doughnut',
+                data: { labels: ['Read', 'Unread'], datasets: [{ data: [readCount, unreadCount], backgroundColor: ['#1cc88a','#e74a3b'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('msgVolumeChart'), {
+                type: 'line',
+                data: { labels: Object.keys(dayCounts), datasets: [{ label: 'Messages', data: Object.values(dayCounts), borderColor: '#4e73df', backgroundColor: 'rgba(78,115,223,0.1)', tension: 0.4 }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}

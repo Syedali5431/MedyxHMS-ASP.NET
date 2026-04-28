@@ -42,4 +42,42 @@
             </div>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Visitor Status</h6></div>
+                <div class="card-body"><canvas id="foVisitorChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Complaint Status</h6></div>
+                <div class="card-body"><canvas id="foComplaintChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var visitors = @Html.Raw(Json.Serialize(Model.Visitors.Select(v => new { status = v.Status })));
+            var complaints = @Html.Raw(Json.Serialize(Model.Complaints.Select(c => new { status = c.Status })));
+            var vCounts = {}, cCounts = {};
+            visitors.forEach(function(v) { vCounts[v.status] = (vCounts[v.status] || 0) + 1; });
+            complaints.forEach(function(c) { cCounts[c.status] = (cCounts[c.status] || 0) + 1; });
+            new Chart(document.getElementById('foVisitorChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(vCounts).length > 0 ? Object.keys(vCounts) : ['No Data'], datasets: [{ data: Object.keys(vCounts).length > 0 ? Object.values(vCounts) : [1], backgroundColor: ['#1cc88a','#f6c23e','#e74a3b','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('foComplaintChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(cCounts).length > 0 ? Object.keys(cCounts) : ['No Data'], datasets: [{ data: Object.keys(cCounts).length > 0 ? Object.values(cCounts) : [1], backgroundColor: ['#e74a3b','#f6c23e','#1cc88a','#4e73df','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+        })();
+    </script>
+}

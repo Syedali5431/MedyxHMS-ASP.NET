@@ -111,4 +111,46 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Payroll Status</h6></div>
+                <div class="card-body"><canvas id="payrollStatusChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Net Salary per Record</h6></div>
+                <div class="card-body"><canvas id="payrollSalaryChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var records = @Html.Raw(Json.Serialize(Model.PayrollRecords.Select(r => new { status = r.Status, net = r.NetSalary, month = r.PayrollMonth.ToString("MMM yyyy"), staff = r.StaffId })));
+            var statusCounts = {};
+            var labels = [], salaries = [];
+            records.forEach(function(r) {
+                statusCounts[r.status] = (statusCounts[r.status] || 0) + 1;
+                labels.push(r.month + ' - ' + r.staff);
+                salaries.push(r.net);
+            });
+            if (labels.length > 10) { labels = labels.slice(-10); salaries = salaries.slice(-10); }
+            new Chart(document.getElementById('payrollStatusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#f6c23e','#1cc88a','#4e73df','#e74a3b'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('payrollSalaryChart'), {
+                type: 'bar',
+                data: { labels: labels, datasets: [{ label: 'Net Salary', data: salaries, backgroundColor: '#4e73df' }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true }, x: { ticks: { maxRotation: 40 } } } }
+            });
+        })();
+    </script>
+}

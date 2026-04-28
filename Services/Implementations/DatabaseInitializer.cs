@@ -494,16 +494,20 @@ END");
             await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[UserThemePreferences]', N'U') IS NULL
 BEGIN
+    DECLARE @UserIdLen INT = COALESCE(COL_LENGTH(N'[dbo].[AspNetUsers]', N'Id') / 2, 450);
+    DECLARE @sql NVARCHAR(MAX) = N'
     CREATE TABLE [dbo].[UserThemePreferences] (
         [Id] INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
-        [UserId] NVARCHAR(450) NOT NULL,
+        [UserId] NVARCHAR(' + CAST(@UserIdLen AS NVARCHAR(10)) + N') NOT NULL,
         [ThemeId] NVARCHAR(50) NOT NULL,
         [PreferenceSince] DATETIME2 NOT NULL,
         [IsDefault] BIT NOT NULL DEFAULT(0),
         CONSTRAINT [FK_UserThemePreferences_AspNetUsers_UserId]
             FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers]([Id]) ON DELETE CASCADE
     );
-    CREATE UNIQUE INDEX [UX_UserThemePreferences_UserId] ON [dbo].[UserThemePreferences]([UserId]);
+    CREATE UNIQUE INDEX [UX_UserThemePreferences_UserId] ON [dbo].[UserThemePreferences]([UserId]);';
+
+    EXEC sp_executesql @sql;
 END");
         }
 

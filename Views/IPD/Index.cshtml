@@ -158,4 +158,44 @@
             </table>
         </div>
     </div>
+
+    <!-- Charts Row -->
+    <div class="row mb-4">
+        <div class="col-lg-5 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-primary">Admission Status</h6></div>
+                <div class="card-body"><canvas id="ipdStatusChart" height="260"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-7 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3"><h6 class="m-0 font-weight-bold text-info">Admission Type Breakdown</h6></div>
+                <div class="card-body"><canvas id="ipdTypeChart" height="260"></canvas></div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function() {
+            var admissions = @Html.Raw(Json.Serialize(Model.Admissions));
+            var statusCounts = {};
+            var typeCounts = {};
+            admissions.forEach(function(a) {
+                var s = a.status || 'Unknown'; statusCounts[s] = (statusCounts[s] || 0) + 1;
+                var t = a.admissionType || 'Unknown'; typeCounts[t] = (typeCounts[t] || 0) + 1;
+            });
+            new Chart(document.getElementById('ipdStatusChart'), {
+                type: 'doughnut',
+                data: { labels: Object.keys(statusCounts), datasets: [{ data: Object.values(statusCounts), backgroundColor: ['#4e73df','#1cc88a','#f6c23e','#858796'], borderWidth: 2 }] },
+                options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            new Chart(document.getElementById('ipdTypeChart'), {
+                type: 'bar',
+                data: { labels: Object.keys(typeCounts), datasets: [{ label: 'Admissions', data: Object.values(typeCounts), backgroundColor: ['#e74a3b','#36b9cc'] }] },
+                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        })();
+    </script>
+}
