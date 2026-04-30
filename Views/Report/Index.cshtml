@@ -185,7 +185,7 @@
     window.reportDownloadHelper = {
         async downloadReport(baseUrl, options) {
             const format = (options.format || 'pdf').toLowerCase();
-            const extension = format === 'excel' ? 'xlsx' : 'pdf';
+            const extension = format === 'excel' || format === 'xlsx' ? 'xlsx' : 'pdf';
             const suggestedBaseName = window.prompt(`Enter ${format.toUpperCase()} file name`, options.defaultFileName || 'report');
 
             if (suggestedBaseName === null) {
@@ -203,55 +203,20 @@
             url.searchParams.set('fileName', trimmedBaseName);
 
             Object.entries(options.query || {}).forEach(([key, value]) => {
-                if (value) {
+                if (value !== undefined && value !== null && value !== '') {
                     url.searchParams.set(key, value);
                 }
             });
 
-            const downloadName = `${trimmedBaseName}.${extension}`;
-
             try {
-                const response = await fetch(url.toString(), {
-                    credentials: 'same-origin'
-                });
-
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Export failed with status ${response.status}.`);
-                }
-
-                const blob = await response.blob();
-
-                if (window.showSaveFilePicker && window.isSecureContext) {
-                    const pickerOptions = {
-                        suggestedName: downloadName,
-                        types: [
-                            {
-                                description: format === 'excel' ? 'Excel Workbook' : 'PDF Document',
-                                accept: {
-                                    [blob.type || (format === 'excel'
-                                        ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                                        : 'application/pdf')]: [`.${extension}`]
-                                }
-                            }
-                        ]
-                    };
-
-                    const fileHandle = await window.showSaveFilePicker(pickerOptions);
-                    const writable = await fileHandle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                    return;
-                }
-
-                const objectUrl = window.URL.createObjectURL(blob);
+                // Native browser download is the most reliable path for file saves.
                 const link = document.createElement('a');
-                link.href = objectUrl;
-                link.download = downloadName;
+                link.href = url.toString();
+                link.download = `${trimmedBaseName}.${extension}`;
+                link.rel = 'noopener';
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
-                window.URL.revokeObjectURL(objectUrl);
             } catch (error) {
                 const message = error instanceof Error ? error.message : 'The report could not be downloaded.';
                 window.alert(message);
