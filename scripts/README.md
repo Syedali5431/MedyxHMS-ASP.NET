@@ -6,27 +6,30 @@ This folder contains SQL and PowerShell scripts for database bootstrap and valid
 
 - `New-Database.sql`
   - Creates database `MedyxHMS` if missing.
-  - Creates full schema (tables, constraints, indexes).
+  - Creates schema (tables, constraints, indexes) — 67 core tables.
+  - Includes MFA columns on AspNetUsers (MFAEnabled, MFASecretKey, MFATempSecret, MFARecoveryCodes).
   - Applies baseline seed data for core startup usage (roles, features, settings, SuperAdmin mapping).
-  - Creates utility views and stored procedures.
 
 - `New-Database-Empty.sql`
   - Creates database `MedyxHMS` if missing.
-  - Creates full schema (tables, constraints, indexes).
+  - Creates schema (tables, constraints, indexes) — 67 core tables.
+  - Includes MFA columns on AspNetUsers.
   - Does not include baseline data inserts.
-  - Keeps utility views and stored procedures.
 
-## Run From SSMS (SQL Server Management Studio)
+- `New-Database.Validation.sql`
+  - Schema + seed data with validation checks.
+  - Includes MFA columns.
 
-1. Open SSMS and connect to your server.
-2. Open either:
-   - `scripts/New-Database.sql`, or
-   - `scripts/New-Database-Empty.sql`
-3. Execute the script.
+> **Note:** These scripts contain 67 core tables. The full database has 96 tables.
+> Additional tables (28) are created dynamically by `DatabaseInitializer.Ensure*Async()` methods at app startup.
+> **Recommended deployment:** Run the app once — `EnsureCreatedAsync()` creates any missing tables.
+> For full manual deployment, use SQL Server Management Studio → Tasks → Generate Scripts from the live database.
 
-## Run From sqlcmd
+## MFA Migration
 
-### LocalDB example
+- `MFA-Migration.sql`
+  - Standalone script to add MFA columns (MFAEnabled, MFASecretKey, MFATempSecret, MFARecoveryCodes) to an existing AspNetUsers table.
+  - Safe to run on any existing database.
 
 ```powershell
 sqlcmd -S "(localdb)\MSSQLLocalDB" -i ".\scripts\New-Database.sql"
