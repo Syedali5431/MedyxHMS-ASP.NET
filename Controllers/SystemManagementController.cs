@@ -82,8 +82,7 @@ namespace MedyxHMS.Controllers
             var inactiveKeys = await _reportCatalogVisibilityService.GetInactiveKeysAsync();
             var roleMap = await _reportCatalogVisibilityService.GetReportRoleMapAsync();
             var allRoles = await _roleManager.Roles
-                .Select(r => r.Name)
-                .Where(r => r != null)
+                .Select(r => r!.Name)
                 .OrderBy(r => r)
                 .ToListAsync();
 
@@ -117,7 +116,7 @@ namespace MedyxHMS.Controllers
                 SearchTerm = search ?? string.Empty,
                 TotalReports = rows.Count,
                 ActiveReports = rows.Count(r => r.IsActive),
-                AvailableRoles = allRoles,
+                AvailableRoles = allRoles!,
                 Rows = rows
             };
 
@@ -939,7 +938,7 @@ namespace MedyxHMS.Controllers
         {
             var canManage = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
             var allUsers = await _userManager.Users.ToListAsync();
-            var availableRoles = await _roleManager.Roles.Where(r => r.Name != "Patient").Select(r => r.Name).ToListAsync();
+            var availableRoles = await _roleManager.Roles.Where(r => r.Name != "Patient").Select(r => r.Name!).ToListAsync();
 
             var filtered = allUsers.AsEnumerable();
 
