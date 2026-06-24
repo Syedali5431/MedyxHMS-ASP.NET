@@ -1,9 +1,9 @@
 # License Guide
 
 
-> Last Updated: 2026-04-28
-> Operational Baseline: production-ready — final UAT passed 2026-04-26; 30 modules validated.
-> References: docs/UAT-Evidence-2026-04-26.md, docs/RECENT_CHANGES.md, docs/LICENSING-DESIGN.md
+> Last Updated: 2026-06-24
+> Operational Baseline: all 5 UI/UX phases complete; MFA with recovery codes; forced password change on default password.
+> References: [LICENSING-DESIGN.md](LICENSING-DESIGN.md)
 
 ## Purpose
 This guide explains how licensing is implemented in MedyxHMS and how to renew/update license expiry securely so clients cannot change expiry from the UI or browser side.

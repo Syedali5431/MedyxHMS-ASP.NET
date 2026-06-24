@@ -53,7 +53,7 @@ This document covers the remaining Step 5.2 non-code operational tasks:
 - understand one-time verification key consumption policy
 
 Reference guide:
-- [user guides/MedyxHMS-Lic-Operator-Guide.md](user%20guides/MedyxHMS-Lic-Operator-Guide.md)
+- [user guides/MedyxHMS-LIC.md](../user%20guides/MedyxHMS-LIC.md) — Licensing tool guide
 
 ## Support Escalation Model
 

@@ -1,9 +1,9 @@
 # User Guide
 
 
-> Last Updated: 2026-04-28
-> Operational Baseline: production-ready — final UAT passed 2026-04-26; all 30 modules validated.
-> References: docs/UAT-Evidence-2026-04-26.md, docs/Final-touches.md, docs/RECENT_CHANGES.md
+> Last Updated: 2026-06-24
+> Operational Baseline: all 5 UI/UX phases complete; MFA with recovery codes; forced password change on default password.
+> References: [../planning/UI-ENHANCEMENT-ROADMAP.md](../planning/UI-ENHANCEMENT-ROADMAP.md), [../testing/UAT.md](../testing/UAT.md)
 
 ## Audience
 

@@ -222,7 +222,7 @@ Built-in report types:
 - Legacy PHP Report Import
 - Report Preview
 
-Also see [Final-touches.md](Final-touches.md) for full list of R1–R49 report types.
+See [Functionality.md](Functionality.md) Section 28 for report types and capabilities.
 
 ### 3.20 Patient Portal (MD19)
 **Controllers:** `PatientPortal/*`  
@@ -291,7 +291,7 @@ Also see [Final-touches.md](Final-touches.md) for full list of R1–R49 report t
 
 ### 3.27 AI Chatbot (MD21)
 **Controllers:** `ChatbotController`, `ChatbotAdminController`  
-See full feature list in [Final-touches.md — CB1–CB12](Final-touches.md).
+See [Functionality.md](Functionality.md) Section 34 for chatbot feature details.
 
 **End-user features:**
 - Natural-language query interface for patients and staff
@@ -396,43 +396,41 @@ See full feature list in [Final-touches.md — CB1–CB12](Final-touches.md).
 
 ---
 
-## 8. Program Stage Tracking (Final-touches Alignment)
+## 8. Implementation History
 
-As of 2026-04-24, staged execution status is:
+All 5 UI/UX enhancement phases completed (2026-06-24):
 
-| Stage | Name | Status | Evidence |
-|-------|------|--------|----------|
-| Stage 1 | Role-Based Business UAT | Completed | `temp_build_output/uat-role-stage1-2026-04-24.json` |
-| Stage 2 | Report Output Certification | Completed | `temp_build_output/stage2-report-cert-2026-04-24.json` |
-| Stage 3 | Admin/SuperAdmin Governance E2E | Completed | `temp_build_output/stage3-governance-e2e-2026-04-24.json` |
-| Stage 4 | Cutover Rehearsal and Rollback Drill | Completed | `temp_build_output/stage4-cutover-rehearsal-2026-04-24.json` |
-| Stage 5 | Notification Production Readiness | Completed | `temp_build_output/stage5-notification-readiness-2026-04-24.json` |
-| Stage 6 | Deferred Enhancements Backlog | Completed | `temp_build_output/stage6-deferred-enhancements-backlog-2026-04-24.json` |
-| Stage 7 | System Management | Planned in Phases | See `Final-touches.md` Stage 7 phased plan |
-| Stage 8 | Certificates | Planned in Phases | See `Final-touches.md` Stage 8 phased plan |
+| Phase | Feature | Status |
+|-------|---------|--------|
+| 1 | Sidebar Toggle | ✅ Complete |
+| 2 | Visual Design Polish | ✅ Complete |
+| 3 | Profile Pictures | ✅ Complete |
+| 4 | Multi-Factor Authentication | ✅ Complete |
+| 5 | Audit Log Menu & Viewer | ✅ Complete |
 
-Execution sequencing and phase-level details for Stage 7 and Stage 8 are governed by `Final-touches.md` and must be reflected in execution checklists before implementation starts.
+Additional features: MFA recovery codes, forced password change on default password.
+See [../planning/UI-ENHANCEMENT-ROADMAP.md](../planning/UI-ENHANCEMENT-ROADMAP.md) for full phase details.
 
 ---
 
 ## 9. Linked Documents
 
-| Document                                           | Purpose                                                        |
-|----------------------------------------------------|----------------------------------------------------------------|
-| [Final-touches.md](Final-touches.md)              | Staged inventories: roles, portals, menus, modules, reports, AI |
-| [Final-TODOList.md](Final-TODOList.md)            | Consolidated completed + pending phase task list               |
-| [UPDATED-TODO-LIST-2026-04-22.md](UPDATED-TODO-LIST-2026-04-22.md) | Short-form active execution priorities |
-| [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md)    | Step-by-step deployment and rollback procedures                |
-| [ADMIN-GUIDE.md](ADMIN-GUIDE.md)                  | Admin user guide                                               |
-| [USER-GUIDE.md](USER-GUIDE.md)                    | End-user documentation                                         |
-| [TRAINING-SUPPORT-PLAN.md](TRAINING-SUPPORT-PLAN.md) | User training plan and support escalation                   |
-| [OPENAI-CHATBOT-DESIGN.md](OPENAI-CHATBOT-DESIGN.md) | Chatbot architecture and safety design                      |
-| [LICENSING-DESIGN.md](LICENSING-DESIGN.md)        | License domain design and enforcement rules                    |
-| [SECURITY-PERFORMANCE-VALIDATION.md](SECURITY-PERFORMANCE-VALIDATION.md) | Security and performance validation checklists |
-| [UAT-EXECUTION-EVIDENCE-2026-04-22.md](UAT-EXECUTION-EVIDENCE-2026-04-22.md) | UAT execution evidence (April 2026)        |
-| [UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md](UAT-ROLE-VALIDATION-CHECKLIST-2026-04-22.md) | Role-by-role UAT checklist |
-| [NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md](NULLABILITY-WARNING-TRIAGE-PLAN-2026-04-22.md) | Warning triage plan |
-| [IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md](IMPLEMENTATION-STATUS-2026-04-22-FINAL-RUN.md) | Final implementation status |
+| Document | Purpose |
+|----------|---------|
+| [Function_List.md](Function_List.md) | Complete function inventory |
+| [Functionality.md](Functionality.md) | Detailed functionality reference |
+| [Modules.md](Modules.md) | Module registry (30 modules) |
+| [Sidebar.md](Sidebar.md) | Sidebar menu reference (32 items) |
+| [DEPLOYMENT-RUNBOOK.md](DEPLOYMENT-RUNBOOK.md) | Step-by-step deployment procedures |
+| [ADMIN-GUIDE.md](ADMIN-GUIDE.md) | Admin user guide |
+| [USER-GUIDE.md](USER-GUIDE.md) | End-user documentation |
+| [../planning/UI-ENHANCEMENT-ROADMAP.md](../planning/UI-ENHANCEMENT-ROADMAP.md) | 5-phase UI/UX roadmap |
+| [../design/LICENSING-DESIGN.md](../design/LICENSING-DESIGN.md) | License domain design |
+| [../design/OPENAI-CHATBOT-DESIGN.md](../design/OPENAI-CHATBOT-DESIGN.md) | Chatbot architecture and safety |
+| [../design/SECURITY-PERFORMANCE-VALIDATION.md](../design/SECURITY-PERFORMANCE-VALIDATION.md) | Security and performance checklists |
+| [../testing/SAT.md](../testing/SAT.md) | Site Acceptance Test |
+| [../testing/UAT.md](../testing/UAT.md) | User Acceptance Test |
+| [../training/TRAINING-SUPPORT-PLAN.md](../training/TRAINING-SUPPORT-PLAN.md) | Training and support plan |
 
 ---
 
