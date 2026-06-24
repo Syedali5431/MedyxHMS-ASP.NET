@@ -1,13 +1,24 @@
 # User Guides — Index
 
 **Medyx HMS User Guides**  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24
 
 ---
 
 ## Overview
 
 This folder contains role-specific user guides for all Medyx HMS user roles. Each guide covers login, module access, step-by-step workflows, and quick-reference tables specific to that role.
+
+## New Features (2026-06-24)
+
+| Feature | Description | Affected Roles |
+|---------|-------------|----------------|
+| Sidebar Toggle | Collapse sidebar to icon-only (56px) — persists across reloads | All staff |
+| Visual Polish | Dashboard icon cards, table/form styling, button icons | All |
+| Profile Pictures | Upload JPG/PNG avatar via Profile page, shown in navbar | All |
+| MFA (TOTP) | QR code setup with Google/Microsoft Authenticator, recovery codes | All (optional) |
+| Forced Password Change | Default password "Medyx147" triggers mandatory password change | All |
+| Audit Log Viewer | Color-coded audit logs with CSV export | Admin, SuperAdmin |
 
 ---
 

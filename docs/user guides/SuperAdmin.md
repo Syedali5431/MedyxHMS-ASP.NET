@@ -2,37 +2,38 @@
 
 **Role:** SuperAdmin  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24  
 
 ---
 
 ## Overview
 
-The SuperAdmin is the highest-privilege user in Medyx HMS. This role has unrestricted access to every module, every user record, and every system configuration. There is typically only one SuperAdmin account per installation. The SuperAdmin is also the only user exempt from license expiry enforcement, meaning the system remains accessible even after the license lapses.
+The SuperAdmin is the highest-privilege user in Medyx HMS. This role has unrestricted access to every module, every user record, and every system configuration.
 
 **Key responsibilities:**
 - System-wide configuration and governance
 - User account management and role assignment
 - License management and module entitlement control
-- Security oversight and audit review
+- Security oversight, audit review, and MFA policy enforcement
 - Module enable/disable governance on the dashboard
 - Chatbot, CMS, and notification infrastructure management
-
----
 
 ## 1. Logging In
 
 1. Open the Medyx HMS URL in your browser.
 2. Enter your email address and password.
-3. A role selection screen appears — select **SuperAdmin**.
-4. Click **Sign In**. You are redirected to `/Dashboard`.
+3. **If using default password "Medyx147":** you will be redirected to change your password immediately (minimum 8 characters).
+4. A role selection screen appears — select **SuperAdmin**.
+5. Click **Sign In**. You are redirected to `/Dashboard`.
 
-> If you see the PatientPortal instead, your browser may have cached a Patient session. Log out fully and log back in selecting SuperAdmin.
+### Sidebar
+- Click the ☰ (hamburger) button in the top navbar to collapse/expand the sidebar.
+- Collapsed state persists across page reloads — icons remain visible.
 
-### Session Behaviour
-- Your active role is stored in the session as `ActiveRole = SuperAdmin`.
-- Navigating to `/PatientPortal/` will be blocked with an Access Denied response.
-- Your session expires after the configured idle timeout.
+### Profile & Security
+- Click your name in the navbar → **Profile** to upload a profile picture (JPG/PNG, max 2MB) and manage account details.
+- **MFA Setup:** On your Profile page, click **Enable MFA** → scan the QR code with Google/Microsoft Authenticator → enter the 6-digit code. Recovery codes are generated automatically — save them securely.
+- **Audit Logs:** Available in the sidebar Admin section — view all system activity with color-coded status badges and CSV export.
 
 ---
 

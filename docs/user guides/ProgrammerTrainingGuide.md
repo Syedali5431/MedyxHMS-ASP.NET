@@ -2,7 +2,7 @@
 
 ## Medyx HMS ASP.NET Project Workflow and File Map
 
-Last Updated: 2026-04-22
+Last Updated: 2026-06-24
 
 ## 1. Purpose of This Guide
 
