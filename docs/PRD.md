@@ -452,3 +452,13 @@ The sidebar supports collapsing to an icon-only view on desktop (≥992px). Stat
 - **Mobile behavior:** Overlay toggle (existing behavior, unchanged)
 - **Persistence:** Sidebar state saved to `localStorage` key `medyx-sidebar-collapsed`
 - **Files:** `wwwroot/js/sidebar-toggle.js`, `wwwroot/css/site.css` (sidebar toggle section), `Views/Shared/_Layout.cshtml`
+
+### 9.2 Visual Design Polish
+**Implemented:** 2026-06-24
+
+- **Dashboard cards:** Stat cards now feature colored icon backgrounds (rounded circles with `bg-opacity-10`) replacing faint `text-gray-300` icons
+- **Quick actions:** Dashboard buttons now include Font Awesome icons (`fa-user-plus`, `fa-calendar-plus`, `fa-file-invoice`)
+- **Table styling:** Global `.table` CSS polish — rounded borders, uppercase headers with letter-spacing, hover highlight
+- **Form enhancements:** Floating label focus color, form container max-width, last-child margin removal
+- **Sidebar polish:** Smooth hover transitions, active link backgrounds, border-radius on links
+- **Files:** `wwwroot/css/site.css` (Visual Polish section), `Views/Dashboard/Index.cshtml`

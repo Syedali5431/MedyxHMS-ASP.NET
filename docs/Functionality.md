@@ -684,3 +684,34 @@
 - All existing sidebar features preserved: role-based visibility, module gating, active link highlighting
 - No changes to `SidebarNavViewComponent` or any backend code
 - Works alongside existing inline mobile sidebar JS
+
+---
+
+## 40. Visual Design Polish (UI)
+
+**Implemented:** 2026-06-24 | **Files:** `wwwroot/css/site.css`, `Views/Dashboard/Index.cshtml`
+
+### Dashboard Stat Cards
+- Icons upgraded from faint `text-gray-300 fa-2x` to colored `fa-lg` inside `rounded-circle bg-{color} bg-opacity-10 p-3` containers
+- Colors match card border accents: primary (Patients), success (Appointments), info (Revenue), warning (Pending Bills)
+- Quick action buttons now include Font Awesome icons
+
+### Table Styling (Global)
+- `.table` gets `border-radius: 0.5rem` with hidden overflow
+- `thead th`: uppercase, 0.8rem, 0.05em letter-spacing, `#64748b` color, `#f8fafc` background
+- `.table-hover tbody tr:hover`: `#f1f5f9` background
+
+### Form Enhancements (Global)
+- `.form-container` max-width: 900px
+- Floating labels use `--hms-primary` on focus/filled
+- Last `.form-floating` in `.card` removes bottom margin
+
+### Sidebar Hover Polish
+- `.staff-sidebar-link`: 0.15s ease transitions, `border-radius: 0.375rem`, horizontal margin
+- Hover: `rgba(255,255,255,0.08)` background
+- Active: `rgba(255,255,255,0.15)` background + `font-weight: 600`
+- `.staff-sidebar-sublink`: smooth color transition
+
+### Safety
+- CSS-only changes — no form names, IDs, or bindings modified
+- No backend, controller, or service changes
