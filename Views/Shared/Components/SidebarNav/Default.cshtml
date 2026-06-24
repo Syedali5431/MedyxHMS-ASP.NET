@@ -8,7 +8,8 @@
     <li class="nav-item">
         <a href="/Dashboard"
            class="staff-sidebar-link @(Model.IsActive("/Dashboard") ? "active" : "")">
-            <i class="fas fa-tachometer-alt staff-sidebar-icon"></i>Dashboard
+            <i class="fas fa-tachometer-alt staff-sidebar-icon"></i>
+            <span class="flex-grow-1">Dashboard</span>
         </a>
     </li>
 
@@ -386,7 +387,8 @@
         <li class="nav-item">
             <a href="/Report/FinancialReport"
                class="staff-sidebar-link @(Model.IsActive("/Report/FinancialReport") ? "active" : "")">
-                <i class="fas fa-coins staff-sidebar-icon"></i>Finance
+                <i class="fas fa-coins staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Finance</span>
             </a>
         </li>
     }
@@ -462,7 +464,8 @@
     <li class="nav-item">
         <a href="/Notifications"
            class="staff-sidebar-link @(Model.IsActive("/Notifications") ? "active" : "")">
-            <i class="fas fa-bell staff-sidebar-icon"></i>Notifications
+            <i class="fas fa-bell staff-sidebar-icon"></i>
+            <span class="flex-grow-1">Notifications</span>
         </a>
     </li>
 

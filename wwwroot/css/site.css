@@ -176,16 +176,19 @@ body {
 }
 .staff-sidebar.collapsed .staff-sidebar-section,
 .staff-sidebar.collapsed .sidebar-brand-text,
+.staff-sidebar.collapsed .sidebar-footer { display: none; }
+.staff-sidebar.collapsed .staff-sidebar-link span.flex-grow-1,
 .staff-sidebar.collapsed .staff-sidebar-chevron,
-.staff-sidebar.collapsed .staff-sidebar-sublink,
-.staff-sidebar.collapsed .sidebar-footer,
-.staff-sidebar.collapsed .sidebar-version,
-.staff-sidebar.collapsed .staff-sidebar-link span.flex-grow-1 {
-    opacity: 0;
-    visibility: hidden;
-    width: 0;
-    overflow: hidden;
-    transition: opacity 0.15s ease, visibility 0.15s ease;
+.staff-sidebar.collapsed .staff-sidebar-sublink { display: none; }
+
+/* Center icons when collapsed */
+.staff-sidebar.collapsed .staff-sidebar-link {
+    justify-content: center;
+    padding: 0.55rem 0;
+    margin: 0.1rem 0.35rem;
+}
+.staff-sidebar.collapsed .staff-sidebar-icon {
+    margin-right: 0;
 }
 
 /* ── Hover expand on collapsed ── */
@@ -197,15 +200,17 @@ body {
 }
 .staff-sidebar.collapsed.hover-expand .staff-sidebar-section,
 .staff-sidebar.collapsed.hover-expand .sidebar-brand-text,
-.staff-sidebar.collapsed.hover-expand .staff-sidebar-chevron,
-.staff-sidebar.collapsed.hover-expand .staff-sidebar-sublink,
-.staff-sidebar.collapsed.hover-expand .sidebar-footer,
-.staff-sidebar.collapsed.hover-expand .sidebar-version,
-.staff-sidebar.collapsed.hover-expand .staff-sidebar-link span.flex-grow-1 {
-    opacity: 1;
-    visibility: visible;
-    width: auto;
-    transition: opacity 0.18s ease 0.05s, visibility 0.18s ease 0.05s;
+.staff-sidebar.collapsed.hover-expand .sidebar-footer { display: block; }
+.staff-sidebar.collapsed.hover-expand .staff-sidebar-link span.flex-grow-1,
+.staff-sidebar.collapsed.hover-expand .staff-sidebar-sublink { display: block; }
+.staff-sidebar.collapsed.hover-expand .staff-sidebar-chevron { display: inline; }
+.staff-sidebar.collapsed.hover-expand .staff-sidebar-link {
+    justify-content: flex-start;
+    padding: 0.5rem 1.1rem;
+    margin: 0.1rem 0.5rem;
+}
+.staff-sidebar.collapsed.hover-expand .staff-sidebar-icon {
+    margin-right: 0.7rem;
 }
 
 /* ── Scrollable ── */
