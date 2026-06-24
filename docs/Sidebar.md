@@ -213,3 +213,11 @@ The sidebar is rendered by `Components/SidebarNavViewComponent.cs` using `Sideba
 | Admin | 3 | 14 |
 | System Management | 1 | 6 |
 | **Total** | **30** | **91** |
+
+---
+
+## Phase Implementation Notes
+
+**Phase 1 — Sidebar Toggle (2026-06-24):** No new sidebar items. Menu structure unchanged. Toggle button moved from mobile-only (`d-lg-none`) to all screen sizes. Sidebar now supports desktop collapse to 56px icon-only view with localStorage persistence.
+
+**Phase 2 — Visual Design Polish (2026-06-24):** No new sidebar items. Visual polish applied: hover transitions, active link backgrounds, border-radius on sidebar links. No structural changes to menu hierarchy.

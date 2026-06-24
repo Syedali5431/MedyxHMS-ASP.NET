@@ -725,3 +725,5 @@
 | Service Implementations | 49 |
 | Background/Hosted Services | 2 |
 | Utility/Seeder Classes | 4 |
+| UI Feature (Phase 1) | 1 JS file (`sidebar-toggle.js`) — no backend functions |
+| UI Feature (Phase 2) | 0 — CSS-only, no backend functions |

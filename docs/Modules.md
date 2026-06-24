@@ -128,3 +128,11 @@ SystemModule (global)
 - Service: `Services/Interfaces/IServices.cs` → `IModuleService`
 - Implementation: `Services/Implementations/ModuleService.cs`
 - Controller: `Controllers/ModuleManagementController.cs`
+
+---
+
+## Phase Implementation Notes
+
+**Phase 1 — Sidebar Toggle (2026-06-24):** No new module. CSS/JS-only feature. No module entry required.
+
+**Phase 2 — Visual Design Polish (2026-06-24):** No new module. CSS-only feature. No module entry required.
