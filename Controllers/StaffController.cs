@@ -13,7 +13,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for StaffController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public class StaffController : Controller
     {
         private readonly IStaffService _staffService;

@@ -29,11 +29,24 @@ namespace MedyxHMS.Controllers
 
         // ======== Lab Test Management ========
 
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, string? search = null, DateTime? from = null, DateTime? to = null)
         {
             if (pageSize < 1) pageSize = 10;
             if (page < 1) page = 1;
             var allTests = await _labService.GetAllLabTestsAsync();
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                allTests = allTests.Where(t =>
+                    (t.TestName != null && t.TestName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.TestCode != null && t.TestCode.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (t.Category != null && t.Category.Contains(search, StringComparison.OrdinalIgnoreCase))).ToList();
+            }
+            if (from.HasValue)
+                allTests = allTests.Where(t => t.CreatedDate >= from.Value).ToList();
+            if (to.HasValue)
+                allTests = allTests.Where(t => t.CreatedDate <= to.Value.AddDays(1).AddTicks(-1)).ToList();
+
             var tests = allTests
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)
@@ -42,6 +55,9 @@ namespace MedyxHMS.Controllers
             ViewBag.TotalPages = (int)Math.Ceiling(allTests.Count() / (double)pageSize);
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
+            ViewBag.Search = search;
+            ViewBag.FromDate = from?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = to?.ToString("yyyy-MM-dd");
 
             return View(tests);
         }

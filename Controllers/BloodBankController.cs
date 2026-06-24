@@ -22,10 +22,15 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string? bloodGroup = null)
         {
             ViewBag.Issues = await _bloodBankService.GetBloodIssuesAsync();
             var inventory = await _bloodBankService.GetBloodInventoryAsync();
+            if (!string.IsNullOrWhiteSpace(bloodGroup))
+            {
+                inventory = inventory.Where(i => i.BloodGroup != null && i.BloodGroup.Equals(bloodGroup, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+            ViewBag.FilterBloodGroup = bloodGroup;
             return View(inventory);
         }
 
