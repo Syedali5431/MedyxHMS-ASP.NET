@@ -672,6 +672,22 @@
             </li>
         }
 
+        @* Audit Logs *@
+        <li class="nav-item">
+            <a href="/Audit"
+               class="staff-sidebar-link @(Model.IsActive("/Audit") ? "active" : "")">
+                <i class="fas fa-history staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Audit Logs</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/Audit/UserActions"
+               class="staff-sidebar-link @(Model.IsActive("/Audit/UserActions") ? "active" : "")">
+                <i class="fas fa-user-clock staff-sidebar-icon"></i>
+                <span class="flex-grow-1">User Actions</span>
+            </a>
+        </li>
+
         @* M24 · Setup / Settings *@
         <li class="nav-item">
             <a href="#sb-setup"

@@ -210,6 +210,6 @@ The sidebar is rendered by `Components/SidebarNavViewComponent.cs` using `Sideba
 | Patients | 2 | 6 |
 | HR | 1 | 7 |
 | Other | 10 | 28 |
-| Admin | 3 | 14 |
+| Admin | 5 | 14 |
 | System Management | 1 | 6 |
-| **Total** | **30** | **91** |
+| **Total** | **32** | **91** |

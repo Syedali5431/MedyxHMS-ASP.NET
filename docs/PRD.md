@@ -473,3 +473,17 @@ The sidebar supports collapsing to an icon-only view on desktop (≥992px). Stat
 - **Security:** Extension whitelist, size validation, old file cleanup on replace
 - **Audit:** Upload and delete actions logged via `IAuditService`
 - **Files:** `Services/Interfaces/IProfileImageService.cs`, `Services/Implementations/ProfileImageService.cs`, `Components/ProfileImageViewComponent.cs`, `Views/Account/Profile.cshtml`
+
+### 9.4 Multi-Factor Authentication
+**Implemented:** 2026-06-24
+- TOTP-based MFA with Google Authenticator, Microsoft Authenticator, Authy
+- QR code setup via EnableMFA page, OTP verification before activation
+- Login flow: conditional redirect to VerifyMFA only when MFAEnabled
+- Disable requires password verification; audit-logged
+- **Files:** `Services/Interfaces/IMFAService.cs`, `Services/Implementations/MFAService.cs`, `Views/Account/EnableMFA.cshtml`, `Views/Account/VerifyMFA.cshtml`
+
+### 9.5 Audit Log Menu & Viewer
+**Implemented:** 2026-06-24
+- Sidebar items: Audit Logs + User Actions (Admin/SuperAdmin only)
+- Color-coded action badges, CSV export, meta-audit logging
+- **Files:** `Controllers/AuditController.cs`, `Views/Audit/Index.cshtml`, `Views/Shared/Components/SidebarNav/Default.cshtml`

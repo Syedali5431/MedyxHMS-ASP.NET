@@ -745,3 +745,50 @@
 - GUID filenames prevent path traversal
 - Audit logging on upload and delete actions
 - RBAC: any authenticated user can manage their own picture
+
+---
+
+## 42. Multi-Factor Authentication (MFA)
+
+**Implemented:** 2026-06-24 | **Files:** `Services/Interfaces/IMFAService.cs`, `Services/Implementations/MFAService.cs`, `Views/Account/EnableMFA.cshtml`, `Views/Account/VerifyMFA.cshtml`, `Views/Account/Profile.cshtml`, `Models/ApplicationUser.cs`
+
+### TOTP Engine
+- HMAC-SHA1 based TOTP (RFC 6238) with 160-bit random secrets
+- Base32 encoding, ±1 time window (90 seconds effective)
+- Compatible with Google/Microsoft Authenticator, Authy
+
+### Setup Flow
+- User clicks "Enable MFA" on Profile page → QR code displayed via qrcodejs
+- Temp secret stored as `MFATempSecret`, OTP verified before activation
+- On valid: `MFATempSecret` → `MFASecretKey`, `MFAEnabled = true`
+- On invalid: error shown, setup not completed
+
+### Login Flow
+- Password succeeds → check `MFAEnabled`: false = normal login, true = redirect to `/Account/VerifyMFA`
+- Session stores userId/rememberMe/returnUrl for MFA step
+- OTP validated against `MFASecretKey`; on success = `LOGIN_SUCCESS_MFA`
+- Non-MFA users completely unaffected
+
+### Disable
+- Requires password verification; clears all MFA fields
+- Audit logged: `MFA_ENABLED`, `MFA_DISABLED`, `MFA_LOGIN_FAILED`, `MFA_SETUP_FAILED`
+
+---
+
+## 43. Audit Log Viewer Enhancements
+
+**Implemented:** 2026-06-24 | **Files:** `Controllers/AuditController.cs`, `Views/Audit/Index.cshtml`, `Views/Shared/Components/SidebarNav/Default.cshtml`
+
+### Sidebar Access
+- "Audit Logs" and "User Actions" added to Admin sidebar section
+- Gated by `IsAdminOrSuper` — invisible to other roles
+- Existing top navbar dropdown preserved
+
+### Access Control
+- `[Authorize(Roles = "Admin,SuperAdmin")]` on controller
+- Meta-audit: viewing audit logs logged as `AUDIT_LOG_VIEWED`
+
+### View Enhancements
+- Color-coded action badges: FAILED=red, SUCCESS=green, LOGIN=blue
+- Failed actions highlighted with `table-danger` row
+- CSV export button added
