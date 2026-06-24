@@ -1,5 +1,7 @@
 # Training and Support Plan
 
+> **Last Updated:** 2026-06-24
+
 ## Purpose
 
 This document covers the remaining Step 5.2 non-code operational tasks:

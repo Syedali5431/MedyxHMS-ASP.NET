@@ -1,5 +1,7 @@
 # Mobile API Compatibility Layer
 
+> **Last Updated:** 2026-06-24
+
 ## Purpose
 
 Preserve the legacy PHP mobile bootstrap contract while introducing versioned ASP.NET endpoints for future mobile clients.

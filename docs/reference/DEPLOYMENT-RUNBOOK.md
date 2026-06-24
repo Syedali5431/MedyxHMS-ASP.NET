@@ -1,7 +1,7 @@
 # Deployment Runbook
 
-> **Last Updated:** 2026-04-28  
-> **Status:** Production-ready — final UAT passed 2026-04-26; all 30 modules validated and system cleared for go-live.
+> **Last Updated:** 2026-06-24  
+> **Status:** all 5 UI/UX phases complete; MFA with recovery codes; forced password change; build clean at 1120 warnings.
 
 ## Purpose
 
@@ -100,7 +100,7 @@ Use this checklist when applying or refreshing the production license file.
 
 Reference:
 
-- `docs/user guides/MedyxHMS-Lic-Operator-Guide.md`
+- `docs/user guides/MedyxHMS-LIC.md`
 - `docs/license Guide.md`
 
 ## Windows Clone and Checkout Recovery

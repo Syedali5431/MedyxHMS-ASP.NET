@@ -2,7 +2,7 @@
 ## Medyx Hospital Management System — ASP.NET Core Edition
 
 **Version:** 1.0  
-**Date:** 2026-04-24  
+**Date:** 2026-06-24  
 **Status:** Live / Post-Stabilization  
 **Platform:** ASP.NET Core 8 MVC + SQL Server  
 

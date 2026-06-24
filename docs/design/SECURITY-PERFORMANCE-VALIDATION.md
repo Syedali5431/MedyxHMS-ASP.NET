@@ -1,5 +1,7 @@
 # Security and Performance Validation
 
+> **Last Updated:** 2026-06-24
+
 ## Purpose
 
 This document closes the Step 5.2 security-testing and performance-testing planning gap with a practical execution checklist for this repository.

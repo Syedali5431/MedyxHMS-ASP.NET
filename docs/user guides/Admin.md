@@ -381,9 +381,9 @@ The floating AI button (bottom-right) provides in-app guidance:
 # Admin
 
 
-> Last Updated: 2026-04-22
-> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
-> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+> Last Updated: 2026-06-24
+> Operational Baseline: all 5 UI/UX phases complete; MFA with recovery codes; forced password change on default password.
+> References: [PRD](../reference/PRD.md), [UAT](../testing/UAT.md)
 
 ## Primary Responsibilities
 - Day-to-day administration, operations, and report management.

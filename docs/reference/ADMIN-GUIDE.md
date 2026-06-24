@@ -43,7 +43,7 @@ Administrators, SuperAdmin users, and system operators.
 
 - Only SuperAdmin uploads/updates license files.
 - Use the license operator guide for MedyxHMS-Lic usage and upload sequence:
-	- [user guides/MedyxHMS-Lic-Operator-Guide.md](user%20guides/MedyxHMS-Lic-Operator-Guide.md)
+	- [user guides/MedyxHMS-LIC.md](user%20guides/MedyxHMS-LIC.md)
 
 ## Audit and Support Expectations
 
