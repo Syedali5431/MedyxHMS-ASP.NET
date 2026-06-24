@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj": {}
+    "C:\\Databases\\MedyxHMS-ASP.NET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj": {}
   },
   "projects": {
-    "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj": {
+    "C:\\Databases\\MedyxHMS-ASP.NET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj",
+        "projectUniqueName": "C:\\Databases\\MedyxHMS-ASP.NET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj",
         "projectName": "MedyxHMS-Lic",
-        "projectPath": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj",
-        "packagesPath": "C:\\Users\\malin\\.nuget\\packages\\",
-        "outputPath": "E:\\HMS\\MedyxHMS-ASPNET\\MedyxHMS-Lic\\obj\\",
+        "projectPath": "C:\\Databases\\MedyxHMS-ASP.NET\\MedyxHMS-Lic\\MedyxHMS-Lic.csproj",
+        "packagesPath": "C:\\Users\\alin\\.nuget\\packages\\",
+        "outputPath": "C:\\Databases\\MedyxHMS-ASP.NET\\MedyxHMS-Lic\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\malin\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\alin\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
@@ -31,6 +31,7 @@
         },
         "frameworks": {
           "net8.0": {
+            "framework": "net8.0",
             "targetAlias": "net8.0",
             "projectReferences": {}
           }
@@ -45,10 +46,11 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "10.0.200"
+        "SdkAnalysisLevel": "10.0.300"
       },
       "frameworks": {
         "net8.0": {
+          "framework": "net8.0",
           "targetAlias": "net8.0",
           "imports": [
             "net461",
@@ -66,7 +68,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.202/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

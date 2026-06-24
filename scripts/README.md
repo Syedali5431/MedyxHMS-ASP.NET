@@ -1,78 +1,56 @@
-# Database Bootstrap Scripts
+# Scripts — Run Sequence
 
-This folder contains SQL and PowerShell scripts for database bootstrap and validation.
+This folder contains database bootstrap, migration, testing, and automation scripts for MedyxHMS.
 
-## New Database Scripts
+---
 
-- `New-Database.sql`
-  - Creates database `MedyxHMS` if missing.
-  - Creates schema (tables, constraints, indexes) — 67 core tables.
-  - Includes MFA columns on AspNetUsers (MFAEnabled, MFASecretKey, MFATempSecret, MFARecoveryCodes).
-  - Applies baseline seed data for core startup usage (roles, features, settings, SuperAdmin mapping).
+## 🚀 Fresh Deployment Sequence
 
-- `New-Database-Empty.sql`
-  - Creates database `MedyxHMS` if missing.
-  - Creates schema (tables, constraints, indexes) — 67 core tables.
-  - Includes MFA columns on AspNetUsers.
-  - Does not include baseline data inserts.
+Run these **in order** when setting up a new environment:
 
-- `New-Database.Validation.sql`
-  - Schema + seed data with validation checks.
-  - Includes MFA columns.
+| # | Script | What It Does |
+|---|--------|--------------|
+| 1 | `New-Database.sql` | **Full database** — schema, roles, users, modules, settings, and baseline seed data |
+| 2 | `New-Database-Empty.sql` | **Empty database** — schema only, no seed data (use for staging/validation) |
+| 3 | `SeedDemoData.sql` | **Demo data** — departments, doctors, staff, patients, appointments, OPD, IPD, wards, beds, bills, pharmacy, lab, radiology, blood bank (idempotent — safe to re-run) |
+| 4 | `StoredProcedures_Reports.sql` | **Report stored procedures** — optimized SPs for report generation (auto-deployed by app on startup) |
+| 5 | `MFA-Migration.sql` | **MFA migration** — adds MFA columns to existing `AspNetUsers` (one-time, run once per DB) |
 
-> **Note:** These scripts contain 67 core tables. The full database has 96 tables.
-> Additional tables (28) are created dynamically by `DatabaseInitializer.Ensure*Async()` methods at app startup.
-> **Recommended deployment:** Run the app once — `EnsureCreatedAsync()` creates any missing tables.
-> For full manual deployment, use SQL Server Management Studio → Tasks → Generate Scripts from the live database.
+> **Note:** `StoredProcedures_Reports.sql` is automatically applied by the app via `DatabaseInitializer.EnsureReportStoredProceduresAsync()` on startup. Manual execution is optional but harmless.
 
-## MFA Migration
+---
 
-- `MFA-Migration.sql`
-  - Standalone script to add MFA columns (MFAEnabled, MFASecretKey, MFATempSecret, MFARecoveryCodes) to an existing AspNetUsers table.
-  - Safe to run on any existing database.
+## 🔧 Validation & Testing Scripts
 
-```powershell
-sqlcmd -S "(localdb)\MSSQLLocalDB" -i ".\scripts\New-Database.sql"
-```
+| # | Script | What It Does |
+|---|--------|--------------|
+| 6 | `Validate-DatabaseDeployment.ps1` | Validates that `New-Database.sql` (`-Full`) or `New-Database-Empty.sql` (`-Empty`) deploys correctly to a temp database, then cleans up |
+| 7 | `Run-RoleModuleSmoke.ps1` | Hits every staff-side and patient-portal route for each test user, verifying HTTP 200 responses. Outputs a JSON report |
+| 8 | `Invoke-UatSmoke.ps1` | Orchestrates UAT smoke testing — builds, generates license, seeds DB, runs role/module route checks. Driven by `UAT-Smoke.config.template.json` |
+| 9 | `UAT-Smoke.config.template.json` | Configuration template for `Invoke-UatSmoke.ps1` — base URL, license settings, tenant, modules |
 
-```powershell
-sqlcmd -S "(localdb)\MSSQLLocalDB" -i ".\scripts\New-Database-Empty.sql"
-```
+---
 
-### SQL Server instance example
+## 🔑 License Tool Automation
 
-```powershell
-sqlcmd -S "YOUR_SERVER\\INSTANCE" -E -i ".\scripts\New-Database.sql"
-```
+| # | Script | What It Does |
+|---|--------|--------------|
+| 10 | `Invoke-LicenseToolAutomation.ps1` | Automates the `MedyxHMS-Lic` CLI — generates private keys and `.lic` license files with modules, expiry, and tenant configuration |
+
+---
+
+## Quick Start
 
 ```powershell
-sqlcmd -S "YOUR_SERVER\\INSTANCE" -E -i ".\scripts\New-Database-Empty.sql"
-```
+# 1. Deploy full database
+sqlcmd -S . -i New-Database.sql -E
 
-If SQL authentication is required, replace `-E` with `-U <username> -P <password>`.
+# 2. Add demo data
+sqlcmd -S . -d MedyxHMS -i SeedDemoData.sql -E
 
-## Validation Scripts
+# 3. Validate deployment
+.\Validate-DatabaseDeployment.ps1 -Full
 
-- `data-migration-validation.sql`: record and integrity checks.
-- `compare-migration-counts.ps1`: source vs target count comparison.
-- `source-count-snapshot.template.csv`: source count template.
-
-## UAT Smoke Automation
-
-- `Invoke-UatSmoke.ps1`
-  - Builds the ASP.NET project and MedyxHMS-Lic desktop tool.
-  - Runs the automated test suite.
-  - Optionally generates a smoke-test `.lic` file.
-  - Optionally checks HTTP reachability for `/`, `/Account/Login`, `/Chatbot`, and `/health`.
-
-- `Invoke-LicenseToolAutomation.ps1`
-  - Automates the interactive MedyxHMS-Lic console workflow for key generation and license creation.
-
-- `UAT-Smoke.config.template.json`
-  - Template configuration for `Invoke-UatSmoke.ps1`.
-
-### Example
-
-```powershell
-pwsh .\scripts\Invoke-UatSmoke.ps1 -BaseUrl "https://localhost:5001"
+# 4. Run role/module smoke test
+.\Invoke-UatSmoke.ps1 -ConfigPath UAT-Smoke.config.template.json
 ```
