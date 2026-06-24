@@ -22,6 +22,35 @@
         <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
     }
 
+    @* Filter Form *@
+    <form method="get" asp-action="Dispatches" class="row g-2 mb-3">
+        <div class="col-auto">
+            <label class="form-label small mb-0">From</label>
+            <input type="date" name="from" class="form-control form-control-sm" value="@ViewBag.FromDate" />
+        </div>
+        <div class="col-auto">
+            <label class="form-label small mb-0">To</label>
+            <input type="date" name="to" class="form-control form-control-sm" value="@ViewBag.ToDate" />
+        </div>
+        <div class="col-auto">
+            <label class="form-label small mb-0">Vehicle</label>
+            <select name="vehicleId" class="form-select form-select-sm">
+                <option value="">All Vehicles</option>
+                @if (ViewBag.Vehicles is IEnumerable<MedyxHMS.Models.AmbulanceVehicle> vehicles)
+                {
+                    @foreach (var v in vehicles)
+                    {
+                        <option value="@v.Id" selected="@(ViewBag.VehicleId != null && (int)ViewBag.VehicleId == v.Id ? "selected" : null)">@v.VehicleNumber</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-filter me-1"></i>Filter</button>
+            <a asp-action="Dispatches" class="btn btn-sm btn-outline-secondary">Clear</a>
+        </div>
+    </form>
+
     <div class="card shadow-sm">
         <div class="card-body table-responsive">
             <table class="table table-hover align-middle">

@@ -31,6 +31,23 @@
         </div>
     }
 
+    @* Search & Filter *@
+    <form method="get" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control form-control-sm" placeholder="Search by name or code..." value="@ViewBag.Search" />
+        </div>
+        <div class="col-auto">
+            <input type="date" name="from" class="form-control form-control-sm" value="@ViewBag.FromDate" />
+        </div>
+        <div class="col-auto">
+            <input type="date" name="to" class="form-control form-control-sm" value="@ViewBag.ToDate" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-search me-1"></i>Search</button>
+            <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Clear</a>
+        </div>
+    </form>
+
     <div class="card">
         <div class="card-header bg-primary text-white">
             <h5 class="mb-0"><i class="fas fa-list"></i> Available Tests (@Model.Count total)</h5>
@@ -93,7 +110,7 @@
                             @for (int i = 1; i <= (int)ViewBag.TotalPages; i++)
                             {
                                 <li class="page-item @(i == (int)ViewBag.CurrentPage ? "active" : "")">
-                                    <a class="page-link" href="@Url.Action("Index", "Lab", new { page = i })">@i</a>
+                                    <a class="page-link" href="@Url.Action("Index", "Lab", new { page = i, search = ViewBag.Search as string, from = ViewBag.FromDate as string, to = ViewBag.ToDate as string })">@i</a>
                                 </li>
                             }
                         </ul>

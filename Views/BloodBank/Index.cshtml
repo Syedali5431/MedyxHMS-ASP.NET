@@ -10,6 +10,25 @@
         <a class="btn btn-primary" asp-action="Issue">Issue Blood</a>
     </div>
 
+    @* Blood Group Filter *@
+    <form method="get" asp-action="Index" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="bloodGroup" class="form-select form-select-sm" onchange="this.form.submit()">
+                <option value="">All Blood Groups</option>
+                @foreach (var bg in new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" })
+                {
+                    <option value="@bg" selected="@(ViewBag.FilterBloodGroup == bg ? "selected" : null)">@bg</option>
+                }
+            </select>
+        </div>
+        @if (!string.IsNullOrEmpty(ViewBag.FilterBloodGroup as string))
+        {
+            <div class="col-auto">
+                <a asp-action="Index" class="btn btn-sm btn-outline-secondary">Clear</a>
+            </div>
+        }
+    </form>
+
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success">@TempData["SuccessMessage"]</div>
