@@ -436,4 +436,19 @@ Execution sequencing and phase-level details for Stage 7 and Stage 8 are governe
 
 ---
 
-*PRD maintained by the Medyx HMS project team. Last updated: 2026-04-24.*
+*PRD maintained by the Medyx HMS project team. Last updated: 2026-06-24.*
+
+---
+
+## 9. UI/UX Features (Phase 1: Sidebar Toggle)
+
+### 9.1 Sidebar Toggle
+**Implemented:** 2026-06-24
+
+The sidebar supports collapsing to an icon-only view on desktop (≥992px). State is persisted via localStorage across page reloads.
+
+- **Toggle button:** Located in the top navbar, visible on all screen sizes
+- **Desktop behavior:** Collapses sidebar from 250px → 56px, showing only icons
+- **Mobile behavior:** Overlay toggle (existing behavior, unchanged)
+- **Persistence:** Sidebar state saved to `localStorage` key `medyx-sidebar-collapsed`
+- **Files:** `wwwroot/js/sidebar-toggle.js`, `wwwroot/css/site.css` (sidebar toggle section), `Views/Shared/_Layout.cshtml`

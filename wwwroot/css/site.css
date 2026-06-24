@@ -342,3 +342,38 @@ body {
     }
 }
 /* ================================================================ */
+
+/* ─── Sidebar Desktop Toggle (Phase 1) ─── */
+@media (min-width: 992px) {
+    #staff-sidebar {
+        transition: width 0.25s ease;
+        overflow: hidden;
+        width: 250px;
+    }
+
+    #staff-sidebar.sidebar-collapsed {
+        width: 56px;
+    }
+
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-link span,
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-sublink,
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-chevron,
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-section,
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-header span,
+    #staff-sidebar.sidebar-collapsed .collapse,
+    #staff-sidebar.sidebar-collapsed .flex-grow-1 {
+        display: none !important;
+    }
+
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-icon {
+        margin-right: 0;
+        text-align: center;
+        width: 100%;
+    }
+
+    #staff-sidebar.sidebar-collapsed .staff-sidebar-link {
+        justify-content: center;
+        padding-left: 0;
+        padding-right: 0;
+    }
+}

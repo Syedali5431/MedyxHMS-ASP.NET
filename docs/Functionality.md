@@ -655,3 +655,32 @@
 ### Background Jobs
 - `LicenseReminderHostedService`: periodic license expiry reminders
 - `ChatbotDataCleanupHostedService`: periodic chatbot data cleanup
+
+---
+
+## 39. Sidebar Toggle (UI)
+
+**Implemented:** 2026-06-24 | **Files:** `wwwroot/js/sidebar-toggle.js`, `wwwroot/css/site.css`, `Views/Shared/_Layout.cshtml`
+
+### Desktop Collapse
+- Toggle button (`#sidebar-toggle-btn`) in top navbar, visible on all screen sizes
+- Collapses sidebar from 250px to 56px (icon-only)
+- Hides all text spans, sub-links, chevrons, section headers, and collapsed submenus
+- Centers sidebar icons when collapsed
+- Smooth CSS transition (0.25s ease)
+
+### State Persistence
+- Sidebar state saved to `localStorage` under key `medyx-sidebar-collapsed`
+- State restored on page load for desktop viewports
+- Falls back gracefully if localStorage is unavailable
+
+### Mobile Behavior
+- Existing mobile overlay toggle (`.show` class) is completely unaffected
+- Toggle button switches between mobile overlay and desktop collapse based on viewport width
+- On resize from mobile → desktop, saved desktop state is restored
+- On resize from desktop → mobile, `sidebar-collapsed` class is removed
+
+### Compatibility
+- All existing sidebar features preserved: role-based visibility, module gating, active link highlighting
+- No changes to `SidebarNavViewComponent` or any backend code
+- Works alongside existing inline mobile sidebar JS
