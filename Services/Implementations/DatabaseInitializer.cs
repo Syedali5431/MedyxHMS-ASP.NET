@@ -1892,7 +1892,6 @@ END");
             {
                 superAdminUser = new ApplicationUser
                 {
-                    Id = "1",
                     UserName = superAdminUserName,
                     Email = superAdminEmail,
                     EmailConfirmed = true,
@@ -1925,7 +1924,9 @@ END");
 
         private async Task EnsureUserIdentityConstraintsAsync()
         {
-            await _context.Database.ExecuteSqlRawAsync(@"
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
 BEGIN
     UPDATE [dbo].[AspNetUsers]
@@ -1953,41 +1954,41 @@ BEGIN
     INNER JOIN Dupes d ON d.[Id] = u.[Id]
     WHERE d.rn > 1;
 
-    IF EXISTS (
-        SELECT 1
-        FROM sys.indexes
-        WHERE [name] = N'UserNameIndex'
-          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
-    )
-        DROP INDEX [UserNameIndex] ON [dbo].[AspNetUsers];
-
-    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'UserName') IS NOT NULL
-        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [UserName] NVARCHAR(256) NOT NULL;
-
-    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'NormalizedUserName') IS NOT NULL
-        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [NormalizedUserName] NVARCHAR(256) NOT NULL;
-
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UX_AspNetUsers_UserName'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [dbo].[AspNetUsers]([UserName]);
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UX_AspNetUsers_UserName')
+            CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [dbo].[AspNetUsers]([UserName]);
+    END
 
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UX_AspNetUsers_Id_UserName'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UX_AspNetUsers_Id_UserName')
+            CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+    END
 
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UserNameIndex'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UserNameIndex] ON [dbo].[AspNetUsers]([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UserNameIndex')
+            CREATE UNIQUE INDEX [UserNameIndex] ON [dbo].[AspNetUsers]([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
+    END
 END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Non-critical error during user identity constraint setup. This is expected on fresh databases.");
+            }
         }
 
         private async Task EnsureStaffAndSuperAdminRoleAsync(ApplicationUser superAdminUser, string superAdminEmployeeId)

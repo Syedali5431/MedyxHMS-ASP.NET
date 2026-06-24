@@ -411,7 +411,7 @@ namespace MedyxHMS.Data
                 .HasMany(s => s.FeedbackItems)
                 .WithOne(f => f.Session)
                 .HasForeignKey(f => f.SessionId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<ChatMessage>()
                 .HasIndex(m => new { m.SessionId, m.CreatedAtUtc });
