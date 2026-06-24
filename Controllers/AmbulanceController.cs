@@ -37,14 +37,14 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> Create(AmbulanceVehicle model)
+        public async Task<IActionResult> Create(AmbulanceVehicle vehicle)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid) return View(vehicle);
 
-            _context.AmbulanceVehicles.Add(model);
+            _context.AmbulanceVehicles.Add(vehicle);
             await _context.SaveChangesAsync();
             await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier),
-                "CREATE", "AmbulanceVehicle", model.Id.ToString(), null, model.VehicleNumber);
+                "CREATE", "AmbulanceVehicle", vehicle.Id.ToString(), null, vehicle.VehicleNumber);
             TempData["SuccessMessage"] = "Vehicle added.";
             return RedirectToAction(nameof(Index));
         }
@@ -58,12 +58,12 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> Edit(int id, AmbulanceVehicle model)
+        public async Task<IActionResult> Edit(int id, AmbulanceVehicle vehicle)
         {
-            if (id != model.Id) return BadRequest();
-            if (!ModelState.IsValid) return View(model);
+            if (id != vehicle.Id) return BadRequest();
+            if (!ModelState.IsValid) return View(vehicle);
 
-            _context.AmbulanceVehicles.Update(model);
+            _context.AmbulanceVehicles.Update(vehicle);
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Vehicle updated.";
             return RedirectToAction(nameof(Index));

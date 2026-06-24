@@ -1257,17 +1257,14 @@ namespace MedyxHMS.Controllers
         private static string GenerateTemporaryPassword(int length = 12)
         {
             const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%";
-            using (var rng = new System.Security.Cryptography.RNGCryptoServiceProvider())
+            var randomBytes = new byte[length];
+            System.Security.Cryptography.RandomNumberGenerator.Fill(randomBytes);
+            var result = new StringBuilder(length);
+            foreach (byte b in randomBytes)
             {
-                var randomBytes = new byte[length];
-                rng.GetBytes(randomBytes);
-                var result = new StringBuilder(length);
-                foreach (byte b in randomBytes)
-                {
-                    result.Append(validChars[b % validChars.Length]);
-                }
-                return result.ToString();
+                result.Append(validChars[b % validChars.Length]);
             }
+            return result.ToString();
         }
     }
 }

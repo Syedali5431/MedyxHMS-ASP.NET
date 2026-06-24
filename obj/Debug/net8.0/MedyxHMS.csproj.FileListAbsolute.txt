@@ -368,3 +368,4 @@ C:\Databases\MedyxHMS-ASP.NET\obj\Debug\net8.0\swae.build.ex.cache
 C:\Databases\MedyxHMS-ASP.NET\obj\Debug\net8.0\MedyxHMS.csproj.Up2Date
 C:\Databases\MedyxHMS-ASP.NET\obj\Debug\net8.0\MedyxHMS.genruntimeconfig.cache
 C:\Databases\MedyxHMS-ASP.NET\obj\Debug\net8.0\ref\MedyxHMS.dll
+C:\Databases\MedyxHMS-ASP.NET\bin\Debug\net8.0\docs\.markdownlint.json

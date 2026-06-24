@@ -606,7 +606,10 @@ namespace MedyxHMS.Controllers
             }
             var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
             var qrUri = await mfaService.BeginSetupAsync(userId, user.Email);
-            return View(qrUri);
+            var secret = new Uri(qrUri).Query.TrimStart('?').Split('&')
+                .FirstOrDefault(p => p.StartsWith("secret="))?.Replace("secret=", "") ?? "";
+            ViewBag.SecretKey = secret;
+            return View("EnableMFA", qrUri);
         }
 
         [HttpPost]
