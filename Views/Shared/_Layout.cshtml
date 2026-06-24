@@ -104,6 +104,9 @@
                                     <span id="notif-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none" style="font-size:0.6rem"></span>
                                 </a>
                             </li>
+                            <li class="nav-item me-2 d-flex align-items-center">
+                                @await Component.InvokeAsync("ProfileImage")
+                            </li>
                             <li class="nav-item me-2 d-flex align-items-center text-muted small">
                                 Signed in as @User.Identity.Name
                             </li>

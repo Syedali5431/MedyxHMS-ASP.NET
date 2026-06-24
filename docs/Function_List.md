@@ -699,6 +699,21 @@
 | `ISmtpHealthService` | `SmtpHealthService` | `Services/Implementations/SmtpHealthService.cs` | SMTP health check |
 | `IPaymentGatewayService` | `PaymentGatewayService` | `Services/Implementations/PaymentGatewayService.cs` | Multi-gateway payments |
 | `IReportCatalogVisibilityService` | `ReportCatalogVisibilityService` | `Services/Implementations/ReportCatalogVisibilityService.cs` | Report visibility |
+| `IProfileImageService` | `ProfileImageService` | `Services/Implementations/ProfileImageService.cs` | Profile picture upload, delete, display |
+
+### UI Components
+
+| Component | File | Purpose |
+|-----------|------|---------|
+| `ProfileImageViewComponent` | `Components/ProfileImageViewComponent.cs` | Navbar profile picture display |
+
+### AccountController (Phase 3 additions)
+
+| Function | Purpose |
+|----------|---------|
+| `Profile()` [GET] | Display user profile with picture upload |
+| `UploadProfileImage(IFormFile)` [POST] | Upload profile picture (JPG/PNG, 2MB max) |
+| `DeleteProfileImage()` [POST] | Remove profile picture |
 
 ### Background & Utility Classes
 **File:** `Services/Implementations/`
@@ -721,7 +736,7 @@
 | Main Controllers | 31 |
 | Patient Portal Controllers | 3 |
 | Total Controller Actions | ~300 |
-| Service Interfaces | 47 |
-| Service Implementations | 49 |
+| Service Interfaces | 48 |
+| Service Implementations | 50 |
 | Background/Hosted Services | 2 |
 | Utility/Seeder Classes | 4 |

@@ -94,6 +94,8 @@ builder.Services.AddScoped<IChatbotService, OpenAiChatbotService>();
 builder.Services.AddScoped<IChatbotConsentService, ChatbotConsentService>();
 builder.Services.AddScoped<IChatbotDataCleanupService, ChatbotDataCleanupService>();
 builder.Services.AddScoped<ISmtpHealthService, SmtpHealthService>();
+builder.Services.AddScoped<IProfileImageService, ProfileImageService>();
+builder.Services.AddScoped<IMFAService, MFAService>();
 
 // Performance & Caching Services (STEP 5.3 - Fast & Efficient System)
 // Using MemoryCache for distributed caching support

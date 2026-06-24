@@ -270,6 +270,14 @@ namespace MedyxHMS.Controllers
 
                 if (result.Succeeded)
                 {
+                    if (user.MFAEnabled)
+                    {
+                        HttpContext.Session.SetString("MFA_UserId", user.Id);
+                        HttpContext.Session.SetString("MFA_RememberMe", model.RememberMe.ToString());
+                        HttpContext.Session.SetString("MFA_ReturnUrl", returnUrl ?? "");
+                        return RedirectToAction("VerifyMFA");
+                    }
+
                     await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS", "User", user.Id);
                     user.LastLoginDate = DateTime.UtcNow;
                     await _userManager.UpdateAsync(user);
@@ -511,6 +519,174 @@ namespace MedyxHMS.Controllers
             }
 
             return roles.FirstOrDefault() ?? "Admin";
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+            return View(user);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadProfileImage(IFormFile profileImage)
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+
+            try
+            {
+                var profileService = HttpContext.RequestServices.GetRequiredService<IProfileImageService>();
+                var fileName = await profileService.UploadAsync(userId, profileImage);
+
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.ProfileImage = fileName;
+                    await _userManager.UpdateAsync(user);
+                }
+
+                await _auditService.LogActivityAsync(userId, "PROFILE_IMAGE_UPLOAD", "User", userId);
+                TempData["SuccessMessage"] = "Profile picture updated.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                ModelState.AddModelError("profileImage", ex.Message);
+            }
+
+            return RedirectToAction("Profile");
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteProfileImage()
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+
+            var profileService = HttpContext.RequestServices.GetRequiredService<IProfileImageService>();
+            await profileService.DeleteAsync(userId);
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.ProfileImage = null;
+                await _userManager.UpdateAsync(user);
+            }
+
+            await _auditService.LogActivityAsync(userId, "PROFILE_IMAGE_DELETE", "User", userId);
+            return RedirectToAction("Profile");
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> EnableMFA()
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+            if (user.MFAEnabled)
+            {
+                TempData["InfoMessage"] = "MFA is already enabled.";
+                return RedirectToAction("Profile");
+            }
+            var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
+            var qrUri = await mfaService.BeginSetupAsync(userId, user.Email);
+            return View(qrUri);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CompleteMFASetup(string code)
+        {
+            var userId = _userManager.GetUserId(User);
+            var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
+            if (await mfaService.CompleteSetupAsync(userId, code))
+            {
+                TempData["SuccessMessage"] = "MFA has been enabled.";
+                return RedirectToAction("Profile");
+            }
+            ModelState.AddModelError("code", "Invalid code. Try again.");
+            var user = await _userManager.FindByIdAsync(userId);
+            var qrUri = $"otpauth://totp/MedyxHMS:{user?.Email}?secret={user?.MFATempSecret}&issuer=MedyxHMS";
+            return View("EnableMFA", qrUri);
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DisableMFA(string password)
+        {
+            var userId = _userManager.GetUserId(User);
+            var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
+            var disabled = await mfaService.DisableAsync(userId, password);
+            TempData[disabled ? "SuccessMessage" : "ErrorMessage"]
+                = disabled ? "MFA disabled." : "Incorrect password.";
+            return RedirectToAction("Profile");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult VerifyMFA()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("MFA_UserId")))
+                return RedirectToAction("Login");
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> VerifyMFA(MFAVerifyViewModel model)
+        {
+            var userId = HttpContext.Session.GetString("MFA_UserId");
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+            if (!ModelState.IsValid) return View(model);
+
+            var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
+            if (!await mfaService.ValidateLoginMfaAsync(userId, model.Code))
+            {
+                ModelState.AddModelError("Code", "Invalid verification code.");
+                return View(model);
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            var rememberMe = HttpContext.Session.GetString("MFA_RememberMe") == "True";
+            var returnUrl = HttpContext.Session.GetString("MFA_ReturnUrl");
+            HttpContext.Session.Remove("MFA_UserId");
+            HttpContext.Session.Remove("MFA_RememberMe");
+            HttpContext.Session.Remove("MFA_ReturnUrl");
+
+            await _signInManager.SignInAsync(user, rememberMe);
+            await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS_MFA", "User", user.Id);
+            user.LastLoginDate = DateTime.UtcNow;
+            await _userManager.UpdateAsync(user);
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var activeRole = PickPrimaryRole(userRoles);
+            var sessionDecision = await _concurrentSessionService.TryRegisterLoginAsync(
+                user.Id, activeRole, HttpContext.Session.Id,
+                HttpContext.Connection.RemoteIpAddress?.ToString(),
+                Request.Headers.UserAgent.ToString());
+            if (!sessionDecision.IsAllowed) { await _signInManager.SignOutAsync(); return RedirectToAction("AccessDenied"); }
+            HttpContext.Session.SetString("SelectedRole", activeRole);
+            return RedirectToLocalAsync(user, activeRole, returnUrl).Result;
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> TestMFA(string code)
+        {
+            var userId = _userManager.GetUserId(User);
+            var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
+            return Json(new { success = await mfaService.TestCodeAsync(userId, code) });
         }
     }
 }

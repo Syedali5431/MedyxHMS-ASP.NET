@@ -14,5 +14,10 @@ namespace MedyxHMS.Models
         public DateTime? LastLoginDate { get; set; }
         public string? ProfileImage { get; set; }
 
+        public bool MFAEnabled { get; set; }
+        public string? MFASecretKey { get; set; }
+        public string? MFATempSecret { get; set; }
+        public string? MFARecoveryCodes { get; set; }
+
     }
 }

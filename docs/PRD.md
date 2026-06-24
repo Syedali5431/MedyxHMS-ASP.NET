@@ -462,3 +462,14 @@ The sidebar supports collapsing to an icon-only view on desktop (≥992px). Stat
 - **Form enhancements:** Floating label focus color, form container max-width, last-child margin removal
 - **Sidebar polish:** Smooth hover transitions, active link backgrounds, border-radius on links
 - **Files:** `wwwroot/css/site.css` (Visual Polish section), `Views/Dashboard/Index.cshtml`
+
+### 9.3 Profile Pictures
+**Implemented:** 2026-06-24
+
+- **Upload:** Users can upload JPG/PNG profile pictures (max 2MB) via Profile page
+- **Storage:** Files saved to `/wwwroot/uploads/profile/` with GUID-based filenames
+- **Display:** Profile image shown in navbar (32px circle) and Profile page (140px)
+- **Default:** SVG avatar placeholder when no image set
+- **Security:** Extension whitelist, size validation, old file cleanup on replace
+- **Audit:** Upload and delete actions logged via `IAuditService`
+- **Files:** `Services/Interfaces/IProfileImageService.cs`, `Services/Implementations/ProfileImageService.cs`, `Components/ProfileImageViewComponent.cs`, `Views/Account/Profile.cshtml`

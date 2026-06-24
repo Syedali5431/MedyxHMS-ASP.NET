@@ -1,0 +1,47 @@
+@model string
+@{
+    ViewData["Title"] = "Enable MFA";
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Enable Multi-Factor Authentication</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info small">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Scan this QR code with Google Authenticator, Microsoft Authenticator, or Authy.
+                    </div>
+                    <div class="text-center my-4">
+                        <div id="qrcode"></div>
+                        <p class="mt-2 text-muted small">Or enter manually: <code class="user-select-all">@Model</code></p>
+                    </div>
+                    <form asp-action="CompleteMFASetup" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label class="form-label">Enter 6-digit code from app</label>
+                            <input type="text" name="code" class="form-control form-control-lg text-center"
+                                   maxlength="6" pattern="\d{6}" placeholder="000000" required autocomplete="off" />
+                        </div>
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-check me-1"></i> Verify & Enable MFA
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        new QRCode(document.getElementById("qrcode"), {
+            text: '@Html.Raw(Model)',
+            width: 200, height: 200
+        });
+    </script>
+}

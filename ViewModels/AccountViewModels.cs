@@ -174,4 +174,12 @@ namespace MedyxHMS.ViewModels
         public DateTime CreatedDate { get; set; }
         public DateTime? LastLoginDate { get; set; }
     }
+
+    public class MFAVerifyViewModel
+    {
+        [Required]
+        [StringLength(6, MinimumLength = 6, ErrorMessage = "Code must be 6 digits.")]
+        [Display(Name = "Verification Code")]
+        public string Code { get; set; }
+    }
 }

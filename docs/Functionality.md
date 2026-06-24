@@ -715,3 +715,33 @@
 ### Safety
 - CSS-only changes — no form names, IDs, or bindings modified
 - No backend, controller, or service changes
+
+---
+
+## 41. Profile Pictures
+
+**Implemented:** 2026-06-24 | **Files:** `Services/Interfaces/IProfileImageService.cs`, `Services/Implementations/ProfileImageService.cs`, `Components/ProfileImageViewComponent.cs`, `Views/Account/Profile.cshtml`, `Views/Shared/_Layout.cshtml`
+
+### Upload Service
+- `IProfileImageService` with `UploadAsync`, `DeleteAsync`, `GetDisplayPath`
+- Validates file type (JPG/PNG only), file size (≤ 2MB)
+- GUID-based filename: `{userId}_{Guid:N}{ext}`
+- Deletes old image before saving new one
+- Creates `/wwwroot/uploads/profile/` directory if missing
+
+### Profile Page
+- `/Account/Profile` — displays user info (name, email, username, employee ID, phone, status, member since)
+- Profile picture upload form with preview (140px rounded circle)
+- Remove button for clearing profile picture
+
+### Navbar Display
+- `ProfileImageViewComponent` renders 32px rounded profile image in navbar
+- Shows default SVG avatar when no image set
+- Rendered via `@await Component.InvokeAsync("ProfileImage")` in `_Layout.cshtml`
+
+### Security
+- Extension whitelist prevents executable uploads
+- 2MB size limit prevents disk exhaustion
+- GUID filenames prevent path traversal
+- Audit logging on upload and delete actions
+- RBAC: any authenticated user can manage their own picture
