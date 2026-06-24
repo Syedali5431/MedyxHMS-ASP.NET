@@ -773,6 +773,17 @@
 - Requires password verification; clears all MFA fields
 - Audit logged: `MFA_ENABLED`, `MFA_DISABLED`, `MFA_LOGIN_FAILED`, `MFA_SETUP_FAILED`
 
+### Recovery Codes
+- 8 one-time-use 16-char codes generated on MFA activation
+- SHA256 hashes stored in `MFARecoveryCodes` (JSON array)
+- Can be used instead of TOTP during login — each code consumed after use
+- Audit logged as `MFA_RECOVERY_CODE_USED`
+
+### Forced Password Change
+- Login with default password "Medyx147" triggers redirect to `/Account/ForceChangePassword`
+- Requires: current password, new password (8+ chars), confirm new password
+- On success: signed in, audit logged (`PASSWORD_CHANGED_FORCED`), redirected to intended destination
+
 ---
 
 ## 43. Audit Log Viewer Enhancements

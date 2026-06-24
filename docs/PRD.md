@@ -479,8 +479,16 @@ The sidebar supports collapsing to an icon-only view on desktop (≥992px). Stat
 - TOTP-based MFA with Google Authenticator, Microsoft Authenticator, Authy
 - QR code setup via EnableMFA page, OTP verification before activation
 - Login flow: conditional redirect to VerifyMFA only when MFAEnabled
+- Recovery codes: 8 one-time-use codes generated on setup, validated via SHA256 hashes
 - Disable requires password verification; audit-logged
 - **Files:** `Services/Interfaces/IMFAService.cs`, `Services/Implementations/MFAService.cs`, `Views/Account/EnableMFA.cshtml`, `Views/Account/VerifyMFA.cshtml`
+
+### 9.6 Forced Password Change
+**Implemented:** 2026-06-24
+- Users logging in with default password "Medyx147" are redirected to forced password change
+- Requires current password, new password (8+ chars), and confirmation
+- Audit logged as `PASSWORD_CHANGED_FORCED`
+- **Files:** `Controllers/AccountController.cs` (ForceChangePassword), `Views/Account/ForceChangePassword.cshtml`
 
 ### 9.5 Audit Log Menu & Viewer
 **Implemented:** 2026-06-24

@@ -9,5 +9,7 @@ namespace MedyxHMS.Services.Interfaces
         Task<bool> DisableAsync(string userId, string password);
         Task<bool> TestCodeAsync(string userId, string code);
         Task<bool> ValidateLoginMfaAsync(string userId, string code);
+        Task<List<string>> GenerateRecoveryCodesAsync(string userId);
+        Task<bool> ValidateRecoveryCodeAsync(string userId, string code);
     }
 }

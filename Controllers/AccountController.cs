@@ -270,6 +270,14 @@ namespace MedyxHMS.Controllers
 
                 if (result.Succeeded)
                 {
+                    // Force password change if using default password
+                    if (model.Password == "Medyx147")
+                    {
+                        HttpContext.Session.SetString("ForcePwd_UserId", user.Id);
+                        HttpContext.Session.SetString("ForcePwd_ReturnUrl", returnUrl ?? "");
+                        return RedirectToAction("ForceChangePassword");
+                    }
+
                     if (user.MFAEnabled)
                     {
                         HttpContext.Session.SetString("MFA_UserId", user.Id);
@@ -687,6 +695,60 @@ namespace MedyxHMS.Controllers
             var userId = _userManager.GetUserId(User);
             var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
             return Json(new { success = await mfaService.TestCodeAsync(userId, code) });
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult ForceChangePassword()
+        {
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("ForcePwd_UserId")))
+                return RedirectToAction("Login");
+            return View();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForceChangePassword(string currentPassword, string newPassword, string confirmPassword)
+        {
+            var userId = HttpContext.Session.GetString("ForcePwd_UserId");
+            if (string.IsNullOrEmpty(userId)) return RedirectToAction("Login");
+
+            if (newPassword != confirmPassword)
+            {
+                ModelState.AddModelError("confirmPassword", "Passwords do not match.");
+                return View();
+            }
+
+            if (newPassword.Length < 8)
+            {
+                ModelState.AddModelError("newPassword", "Password must be at least 8 characters.");
+                return View();
+            }
+
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+
+            var result = await _userManager.ChangePasswordAsync(user, currentPassword, newPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var err in result.Errors)
+                    ModelState.AddModelError("", err.Description);
+                return View();
+            }
+
+            var returnUrl = HttpContext.Session.GetString("ForcePwd_ReturnUrl");
+            HttpContext.Session.Remove("ForcePwd_UserId");
+            HttpContext.Session.Remove("ForcePwd_ReturnUrl");
+
+            await _signInManager.SignInAsync(user, false);
+            await _auditService.LogActivityAsync(userId, "PASSWORD_CHANGED_FORCED", "User", userId);
+            TempData["SuccessMessage"] = "Password changed successfully.";
+
+            var userRoles = await _userManager.GetRolesAsync(user);
+            var activeRole = PickPrimaryRole(userRoles);
+            HttpContext.Session.SetString("SelectedRole", activeRole);
+            return RedirectToLocalAsync(user, activeRole, returnUrl).Result;
         }
     }
 }

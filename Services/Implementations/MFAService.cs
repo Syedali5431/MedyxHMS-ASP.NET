@@ -1,4 +1,3 @@
-using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,6 +47,7 @@ namespace MedyxHMS.Services.Implementations
             user.MFATempSecret = null;
             user.MFAEnabled = true;
             await _userManager.UpdateAsync(user);
+            await GenerateRecoveryCodesAsync(userId);
             await _auditService.LogActivityAsync(userId, "MFA_ENABLED", "User", userId);
             return true;
         }
@@ -79,7 +79,10 @@ namespace MedyxHMS.Services.Implementations
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null || !user.MFAEnabled || string.IsNullOrEmpty(user.MFASecretKey)) return true;
             var valid = ValidateCode(user.MFASecretKey, code);
-            if (!valid) await _auditService.LogActivityAsync(userId, "MFA_LOGIN_FAILED", "User", userId);
+            if (!valid)
+                valid = await ValidateRecoveryCodeAsync(userId, code);
+            if (!valid)
+                await _auditService.LogActivityAsync(userId, "MFA_LOGIN_FAILED", "User", userId);
             return valid;
         }
 
@@ -132,6 +135,38 @@ namespace MedyxHMS.Services.Implementations
             var offset = hash[^1] & 0x0F;
             var binary = ((hash[offset] & 0x7F) << 24) | ((hash[offset + 1] & 0xFF) << 16) | ((hash[offset + 2] & 0xFF) << 8) | (hash[offset + 3] & 0xFF);
             return (binary % 1_000_000).ToString("D6");
+        }
+
+        public async Task<List<string>> GenerateRecoveryCodesAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId)
+                ?? throw new InvalidOperationException("User not found.");
+            var codes = new List<string>();
+            var hashes = new List<string>();
+            for (int i = 0; i < 8; i++)
+            {
+                var code = Guid.NewGuid().ToString("N")[..16];
+                codes.Add(code);
+                hashes.Add(Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(code))));
+            }
+            user.MFARecoveryCodes = System.Text.Json.JsonSerializer.Serialize(hashes);
+            await _userManager.UpdateAsync(user);
+            return codes;
+        }
+
+        public async Task<bool> ValidateRecoveryCodeAsync(string userId, string code)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+            if (user == null || string.IsNullOrEmpty(user.MFARecoveryCodes)) return false;
+            var hashes = System.Text.Json.JsonSerializer.Deserialize<List<string>>(user.MFARecoveryCodes);
+            if (hashes == null) return false;
+            var hash = Convert.ToBase64String(SHA256.HashData(Encoding.UTF8.GetBytes(code)));
+            if (!hashes.Contains(hash)) return false;
+            hashes.Remove(hash);
+            user.MFARecoveryCodes = System.Text.Json.JsonSerializer.Serialize(hashes);
+            await _userManager.UpdateAsync(user);
+            await _auditService.LogActivityAsync(userId, "MFA_RECOVERY_CODE_USED", "User", userId);
+            return true;
         }
     }
 }
