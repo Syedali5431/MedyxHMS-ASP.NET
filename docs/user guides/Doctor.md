@@ -11,6 +11,7 @@
 Doctors are the primary clinical users of Medyx HMS. After logging in, a Doctor is directed to the clinical workflow area covering outpatient consultations, inpatient management, prescriptions, and diagnostic ordering. Doctors have read access to patient histories, lab results, and radiology reports to support informed clinical decisions.
 
 **Key responsibilities:**
+
 - Managing OPD (outpatient) consultations
 - Supervising assigned IPD (inpatient) cases
 - Writing and managing prescriptions
@@ -35,7 +36,7 @@ Doctors are the primary clinical users of Medyx HMS. After logging in, a Doctor 
 Your dashboard shows:
 
 | Widget | Description |
-|--------|-------------|
+| -------- | ------------- |
 | Today's Appointments | All appointments scheduled for you today |
 | Active OPD Encounters | Open consultations requiring completion |
 | Admitted Patients | Your currently admitted IPD patients |
