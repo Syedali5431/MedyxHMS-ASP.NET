@@ -1887,7 +1887,8 @@ END");
             const string superAdminUserName = "superadmin";
             const string superAdminEmployeeId = "SUPER001";
 
-            var superAdminUser = await _userManager.FindByEmailAsync(superAdminEmail);
+            var superAdminUser = await _userManager.FindByEmailAsync(superAdminEmail)
+                ?? await _userManager.FindByNameAsync(superAdminUserName);
             if (superAdminUser == null)
             {
                 superAdminUser = new ApplicationUser
@@ -1905,17 +1906,27 @@ END");
                 var result = await _userManager.CreateAsync(superAdminUser, "SuperAdmin@123!");
                 if (!result.Succeeded)
                 {
+                    _logger.LogError("Failed to create SuperAdmin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
                     return;
                 }
+                _logger.LogInformation("SuperAdmin user created successfully.");
             }
-            else if (!string.Equals(superAdminUser.UserName, superAdminUserName, StringComparison.OrdinalIgnoreCase))
+            else
             {
-                var usernameExists = await _userManager.FindByNameAsync(superAdminUserName);
-                if (usernameExists == null)
-                {
-                    superAdminUser.UserName = superAdminUserName;
-                    await _userManager.UpdateAsync(superAdminUser);
-                }
+                // User exists — ensure email, EmployeeId, IsActive, and password are correct
+                var needsUpdate = false;
+                if (superAdminUser.Email != superAdminEmail) { superAdminUser.Email = superAdminEmail; superAdminUser.EmailConfirmed = true; needsUpdate = true; }
+                if (string.IsNullOrWhiteSpace(superAdminUser.EmployeeId)) { superAdminUser.EmployeeId = superAdminEmployeeId; needsUpdate = true; }
+                if (!superAdminUser.IsActive) { superAdminUser.IsActive = true; needsUpdate = true; }
+                if (needsUpdate) await _userManager.UpdateAsync(superAdminUser);
+
+                // Reset password to known default
+                var token = await _userManager.GeneratePasswordResetTokenAsync(superAdminUser);
+                var resetResult = await _userManager.ResetPasswordAsync(superAdminUser, token, "SuperAdmin@123!");
+                if (resetResult.Succeeded)
+                    _logger.LogInformation("SuperAdmin password reset to default.");
+                else
+                    _logger.LogWarning("SuperAdmin password reset failed: {Errors}", string.Join(", ", resetResult.Errors.Select(e => e.Description)));
             }
 
             await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
