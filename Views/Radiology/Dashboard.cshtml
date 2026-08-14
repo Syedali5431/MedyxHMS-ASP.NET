@@ -164,7 +164,7 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        legend: { position: 'bottom' }
+                        plugins: { legend: { position: 'bottom' } }
                     }
                 });</text>
             }
@@ -188,11 +188,9 @@
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: {
-                            yAxes: [{
-                                ticks: { beginAtZero: true, precision: 0 }
-                            }]
+                            y: { beginAtZero: true, ticks: { precision: 0 } }
                         },
-                        legend: { display: false }
+                        plugins: { legend: { display: false } }
                     }
                 });</text>
             }

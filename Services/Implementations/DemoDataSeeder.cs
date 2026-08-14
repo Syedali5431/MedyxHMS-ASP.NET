@@ -548,28 +548,18 @@ END");
 
         private async Task SeedLabAsync()
         {
-            if (await _context.LabTests.AnyAsync()) return;
-
             var now = DateTime.UtcNow;
-            var tests = new[]
-            {
-                new LabTest { TestName="Complete Blood Count",  TestCode="CBC",     Category="Hematology",    Description="Full blood count panel",                              Price=350, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Fasting Blood Sugar",   TestCode="FBS",     Category="Biochemistry",  Description="Glucose level after 8h fast",                         Price=80,  NormalRange="70-100",     Unit="mg/dL", PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="HbA1c",                 TestCode="HBA1C",   Category="Biochemistry",  Description="Glycated haemoglobin — 3-month glucose average",     Price=350, NormalRange="4.0-5.6",    Unit="%",     PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Lipid Profile",         TestCode="LIPID",   Category="Biochemistry",  Description="Cholesterol, triglycerides, HDL, LDL",                Price=500, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Thyroid Function Test", TestCode="TFT",     Category="Endocrinology", Description="TSH, T3, T4",                                          Price=600, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Liver Function Test",   TestCode="LFT",     Category="Biochemistry",  Description="ALT, AST, ALP, bilirubin, albumin",                    Price=550, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Renal Function Test",   TestCode="RFT",     Category="Biochemistry",  Description="Urea, creatinine, uric acid, electrolytes",           Price=450, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Urine Routine",         TestCode="URINE-R", Category="Microbiology",  Description="Urine microscopy and culture",                         Price=150, NormalRange="See report", Unit="",      PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
-                new LabTest { TestName="ECG",                   TestCode="ECG",     Category="Cardiology",    Description="12-lead electrocardiogram",                            Price=200, NormalRange="Normal sinus rhythm", Unit="", PreparationTimeHours=1, IsActive=true, CreatedDate=now },
-                new LabTest { TestName="Sputum Culture",        TestCode="SPUTUM",  Category="Microbiology",  Description="Culture and sensitivity for respiratory pathogens",   Price=400, NormalRange="No growth",  Unit="",      PreparationTimeHours=48, IsActive=true, CreatedDate=now },
-            };
 
-            await _context.LabTests.AddRangeAsync(tests);
-            await _context.SaveChangesAsync();
+            if (!await _context.LabTests.AnyAsync())
+            {
+                await SeedLabTestCatalogAsync(now);
+            }
+
+            if (await _context.LabResults.AnyAsync(r => r.OrderDate >= now.AddDays(-30))) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
-            if (!patients.Any()) { _logger.LogInformation("Seeded {Count} lab tests", tests.Length); return; }
+            var tests = await _context.LabTests.ToListAsync();
+            if (!patients.Any() || !tests.Any()) return;
 
             var results = new List<LabResult>();
             var statuses = new[] { "Completed", "Completed", "Completed", "In Progress", "Ordered" };
@@ -578,7 +568,7 @@ END");
             for (var i = 0; i < 12; i++)
             {
                 var patient  = patients[i % patients.Count];
-                var test     = tests[i % tests.Length];
+                var test     = tests[i % tests.Count];
                 var ordered  = now.AddDays(-(i + 1));
                 var status   = statuses[i % statuses.Length];
 
@@ -603,32 +593,46 @@ END");
 
             await _context.LabResults.AddRangeAsync(results);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Seeded {TestCount} lab tests and {ResultCount} lab results", tests.Length, results.Count);
+            _logger.LogInformation("Seeded {Count} lab results", results.Count);
+        }
+
+        private async Task SeedLabTestCatalogAsync(DateTime now)
+        {
+            var tests = new[]
+            {
+                new LabTest { TestName="Complete Blood Count",  TestCode="CBC",     Category="Hematology",    Description="Full blood count panel",                              Price=350, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Fasting Blood Sugar",   TestCode="FBS",     Category="Biochemistry",  Description="Glucose level after 8h fast",                         Price=80,  NormalRange="70-100",     Unit="mg/dL", PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="HbA1c",                 TestCode="HBA1C",   Category="Biochemistry",  Description="Glycated haemoglobin — 3-month glucose average",     Price=350, NormalRange="4.0-5.6",    Unit="%",     PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Lipid Profile",         TestCode="LIPID",   Category="Biochemistry",  Description="Cholesterol, triglycerides, HDL, LDL",                Price=500, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Thyroid Function Test", TestCode="TFT",     Category="Endocrinology", Description="TSH, T3, T4",                                          Price=600, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Liver Function Test",   TestCode="LFT",     Category="Biochemistry",  Description="ALT, AST, ALP, bilirubin, albumin",                    Price=550, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Renal Function Test",   TestCode="RFT",     Category="Biochemistry",  Description="Urea, creatinine, uric acid, electrolytes",           Price=450, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Urine Routine",         TestCode="URINE-R", Category="Microbiology",  Description="Urine microscopy and culture",                         Price=150, NormalRange="See report", Unit="",      PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="ECG",                   TestCode="ECG",     Category="Cardiology",    Description="12-lead electrocardiogram",                            Price=200, NormalRange="Normal sinus rhythm", Unit="", PreparationTimeHours=1, IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Sputum Culture",        TestCode="SPUTUM",  Category="Microbiology",  Description="Culture and sensitivity for respiratory pathogens",   Price=400, NormalRange="No growth",  Unit="",      PreparationTimeHours=48, IsActive=true, CreatedDate=now },
+            };
+
+            await _context.LabTests.AddRangeAsync(tests);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} lab tests", tests.Length);
         }
 
         // ── Radiology ────────────────────────────────────────────────────────────
 
         private async Task SeedRadiologyAsync()
         {
-            if (await _context.RadiologyTests.AnyAsync()) return;
-
             var now = DateTime.UtcNow;
-            var tests = new[]
-            {
-                new RadiologyTest { TestName="Chest X-Ray PA",        TestCode="CXR-PA",   Category="X-Ray",      Description="Postero-anterior chest radiograph",         Price=300,  PreparationTimeHours=1, SpecialInstructions="Remove metal objects", RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="X-Ray Knee AP/Lateral", TestCode="XR-KNEE",  Category="X-Ray",      Description="Knee joint radiograph",                       Price=350,  PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="USG Abdomen & Pelvis",  TestCode="USG-ABD",  Category="Ultrasound", Description="Abdominal and pelvic ultrasonography",       Price=600,  PreparationTimeHours=4, SpecialInstructions="Full bladder required", RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="CT Chest",              TestCode="CT-CHEST", Category="CT Scan",    Description="Computed tomography of chest",                Price=2500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="Echocardiogram",        TestCode="ECHO",     Category="Ultrasound", Description="2D and Doppler echocardiography",             Price=1500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="MRI Knee",              TestCode="MRI-KNEE", Category="MRI",        Description="Magnetic resonance imaging of knee joint",    Price=3500, PreparationTimeHours=2, SpecialInstructions="No metal implants",    RequiresContrast=false, IsActive=true, CreatedDate=now },
-                new RadiologyTest { TestName="CT KUB",                TestCode="CT-KUB",   Category="CT Scan",    Description="CT of kidneys, ureters and bladder",          Price=2000, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
-            };
 
-            await _context.RadiologyTests.AddRangeAsync(tests);
-            await _context.SaveChangesAsync();
+            if (!await _context.RadiologyTests.AnyAsync())
+            {
+                await SeedRadiologyTestCatalogAsync(now);
+            }
+
+            if (await _context.RadiologyResults.AnyAsync(r => r.OrderDate >= now.AddDays(-30))) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
-            if (!patients.Any()) { _logger.LogInformation("Seeded {Count} radiology tests", tests.Length); return; }
+            var tests = await _context.RadiologyTests.ToListAsync();
+            if (!patients.Any() || !tests.Any()) return;
 
             var findings = new[]
             {
@@ -646,7 +650,7 @@ END");
             for (var i = 0; i < 8; i++)
             {
                 var patient = patients[i % patients.Count];
-                var test    = tests[i % tests.Length];
+                var test    = tests[i % tests.Count];
                 var ordered = now.AddDays(-(i + 1));
                 var status  = statuses[i % statuses.Length];
 
@@ -670,14 +674,32 @@ END");
 
             await _context.RadiologyResults.AddRangeAsync(results);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Seeded {TestCount} radiology tests and {ResultCount} radiology results", tests.Length, results.Count);
+            _logger.LogInformation("Seeded {Count} radiology results", results.Count);
+        }
+
+        private async Task SeedRadiologyTestCatalogAsync(DateTime now)
+        {
+            var tests = new[]
+            {
+                new RadiologyTest { TestName="Chest X-Ray PA",        TestCode="CXR-PA",   Category="X-Ray",      Description="Postero-anterior chest radiograph",         Price=300,  PreparationTimeHours=1, SpecialInstructions="Remove metal objects", RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="X-Ray Knee AP/Lateral", TestCode="XR-KNEE",  Category="X-Ray",      Description="Knee joint radiograph",                       Price=350,  PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="USG Abdomen & Pelvis",  TestCode="USG-ABD",  Category="Ultrasound", Description="Abdominal and pelvic ultrasonography",       Price=600,  PreparationTimeHours=4, SpecialInstructions="Full bladder required", RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="CT Chest",              TestCode="CT-CHEST", Category="CT Scan",    Description="Computed tomography of chest",                Price=2500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="Echocardiogram",        TestCode="ECHO",     Category="Ultrasound", Description="2D and Doppler echocardiography",             Price=1500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="MRI Knee",              TestCode="MRI-KNEE", Category="MRI",        Description="Magnetic resonance imaging of knee joint",    Price=3500, PreparationTimeHours=2, SpecialInstructions="No metal implants",    RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="CT KUB",                TestCode="CT-KUB",   Category="CT Scan",    Description="CT of kidneys, ureters and bladder",          Price=2000, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+            };
+
+            await _context.RadiologyTests.AddRangeAsync(tests);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} radiology tests", tests.Length);
         }
 
         // ── Pharmacy ─────────────────────────────────────────────────────────────
 
         private async Task SeedPharmacyAsync()
         {
-            if (await _context.PharmacyBills.AnyAsync()) return;
+            if (await _context.PharmacyBills.AnyAsync(b => b.BillDate >= DateTime.UtcNow.AddDays(-30))) return;
 
             var patients  = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
             var medicines = await _context.Medicines.OrderBy(m => m.Id).ToListAsync();
@@ -763,7 +785,7 @@ END");
 
         private async Task SeedOperationTheatreAsync()
         {
-            if (await _context.OTSchedules.AnyAsync()) return;
+            if (await _context.OTSchedules.AnyAsync(o => o.ScheduledDate >= DateTime.UtcNow.AddDays(-30))) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Skip(2).Take(6).ToListAsync();
             var doctors  = await _context.Doctors.OrderBy(d => d.Id).ToListAsync();
@@ -800,7 +822,7 @@ END");
 
         private async Task SeedReferralsAsync()
         {
-            if (await _context.Referrals.AnyAsync()) return;
+            if (await _context.Referrals.AnyAsync(r => r.ReferralDate >= DateTime.UtcNow.AddDays(-30))) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(6).ToListAsync();
             if (!patients.Any()) return;
@@ -875,7 +897,7 @@ END");
 
         private async Task SeedFrontOfficeAsync()
         {
-            if (await _context.VisitorLogs.AnyAsync()) return;
+            if (await _context.VisitorLogs.AnyAsync(v => v.VisitDate >= DateTime.UtcNow.AddDays(-30))) return;
 
             var now = DateTime.UtcNow;
             var purposes = new[] { "Patient enquiry", "Bill payment", "Meeting doctor", "Document collection", "Appointment booking", "Delivery" };
@@ -915,7 +937,7 @@ END");
 
             var now = DateTime.UtcNow;
 
-            if (!await _context.StaffAttendances.AnyAsync())
+            if (!await _context.StaffAttendances.AnyAsync(a => a.AttendanceDate >= now.Date.AddDays(-30)))
             {
                 var attendance = new List<StaffAttendance>();
                 foreach (var member in staff)
@@ -944,7 +966,7 @@ END");
                 _logger.LogInformation("Seeded {Count} staff attendance records", attendance.Count);
             }
 
-            if (!await _context.PayrollRecords.AnyAsync())
+            if (!await _context.PayrollRecords.AnyAsync(p => p.PayrollMonth >= new DateTime(now.Year, now.Month, 1).AddMonths(-1)))
             {
                 var payroll = new List<PayrollRecord>();
                 foreach (var member in staff)

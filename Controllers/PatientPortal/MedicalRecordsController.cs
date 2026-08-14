@@ -60,8 +60,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                         {
                             Id = r.Id.ToString(),
                             RecordDate = r.RecordDate,
-                            DoctorName = $"{r.Staff?.FirstName} {r.Staff?.LastName}",
-                            Department = r.Staff?.Department,
+                            DoctorName = r.DoctorName,
+                            Department = string.Empty,
                             Diagnosis = r.Diagnosis,
                             Treatment = r.Treatment,
                             Prescription = r.Prescription?.ToString(),
@@ -106,8 +106,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                 {
                     Id = record.Id.ToString(),
                     RecordDate = record.RecordDate,
-                    DoctorName = $"{record.Staff?.FirstName} {record.Staff?.LastName}",
-                    Department = record.Staff?.Department,
+                    DoctorName = record.DoctorName,
+                    Department = string.Empty,
                     Diagnosis = record.Diagnosis,
                     Treatment = record.Treatment,
                     Prescription = record.Prescription?.ToString(),
@@ -115,10 +115,10 @@ namespace MedyxHMS.Controllers.PatientPortal
                 },
                 Doctor = new PatientPortalDoctorDto
                 {
-                    Id = record.Staff?.Id.ToString(),
-                    FirstName = record.Staff?.FirstName,
-                    LastName = record.Staff?.LastName,
-                    Department = record.Staff?.Department
+                    Id = record.Doctor?.Id,
+                    FirstName = record.Doctor?.FirstName,
+                    LastName = record.Doctor?.LastName,
+                    Department = string.Empty
                 }
             };
 
@@ -321,8 +321,8 @@ namespace MedyxHMS.Controllers.PatientPortal
             var rows = records.Select(r => (IReadOnlyList<string>)new[]
             {
                 r.RecordDate.ToString("yyyy-MM-dd"),
-                (r.Staff?.FirstName + " " + r.Staff?.LastName).Trim(),
-                r.Staff?.Department ?? string.Empty,
+                r.DoctorName ?? string.Empty,
+                string.Empty,
                 r.Diagnosis ?? string.Empty,
                 r.Treatment ?? string.Empty
             }).ToList();

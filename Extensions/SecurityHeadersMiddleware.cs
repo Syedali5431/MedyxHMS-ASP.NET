@@ -35,7 +35,11 @@ namespace MedyxHMS.Extensions
                 // XSS Protection
                 response.Headers["X-XSS-Protection"] = "1; mode=block";
 
-                // Content Security Policy - Strict but functional
+                // Content Security Policy - Strict but functional.
+                // "upgrade-insecure-requests" is skipped on plain-HTTP localhost dev servers —
+                // it otherwise makes the browser rewrite same-origin requests to https:// and
+                // fail with ERR_SSL_PROTOCOL_ERROR since no TLS listener exists there.
+                var isLocalHttp = !context.Request.IsHttps && context.Request.Host.Host == "localhost";
                 response.Headers["Content-Security-Policy"] =
                     "default-src 'self'; " +
                     "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com; " +
@@ -44,8 +48,8 @@ namespace MedyxHMS.Extensions
                     "img-src 'self' data: https:; " +
                     "connect-src 'self'; " +
                     "frame-ancestors 'self'; " +
-                    "form-action 'self'; " +
-                    "upgrade-insecure-requests;";
+                    "form-action 'self';" +
+                    (isLocalHttp ? string.Empty : " upgrade-insecure-requests;");
 
                 // Referrer Policy
                 response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";

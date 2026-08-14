@@ -82,8 +82,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                     Id = a.Id.ToString(),
                     AppointmentId = a.AppointmentId,
                     AppointmentDate = a.AppointmentDate,
-                    DoctorName = $"{a.Staff?.FirstName} {a.Staff?.LastName}",
-                    Department = a.Staff?.Department ?? string.Empty,
+                    DoctorName = a.Doctor != null ? $"{a.Doctor.FirstName} {a.Doctor.LastName}" : string.Empty,
+                    Department = a.Doctor?.Specialization ?? string.Empty,
                     Status = a.Status,
                     Symptoms = a.Symptoms
                 }).ToList();
@@ -296,8 +296,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                 {
                     a.AppointmentDate.ToString("yyyy-MM-dd"),
                     a.AppointmentDate.ToString("HH:mm"),
-                    (a.Staff != null ? ($"{a.Staff.FirstName} {a.Staff.LastName}").Trim() : string.Empty),
-                    a.Staff?.Department ?? string.Empty,
+                    (a.Doctor != null ? ($"{a.Doctor.FirstName} {a.Doctor.LastName}").Trim() : string.Empty),
+                    a.Doctor?.Specialization ?? string.Empty,
                     a.Status ?? string.Empty
                 }).ToList();
                 title = "Patient Dashboard - Upcoming Appointments";

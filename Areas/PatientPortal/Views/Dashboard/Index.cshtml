@@ -27,7 +27,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase mb-1">Upcoming Appointments</h6>
-                        <h3 class="text-primary">@Model.Dashboard?.UpcomingAppointments ?? 0</h3>
+                        <h3 class="text-primary">@(Model.Dashboard?.UpcomingAppointments ?? 0)</h3>
                     </div>
                     <i class="fas fa-calendar-check fa-3x text-primary opacity-50"></i>
                 </div>
@@ -44,7 +44,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase mb-1">Pending Bills</h6>
-                        <h3 class="text-warning">@Model.Dashboard?.PendingBills ?? 0</h3>
+                        <h3 class="text-warning">@(Model.Dashboard?.PendingBills ?? 0)</h3>
                     </div>
                     <i class="fas fa-receipt fa-3x text-warning opacity-50"></i>
                 </div>
@@ -61,7 +61,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase mb-1">Outstanding Balance</h6>
-                        <h3 class="text-danger">₹@Model.Dashboard?.TotalOutstandingAmount?.ToString("N2") ?? "0.00"</h3>
+                        <h3 class="text-danger">₹@(Model.Dashboard?.TotalOutstandingAmount?.ToString("N2") ?? "0.00")</h3>
                     </div>
                     <i class="fas fa-money-bill-wave fa-3x text-danger opacity-50"></i>
                 </div>
@@ -78,7 +78,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase mb-1">Test Results</h6>
-                        <h3 class="text-success">@Model.Dashboard?.RecentTestResults ?? 0</h3>
+                        <h3 class="text-success">@(Model.Dashboard?.RecentTestResults ?? 0)</h3>
                     </div>
                     <i class="fas fa-flask-vial fa-3x text-success opacity-50"></i>
                 </div>

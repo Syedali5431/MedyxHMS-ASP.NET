@@ -54,8 +54,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                             Id = a.Id.ToString(),
                             AppointmentId = a.AppointmentId,
                             AppointmentDate = a.AppointmentDate,
-                            DoctorName = $"{a.Staff?.FirstName} {a.Staff?.LastName}",
-                            Department = a.Staff?.Department,
+                            DoctorName = a.Doctor != null ? $"{a.Doctor.FirstName} {a.Doctor.LastName}" : string.Empty,
+                            Department = a.Doctor?.Specialization,
                             Status = a.Status,
                             Symptoms = a.Symptoms,
                             Notes = a.Notes,
@@ -107,8 +107,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                     Id = appointment.Id.ToString(),
                     AppointmentId = appointment.AppointmentId,
                     AppointmentDate = appointment.AppointmentDate,
-                    DoctorName = $"{appointment.Staff?.FirstName} {appointment.Staff?.LastName}",
-                    Department = appointment.Staff?.Department,
+                    DoctorName = appointment.Doctor != null ? $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}" : string.Empty,
+                    Department = appointment.Doctor?.Specialization,
                     Status = appointment.Status,
                     Symptoms = appointment.Symptoms,
                     Notes = appointment.Notes,
@@ -116,11 +116,11 @@ namespace MedyxHMS.Controllers.PatientPortal
                 },
                 Doctor = new PatientPortalDoctorDto
                 {
-                    Id = appointment.Staff?.Id.ToString(),
-                    FirstName = appointment.Staff?.FirstName,
-                    LastName = appointment.Staff?.LastName,
-                    Department = appointment.Staff?.Department,
-                    Designation = appointment.Staff?.Designation
+                    Id = appointment.Doctor?.Id.ToString(),
+                    FirstName = appointment.Doctor?.FirstName,
+                    LastName = appointment.Doctor?.LastName,
+                    Department = appointment.Doctor?.Specialization,
+                    Designation = "Doctor"
                 }
             };
 
@@ -244,7 +244,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     Id = appointment.Id.ToString(),
                     AppointmentId = appointment.AppointmentId,
                     AppointmentDate = appointment.AppointmentDate,
-                    DoctorName = $"{appointment.Staff?.FirstName} {appointment.Staff?.LastName}",
+                    DoctorName = appointment.Doctor != null ? $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}" : string.Empty,
                     Status = appointment.Status
                 }
             };

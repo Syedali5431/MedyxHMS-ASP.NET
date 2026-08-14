@@ -233,7 +233,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<IEnumerable<Appointment>> GetPatientAppointmentsAsync(string patientId, string filter = "all")
         {
             var query = _context.Appointments
-                .Include(a => a.Staff)
+                .Include(a => a.Doctor)
                 .Where(a => a.PatientId.ToString() == patientId);
 
             query = filter switch
@@ -250,7 +250,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<Appointment?> GetAppointmentDetailsAsync(string appointmentId)
         {
             return await _context.Appointments
-                .Include(a => a.Staff)
+                .Include(a => a.Doctor)
                 .Include(a => a.Patient)
                 .FirstOrDefaultAsync(a => a.Id.ToString() == appointmentId);
         }
@@ -360,7 +360,7 @@ namespace MedyxHMS.Services.Implementations
                 query = query.Where(m => m.RecordDate <= endDate.Value);
 
             return await query
-                .Include(m => m.Staff)
+                .Include(m => m.Doctor)
                 .OrderByDescending(m => m.RecordDate)
                 .ToListAsync();
         }
@@ -368,7 +368,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<MedicalRecord?> GetMedicalRecordDetailsAsync(string recordId)
         {
             return await _context.MedicalRecords
-                .Include(m => m.Staff)
+                .Include(m => m.Doctor)
                 .Include(m => m.Patient)
                 .FirstOrDefaultAsync(m => m.Id.ToString() == recordId);
         }

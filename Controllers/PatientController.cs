@@ -124,16 +124,48 @@ namespace MedyxHMS.Controllers
 
             var patientDto = MapToDto(patient);
 
-            // For now, we'll create empty collections for related data
-            // These will be populated when we implement the related services
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .Where(a => a.PatientId == id)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ThenByDescending(a => a.AppointmentTime)
+                .ToListAsync();
+
+            var bills = await _context.Bills
+                .Where(b => b.PatientId == id)
+                .OrderByDescending(b => b.BillDate)
+                .ToListAsync();
+
             var viewModel = new PatientDetailsViewModel
             {
                 Patient = patientDto,
-                RecentAppointments = new List<AppointmentSummaryDto>(),
-                RecentBills = new List<BillSummaryDto>(),
-                TotalAppointments = 0,
-                TotalBills = 0,
-                TotalAmountPaid = 0
+                RecentAppointments = appointments
+                    .Take(5)
+                    .Select(a => new AppointmentSummaryDto
+                    {
+                        Id = a.Id,
+                        AppointmentDate = a.AppointmentDate,
+                        AppointmentTime = a.AppointmentTime,
+                        Status = a.Status,
+                        AppointmentType = a.AppointmentType,
+                        PatientName = $"{patient.FirstName} {patient.LastName}",
+                        DoctorName = a.Doctor != null ? $"{a.Doctor.FirstName} {a.Doctor.LastName}" : "Unknown"
+                    })
+                    .ToList(),
+                RecentBills = bills
+                    .Take(5)
+                    .Select(b => new BillSummaryDto
+                    {
+                        Id = b.Id,
+                        BillDate = b.BillDate,
+                        Amount = b.TotalAmount,
+                        Status = b.Status,
+                        Description = b.BillType
+                    })
+                    .ToList(),
+                TotalAppointments = appointments.Count,
+                TotalBills = bills.Count,
+                TotalAmountPaid = bills.Sum(b => b.PaidAmount)
             };
 
             return View(viewModel);
