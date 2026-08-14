@@ -32,7 +32,7 @@ namespace MedyxHMS.Controllers
 
         // List all prescriptions
         [HttpGet]
-        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, int? patientId = null)
+        public async Task<IActionResult> Index(int page = 1, int pageSize = 10, int? patientId = null, string? search = null, DateTime? from = null, DateTime? to = null)
         {
             var prescriptions = await _prescriptionService.GetAllPrescriptionsAsync();
 
@@ -40,6 +40,17 @@ namespace MedyxHMS.Controllers
             {
                 prescriptions = prescriptions.Where(p => p.PharmacyBill.PatientId == patientId.Value).ToList();
             }
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                prescriptions = prescriptions.Where(p =>
+                    (p.Medicine?.Name != null && p.Medicine.Name.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.PharmacyBill?.Patient?.FirstName != null && p.PharmacyBill.Patient.FirstName.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                    (p.PharmacyBill?.Patient?.LastName != null && p.PharmacyBill.Patient.LastName.Contains(search, StringComparison.OrdinalIgnoreCase))).ToList();
+            }
+            if (from.HasValue)
+                prescriptions = prescriptions.Where(p => p.CreatedDate >= from.Value).ToList();
+            if (to.HasValue)
+                prescriptions = prescriptions.Where(p => p.CreatedDate <= to.Value.AddDays(1).AddTicks(-1)).ToList();
 
             var prescriptionList = prescriptions
                 .OrderByDescending(p => p.CreatedDate)
@@ -53,6 +64,9 @@ namespace MedyxHMS.Controllers
                 PageSize = pageSize,
                 TotalRecords = prescriptions.Count(),
                 PatientId = patientId,
+                Search = search,
+                FromDate = from,
+                ToDate = to,
                 Prescriptions = prescriptionList.Select(p => new PrescriptionDto
                 {
                     Id = p.Id,
@@ -462,6 +476,9 @@ namespace MedyxHMS.Controllers
             public bool HasPreviousPage => CurrentPage > 1;
             public bool HasNextPage => CurrentPage < TotalPages;
             public int? PatientId { get; set; }
+            public string? Search { get; set; }
+            public DateTime? FromDate { get; set; }
+            public DateTime? ToDate { get; set; }
         }
 
         public class CreatePrescriptionViewModel

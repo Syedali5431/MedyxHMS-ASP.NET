@@ -1887,12 +1887,12 @@ END");
             const string superAdminUserName = "superadmin";
             const string superAdminEmployeeId = "SUPER001";
 
-            var superAdminUser = await _userManager.FindByEmailAsync(superAdminEmail);
+            var superAdminUser = await _userManager.FindByEmailAsync(superAdminEmail)
+                ?? await _userManager.FindByNameAsync(superAdminUserName);
             if (superAdminUser == null)
             {
                 superAdminUser = new ApplicationUser
                 {
-                    Id = "1",
                     UserName = superAdminUserName,
                     Email = superAdminEmail,
                     EmailConfirmed = true,
@@ -1906,17 +1906,27 @@ END");
                 var result = await _userManager.CreateAsync(superAdminUser, "SuperAdmin@123!");
                 if (!result.Succeeded)
                 {
+                    _logger.LogError("Failed to create SuperAdmin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
                     return;
                 }
+                _logger.LogInformation("SuperAdmin user created successfully.");
             }
-            else if (!string.Equals(superAdminUser.UserName, superAdminUserName, StringComparison.OrdinalIgnoreCase))
+            else
             {
-                var usernameExists = await _userManager.FindByNameAsync(superAdminUserName);
-                if (usernameExists == null)
-                {
-                    superAdminUser.UserName = superAdminUserName;
-                    await _userManager.UpdateAsync(superAdminUser);
-                }
+                // User exists — ensure email, EmployeeId, IsActive, and password are correct
+                var needsUpdate = false;
+                if (superAdminUser.Email != superAdminEmail) { superAdminUser.Email = superAdminEmail; superAdminUser.EmailConfirmed = true; needsUpdate = true; }
+                if (string.IsNullOrWhiteSpace(superAdminUser.EmployeeId)) { superAdminUser.EmployeeId = superAdminEmployeeId; needsUpdate = true; }
+                if (!superAdminUser.IsActive) { superAdminUser.IsActive = true; needsUpdate = true; }
+                if (needsUpdate) await _userManager.UpdateAsync(superAdminUser);
+
+                // Reset password to known default
+                var token = await _userManager.GeneratePasswordResetTokenAsync(superAdminUser);
+                var resetResult = await _userManager.ResetPasswordAsync(superAdminUser, token, "SuperAdmin@123!");
+                if (resetResult.Succeeded)
+                    _logger.LogInformation("SuperAdmin password reset to default.");
+                else
+                    _logger.LogWarning("SuperAdmin password reset failed: {Errors}", string.Join(", ", resetResult.Errors.Select(e => e.Description)));
             }
 
             await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
@@ -1925,7 +1935,9 @@ END");
 
         private async Task EnsureUserIdentityConstraintsAsync()
         {
-            await _context.Database.ExecuteSqlRawAsync(@"
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
 IF OBJECT_ID(N'[dbo].[AspNetUsers]', N'U') IS NOT NULL
 BEGIN
     UPDATE [dbo].[AspNetUsers]
@@ -1953,41 +1965,41 @@ BEGIN
     INNER JOIN Dupes d ON d.[Id] = u.[Id]
     WHERE d.rn > 1;
 
-    IF EXISTS (
-        SELECT 1
-        FROM sys.indexes
-        WHERE [name] = N'UserNameIndex'
-          AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
-    )
-        DROP INDEX [UserNameIndex] ON [dbo].[AspNetUsers];
-
-    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'UserName') IS NOT NULL
-        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [UserName] NVARCHAR(256) NOT NULL;
-
-    IF COL_LENGTH(N'[dbo].[AspNetUsers]', N'NormalizedUserName') IS NOT NULL
-        ALTER TABLE [dbo].[AspNetUsers] ALTER COLUMN [NormalizedUserName] NVARCHAR(256) NOT NULL;
-
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UX_AspNetUsers_UserName'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [dbo].[AspNetUsers]([UserName]);
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UX_AspNetUsers_UserName')
+            CREATE UNIQUE INDEX [UX_AspNetUsers_UserName] ON [dbo].[AspNetUsers]([UserName]);
+    END
 
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UX_AspNetUsers_Id_UserName'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UX_AspNetUsers_Id_UserName')
+            CREATE UNIQUE INDEX [UX_AspNetUsers_Id_UserName] ON [dbo].[AspNetUsers]([Id], [UserName]);
+    END
 
     IF NOT EXISTS (
         SELECT 1 FROM sys.indexes
         WHERE [name] = N'UserNameIndex'
           AND [object_id] = OBJECT_ID(N'[dbo].[AspNetUsers]')
     )
-        CREATE UNIQUE INDEX [UserNameIndex] ON [dbo].[AspNetUsers]([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
+    BEGIN
+        IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'UserNameIndex')
+            CREATE UNIQUE INDEX [UserNameIndex] ON [dbo].[AspNetUsers]([NormalizedUserName]) WHERE [NormalizedUserName] IS NOT NULL;
+    END
 END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Non-critical error during user identity constraint setup. This is expected on fresh databases.");
+            }
         }
 
         private async Task EnsureStaffAndSuperAdminRoleAsync(ApplicationUser superAdminUser, string superAdminEmployeeId)

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Security.Claims;
+using System.Text.Json;
 using MedyxHMS.Data;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -9,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 // Purpose: Contains application code for AuditController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,SuperAdmin")]
     public class AuditController : Controller
     {
         private readonly IAuditService _auditService;
@@ -23,10 +24,12 @@ namespace MedyxHMS.Controllers
             _logger = logger;
         }
 
-        [Authorize(Policy = "Permission:*")]
         [HttpGet]
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string entityType, string userId)
         {
+            // Meta-audit: log who viewed audit logs
+            var currentUserId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
+            await _auditService.LogActivityAsync(currentUserId, "AUDIT_LOG_VIEWED", "AuditLog", "batch");
             if (!startDate.HasValue)
                 startDate = DateTime.UtcNow.AddDays(-7);
 

@@ -42,7 +42,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Request()
+        public async Task<IActionResult> CreateRequest()
         {
             var staff = (await _staffService.GetAllStaffAsync()).OrderBy(s => s.FirstName).ThenBy(s => s.LastName).ToList();
             var leaveTypes = (await _leaveService.GetLeaveTypesAsync(activeOnly: true)).ToList();
@@ -58,12 +58,12 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Request(LeaveRequestCreateViewModel model)
+        public async Task<IActionResult> CreateRequest(LeaveRequestCreateViewModel model)
         {
             if (model?.LeaveRequest == null)
             {
                 TempData["ErrorMessage"] = "Invalid leave request.";
-                return RedirectToAction(nameof(Request));
+                return RedirectToAction(nameof(CreateRequest));
             }
 
             try

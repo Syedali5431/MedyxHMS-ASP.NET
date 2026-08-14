@@ -40,7 +40,7 @@ namespace MedyxHMS.Models
         public ICollection<Bill> Bills { get; set; } = new List<Bill>();
         public ICollection<PatientInsurance> Insurances { get; set; } = new List<PatientInsurance>();
         public ICollection<SystemNotification> Notifications { get; set; } = new List<SystemNotification>();
-        public ApplicationUser User { get; set; } = null!;
+        public ApplicationUser? User { get; set; }
     }
 
     public class Appointment

@@ -2,13 +2,13 @@
 
 **Role:** Admin  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24  
 
 ---
 
 ## Overview
 
-The Admin role is responsible for the day-to-day operational administration of the hospital. Admins can manage patients, staff (excluding SuperAdmin), appointments, billing, reports, and the public CMS. The Admin cannot change system-level configurations that are reserved for SuperAdmin (license management, SuperAdmin password resets, global module toggles).
+The Admin role is responsible for the day-to-day operational administration of the hospital.
 
 **Key responsibilities:**
 - Patient and staff record management
@@ -17,6 +17,7 @@ The Admin role is responsible for the day-to-day operational administration of t
 - Report generation and distribution
 - Accounts approval for new staff registrations
 - CMS and public website content management
+- Audit log review (sidebar → Audit Logs)
 
 ---
 
@@ -24,8 +25,15 @@ The Admin role is responsible for the day-to-day operational administration of t
 
 1. Open the Medyx HMS URL in your browser.
 2. Enter your email and password.
-3. Select the **Admin** role when prompted.
-4. Click **Sign In**. You are redirected to `/Dashboard`.
+3. **If using default password "Medyx147":** you will be redirected to change your password immediately.
+4. Select the **Admin** role when prompted.
+5. Click **Sign In**. You are redirected to `/Dashboard`.
+
+### Sidebar & Profile
+- Click ☰ in the navbar to collapse/expand the sidebar (state persists).
+- Upload a profile picture via **Profile** in the navbar (JPG/PNG, max 2MB).
+- Optionally enable **MFA** on your Profile page for extra security.
+- **Audit Logs** are available in the Admin sidebar section.
 
 ---
 
@@ -373,9 +381,9 @@ The floating AI button (bottom-right) provides in-app guidance:
 # Admin
 
 
-> Last Updated: 2026-04-22
-> Operational Baseline: runtime stabilization complete, automated UAT technical gates passing.
-> References: docs/UAT-EXECUTION-EVIDENCE-2026-04-22.md, docs/UPDATED-PRD-2026-04-22.md, docs/UPDATED-TODO-LIST-2026-04-22.md
+> Last Updated: 2026-06-24
+> Operational Baseline: all 5 UI/UX phases complete; MFA with recovery codes; forced password change on default password.
+> References: [PRD](../reference/PRD.md), [UAT](../testing/UAT.md)
 
 ## Primary Responsibilities
 - Day-to-day administration, operations, and report management.

@@ -92,7 +92,7 @@ namespace MedyxHMS.Controllers
                     dashboardViewModel.PendingBills = allBills.Count(b => b.Status == "Unpaid" || b.Status == "Partially Paid");
                 }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Log error and show basic dashboard
                 ViewBag.Error = "Some dashboard data could not be loaded. Please check database connection.";

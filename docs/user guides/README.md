@@ -1,7 +1,7 @@
 # User Guides — Index
 
 **Medyx HMS User Guides**  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24
 
 ---
 
@@ -9,12 +9,23 @@
 
 This folder contains role-specific user guides for all Medyx HMS user roles. Each guide covers login, module access, step-by-step workflows, and quick-reference tables specific to that role.
 
+## New Features (2026-06-24)
+
+| Feature | Description | Affected Roles |
+| --------- | ------------- | ---------------- |
+| Sidebar Toggle | Collapse sidebar to icon-only (56px) — persists across reloads | All staff |
+| Visual Polish | Dashboard icon cards, table/form styling, button icons | All |
+| Profile Pictures | Upload JPG/PNG avatar via Profile page, shown in navbar | All |
+| MFA (TOTP) | QR code setup with Google/Microsoft Authenticator, recovery codes | All (optional) |
+| Forced Password Change | Default password "Medyx147" triggers mandatory password change | All |
+| Audit Log Viewer | Color-coded audit logs with CSV export | Admin, SuperAdmin |
+
 ---
 
 ## Role Guides
 
 | Guide | Role | Portal | Primary Area |
-|-------|------|--------|--------------|
+| ------- | ------ | -------- | -------------- |
 | [SuperAdmin.md](SuperAdmin.md) | SuperAdmin | Staff Portal | Full system governance, license, security |
 | [Admin.md](Admin.md) | Admin | Staff Portal | Hospital operations, patients, billing, reports |
 | [Doctor.md](Doctor.md) | Doctor | Staff Portal | OPD, IPD, prescriptions, test ordering |
@@ -40,7 +51,7 @@ This folder contains role-specific user guides for all Medyx HMS user roles. Eac
 ## Portal URLs
 
 | Portal | URL | Who Uses It |
-|--------|-----|-------------|
+| -------- | ----- | ------------- |
 | Staff / Admin Portal | `/` | All staff roles |
 | Patient Portal | `/PatientPortal/` | Patients only |
 | Public Website | `/Site/` | General public |
@@ -50,7 +61,7 @@ This folder contains role-specific user guides for all Medyx HMS user roles. Eac
 ## Role-to-Module Access Summary
 
 | Module | SA | AD | DR | NU | PH | AC | RC | LT | RA | ST | PA |
-|--------|----|----|----|----|----|----|----|----|----|----|-----|
+| -------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ----- |
 | Dashboard | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Patient Mgmt | ✅ | ✅ | 👁 | 👁 | — | — | ✅ | — | — | — | 👁 |
 | Appointments | ✅ | ✅ | ✅ | 👁 | — | — | ✅ | — | — | — | ✅ |
@@ -84,6 +95,7 @@ This folder contains role-specific user guides for all Medyx HMS user roles. Eac
 | Audit | ✅ | 👁 | — | — | — | — | — | — | — | — | — |
 
 **Legend:**
+
 - ✅ Full access
 - 👁 Read-only / view access
 - — No access (or access controlled by Module Management)

@@ -1,5 +1,7 @@
 ﻿# MedyxHMS ASP.NET Function Inventory
 
+> **Last Updated:** 2026-06-24
+
 This document lists functions detected in the ASP.NET project source, where each function is defined, one usage location in code (when found), and the function purpose.
 
 ## Scope

@@ -2,7 +2,7 @@
 
 **Role:** Pharmacist  
 **Portal:** Staff / Admin Portal (`/`)  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24  
 
 ---
 

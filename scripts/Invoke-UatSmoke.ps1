@@ -11,7 +11,9 @@ $ErrorActionPreference = 'Stop'
 
 $config = @{}
 if (Test-Path $ConfigPath) {
-    $config = Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json -AsHashtable
+    $configRaw = Get-Content -Raw -Path $ConfigPath | ConvertFrom-Json
+    $config = @{}
+    $configRaw.PSObject.Properties | ForEach-Object { $config[$_.Name] = $_.Value }
 }
 
 if (-not $BaseUrl -and $config.ContainsKey('BaseUrl')) {

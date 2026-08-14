@@ -2,7 +2,7 @@
 
 ## Medyx HMS ASP.NET Project Workflow and File Map
 
-Last Updated: 2026-04-22
+Last Updated: 2026-06-24
 
 ## 1. Purpose of This Guide
 
@@ -351,12 +351,12 @@ Key automation and deployment assets in [scripts](../../scripts):
 Primary docs folder: [docs](../../docs)
 
 High-value references:
-- [docs/PRD.md](../../docs/PRD.md): Product requirements and module scope.
-- [docs/Final-touches.md](../../docs/Final-touches.md): Role/portal/module/report/chatbot inventory.
-- [docs/Final-TODOList.md](../../docs/Final-TODOList.md): Completed and pending implementation tasks.
-- [docs/LICENSING-DESIGN.md](../../docs/LICENSING-DESIGN.md): Licensing architecture rationale.
-- [docs/OPENAI-CHATBOT-DESIGN.md](../../docs/OPENAI-CHATBOT-DESIGN.md): Chatbot governance and design.
-- [docs/DEPLOYMENT-RUNBOOK.md](../../docs/DEPLOYMENT-RUNBOOK.md): Deployment operations guide.
+- [PRD.md](../reference/PRD.md): Product requirements and module scope.
+- [LICENSING-DESIGN.md](../design/LICENSING-DESIGN.md): Licensing architecture rationale.
+- [OPENAI-CHATBOT-DESIGN.md](../design/OPENAI-CHATBOT-DESIGN.md): Chatbot governance and design.
+- [DEPLOYMENT-RUNBOOK.md](../reference/DEPLOYMENT-RUNBOOK.md): Deployment operations guide.
+- [Final-touches.md](../../Final-touches.md): Role/portal/module/report/chatbot inventory.
+- [Final-TODOList.md](../../Final-TODOList.md): Completed and pending implementation tasks.
 
 ## 5. Recommended Reading Order for New Programmers
 

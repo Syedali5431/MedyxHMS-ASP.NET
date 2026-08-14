@@ -2,7 +2,7 @@
 
 **Document:** MedyxHMS-LIC.md  
 **Audience:** System Administrators, SuperAdmins, Medyx Vendor Team  
-**Last Updated:** 2026-04-28  
+**Last Updated:** 2026-06-24  
 
 ---
 

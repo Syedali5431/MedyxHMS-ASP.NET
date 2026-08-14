@@ -1,19 +1,15 @@
 @model MedyxHMS.Components.SidebarNavViewModel
 
-@* Staff portal persistent left sidebar – M1 through M24 *@
+@* Staff portal sidebar navigation – v2.0 premium *@
 
-<div class="staff-sidebar-header px-3 py-2 d-flex align-items-center gap-2">
-    <i class="fas fa-hospital-user text-primary"></i>
-    <span class="fw-semibold text-white small">Navigation</span>
-</div>
-
-<ul class="nav flex-column staff-sidebar-nav mb-4">
+<ul class="nav flex-column staff-sidebar-nav">
 
     @* ─── M1 · Dashboard (always visible) ─── *@
     <li class="nav-item">
         <a href="/Dashboard"
            class="staff-sidebar-link @(Model.IsActive("/Dashboard") ? "active" : "")">
-            <i class="fas fa-tachometer-alt staff-sidebar-icon"></i>Dashboard
+            <i class="fas fa-tachometer-alt staff-sidebar-icon"></i>
+            <span class="flex-grow-1">Dashboard</span>
         </a>
     </li>
 
@@ -391,7 +387,8 @@
         <li class="nav-item">
             <a href="/Report/FinancialReport"
                class="staff-sidebar-link @(Model.IsActive("/Report/FinancialReport") ? "active" : "")">
-                <i class="fas fa-coins staff-sidebar-icon"></i>Finance
+                <i class="fas fa-coins staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Finance</span>
             </a>
         </li>
     }
@@ -467,7 +464,8 @@
     <li class="nav-item">
         <a href="/Notifications"
            class="staff-sidebar-link @(Model.IsActive("/Notifications") ? "active" : "")">
-            <i class="fas fa-bell staff-sidebar-icon"></i>Notifications
+            <i class="fas fa-bell staff-sidebar-icon"></i>
+            <span class="flex-grow-1">Notifications</span>
         </a>
     </li>
 
@@ -671,6 +669,22 @@
                 </div>
             </li>
         }
+
+        @* Audit Logs *@
+        <li class="nav-item">
+            <a href="/Audit"
+               class="staff-sidebar-link @(Model.IsActive("/Audit") ? "active" : "")">
+                <i class="fas fa-history staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Audit Logs</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/Audit/UserActions"
+               class="staff-sidebar-link @(Model.IsActive("/Audit/UserActions") ? "active" : "")">
+                <i class="fas fa-user-clock staff-sidebar-icon"></i>
+                <span class="flex-grow-1">User Actions</span>
+            </a>
+        </li>
 
         @* M24 · Setup / Settings *@
         <li class="nav-item">

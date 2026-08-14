@@ -37,14 +37,14 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> Create(AmbulanceVehicle model)
+        public async Task<IActionResult> Create(AmbulanceVehicle vehicle)
         {
-            if (!ModelState.IsValid) return View(model);
+            if (!ModelState.IsValid) return View(vehicle);
 
-            _context.AmbulanceVehicles.Add(model);
+            _context.AmbulanceVehicles.Add(vehicle);
             await _context.SaveChangesAsync();
             await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier),
-                "CREATE", "AmbulanceVehicle", model.Id.ToString(), null, model.VehicleNumber);
+                "CREATE", "AmbulanceVehicle", vehicle.Id.ToString(), null, vehicle.VehicleNumber);
             TempData["SuccessMessage"] = "Vehicle added.";
             return RedirectToAction(nameof(Index));
         }
@@ -58,12 +58,12 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
-        public async Task<IActionResult> Edit(int id, AmbulanceVehicle model)
+        public async Task<IActionResult> Edit(int id, AmbulanceVehicle vehicle)
         {
-            if (id != model.Id) return BadRequest();
-            if (!ModelState.IsValid) return View(model);
+            if (id != vehicle.Id) return BadRequest();
+            if (!ModelState.IsValid) return View(vehicle);
 
-            _context.AmbulanceVehicles.Update(model);
+            _context.AmbulanceVehicles.Update(vehicle);
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Vehicle updated.";
             return RedirectToAction(nameof(Index));
@@ -71,11 +71,26 @@ namespace MedyxHMS.Controllers
 
         // ── Dispatches ────────────────────────────────────────────
 
-        public async Task<IActionResult> Dispatches()
+        public async Task<IActionResult> Dispatches(DateTime? from = null, DateTime? to = null, int? vehicleId = null)
         {
-            var dispatches = await _context.AmbulanceDispatches
+            var query = _context.AmbulanceDispatches
                 .Include(d => d.AmbulanceVehicle)
                 .Include(d => d.Patient)
+                .AsQueryable();
+
+            if (from.HasValue)
+                query = query.Where(d => d.DispatchTime >= from.Value);
+            if (to.HasValue)
+                query = query.Where(d => d.DispatchTime <= to.Value.AddDays(1).AddTicks(-1));
+            if (vehicleId.HasValue)
+                query = query.Where(d => d.AmbulanceVehicleId == vehicleId.Value);
+
+            ViewBag.FromDate = from?.ToString("yyyy-MM-dd");
+            ViewBag.ToDate = to?.ToString("yyyy-MM-dd");
+            ViewBag.VehicleId = vehicleId;
+            ViewBag.Vehicles = await _context.AmbulanceVehicles.OrderBy(v => v.VehicleNumber).ToListAsync();
+
+            var dispatches = await query
                 .OrderByDescending(d => d.DispatchTime)
                 .ToListAsync();
             return View(dispatches);

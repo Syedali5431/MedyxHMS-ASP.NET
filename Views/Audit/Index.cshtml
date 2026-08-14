@@ -10,7 +10,7 @@
             <h2>Audit Logs</h2>
             <p class="text-muted mb-0">Track user and entity changes across the system</p>
         </div>
-        <a class="btn btn-outline-secondary" asp-controller="Report" asp-action="Index">Back to Reports</a>
+        <a class="btn btn-sm btn-outline-success me-1" asp-action="Index" asp-route-export="csv"><i class="fas fa-file-csv me-1"></i>CSV</a>
     </div>
 
     <div class="card mb-4">
@@ -70,10 +70,14 @@
                     {
                         @foreach (var log in Model.AuditLogs)
                         {
-                            <tr>
+                            var badgeClass = log.Action.Contains("FAILED") ? "bg-danger" :
+                                             log.Action.Contains("SUCCESS") || log.Action.Contains("ENABLED") ? "bg-success" :
+                                             log.Action.Contains("LOGIN") ? "bg-primary" :
+                                             "bg-secondary";
+                            <tr class="@(log.Action.Contains("FAILED") ? "table-danger" : "")">"
                                 <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
                                 <td>@(string.IsNullOrWhiteSpace(log.UserId) ? "System" : log.UserId)</td>
-                                <td><span class="badge bg-info text-dark">@log.Action</span></td>
+                                <td><span class="badge @badgeClass">@log.Action</span></td>
                                 <td>@log.EntityName</td>
                                 <td>@log.EntityId</td>
                                 <td>@log.IpAddress</td>

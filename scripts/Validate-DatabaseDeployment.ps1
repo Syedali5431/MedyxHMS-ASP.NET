@@ -9,7 +9,8 @@ if (-not $Full -and -not $Empty) {
     exit 1
 }
 
-$Script = if ($Full) { "scripts\New-Database.sql" } else { "scripts\New-Database-Empty.sql" }
+$ScriptRoot = $PSScriptRoot
+$Script = if ($Full) { "$ScriptRoot\New-Database.sql" } else { "$ScriptRoot\New-Database-Empty.sql" }
 $DbName = "MedyxHMS_Validate_$(Get-Random)"
 $TempScript = "temp_validate_$DbName.sql"
 

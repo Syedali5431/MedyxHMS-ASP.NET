@@ -1,7 +1,0 @@
-﻿C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(107,74): error CS1501: No overload for method 'ToString' takes 1 arguments [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(149,63): error CS0023: Operator '?' cannot be applied to operand of type 'DateTime' [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(176,86): error CS1501: No overload for method 'ToString' takes 1 arguments [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]
-Build FAILED.
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(107,74): error CS1501: No overload for method 'ToString' takes 1 arguments [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(149,63): error CS0023: Operator '?' cannot be applied to operand of type 'DateTime' [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]
-C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\Views\Staff\Details.cshtml(176,86): error CS1501: No overload for method 'ToString' takes 1 arguments [C:\Databases\Medyx-HMS\MedyxHMS-ASPNET\MedyxHMS-ASPNET\MedyxHMS.csproj]

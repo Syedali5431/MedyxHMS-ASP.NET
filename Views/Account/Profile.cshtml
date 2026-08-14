@@ -1,0 +1,131 @@
+@model MedyxHMS.Models.ApplicationUser
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container py-3">
+    <h4 class="mb-4"><i class="fas fa-user-circle me-2 text-primary"></i>My Profile</h4>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row">
+        <div class="col-lg-4">
+            @* Profile Picture Card *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-camera me-2"></i>Profile Picture</h6>
+                </div>
+                <div class="card-body text-center">
+                    @{
+                        var profileService = Context.RequestServices.GetService<MedyxHMS.Services.Interfaces.IProfileImageService>();
+                        var imgPath = profileService?.GetDisplayPath(Model.ProfileImage) ?? "/images/default-avatar.png";
+                    }
+                    <img src="@imgPath" alt="Profile Picture"
+                         class="rounded-circle img-thumbnail mb-3"
+                         style="width: 140px; height: 140px; object-fit: cover;" />
+
+                    <form asp-action="UploadProfileImage" method="post" enctype="multipart/form-data">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-2">
+                            <input type="file" class="form-control form-control-sm" id="profileImage"
+                                   name="profileImage" accept=".jpg,.jpeg,.png" />
+                            <div class="form-text small">JPG/PNG, max 2 MB</div>
+                            <span class="text-danger small">@Html.ValidationMessage("profileImage")</span>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                            <i class="fas fa-upload me-1"></i> Upload
+                        </button>
+                    </form>
+
+                    @if (!string.IsNullOrEmpty(Model.ProfileImage))
+                    {
+                        <form asp-action="DeleteProfileImage" method="post" class="mt-2">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
+                                <i class="fas fa-trash me-1"></i> Remove
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Account Details</h6>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Name</dt>
+                        <dd class="col-sm-8">@Model.FirstName @Model.LastName</dd>
+
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">@Model.Email</dd>
+
+                        <dt class="col-sm-4">Username</dt>
+                        <dd class="col-sm-8">@Model.UserName</dd>
+
+                        <dt class="col-sm-4">Employee ID</dt>
+                        <dd class="col-sm-8">@Model.EmployeeId</dd>
+
+                        <dt class="col-sm-4">Phone</dt>
+                        <dd class="col-sm-8">@(Model.PhoneNumber ?? "N/A")</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger")">
+                                @(Model.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </dd>
+
+                        <dt class="col-sm-4">Member Since</dt>
+                        <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-lg-8 offset-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Multi-Factor Authentication</h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.MFAEnabled)
+                    {
+                        <div class="alert alert-success d-flex align-items-center small mb-3">
+                            <i class="fas fa-check-circle fa-2x me-3"></i>
+                            <div><strong>MFA is active.</strong> Your account is protected.</div>
+                        </div>
+                        <form asp-action="DisableMFA" method="post" class="mb-2">
+                            @Html.AntiForgeryToken()
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control form-control-sm"
+                                       placeholder="Enter password to disable MFA" required />
+                                <button type="submit" class="btn btn-outline-danger btn-sm">
+                                    <i class="fas fa-unlock me-1"></i> Disable MFA
+                                </button>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning d-flex align-items-center small mb-3">
+                            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                            <div><strong>MFA is not enabled.</strong> Add extra security to your account.</div>
+                        </div>
+                        <a asp-action="EnableMFA" class="btn btn-primary btn-sm">
+                            <i class="fas fa-shield-alt me-1"></i> Enable MFA
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

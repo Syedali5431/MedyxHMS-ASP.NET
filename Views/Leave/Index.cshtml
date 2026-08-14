@@ -10,7 +10,7 @@
             <p class="text-muted mb-0">Review and approve leave requests</p>
         </div>
         <div class="d-flex gap-2">
-            <a class="btn btn-primary" asp-action="Request">New Leave Request</a>
+            <a class="btn btn-primary" asp-action="CreateRequest">New Leave Request</a>
             <a class="btn btn-outline-primary" asp-action="Balances">Leave Balances</a>
             @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin"))
             {
