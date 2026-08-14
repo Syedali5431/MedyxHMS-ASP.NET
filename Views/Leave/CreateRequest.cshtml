@@ -16,8 +16,9 @@
 
     <div class="card">
         <div class="card-body">
-            <form method="post" asp-action="Request">
+            <form method="post" asp-action="CreateRequest">
                 @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Staff</label>

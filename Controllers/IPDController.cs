@@ -1,10 +1,12 @@
-﻿using MedyxHMS.DTOs;
+﻿using MedyxHMS.Data;
+using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
 using PatientDto = MedyxHMS.DTOs.PatientDto;
 
 // Purpose: Contains application code for IPDController and its related runtime behavior.
@@ -20,6 +22,7 @@ namespace MedyxHMS.Controllers
         private readonly IBedService _bedService;
         private readonly IBillingService _billingService;
         private readonly IAuditService _auditService;
+        private readonly ApplicationDbContext _context;
 
         public IPDController(
             IIPDService ipdService,
@@ -28,7 +31,8 @@ namespace MedyxHMS.Controllers
             IWardService wardService,
             IBedService bedService,
             IBillingService billingService,
-            IAuditService auditService)
+            IAuditService auditService,
+            ApplicationDbContext context)
         {
             _ipdService = ipdService;
             _patientService = patientService;
@@ -37,6 +41,7 @@ namespace MedyxHMS.Controllers
             _bedService = bedService;
             _billingService = billingService;
             _auditService = auditService;
+            _context = context;
         }
 
         // List all IPD admissions
@@ -168,7 +173,7 @@ namespace MedyxHMS.Controllers
             }
 
             var patient = await _patientService.GetPatientByIdAsync(admission.PatientId);
-            var doctor = await _staffService.GetStaffByIdAsync(admission.DoctorId.ToString());
+            var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == admission.DoctorId);
             var relatedBills = await _billingService.GetBillsByPatientAsync(admission.PatientId);
             var ipdBills = relatedBills.Where(b => b.BillType == "IPD").ToList();
 
@@ -178,7 +183,7 @@ namespace MedyxHMS.Controllers
             {
                 Admission = MapToIPDAdmissionDto(admission),
                 Patient = MapToPatientPortalDto(patient),
-                Doctor = MapToStaffDto(doctor),
+                Doctor = MapDoctorToStaffDto(doctor),
                 Bed = admission.Bed != null ? MapToBedDto(admission.Bed) : null,
                 Ward = admission.Bed?.Ward != null ? MapToWardDto(admission.Bed.Ward) : null,
                 RelatedBills = ipdBills.Select(b => MapToBillDto(b)).ToList(),
@@ -194,7 +199,9 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Create(int? patientId)
         {
             var patients = await _patientService.GetAllPatientsAsync();
-            var doctors = await _staffService.GetAllStaffAsync();
+            // IPDAdmission.DoctorId is an int FK into the Doctors table (see Models/OPD.cs), not
+            // the Staff table (whose Id is a string ApplicationUser Id) - must source from Doctors.
+            var doctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
             var wards = await _wardService.GetAllWardsAsync();
             var availableBeds = await _bedService.GetAvailableBedsAsync();
 
@@ -215,13 +222,13 @@ namespace MedyxHMS.Controllers
                     Email = p.Email,
                     Phone = p.Phone
                 }).ToList(),
-                Doctors = doctors.Where(d => d.Department == "Doctor" || d.Department == "Physician").Select(d => new StaffDto
+                Doctors = doctors.Select(d => new StaffDto
                 {
-                    Id = d.Id,
+                    Id = d.Id.ToString(),
                     FirstName = d.FirstName,
                     LastName = d.LastName,
                     EmployeeId = d.EmployeeId,
-                    Department = d.Department
+                    Department = d.Specialization
                 }).ToList(),
                 Wards = wards.Select(w => MapToWardDto(w)).ToList(),
                 AvailableBeds = availableBeds.Select(b => MapToBedDto(b)).ToList(),
@@ -244,7 +251,9 @@ namespace MedyxHMS.Controllers
                     PatientId = model.Admission.PatientId,
                     DoctorId = model.Admission.DoctorId,
                     BedId = model.Admission.BedId,
-                    AdmissionDate = model.Admission.AdmissionDate,
+                    // Create.cshtml has no AdmissionDate input, so the posted DTO value is
+                    // always default(DateTime); the admission is always "now" in this flow.
+                    AdmissionDate = DateTime.Now,
                     AdmissionType = model.Admission.AdmissionType,
                     Diagnosis = model.Admission.Diagnosis,
                     Treatment = model.Admission.Treatment,
@@ -272,7 +281,7 @@ namespace MedyxHMS.Controllers
 
             // Reload dropdown data if validation fails
             var patients = await _patientService.GetAllPatientsAsync();
-            var doctors = await _staffService.GetAllStaffAsync();
+            var doctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
             var wards = await _wardService.GetAllWardsAsync();
             var availableBeds = await _bedService.GetAvailableBedsAsync();
 
@@ -285,13 +294,13 @@ namespace MedyxHMS.Controllers
                 Phone = p.Phone
             }).ToList();
 
-            model.Doctors = doctors.Where(d => d.Department == "Doctor" || d.Department == "Physician").Select(d => new StaffDto
+            model.Doctors = doctors.Select(d => new StaffDto
             {
-                Id = d.Id,
+                Id = d.Id.ToString(),
                 FirstName = d.FirstName,
                 LastName = d.LastName,
                 EmployeeId = d.EmployeeId,
-                Department = d.Department
+                Department = d.Specialization
             }).ToList();
 
             model.Wards = wards.Select(w => MapToWardDto(w)).ToList();
@@ -312,7 +321,7 @@ namespace MedyxHMS.Controllers
             }
 
             var patient = await _patientService.GetPatientByIdAsync(admission.PatientId);
-            var doctor = await _staffService.GetStaffByIdAsync(admission.DoctorId.ToString());
+            var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == admission.DoctorId);
             var availableBeds = await _bedService.GetAvailableBedsAsync();
             var wards = await _wardService.GetAllWardsAsync();
 
@@ -331,7 +340,7 @@ namespace MedyxHMS.Controllers
                 },
                 CurrentAdmission = MapToIPDAdmissionDto(admission),
                 Patient = MapToPatientPortalDto(patient),
-                Doctor = MapToStaffDto(doctor),
+                Doctor = MapDoctorToStaffDto(doctor),
                 AvailableBeds = availableBeds.Select(b => MapToBedDto(b)).ToList(),
                 Wards = wards.Select(w => MapToWardDto(w)).ToList()
             };
@@ -386,13 +395,13 @@ namespace MedyxHMS.Controllers
             if (admission != null)
             {
                 var patient = await _patientService.GetPatientByIdAsync(admission.PatientId);
-                var doctor = await _staffService.GetStaffByIdAsync(admission.DoctorId.ToString());
+                var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == admission.DoctorId);
                 var availableBeds = await _bedService.GetAvailableBedsAsync();
                 var wards = await _wardService.GetAllWardsAsync();
 
                 model.CurrentAdmission = MapToIPDAdmissionDto(admission);
                 model.Patient = MapToPatientPortalDto(patient);
-                model.Doctor = MapToStaffDto(doctor);
+                model.Doctor = MapDoctorToStaffDto(doctor);
                 model.AvailableBeds = availableBeds.Select(b => MapToBedDto(b)!).ToList();
                 model.Wards = wards.Select(w => MapToWardDto(w)!).ToList();
             }
@@ -531,6 +540,24 @@ namespace MedyxHMS.Controllers
                 Phone = staff.Phone,
                 EmployeeId = staff.EmployeeId,
                 Department = staff.Department
+            };
+        }
+
+        // IPDAdmission.DoctorId is an int FK into the Doctors table, not Staff (whose Id is a
+        // string ApplicationUser Id) - see the Create-flow fix above. Details/Edit need the same
+        // correction when looking up the attending doctor to display.
+        private StaffDto? MapDoctorToStaffDto(Doctor? doctor)
+        {
+            if (doctor == null) return null;
+            return new StaffDto
+            {
+                Id = doctor.Id.ToString(),
+                FirstName = doctor.FirstName,
+                LastName = doctor.LastName,
+                Email = doctor.Email,
+                Phone = doctor.Phone,
+                EmployeeId = doctor.EmployeeId,
+                Department = doctor.Department != null ? doctor.Department.Name : doctor.Specialization
             };
         }
 

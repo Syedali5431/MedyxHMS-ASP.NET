@@ -180,7 +180,7 @@ namespace MedyxHMS.Controllers
             }
 
             var patient = await _patientService.GetPatientByIdAsync(visit.PatientId);
-            var doctor = await _staffService.GetStaffByIdAsync(visit.DoctorId.ToString());
+            var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == visit.DoctorId);
 
             var viewModel = new OPDVisitDetailsViewModel
             {
@@ -215,13 +215,13 @@ namespace MedyxHMS.Controllers
                 } : new PatientPortalDto(),
                 Doctor = doctor != null ? new StaffDto
                 {
-                    Id = doctor.Id,
+                    Id = doctor.Id.ToString(),
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Email = doctor.Email,
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
-                    Department = doctor.Department
+                    Department = doctor.Department != null ? doctor.Department.Name : doctor.Specialization
                 } : new StaffDto()
             };
 
@@ -231,7 +231,9 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Create(int? patientId, int? doctorId)
         {
             var patients = await _patientService.GetAllPatientsAsync();
-            var doctors = await _staffService.GetAllStaffAsync();
+            // OPDVisit.DoctorId is an int FK into the Doctors table (see Models/OPD.cs), not the
+            // Staff table (whose Id is a string ApplicationUser Id) - must source from Doctors.
+            var doctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
 
             var viewModel = new CreateOPDVisitViewModel
             {
@@ -249,13 +251,13 @@ namespace MedyxHMS.Controllers
                     Email = p.Email,
                     Phone = p.Phone
                 }).ToList(),
-                Doctors = doctors.Where(d => d.Department == "Doctor" || d.Department == "Physician").Select(d => new StaffDto
+                Doctors = doctors.Select(d => new StaffDto
                 {
-                    Id = d.Id,
+                    Id = d.Id.ToString(),
                     FirstName = d.FirstName,
                     LastName = d.LastName,
                     EmployeeId = d.EmployeeId,
-                    Department = d.Department
+                    Department = d.Specialization
                 }).ToList(),
                 SelectedPatientId = patientId,
                 SelectedDoctorId = doctorId
@@ -333,7 +335,7 @@ namespace MedyxHMS.Controllers
 
             // Reload dropdown data if validation fails
             var patients = await _patientService.GetAllPatientsAsync();
-            var doctors = await _staffService.GetAllStaffAsync();
+            var doctors = await _context.Doctors.Where(d => d.IsActive).OrderBy(d => d.FirstName).ToListAsync();
 
             model.Patients = patients.Select(p => new PatientDto
             {
@@ -344,13 +346,13 @@ namespace MedyxHMS.Controllers
                 Phone = p.Phone
             }).ToList();
 
-            model.Doctors = doctors.Where(d => d.Department == "Doctor" || d.Department == "Physician").Select(d => new StaffDto
+            model.Doctors = doctors.Select(d => new StaffDto
             {
-                Id = d.Id,
+                Id = d.Id.ToString(),
                 FirstName = d.FirstName,
                 LastName = d.LastName,
                 EmployeeId = d.EmployeeId,
-                Department = d.Department
+                Department = d.Specialization
             }).ToList();
 
             return View(model);
@@ -365,7 +367,7 @@ namespace MedyxHMS.Controllers
             }
 
             var patient = await _patientService.GetPatientByIdAsync(visit.PatientId);
-            var doctor = await _staffService.GetStaffByIdAsync(visit.DoctorId.ToString());
+            var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == visit.DoctorId);
 
             var viewModel = new EditOPDVisitViewModel
             {
@@ -410,13 +412,13 @@ namespace MedyxHMS.Controllers
                 } : new PatientPortalDto(),
                 Doctor = doctor != null ? new StaffDto
                 {
-                    Id = doctor.Id,
+                    Id = doctor.Id.ToString(),
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Email = doctor.Email,
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
-                    Department = doctor.Department
+                    Department = doctor.Department != null ? doctor.Department.Name : doctor.Specialization
                 } : new StaffDto()
             };
 
@@ -488,7 +490,7 @@ namespace MedyxHMS.Controllers
             if (visit != null)
             {
                 var patient = await _patientService.GetPatientByIdAsync(visit.PatientId);
-                var doctor = await _staffService.GetStaffByIdAsync(visit.DoctorId.ToString());
+                var doctor = await _context.Doctors.Include(d => d.Department).FirstOrDefaultAsync(d => d.Id == visit.DoctorId);
 
                 model.CurrentVisit = new OPDVisitDto
                 {
@@ -523,13 +525,13 @@ namespace MedyxHMS.Controllers
 
                 model.Doctor = doctor != null ? new StaffDto
                 {
-                    Id = doctor.Id,
+                    Id = doctor.Id.ToString(),
                     FirstName = doctor.FirstName,
                     LastName = doctor.LastName,
                     Email = doctor.Email,
                     Phone = doctor.Phone,
                     EmployeeId = doctor.EmployeeId,
-                    Department = doctor.Department
+                    Department = doctor.Department != null ? doctor.Department.Name : doctor.Specialization
                 } : new StaffDto();
             }
 
@@ -540,14 +542,21 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _opdService.DeleteOPDVisitAsync(id);
-            if (result)
+            try
             {
-                TempData["Success"] = "OPD visit deleted successfully.";
+                var result = await _opdService.DeleteOPDVisitAsync(id);
+                if (result)
+                {
+                    TempData["Success"] = "OPD visit deleted successfully.";
+                }
+                else
+                {
+                    TempData["Error"] = "Failed to delete OPD visit.";
+                }
             }
-            else
+            catch (DbUpdateException)
             {
-                TempData["Error"] = "Failed to delete OPD visit.";
+                TempData["Error"] = "This OPD visit cannot be deleted because it has related records (e.g. bills or prescriptions).";
             }
             return RedirectToAction(nameof(Index));
         }

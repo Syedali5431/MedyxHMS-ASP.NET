@@ -230,7 +230,7 @@ namespace MedyxHMS.DTOs
     public class PatientPortalAppointmentCreateDto
     {
         [Required(ErrorMessage = "Doctor is required")]
-        public string DoctorId { get; set; }
+        public int DoctorId { get; set; }
 
         [Required(ErrorMessage = "Appointment date is required")]
         [DataType(DataType.DateTime)]

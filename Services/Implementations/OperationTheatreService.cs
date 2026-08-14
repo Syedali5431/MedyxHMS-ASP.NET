@@ -48,6 +48,7 @@ namespace MedyxHMS.Services.Implementations
 
             var bill = new Bill
             {
+                BillNumber = GenerateBillNumber(),
                 PatientId = schedule.PatientId,
                 BillDate = DateTime.UtcNow,
                 DueDate = DateTime.UtcNow.AddDays(10),
@@ -89,6 +90,27 @@ namespace MedyxHMS.Services.Implementations
             _context.OTSchedules.Update(schedule);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private string GenerateBillNumber()
+        {
+            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var lastBill = _context.Bills
+                .Where(b => b.BillNumber.StartsWith($"OTBILL{datePart}"))
+                .OrderByDescending(b => b.Id)
+                .FirstOrDefault();
+
+            var sequentialNumber = 1;
+            if (lastBill != null)
+            {
+                var lastNumber = lastBill.BillNumber.Substring(14);
+                if (int.TryParse(lastNumber, out var parsedNumber))
+                {
+                    sequentialNumber = parsedNumber + 1;
+                }
+            }
+
+            return $"OTBILL{datePart}{sequentialNumber:D4}";
         }
     }
 }

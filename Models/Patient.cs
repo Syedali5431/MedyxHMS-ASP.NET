@@ -1,4 +1,6 @@
 ﻿// Purpose: Contains application code for Patient and its related runtime behavior.
+using System.ComponentModel.DataAnnotations.Schema;
+
 namespace MedyxHMS.Models
 {
     public class Patient
@@ -46,6 +48,15 @@ namespace MedyxHMS.Models
     public class Appointment
     {
         public int Id { get; set; }
+
+        // AppointmentId is a legacy pass-through around Id, backed by its own real (and
+        // redundant) database column. Because it has a public getter/setter, EF Core mapped it
+        // as an independent scalar by convention - materializing a row would call this setter
+        // with the STORED AppointmentId column value (0 for every appointment ever created
+        // through the app, since nothing set it), clobbering the real Id back to 0 after it was
+        // correctly read. [NotMapped] stops EF from round-tripping it through the database at
+        // all; it remains available in memory purely as a convenience alias for Id.
+        [NotMapped]
         public int AppointmentId
         {
             get => Id;

@@ -137,8 +137,8 @@ namespace MedyxHMS.Services.Interfaces
         Task<int> GetOverdueBillsCountAsync(string patientId);
         
         // Doctor Information
-        Task<IEnumerable<Staff>> GetAvailableDoctorsForBookingAsync(string? departmentFilter = null);
-        Task<Staff?> GetDoctorDetailsAsync(string doctorId);
+        Task<IEnumerable<Doctor>> GetAvailableDoctorsForBookingAsync(string? departmentFilter = null);
+        Task<Doctor?> GetDoctorDetailsAsync(int doctorId);
         Task<List<DoctorAvailability>> GetDoctorAvailabilityAsync(string doctorId);
         
         // Patient Notifications

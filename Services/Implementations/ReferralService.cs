@@ -46,6 +46,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 var bill = new Bill
                 {
+                    BillNumber = GenerateBillNumber(),
                     PatientId = referral.PatientId,
                     BillDate = DateTime.UtcNow,
                     DueDate = DateTime.UtcNow.AddDays(15),
@@ -88,6 +89,27 @@ namespace MedyxHMS.Services.Implementations
             _context.Referrals.Update(referral);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        private string GenerateBillNumber()
+        {
+            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var lastBill = _context.Bills
+                .Where(b => b.BillNumber.StartsWith($"REFBILL{datePart}"))
+                .OrderByDescending(b => b.Id)
+                .FirstOrDefault();
+
+            var sequentialNumber = 1;
+            if (lastBill != null)
+            {
+                var lastNumber = lastBill.BillNumber.Substring(15);
+                if (int.TryParse(lastNumber, out var parsedNumber))
+                {
+                    sequentialNumber = parsedNumber + 1;
+                }
+            }
+
+            return $"REFBILL{datePart}{sequentialNumber:D4}";
         }
     }
 }

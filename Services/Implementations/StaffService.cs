@@ -98,6 +98,12 @@ namespace MedyxHMS.Services.Implementations
                 // Set the staff ID to match the user ID
                 staff.Id = user.Id;
                 staff.CreatedDate = DateTime.UtcNow;
+                // The caller (StaffController) builds staff.User as a throwaway placeholder just
+                // to carry UserName/Email/Phone into this method. Left as-is, EF's change tracker
+                // would cascade-track that incomplete object as a second, bogus ApplicationUser
+                // insert when Staff is added below - replace it with the real, already-persisted
+                // user so the Staff.User navigation points at the correct tracked entity.
+                staff.User = user;
 
                 // Add staff to database
                 _context.Staff.Add(staff);
@@ -141,9 +147,10 @@ namespace MedyxHMS.Services.Implementations
 
         private async Task<string> GetNextNumericUserIdAsync()
         {
-            var maxId = await _userManager.Users
-                .Select(u => (int?)ConvertToNumericUserId(u.Id))
-                .MaxAsync() ?? 0;
+            // ConvertToNumericUserId is a plain C# method and can't be translated to SQL, so the
+            // ids must be materialized first and converted client-side before taking the max.
+            var userIds = await _userManager.Users.Select(u => u.Id).ToListAsync();
+            var maxId = userIds.Count == 0 ? 0 : userIds.Max(ConvertToNumericUserId);
 
             return (maxId + 1).ToString();
         }
@@ -182,6 +189,11 @@ namespace MedyxHMS.Services.Implementations
                 existingStaff.User.LastName = staff.LastName;
                 existingStaff.User.PhoneNumber = staff.Phone;
                 existingStaff.User.IsActive = staff.IsActive;
+                if (!string.IsNullOrWhiteSpace(staff.Email))
+                {
+                    existingStaff.User.Email = staff.Email;
+                    existingStaff.User.NormalizedEmail = staff.Email.ToUpperInvariant();
+                }
 
                 // Update staff information
                 existingStaff.EmployeeId = staff.EmployeeId;

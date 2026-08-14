@@ -47,6 +47,9 @@ namespace MedyxHMS.Services.Implementations
             await EnsureNewModuleTablesAsync();
             await EnsureUserThemePreferenceTableAsync();
             await EnsureUserIdentityConstraintsAsync();
+            await EnsurePatientUserIdNullableAsync();
+            await EnsureAppointmentIdColumnHasDefaultAsync();
+            await EnsureAppointmentStaffIdNotEnforcedAsync();
             await EnsureReportStoredProceduresAsync();
 
             // Seed initial public website and booking data for Step 4.2
@@ -1999,6 +2002,87 @@ END");
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Non-critical error during user identity constraint setup. This is expected on fresh databases.");
+            }
+        }
+
+        private async Task EnsurePatientUserIdNullableAsync()
+        {
+            try
+            {
+                // Patient.UserId is intentionally nullable in the model (staff can register a
+                // patient without a linked login account), but the original schema created the
+                // column NOT NULL, which blocks every Patient/Create submission. Relax it once.
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF EXISTS (
+    SELECT 1 FROM sys.columns c
+    JOIN sys.tables t ON t.object_id = c.object_id
+    WHERE t.name = N'Patients' AND c.name = N'UserId' AND c.is_nullable = 0
+)
+BEGIN
+    ALTER TABLE [dbo].[Patients] ALTER COLUMN [UserId] nvarchar(128) NULL;
+END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Non-critical error while relaxing Patients.UserId nullability.");
+            }
+        }
+
+        private async Task EnsureAppointmentIdColumnHasDefaultAsync()
+        {
+            try
+            {
+                // Appointment.AppointmentId is now [NotMapped] (see Models/Patient.cs) since its
+                // getter/setter just aliased Id and EF Core was clobbering the real Id with this
+                // column's stored value on materialization. EF no longer supplies a value for it
+                // on INSERT, so the column needs a default to keep satisfying its NOT NULL
+                // constraint for any code path that still round-trips through EF's SQL layer.
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (
+    SELECT 1 FROM sys.default_constraints dc
+    JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
+    WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[Appointments]') AND c.name = N'AppointmentId'
+)
+BEGIN
+    ALTER TABLE [dbo].[Appointments] ADD CONSTRAINT [DF_Appointments_AppointmentId] DEFAULT (0) FOR [AppointmentId];
+END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Non-critical error while adding default for Appointments.AppointmentId.");
+            }
+        }
+
+        private async Task EnsureAppointmentStaffIdNotEnforcedAsync()
+        {
+            try
+            {
+                // Appointment.StaffId is a legacy column whose C# property getter just stringifies
+                // DoctorId (see Models/Patient.cs). It only satisfies its FK to Staff.Id by
+                // coincidence when a Doctor's numeric Id happens to equal an existing Staff.Id
+                // string - for every other doctor, appointment creation fails with a FK violation.
+                // DoctorId (FK to Doctors) is the real, correctly-enforced relationship, so this
+                // vestigial constraint is dropped and the column relaxed to nullable.
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF EXISTS (
+    SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_Appointments_Staff_StaffId'
+)
+BEGIN
+    ALTER TABLE [dbo].[Appointments] DROP CONSTRAINT [FK_Appointments_Staff_StaffId];
+END
+
+IF EXISTS (
+    SELECT 1 FROM sys.columns c
+    JOIN sys.tables t ON t.object_id = c.object_id
+    WHERE t.name = N'Appointments' AND c.name = N'StaffId' AND c.is_nullable = 0
+)
+BEGIN
+    ALTER TABLE [dbo].[Appointments] ALTER COLUMN [StaffId] nvarchar(128) NULL;
+END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Non-critical error while relaxing Appointments.StaffId constraint.");
             }
         }
 

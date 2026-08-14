@@ -146,8 +146,23 @@ namespace MedyxHMS.DTOs
         [StringLength(200, ErrorMessage = "Medicine name cannot exceed 200 characters")]
         public string Name { get; set; }
 
+        [StringLength(200, ErrorMessage = "Generic name cannot exceed 200 characters")]
+        public string GenericName { get; set; }
+
         [StringLength(100, ErrorMessage = "Category cannot exceed 100 characters")]
         public string Category { get; set; }
+
+        [StringLength(100, ErrorMessage = "Dosage form cannot exceed 100 characters")]
+        public string DosageForm { get; set; }
+
+        [StringLength(100, ErrorMessage = "Strength cannot exceed 100 characters")]
+        public string Strength { get; set; }
+
+        [StringLength(200, ErrorMessage = "Manufacturer cannot exceed 200 characters")]
+        public string Manufacturer { get; set; }
+
+        [StringLength(100, ErrorMessage = "Batch number cannot exceed 100 characters")]
+        public string BatchNumber { get; set; }
 
         [Range(0, 999999.99, ErrorMessage = "Unit price must be between 0 and 999999.99")]
         public decimal? UnitPrice { get; set; }

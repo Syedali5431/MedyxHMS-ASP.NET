@@ -16,6 +16,7 @@
                 <div class="card-body">
                     <form method="post" action="@Url.Action("Edit")">
                         @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
                         <input type="hidden" name="VisitId" value="@Model.VisitId" />
 
                         <!-- Read-only Visit Info -->

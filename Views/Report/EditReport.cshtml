@@ -12,6 +12,7 @@
         <div class="card-body">
             <form asp-action="EditReport" method="post">
                 @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
                 <input asp-for="Id" type="hidden" />
 
                 <div class="row g-3">

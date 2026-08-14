@@ -49,6 +49,7 @@
 
     <form asp-action="EditReport" method="post" id="editReportForm">
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <input type="hidden" asp-for="TemplateId" />
         <input type="hidden" asp-for="FieldsJson" id="fieldsJsonInput" />
 

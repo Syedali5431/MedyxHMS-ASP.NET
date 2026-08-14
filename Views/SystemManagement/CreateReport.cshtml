@@ -22,6 +22,7 @@
 
     <form asp-action="CreateReport" method="post" id="createReportForm">
         @Html.AntiForgeryToken()
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
         <!-- Hidden field carries serialised field builder JSON -->
         <input type="hidden" asp-for="FieldsJson" id="fieldsJsonInput" />

@@ -35,6 +35,7 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
                         <input type="hidden" name="Staff.Id" value="@Model.Staff.Id" />
 
                         <!-- Basic Information -->

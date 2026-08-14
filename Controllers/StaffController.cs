@@ -413,6 +413,9 @@ namespace MedyxHMS.Controllers
                     }
 
                     // Update staff object
+                    // Staff.Email reads/writes through the User navigation (get => User?.Email),
+                    // so a throwaway object needs its own User set or the getter always returns
+                    // null and the service below silently has nothing to copy to the real user.
                     var staff = new Staff
                     {
                         Id = viewModel.Staff.Id,
@@ -425,7 +428,8 @@ namespace MedyxHMS.Controllers
                         Salary = viewModel.Staff.Salary,
                         Phone = viewModel.Staff.Phone,
                         Address = viewModel.Staff.Address,
-                        IsActive = viewModel.Staff.IsActive
+                        IsActive = viewModel.Staff.IsActive,
+                        User = new ApplicationUser { Email = viewModel.Staff.Email }
                     };
 
                     // Update the staff

@@ -49,6 +49,7 @@ namespace MedyxHMS.Services.Implementations
             if (existingAppointment == null)
                 return null;
 
+            existingAppointment.DoctorId = appointment.DoctorId;
             existingAppointment.AppointmentDate = appointment.AppointmentDate;
             existingAppointment.AppointmentTime = appointment.AppointmentTime;
             existingAppointment.Status = appointment.Status;

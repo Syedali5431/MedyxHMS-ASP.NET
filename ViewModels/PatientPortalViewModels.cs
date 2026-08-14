@@ -61,6 +61,7 @@ namespace MedyxHMS.ViewModels
         public List<PatientPortalDoctorAvailabilityDto> SelectedDoctorAvailability { get; set; } = new();
         public string SelectedDoctorId { get; set; }
         public DateTime SelectedDate { get; set; } = DateTime.Today;
+        public string? SelectedTime { get; set; }
         public List<TimeSlotViewModel> AvailableTimeSlots { get; set; } = new();
     }
 

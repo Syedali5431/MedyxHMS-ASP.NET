@@ -23,6 +23,16 @@ builder.Services.AddControllersWithViews(options =>
 {
     // Centralized license gate for MVC actions. Middleware also enforces license for non-MVC paths.
     options.Filters.Add<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
+})
+.AddMvcOptions(options =>
+{
+    // The project enables nullable annotations (see .csproj) but most DTO properties are
+    // declared as non-nullable `string` without an explicit [Required] attribute, relying on
+    // [StringLength]/etc. alone to mean "optional". Without this, ASP.NET Core's default
+    // model-binding behavior treats every non-nullable reference-type property as implicitly
+    // required, silently blocking submission of forms (e.g. Patient/Create) on fields the UI
+    // and DTOs themselves document as optional. Explicit [Required] attributes are unaffected.
+    options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
 });
 builder.Services.AddTransient<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
 builder.Services.AddHttpClient();

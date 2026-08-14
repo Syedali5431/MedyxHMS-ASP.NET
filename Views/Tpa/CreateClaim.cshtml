@@ -9,6 +9,7 @@
         <div class="card-body">
             <form asp-action="CreateClaim" method="post">
                 @Html.AntiForgeryToken()
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold">TPA Provider <span class="text-danger">*</span></label>
                     <select asp-for="TpaProviderId" class="form-select">

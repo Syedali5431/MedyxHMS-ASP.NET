@@ -147,9 +147,9 @@ namespace MedyxHMS.Controllers.PatientPortal
                         Id = d.Id.ToString(),
                         FirstName = d.FirstName,
                         LastName = d.LastName,
-                        Department = d.Department,
-                        Designation = d.Designation,
-                        About = d.About
+                        Department = d.Department != null ? d.Department.Name : string.Empty,
+                        Designation = "Doctor",
+                        Specialization = d.Specialization
                     }).ToList()
                 };
 
@@ -183,11 +183,19 @@ namespace MedyxHMS.Controllers.PatientPortal
             {
                 try
                 {
+                    var appointmentTime = TimeSpan.TryParse(viewModel.SelectedTime, out var parsedTime)
+                        ? parsedTime
+                        : new TimeSpan(9, 0, 0);
+
                     var appointment = new Appointment
                     {
                         PatientId = patientId.Value,
-                        StaffId = viewModel.Appointment.DoctorId,
-                        AppointmentDate = viewModel.SelectedDate.Add(new TimeSpan(9, 0, 0)), // Default time
+                        DoctorId = viewModel.Appointment.DoctorId,
+                        // AppointmentTime is the field the staff side reads for the time-of-day;
+                        // the patient portal's own appointment list reads the time embedded in
+                        // AppointmentDate instead, so set both consistently.
+                        AppointmentDate = viewModel.SelectedDate.Date.Add(appointmentTime),
+                        AppointmentTime = appointmentTime,
                         Symptoms = viewModel.Appointment.Symptoms,
                         Notes = viewModel.Appointment.Notes,
                         Priority = viewModel.Appointment.Priority ?? "Normal"

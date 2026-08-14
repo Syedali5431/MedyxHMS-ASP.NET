@@ -30,6 +30,7 @@
                 <div class="card-body">
                     <form method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                         <!-- Basic Information -->
                         <div class="row">
@@ -154,6 +155,14 @@
                                            id="Staff_Password" name="Staff.Password" required>
                                     @Html.ValidationMessageFor(m => m.Staff.Password, "", new { @class = "text-danger" })
                                     <small class="form-text text-muted">Password must be at least 8 characters long and contain uppercase, lowercase, and numeric characters.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="Staff_ConfirmPassword" class="form-label">Confirm Password <span class="text-danger">*</span></label>
+                                    <input type="password" class="form-control @Html.ValidationCssClassFor(m => m.Staff.ConfirmPassword)"
+                                           id="Staff_ConfirmPassword" name="Staff.ConfirmPassword" required>
+                                    @Html.ValidationMessageFor(m => m.Staff.ConfirmPassword, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                         </div>

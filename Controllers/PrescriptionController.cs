@@ -1,9 +1,11 @@
-﻿using MedyxHMS.DTOs;
+﻿using MedyxHMS.Data;
+using MedyxHMS.DTOs;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 // Purpose: Contains application code for PrescriptionController and its related runtime behavior.
 namespace MedyxHMS.Controllers
@@ -15,17 +17,20 @@ namespace MedyxHMS.Controllers
         private readonly IPatientService _patientService;
         private readonly IBillingService _billingService;
         private readonly IAuditService _auditService;
+        private readonly ApplicationDbContext _context;
 
         public PrescriptionController(
             IPrescriptionService prescriptionService,
             IPatientService patientService,
             IBillingService billingService,
-            IAuditService auditService)
+            IAuditService auditService,
+            ApplicationDbContext context)
         {
             _prescriptionService = prescriptionService;
             _patientService = patientService;
             _billingService = billingService;
             _auditService = auditService;
+            _context = context;
         }
 
         #region Prescriptions
@@ -122,6 +127,7 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Create(int? pharmacyBillId)
         {
             var medicines = await _prescriptionService.GetAllMedicinesAsync();
+            var pharmacyBills = await GetPharmacyBillOptionsAsync();
 
             var viewModel = new CreatePrescriptionViewModel
             {
@@ -140,6 +146,7 @@ namespace MedyxHMS.Controllers
                     UnitPrice = m.UnitPrice,
                     StockQuantity = m.StockQuantity
                 }).ToList(),
+                PharmacyBills = pharmacyBills,
                 SelectedPharmacyBillId = pharmacyBillId
             };
 
@@ -191,6 +198,7 @@ namespace MedyxHMS.Controllers
                 GenericName = m.GenericName,
                 UnitPrice = m.UnitPrice
             }).ToList();
+            model.PharmacyBills = await GetPharmacyBillOptionsAsync();
 
             return View(model);
         }
@@ -201,23 +209,30 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> Delete(int id)
         {
-            var result = await _prescriptionService.DeletePrescriptionAsync(id);
-            if (result)
+            try
             {
-                await _auditService.LogActivityAsync(
-                    User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
-                    "DELETE",
-                    "Prescription",
-                    id.ToString(),
-                    "",
-                    ""
-                );
+                var result = await _prescriptionService.DeletePrescriptionAsync(id);
+                if (result)
+                {
+                    await _auditService.LogActivityAsync(
+                        User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value,
+                        "DELETE",
+                        "Prescription",
+                        id.ToString(),
+                        "",
+                        ""
+                    );
 
-                TempData["Success"] = "Prescription deleted successfully.";
+                    TempData["Success"] = "Prescription deleted successfully.";
+                }
+                else
+                {
+                    TempData["Error"] = "Failed to delete prescription.";
+                }
             }
-            else
+            catch (DbUpdateException)
             {
-                TempData["Error"] = "Failed to delete prescription.";
+                TempData["Error"] = "This prescription cannot be deleted because it has related records.";
             }
             return RedirectToAction(nameof(Index));
         }
@@ -368,7 +383,12 @@ namespace MedyxHMS.Controllers
             {
                 Id = medicine.Id,
                 Name = medicine.Name,
+                GenericName = medicine.GenericName,
                 Category = medicine.Category,
+                DosageForm = medicine.DosageForm,
+                Strength = medicine.Strength,
+                Manufacturer = medicine.Manufacturer,
+                BatchNumber = medicine.BatchNumber,
                 UnitPrice = medicine.UnitPrice,
                 StockQuantity = medicine.StockQuantity,
                 MinStockLevel = medicine.MinStockLevel,
@@ -395,8 +415,18 @@ namespace MedyxHMS.Controllers
             {
                 if (!string.IsNullOrEmpty(model.Name))
                     medicine.Name = model.Name;
+                if (!string.IsNullOrEmpty(model.GenericName))
+                    medicine.GenericName = model.GenericName;
                 if (!string.IsNullOrEmpty(model.Category))
                     medicine.Category = model.Category;
+                if (!string.IsNullOrEmpty(model.DosageForm))
+                    medicine.DosageForm = model.DosageForm;
+                if (!string.IsNullOrEmpty(model.Strength))
+                    medicine.Strength = model.Strength;
+                if (!string.IsNullOrEmpty(model.Manufacturer))
+                    medicine.Manufacturer = model.Manufacturer;
+                if (!string.IsNullOrEmpty(model.BatchNumber))
+                    medicine.BatchNumber = model.BatchNumber;
                 if (model.UnitPrice.HasValue)
                     medicine.UnitPrice = model.UnitPrice.Value;
                 if (model.StockQuantity.HasValue)
@@ -481,11 +511,31 @@ namespace MedyxHMS.Controllers
             public DateTime? ToDate { get; set; }
         }
 
+        private async Task<List<PharmacyBillOption>> GetPharmacyBillOptionsAsync()
+        {
+            return await _context.PharmacyBills
+                .Include(b => b.Patient)
+                .OrderByDescending(b => b.BillDate)
+                .Select(b => new PharmacyBillOption
+                {
+                    Id = b.Id,
+                    Label = b.BillNumber + " - " + (b.Patient != null ? b.Patient.FirstName + " " + b.Patient.LastName : "Unknown Patient")
+                })
+                .ToListAsync();
+        }
+
         public class CreatePrescriptionViewModel
         {
             public PrescriptionCreateDto Prescription { get; set; } = new();
             public List<MedicineDto> Medicines { get; set; } = new();
+            public List<PharmacyBillOption> PharmacyBills { get; set; } = new();
             public int? SelectedPharmacyBillId { get; set; }
+        }
+
+        public class PharmacyBillOption
+        {
+            public int Id { get; set; }
+            public string Label { get; set; } = string.Empty;
         }
 
         public class MedicineListViewModel

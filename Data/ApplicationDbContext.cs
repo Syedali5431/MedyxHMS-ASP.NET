@@ -639,5 +639,44 @@ namespace MedyxHMS.Data
             // Seed basic roles and features will be added via migrations
             // This ensures we have the foundation for RBAC
         }
+
+        // MVC's default ConvertEmptyStringToNull binds an empty optional form field to null,
+        // which format-only attributes like [Phone]/[EmailAddress] correctly skip during
+        // validation (they only run on non-null values). But entities default these same
+        // optional strings to string.Empty, and their DB columns are NOT NULL by convention,
+        // so an explicit null from binding fails at insert/update time. Coalescing null to
+        // string.Empty here (once, centrally) fixes that without touching per-field validation.
+        private void CoalesceNullStringsToEmpty()
+        {
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.State != EntityState.Added && entry.State != EntityState.Modified)
+                {
+                    continue;
+                }
+
+                foreach (var property in entry.Properties)
+                {
+                    if (property.Metadata.ClrType == typeof(string)
+                        && !property.Metadata.IsNullable
+                        && property.CurrentValue == null)
+                    {
+                        property.CurrentValue = string.Empty;
+                    }
+                }
+            }
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            CoalesceNullStringsToEmpty();
+            return base.SaveChanges(acceptAllChangesOnSuccess);
+        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        {
+            CoalesceNullStringsToEmpty();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+        }
     }
 }

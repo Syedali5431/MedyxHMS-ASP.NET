@@ -99,9 +99,10 @@ namespace MedyxHMS.Services.Implementations
 
         private async Task<string> GetNextNumericUserIdAsync()
         {
-            var maxId = await _userManager.Users
-                .Select(u => (int?)ConvertToNumericUserId(u.Id))
-                .MaxAsync() ?? 0;
+            // ConvertToNumericUserId is a plain C# method and can't be translated to SQL, so the
+            // ids must be materialized first and converted client-side before taking the max.
+            var userIds = await _userManager.Users.Select(u => u.Id).ToListAsync();
+            var maxId = userIds.Count == 0 ? 0 : userIds.Max(ConvertToNumericUserId);
 
             return (maxId + 1).ToString();
         }
@@ -267,7 +268,13 @@ namespace MedyxHMS.Services.Implementations
                     _context.Appointments.Add(appointment);
                     await _context.SaveChangesAsync();
 
-                    await _auditService.LogActivityAsync(appointment.PatientId.ToString(), "APPOINTMENT_BOOKED", "Appointment", appointment.Id.ToString());
+                    // AuditLogs.UserId is a FK to AspNetUsers.Id, not the Patient.Id - resolve the
+                    // patient's linked account before logging (best-effort; skip if unlinked).
+                    var bookingUserId = await GetPatientUserIdAsync(appointment.PatientId);
+                    if (!string.IsNullOrEmpty(bookingUserId))
+                    {
+                        await _auditService.LogActivityAsync(bookingUserId, "APPOINTMENT_BOOKED", "Appointment", appointment.Id.ToString());
+                    }
 
                     await transaction.CommitAsync();
                     return appointment;
@@ -287,12 +294,17 @@ namespace MedyxHMS.Services.Implementations
                 return false;
 
             appointment.AppointmentDate = newDate.Add(newTime);
+            appointment.AppointmentTime = newTime;
             appointment.Status = "Rescheduled";
 
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogActivityAsync(appointment.PatientId.ToString(), "APPOINTMENT_RESCHEDULED", "Appointment", appointmentId);
+            var rescheduleUserId = await GetPatientUserIdAsync(appointment.PatientId);
+            if (!string.IsNullOrEmpty(rescheduleUserId))
+            {
+                await _auditService.LogActivityAsync(rescheduleUserId, "APPOINTMENT_RESCHEDULED", "Appointment", appointmentId);
+            }
 
             return true;
         }
@@ -309,9 +321,21 @@ namespace MedyxHMS.Services.Implementations
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogActivityAsync(appointment.PatientId.ToString(), "APPOINTMENT_CANCELLED", "Appointment", appointmentId);
+            var cancelUserId = await GetPatientUserIdAsync(appointment.PatientId);
+            if (!string.IsNullOrEmpty(cancelUserId))
+            {
+                await _auditService.LogActivityAsync(cancelUserId, "APPOINTMENT_CANCELLED", "Appointment", appointmentId);
+            }
 
             return true;
+        }
+
+        private async Task<string?> GetPatientUserIdAsync(int patientId)
+        {
+            return await _context.Patients
+                .Where(p => p.Id == patientId)
+                .Select(p => p.UserId)
+                .FirstOrDefaultAsync();
         }
 
         public async Task<IEnumerable<Staff>> GetAvailableDoctorsAsync(DateTime date)
@@ -447,27 +471,28 @@ namespace MedyxHMS.Services.Implementations
         }
 
         // Doctor Information
-        public async Task<IEnumerable<Staff>> GetAvailableDoctorsForBookingAsync(string departmentFilter = null)
+        // Sources from the Doctors table (int Id) rather than Staff (string ApplicationUser Id):
+        // Appointment.DoctorId is an int FK into Doctors, so patient-portal booking must use the
+        // same identity space as the staff-side Appointment/Create flow, not the Staff/RBAC one.
+        public async Task<IEnumerable<Doctor>> GetAvailableDoctorsForBookingAsync(string departmentFilter = null)
         {
-            IQueryable<Staff> query = _context.Staff
-                .Where(s => s.IsActive && s.StaffRoles.Any(sr => sr.Role.Name == "Doctor"))
-                .Include(s => s.User);
+            IQueryable<Doctor> query = _context.Doctors
+                .Where(d => d.IsActive)
+                .Include(d => d.Department);
 
             if (!string.IsNullOrEmpty(departmentFilter))
             {
-                query = query.Where(s => s.Department == departmentFilter);
+                query = query.Where(d => d.Department != null && d.Department.Name == departmentFilter);
             }
 
-            return await query.OrderBy(s => s.FirstName).ToListAsync();
+            return await query.OrderBy(d => d.FirstName).ToListAsync();
         }
 
-        public async Task<Staff?> GetDoctorDetailsAsync(string doctorId)
+        public async Task<Doctor?> GetDoctorDetailsAsync(int doctorId)
         {
-            return await _context.Staff
-                .Include(s => s.User)
-                .Include(s => s.StaffRoles)
-                .ThenInclude(sr => sr.Role)
-                .FirstOrDefaultAsync(s => s.Id.ToString() == doctorId);
+            return await _context.Doctors
+                .Include(d => d.Department)
+                .FirstOrDefaultAsync(d => d.Id == doctorId);
         }
 
         public Task<List<DoctorAvailability>> GetDoctorAvailabilityAsync(string doctorId)

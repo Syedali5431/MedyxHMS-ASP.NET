@@ -1,0 +1,81 @@
+@model MedyxHMS.Models.RadiologyResult
+@{
+    ViewData["Title"] = "Radiology Result Details";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-x-ray"></i> Radiology Result — Order #@Model.OrderNumber</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a asp-action="EditResult" asp-route-id="@Model.Id" class="btn btn-warning">
+                <i class="fas fa-edit"></i> Edit Result
+            </a>
+            <a asp-action="Results" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Results
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+    }
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Result Information</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-4">Order Number</dt>
+                        <dd class="col-sm-8">@Model.OrderNumber</dd>
+
+                        <dt class="col-sm-4">Test</dt>
+                        <dd class="col-sm-8">@Model.RadiologyTest?.TestName</dd>
+
+                        <dt class="col-sm-4">Order Date</dt>
+                        <dd class="col-sm-8">@Model.OrderDate.ToString("MMM dd, yyyy hh:mm tt")</dd>
+
+                        <dt class="col-sm-4">Result Date</dt>
+                        <dd class="col-sm-8">@(Model.ResultDate?.ToString("MMM dd, yyyy hh:mm tt") ?? "Pending")</dd>
+
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8"><span class="badge bg-info">@Model.Status</span></dd>
+
+                        <dt class="col-sm-4">Findings</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Findings) ? "-" : Model.Findings)</dd>
+
+                        <dt class="col-sm-4">Impression</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Impression) ? "-" : Model.Impression)</dd>
+
+                        <dt class="col-sm-4">Performed By</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.PerformedBy) ? "-" : Model.PerformedBy)</dd>
+
+                        <dt class="col-sm-4">Verified By</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.VerifiedBy) ? "-" : Model.VerifiedBy)</dd>
+
+                        <dt class="col-sm-4">Notes</dt>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Notes) ? "-" : Model.Notes)</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Patient</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>@Model.Patient?.FirstName @Model.Patient?.LastName</strong></p>
+                    <p class="mb-1 text-muted">@Model.Patient?.PatientId</p>
+                    <p class="mb-0 text-muted">@Model.Patient?.Phone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

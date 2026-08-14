@@ -1,7 +1,6 @@
-@model MedyxHMS.Models.LabResult
+@model MedyxHMS.Models.RadiologyResult
 @{
-    ViewData["Title"] = "Edit Lab Result";
-    var noteHistory = ViewBag.NoteHistory as IEnumerable<MedyxHMS.Models.LabNoteHistory> ?? Enumerable.Empty<MedyxHMS.Models.LabNoteHistory>();
+    ViewData["Title"] = "Edit Radiology Result";
 }
 
 <div class="container-fluid mt-4">
@@ -9,7 +8,7 @@
         <div class="col-md-8 mx-auto">
             <div class="card">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0"><i class="fas fa-flask"></i> Edit Lab Result — Order #@Model.OrderNumber</h5>
+                    <h5 class="mb-0"><i class="fas fa-x-ray"></i> Edit Radiology Result — Order #@Model.OrderNumber</h5>
                 </div>
                 <div class="card-body">
                     @if (TempData["SuccessMessage"] != null)
@@ -23,13 +22,19 @@
                         <input type="hidden" asp-for="Id" />
                         <input type="hidden" asp-for="OrderNumber" />
                         <input type="hidden" asp-for="PatientId" />
-                        <input type="hidden" asp-for="LabTestId" />
+                        <input type="hidden" asp-for="RadiologyTestId" />
                         <input type="hidden" asp-for="OrderDate" />
 
                         <div class="mb-3">
-                            <label asp-for="ResultValue" class="form-label"></label>
-                            <input asp-for="ResultValue" class="form-control" />
-                            <span asp-validation-for="ResultValue" class="text-danger small"></span>
+                            <label asp-for="Findings" class="form-label"></label>
+                            <textarea asp-for="Findings" class="form-control" rows="3"></textarea>
+                            <span asp-validation-for="Findings" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Impression" class="form-label"></label>
+                            <textarea asp-for="Impression" class="form-control" rows="2"></textarea>
+                            <span asp-validation-for="Impression" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
@@ -48,33 +53,13 @@
                         </div>
 
                         <div class="mb-3">
-                            <label asp-for="Interpretation" class="form-label"></label>
-                            <textarea asp-for="Interpretation" class="form-control" rows="2"></textarea>
+                            <label asp-for="PerformedBy" class="form-label"></label>
+                            <input asp-for="PerformedBy" class="form-control" />
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="Notes" class="form-label">Notes</label>
                             <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
-
-                            @if (noteHistory.Any())
-                            {
-                                <div class="mt-2">
-                                    <a class="btn btn-link btn-sm p-0" data-bs-toggle="collapse" href="#noteHistory">
-                                        <i class="fas fa-history"></i> View previous notes (@noteHistory.Count())
-                                    </a>
-                                    <div class="collapse mt-2" id="noteHistory">
-                                        <div class="ps-2 border-start border-2 border-secondary">
-                                            @foreach (var h in noteHistory)
-                                            {
-                                                <div class="mb-3">
-                                                    <small class="text-muted">@h.UpdatedAtUtc.ToLocalTime().ToString("MMM dd, yyyy hh:mm tt")</small>
-                                                    <p class="mb-0 fst-italic text-secondary">@h.Notes</p>
-                                                </div>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-                            }
                         </div>
 
                         <div class="d-flex justify-content-between">

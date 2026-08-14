@@ -143,9 +143,10 @@ namespace MedyxHMS.Controllers
 
         private async Task<string> GetNextNumericUserIdAsync()
         {
-            var maxId = await _userManager.Users
-                .Select(u => (int?)ConvertToNumericUserId(u.Id))
-                .MaxAsync() ?? 0;
+            // ConvertToNumericUserId is a plain C# method and can't be translated to SQL, so the
+            // ids must be materialized first and converted client-side before taking the max.
+            var userIds = await _userManager.Users.Select(u => u.Id).ToListAsync();
+            var maxId = userIds.Count == 0 ? 0 : userIds.Max(ConvertToNumericUserId);
 
             return (maxId + 1).ToString();
         }

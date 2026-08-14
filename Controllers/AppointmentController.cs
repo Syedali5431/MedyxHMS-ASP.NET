@@ -425,7 +425,7 @@ namespace MedyxHMS.Controllers
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Create",
                     "Appointment",
                     createdAppointment.Id.ToString(),
@@ -433,14 +433,14 @@ namespace MedyxHMS.Controllers
                     $"Created appointment for patient ID {createdAppointment.PatientId} with doctor ID {createdAppointment.DoctorId}"
                 );
 
-                TempData["SuccessMessage"] = $"Appointment scheduled successfully for {createdAppointment.AppointmentDate:MMM dd, yyyy} at {createdAppointment.AppointmentTime:hh\\:mm tt}";
+                TempData["SuccessMessage"] = $"Appointment scheduled successfully for {createdAppointment.AppointmentDate:MMM dd, yyyy} at {DateTime.Today.Add(createdAppointment.AppointmentTime):hh\\:mm tt}";
                 return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "An error occurred while creating the appointment. Please try again.");
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Create",
                     "Appointment",
                     "Failed",
@@ -473,6 +473,10 @@ namespace MedyxHMS.Controllers
 
             var updateDto = new AppointmentUpdateDto
             {
+                Id = appointment.Id,
+                PatientId = appointment.PatientId,
+                DoctorId = appointment.DoctorId,
+                Status = appointment.Status,
                 AppointmentDate = appointment.AppointmentDate,
                 AppointmentTime = appointment.AppointmentTime,
                 AppointmentType = appointment.AppointmentType,
@@ -484,7 +488,8 @@ namespace MedyxHMS.Controllers
             {
                 CurrentAppointment = appointmentDto,
                 Appointment = updateDto,
-                AvailableDoctors = await GetAvailableDoctorsAsync()
+                AvailableDoctors = await GetAvailableDoctorsAsync(),
+                Patient = MapPatientToDto(appointment.Patient)
             };
 
             return View(viewModel);
@@ -502,8 +507,10 @@ namespace MedyxHMS.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.CurrentAppointment = MapToDto(await _appointmentService.GetAppointmentByIdAsync(id));
+                var reloaded = await _appointmentService.GetAppointmentByIdAsync(id);
+                model.CurrentAppointment = MapToDto(reloaded);
                 model.AvailableDoctors = await GetAvailableDoctorsAsync();
+                model.Patient = reloaded?.Patient != null ? MapPatientToDto(reloaded.Patient) : null;
                 return View(model);
             }
 
@@ -516,26 +523,27 @@ namespace MedyxHMS.Controllers
                 }
 
                 // Check for conflicts if date/time changed
-                if (existingAppointment.DoctorId != model.CurrentAppointment.DoctorId ||
+                if (existingAppointment.DoctorId != model.Appointment.DoctorId ||
                     existingAppointment.AppointmentDate != model.Appointment.AppointmentDate ||
                     existingAppointment.AppointmentTime != model.Appointment.AppointmentTime)
                 {
-                    if (await HasAppointmentConflict(model.CurrentAppointment.DoctorId, model.Appointment.AppointmentDate, model.Appointment.AppointmentTime, id))
+                    if (await HasAppointmentConflict(model.Appointment.DoctorId, model.Appointment.AppointmentDate, model.Appointment.AppointmentTime, id))
                     {
                         ModelState.AddModelError("", "This doctor already has an appointment at the selected time.");
                         model.CurrentAppointment = MapToDto(existingAppointment);
                         model.AvailableDoctors = await GetAvailableDoctorsAsync();
+                        model.Patient = MapPatientToDto(existingAppointment.Patient);
                         return View(model);
                     }
                 }
 
-                var oldValues = $"Date: {existingAppointment.AppointmentDate:MMM dd, yyyy}, Time: {existingAppointment.AppointmentTime:hh\\:mm tt}, Type: {existingAppointment.AppointmentType}";
+                var oldValues = $"Date: {existingAppointment.AppointmentDate:MMM dd, yyyy}, Time: {DateTime.Today.Add(existingAppointment.AppointmentTime):hh\\:mm tt}, Type: {existingAppointment.AppointmentType}";
 
                 var updatedAppointment = new Appointment
                 {
                     Id = id,
                     PatientId = existingAppointment.PatientId,
-                    DoctorId = model.CurrentAppointment.DoctorId,
+                    DoctorId = model.Appointment.DoctorId,
                     AppointmentDate = model.Appointment.AppointmentDate,
                     AppointmentTime = model.Appointment.AppointmentTime,
                     Status = existingAppointment.Status,
@@ -550,11 +558,11 @@ namespace MedyxHMS.Controllers
                     return NotFound();
                 }
 
-                var newValues = $"Date: {result.AppointmentDate:MMM dd, yyyy}, Time: {result.AppointmentTime:hh\\:mm tt}, Type: {result.AppointmentType}";
+                var newValues = $"Date: {result.AppointmentDate:MMM dd, yyyy}, Time: {DateTime.Today.Add(result.AppointmentTime):hh\\:mm tt}, Type: {result.AppointmentType}";
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Update",
                     "Appointment",
                     id.ToString(),
@@ -569,7 +577,7 @@ namespace MedyxHMS.Controllers
             {
                 ModelState.AddModelError("", "An error occurred while updating the appointment. Please try again.");
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Update",
                     "Appointment",
                     id.ToString(),
@@ -577,8 +585,10 @@ namespace MedyxHMS.Controllers
                     $"Failed to update appointment: {ex.Message}"
                 );
 
-                model.CurrentAppointment = MapToDto(await _appointmentService.GetAppointmentByIdAsync(id));
+                var reloaded = await _appointmentService.GetAppointmentByIdAsync(id);
+                model.CurrentAppointment = MapToDto(reloaded);
                 model.AvailableDoctors = await GetAvailableDoctorsAsync();
+                model.Patient = reloaded?.Patient != null ? MapPatientToDto(reloaded.Patient) : null;
                 return View(model);
             }
         }
@@ -639,7 +649,7 @@ namespace MedyxHMS.Controllers
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Update",
                     "Appointment",
                     id.ToString(),
@@ -654,7 +664,7 @@ namespace MedyxHMS.Controllers
             {
                 ModelState.AddModelError("", "An error occurred while updating the appointment status. Please try again.");
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Update",
                     "Appointment",
                     id.ToString(),
@@ -695,7 +705,7 @@ namespace MedyxHMS.Controllers
 
                 // Log the activity
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Delete",
                     "Appointment",
                     id.ToString(),
@@ -709,7 +719,7 @@ namespace MedyxHMS.Controllers
             catch (Exception ex)
             {
                 await _auditService.LogActivityAsync(
-                    User.Identity.Name,
+                    User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Delete",
                     "Appointment",
                     id.ToString(),
