@@ -1,6 +1,7 @@
 ﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
+using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,67 @@ namespace MedyxHMS.Controllers
             ViewBag.ToDate = to?.ToString("yyyy-MM-dd");
 
             return View(tests);
+        }
+
+        public async Task<IActionResult> Dashboard()
+        {
+            var results = (await _labService.GetAllLabResultsAsync()).ToList();
+            var tests = (await _labService.GetAllLabTestsAsync()).ToList();
+
+            var today = DateTime.Today;
+            var todayResults = results.Where(r => r.OrderDate.Date == today).ToList();
+            var pendingResults = results.Where(r => r.Status != "Completed" && r.Status != "Cancelled").ToList();
+            var completedToday = results.Where(r => r.Status == "Completed" && r.ResultDate.HasValue && r.ResultDate.Value.Date == today).ToList();
+
+            bool IsCritical(LabResult r) =>
+                r.Status == "Completed" &&
+                !string.IsNullOrWhiteSpace(r.Interpretation) &&
+                !r.Interpretation.Equals("Normal", StringComparison.OrdinalIgnoreCase);
+
+            var criticalResults = results.Where(IsCritical).ToList();
+
+            var testsByCategory = tests
+                .GroupBy(t => t.Category)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var resultsByStatus = results
+                .GroupBy(r => r.Status)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var criticalResultsList = criticalResults
+                .OrderByDescending(r => r.ResultDate ?? r.OrderDate)
+                .Take(10)
+                .Select(r => new LabResultDto
+                {
+                    Id = r.Id,
+                    LabTestId = r.LabTestId,
+                    PatientName = r.Patient != null ? $"{r.Patient.FirstName} {r.Patient.LastName}" : "Unknown",
+                    TestName = r.LabTest != null ? r.LabTest.TestName : "Unknown",
+                    TestDate = r.OrderDate,
+                    Parameter = r.LabTest != null ? r.LabTest.TestName : string.Empty,
+                    Result = r.ResultValue,
+                    Unit = r.Unit,
+                    ReferenceRange = r.NormalRange,
+                    Status = r.Status,
+                    Interpretation = r.Interpretation,
+                    ResultDate = r.ResultDate ?? r.OrderDate,
+                    PerformedBy = r.PerformedBy,
+                    Notes = r.Notes
+                })
+                .ToList();
+
+            var viewModel = new LabDashboardViewModel
+            {
+                TodayTests = todayResults.Count,
+                PendingTests = pendingResults.Count,
+                CompletedToday = completedToday.Count,
+                CriticalResults = criticalResults.Count,
+                CriticalResultsList = criticalResultsList,
+                TestsByCategory = testsByCategory,
+                ResultsByStatus = resultsByStatus
+            };
+
+            return View(viewModel);
         }
 
         [HttpGet]

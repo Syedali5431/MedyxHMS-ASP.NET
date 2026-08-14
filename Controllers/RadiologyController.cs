@@ -1,5 +1,6 @@
 ﻿using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
+using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
@@ -40,6 +41,70 @@ namespace MedyxHMS.Controllers
             ViewBag.PageSize = pageSize;
 
             return View(tests);
+        }
+
+        public async Task<IActionResult> Dashboard()
+        {
+            var results = (await _radiologyService.GetAllRadiologyResultsAsync()).ToList();
+            var tests = (await _radiologyService.GetAllRadiologyTestsAsync()).ToList();
+
+            var today = DateTime.Today;
+            var todayResults = results.Where(r => r.OrderDate.Date == today).ToList();
+            var pendingResults = results.Where(r => r.Status != "Completed" && r.Status != "Cancelled").ToList();
+            var completedToday = results.Where(r => r.Status == "Completed" && r.ResultDate.HasValue && r.ResultDate.Value.Date == today).ToList();
+
+            bool IsCritical(RadiologyResult r)
+            {
+                if (r.Status != "Completed" || string.IsNullOrWhiteSpace(r.Impression))
+                    return false;
+
+                var impression = r.Impression.ToLowerInvariant();
+                return !impression.Contains("unremarkable") && !impression.Contains("normal") && !impression.Contains("no abnormality");
+            }
+
+            var criticalResults = results.Where(IsCritical).ToList();
+
+            var testsByCategory = tests
+                .GroupBy(t => t.Category)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var resultsByStatus = results
+                .GroupBy(r => r.Status)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var criticalFindingsList = criticalResults
+                .OrderByDescending(r => r.ResultDate ?? r.OrderDate)
+                .Take(10)
+                .Select(r => new RadiologyResultDto
+                {
+                    Id = r.Id,
+                    RadiologyTestId = r.RadiologyTestId,
+                    PatientName = r.Patient != null ? $"{r.Patient.FirstName} {r.Patient.LastName}" : "Unknown",
+                    TestName = r.RadiologyTest != null ? r.RadiologyTest.TestName : "Unknown",
+                    TestDate = r.OrderDate,
+                    Findings = r.Findings,
+                    Impression = r.Impression,
+                    Status = r.Status,
+                    ImagePath = r.ImagePath,
+                    ResultDate = r.ResultDate ?? r.OrderDate,
+                    PerformedBy = r.PerformedBy,
+                    ReviewedBy = r.VerifiedBy,
+                    Notes = r.Notes
+                })
+                .ToList();
+
+            var viewModel = new RadiologyDashboardViewModel
+            {
+                TodayTests = todayResults.Count,
+                PendingTests = pendingResults.Count,
+                CompletedToday = completedToday.Count,
+                CriticalFindings = criticalResults.Count,
+                CriticalFindingsList = criticalFindingsList,
+                TestsByCategory = testsByCategory,
+                ResultsByStatus = resultsByStatus
+            };
+
+            return View(viewModel);
         }
 
         [HttpGet]

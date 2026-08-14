@@ -103,6 +103,74 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        public async Task<IActionResult> Dashboard()
+        {
+            var visits = (await _opdService.GetAllOPDVisitsAsync()).ToList();
+
+            var today = DateTime.Today;
+            var weekStart = today.AddDays(-(int)today.DayOfWeek);
+            var monthStart = new DateTime(today.Year, today.Month, 1);
+
+            var todayVisits = visits.Where(v => v.VisitDate.Date == today).ToList();
+            var weekVisits = visits.Where(v => v.VisitDate.Date >= weekStart).ToList();
+            var monthVisits = visits.Where(v => v.VisitDate.Date >= monthStart).ToList();
+
+            var recentVisits = visits
+                .OrderByDescending(v => v.VisitDate)
+                .Take(10)
+                .Select(v => new OPDVisitDto
+                {
+                    Id = v.Id,
+                    PatientId = v.PatientId,
+                    PatientName = v.Patient != null ? $"{v.Patient.FirstName} {v.Patient.LastName}" : "Unknown",
+                    DoctorId = v.DoctorId,
+                    DoctorName = v.Doctor != null ? $"{v.Doctor.FirstName} {v.Doctor.LastName}" : "Unknown",
+                    VisitDate = v.VisitDate,
+                    Diagnosis = v.Diagnosis,
+                    ConsultationFee = v.ConsultationFee,
+                    PaymentStatus = v.PaymentStatus,
+                    Department = v.Doctor?.Department?.Name ?? "Unknown",
+                    Status = "Completed",
+                    CreatedDate = v.CreatedDate,
+                    CreatedBy = v.CreatedBy
+                })
+                .ToList();
+
+            var visitsByDepartment = visits
+                .Where(v => v.Doctor?.Department != null)
+                .GroupBy(v => v.Doctor.Department.Name)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var topDoctors = visits
+                .Where(v => v.Doctor != null)
+                .GroupBy(v => new { v.DoctorId, v.Doctor.FirstName, v.Doctor.LastName })
+                .Select(g => new StaffDto
+                {
+                    Id = g.Key.DoctorId.ToString(),
+                    FirstName = g.Key.FirstName,
+                    LastName = g.Key.LastName,
+                    VisitCount = g.Count()
+                })
+                .OrderByDescending(d => d.VisitCount)
+                .Take(5)
+                .ToList();
+
+            var viewModel = new OPDDashboardViewModel
+            {
+                TodayVisits = todayVisits.Count,
+                ThisWeekVisits = weekVisits.Count,
+                ThisMonthVisits = monthVisits.Count,
+                TodayRevenue = todayVisits.Sum(v => v.ConsultationFee),
+                ThisWeekRevenue = weekVisits.Sum(v => v.ConsultationFee),
+                ThisMonthRevenue = monthVisits.Sum(v => v.ConsultationFee),
+                RecentVisits = recentVisits,
+                TopDoctors = topDoctors,
+                VisitsByDepartment = visitsByDepartment
+            };
+
+            return View(viewModel);
+        }
+
         public async Task<IActionResult> Details(int id)
         {
             var visit = await _opdService.GetOPDVisitByIdAsync(id);

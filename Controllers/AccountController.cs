@@ -180,6 +180,7 @@ namespace MedyxHMS.Controllers
                 return Json(new { success = false, message = "Email and password are required." });
 
             var user = await _userManager.FindByEmailAsync(email)
+                    ?? await _userManager.FindByNameAsync(email)
                     ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == email);
 
             if (user == null)
@@ -228,8 +229,9 @@ namespace MedyxHMS.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // Try to find user by email or employee ID
+            // Try to find user by email, username, or employee ID
             var user = await _userManager.FindByEmailAsync(model.Email)
+                    ?? await _userManager.FindByNameAsync(model.Email)
                     ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == model.Email);
 
             if (user != null)

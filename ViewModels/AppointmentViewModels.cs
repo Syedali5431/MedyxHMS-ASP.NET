@@ -151,13 +151,15 @@ namespace MedyxHMS.ViewModels
         public IEnumerable<AppointmentDto> UpcomingAppointmentsList { get; set; } = new List<AppointmentDto>();
         public Dictionary<string, int> AppointmentsByType { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> AppointmentsByStatus { get; set; } = new Dictionary<string, int>();
-        public int TotalAppointments => TodayAppointments + UpcomingAppointments + CompletedToday + CancelledToday;
+        public int TotalAppointments { get; set; }
+        public int TotalCompleted { get; set; }
+        public int TotalNoShow { get; set; }
         public decimal TotalAppointmentsChange => 0;
-        public decimal CompletionRate => TotalAppointments > 0 ? (decimal)CompletedToday / TotalAppointments * 100 : 0;
+        public decimal CompletionRate => TotalAppointments > 0 ? (decimal)TotalCompleted / TotalAppointments * 100 : 0;
         public decimal CompletionRateChange => 0;
         public decimal AverageWaitTime => 0;
         public decimal WaitTimeChange => 0;
-        public decimal NoShowRate => 0;
+        public decimal NoShowRate => TotalAppointments > 0 ? (decimal)TotalNoShow / TotalAppointments * 100 : 0;
         public decimal NoShowRateChange => 0;
         public IEnumerable<DoctorPerformanceItem> DoctorPerformance { get; set; } = new List<DoctorPerformanceItem>();
         public IEnumerable<RecentAppointmentActivityItem> RecentActivities { get; set; } = new List<RecentAppointmentActivityItem>();

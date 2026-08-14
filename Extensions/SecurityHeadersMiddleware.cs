@@ -40,7 +40,7 @@ namespace MedyxHMS.Extensions
                     "default-src 'self'; " +
                     "script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com; " +
                     "style-src 'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com fonts.googleapis.com; " +
-                    "font-src 'self' fonts.gstatic.com cdn.jsdelivr.net cdnjs.cloudflare.com; " +
+                    "font-src 'self' data: fonts.gstatic.com cdn.jsdelivr.net cdnjs.cloudflare.com; " +
                     "img-src 'self' data: https:; " +
                     "connect-src 'self'; " +
                     "frame-ancestors 'self'; " +

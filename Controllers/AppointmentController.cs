@@ -207,19 +207,68 @@ namespace MedyxHMS.Controllers
 
             var allAppointments = await _appointmentService.GetAllAppointmentsAsync();
             var appointmentsList = allAppointments.ToList();
+            var allDtos = appointmentsList.Select(MapToDto).ToList();
 
-            var todayAppointments = appointmentsList
+            var todayAppointments = allDtos
                 .Where(a => a.AppointmentDate.Date == DateTime.Today)
-                .Select(MapToDto)
                 .ToList();
 
-            var upcomingAppointments = appointmentsList
+            var upcomingAppointments = allDtos
                 .Where(a => a.AppointmentDate.Date > DateTime.Today && a.AppointmentDate.Date <= DateTime.Today.AddDays(7))
-                .Select(MapToDto)
                 .OrderBy(a => a.AppointmentDate)
                 .ThenBy(a => a.AppointmentTime)
                 .Take(10)
                 .ToList();
+
+            bool IsNoShow(string status) =>
+                (status ?? string.Empty).Replace("-", " ").Trim().Equals("No Show", StringComparison.OrdinalIgnoreCase);
+
+            var doctors = await GetAvailableDoctorsAsync();
+            var specializationByDoctorId = doctors.ToDictionary(d => d.Id, d => d.Specialization);
+
+            var doctorPerformance = allDtos
+                .GroupBy(a => new { a.DoctorId, a.DoctorName })
+                .Select(g =>
+                {
+                    var total = g.Count();
+                    var completed = g.Count(a => a.Status == "Completed");
+                    var noShow = g.Count(a => IsNoShow(a.Status));
+                    return new DoctorPerformanceItem
+                    {
+                        DoctorName = g.Key.DoctorName,
+                        Specialization = specializationByDoctorId.TryGetValue(g.Key.DoctorId, out var spec) ? spec : string.Empty,
+                        TotalAppointments = total,
+                        CompletedAppointments = completed,
+                        CompletionRate = total > 0 ? Math.Round((decimal)completed / total * 100, 1) : 0,
+                        AverageWaitTime = 0,
+                        NoShowRate = total > 0 ? Math.Round((decimal)noShow / total * 100, 1) : 0
+                    };
+                })
+                .OrderByDescending(d => d.TotalAppointments)
+                .Take(10)
+                .ToList();
+
+            var recentActivities = allDtos
+                .OrderByDescending(a => a.UpdatedDate ?? a.CreatedDate)
+                .Take(10)
+                .Select(a => new RecentAppointmentActivityItem
+                {
+                    Timestamp = a.UpdatedDate ?? a.CreatedDate,
+                    Action = a.UpdatedDate.HasValue ? "Updated" : "Created",
+                    PatientName = a.PatientName,
+                    DoctorName = a.DoctorName,
+                    Details = $"{a.AppointmentType} — {a.Status}",
+                    UserName = string.IsNullOrWhiteSpace(a.UpdatedBy) ? a.CreatedBy : a.UpdatedBy
+                })
+                .ToList();
+
+            var orderedDays = new[]
+            {
+                DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday,
+                DayOfWeek.Friday, DayOfWeek.Saturday, DayOfWeek.Sunday
+            };
+            var weeklyTrends = allDtos.GroupBy(a => a.AppointmentDate.DayOfWeek).ToDictionary(g => g.Key, g => g.Count());
+            var peakHours = allDtos.GroupBy(a => a.AppointmentTime.Hours).ToDictionary(g => g.Key, g => g.Count());
 
             var viewModel = new AppointmentDashboardViewModel
             {
@@ -229,12 +278,21 @@ namespace MedyxHMS.Controllers
                 CancelledToday = todayAppointments.Count(a => a.Status == "Cancelled"),
                 TodayAppointmentsList = todayAppointments,
                 UpcomingAppointmentsList = upcomingAppointments,
-                AppointmentsByType = appointmentsList
+                AppointmentsByType = allDtos
                     .GroupBy(a => a.AppointmentType)
                     .ToDictionary(g => g.Key, g => g.Count()),
-                AppointmentsByStatus = appointmentsList
+                AppointmentsByStatus = allDtos
                     .GroupBy(a => a.Status)
-                    .ToDictionary(g => g.Key, g => g.Count())
+                    .ToDictionary(g => g.Key, g => g.Count()),
+                TotalAppointments = allDtos.Count,
+                TotalCompleted = allDtos.Count(a => a.Status == "Completed"),
+                TotalNoShow = allDtos.Count(a => IsNoShow(a.Status)),
+                DoctorPerformance = doctorPerformance,
+                RecentActivities = recentActivities,
+                WeeklyTrendsLabels = orderedDays.Select(d => d.ToString().Substring(0, 3)).ToList(),
+                WeeklyTrendsData = orderedDays.Select(d => weeklyTrends.TryGetValue(d, out var c) ? c : 0).ToList(),
+                PeakHoursLabels = Enumerable.Range(0, 24).Select(h => $"{h:D2}:00").ToList(),
+                PeakHoursData = Enumerable.Range(0, 24).Select(h => peakHours.TryGetValue(h, out var c) ? c : 0).ToList()
             };
 
             return View(viewModel);
@@ -716,15 +774,19 @@ namespace MedyxHMS.Controllers
 
         private async Task<IEnumerable<DoctorDto>> GetAvailableDoctorsAsync()
         {
-            // For now, return mock doctors. In a real system, this would come from a Doctor service
-            return new List<DoctorDto>
-            {
-                new DoctorDto { Id = 1, Name = "Dr. Sarah Johnson", Specialization = "General Medicine", Department = "Internal Medicine", IsActive = true },
-                new DoctorDto { Id = 2, Name = "Dr. Michael Chen", Specialization = "Cardiology", Department = "Cardiology", IsActive = true },
-                new DoctorDto { Id = 3, Name = "Dr. Emily Davis", Specialization = "Pediatrics", Department = "Pediatrics", IsActive = true },
-                new DoctorDto { Id = 4, Name = "Dr. Robert Wilson", Specialization = "Orthopedics", Department = "Orthopedics", IsActive = true },
-                new DoctorDto { Id = 5, Name = "Dr. Lisa Brown", Specialization = "Dermatology", Department = "Dermatology", IsActive = true }
-            };
+            return await _context.Doctors
+                .Include(d => d.Department)
+                .OrderBy(d => d.FirstName)
+                .ThenBy(d => d.LastName)
+                .Select(d => new DoctorDto
+                {
+                    Id = d.Id,
+                    Name = $"Dr. {d.FirstName} {d.LastName}",
+                    Specialization = d.Specialization,
+                    Department = d.Department != null ? d.Department.Name : string.Empty,
+                    IsActive = d.IsActive
+                })
+                .ToListAsync();
         }
 
         private async Task<DoctorDto> GetDoctorByIdAsync(int doctorId)

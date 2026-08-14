@@ -20,6 +20,7 @@ namespace MedyxHMS.Services.Implementations
             return await _context.OPDVisits
                 .Include(v => v.Patient)
                 .Include(v => v.Doctor)
+                    .ThenInclude(d => d.Department)
                 .OrderByDescending(v => v.VisitDate)
                 .ToListAsync();
         }

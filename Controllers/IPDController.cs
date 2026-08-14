@@ -94,6 +94,69 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        public async Task<IActionResult> Dashboard()
+        {
+            var admissions = (await _ipdService.GetAllIPDAdmissionsAsync()).ToList();
+            var wards = (await _wardService.GetAllWardsAsync()).ToList();
+
+            var today = DateTime.Today;
+            var currentAdmissions = admissions.Where(a => a.Status == "Admitted").ToList();
+            var todayAdmissions = admissions.Where(a => a.AdmissionDate.Date == today).ToList();
+            var todayDischarges = admissions.Where(a => a.DischargeDate.HasValue && a.DischargeDate.Value.Date == today).ToList();
+
+            var dischargedWithDuration = admissions.Where(a => a.DischargeDate.HasValue).ToList();
+            var avgStay = dischargedWithDuration.Any()
+                ? dischargedWithDuration.Average(a => (a.DischargeDate!.Value - a.AdmissionDate).TotalDays)
+                : 0;
+
+            var recentAdmissions = admissions
+                .OrderByDescending(a => a.AdmissionDate)
+                .Take(10)
+                .Select(a => MapToIPDAdmissionDto(a))
+                .ToList();
+
+            var recentDischarges = admissions
+                .Where(a => a.DischargeDate.HasValue)
+                .OrderByDescending(a => a.DischargeDate)
+                .Take(10)
+                .Select(a => MapToIPDAdmissionDto(a))
+                .ToList();
+
+            var admissionsByDepartment = admissions
+                .Where(a => a.Doctor?.Department != null)
+                .GroupBy(a => a.Doctor.Department.Name)
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            var wardOccupancy = wards
+                .Select(w => new WardDto
+                {
+                    Id = w.Id,
+                    Name = w.Name,
+                    Description = w.Description,
+                    TotalBeds = w.TotalBeds,
+                    OccupiedBeds = w.OccupiedBeds,
+                    IsActive = w.IsActive,
+                    CreatedDate = w.CreatedDate
+                })
+                .ToList();
+
+            var viewModel = new IPDDashboardViewModel
+            {
+                CurrentAdmissions = currentAdmissions.Count,
+                AvailableBeds = wards.Sum(w => w.TotalBeds - w.OccupiedBeds),
+                TotalBeds = wards.Sum(w => w.TotalBeds),
+                TodayAdmissions = todayAdmissions.Count,
+                TodayDischarges = todayDischarges.Count,
+                AverageStayDuration = (decimal)avgStay,
+                RecentAdmissions = recentAdmissions,
+                RecentDischarges = recentDischarges,
+                WardOccupancy = wardOccupancy,
+                AdmissionsByDepartment = admissionsByDepartment
+            };
+
+            return View(viewModel);
+        }
+
         // Get IPD admission details
         [HttpGet]
         public async Task<IActionResult> Details(int id)

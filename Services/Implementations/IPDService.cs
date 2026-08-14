@@ -21,6 +21,7 @@ namespace MedyxHMS.Services.Implementations
             return await _context.IPDAdmissions
                 .Include(a => a.Patient)
                 .Include(a => a.Doctor)
+                    .ThenInclude(d => d.Department)
                 .Include(a => a.Bed)
                     .ThenInclude(b => b.Ward)
                 .OrderByDescending(a => a.AdmissionDate)
