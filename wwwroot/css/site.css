@@ -493,6 +493,11 @@ a {
 
 /* ── Scrollable ── */
 .staff-sidebar-nav {
+    /* Bootstrap's .nav sets flex-wrap: wrap by default; combined with the .flex-column
+       utility this makes the list wrap into new columns once it overflows vertically,
+       collapsing all items into a single garbled horizontal row instead of a normal
+       one-item-per-line vertical list. Force nowrap so overflow-y:auto scrolls instead. */
+    flex-wrap: nowrap;
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
