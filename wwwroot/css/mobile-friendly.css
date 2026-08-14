@@ -57,9 +57,9 @@ input, textarea, select {
 }
 
 input:focus, textarea:focus, select:focus {
-    border-color: #0077cc;
+    border-color: var(--hms-primary, #0077cc);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 119, 204, 0.1);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--hms-primary, #0077cc) 15%, transparent);
 }
 
 /* Responsive Table */
@@ -205,7 +205,7 @@ input:focus, textarea:focus, select:focus {
         transform: translateX(-100%);
         transition: transform 0.3s ease;
         z-index: 1000;
-        background: white;
+        background: var(--hms-card-bg, white);
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
     }
@@ -308,16 +308,16 @@ ul, ol {
 }
 
 ::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--hms-surface-muted, #f1f1f1);
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #888;
+    background: color-mix(in srgb, var(--hms-primary, #888) 35%, #9aa3af 65%);
     border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--hms-primary, #555);
 }
 
 /* Performance: GPU Acceleration */

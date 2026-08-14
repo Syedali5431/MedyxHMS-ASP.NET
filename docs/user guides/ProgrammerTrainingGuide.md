@@ -334,11 +334,14 @@ Patient portal views are under [Views/PatientPortal](../../Views/PatientPortal),
 ## 4.13 Scripts and Operational SQL/PowerShell
 
 Key automation and deployment assets in [scripts](../../scripts):
-- [scripts/New-Database.sql](../../scripts/New-Database.sql): Database creation script.
-- [scripts/New-Database.Validation.sql](../../scripts/New-Database.Validation.sql): Validation checks for schema.
+- [scripts/New-Database.sql](../../scripts/New-Database.sql): Database creation script (full schema + baseline seed data).
+- [scripts/New-Database-Empty.sql](../../scripts/New-Database-Empty.sql): Same schema, without baseline seed data.
+- [scripts/CreateIndexes.sql](../../scripts/CreateIndexes.sql): Supplemental indexes for dashboard/report date-range queries and point-lookup business keys.
 - [scripts/SeedDemoData.sql](../../scripts/SeedDemoData.sql): Demo/test data seeding.
 - [scripts/StoredProcedures_Reports.sql](../../scripts/StoredProcedures_Reports.sql): Reporting stored procedures and related DB objects.
 - [scripts/Import-HospitalDemoData.ps1](../../scripts/Import-HospitalDemoData.ps1): PowerShell data import workflow.
+- [scripts/data-migration-validation.sql](../../scripts/data-migration-validation.sql): Record/integrity count checks against a deployed database.
+- [scripts/compare-migration-counts.ps1](../../scripts/compare-migration-counts.ps1): Source vs. target migration count comparison.
 - [scripts/Validate-DatabaseDeployment.ps1](../../scripts/Validate-DatabaseDeployment.ps1): Post-deployment validation automation.
 - [scripts/Invoke-UatSmoke.ps1](../../scripts/Invoke-UatSmoke.ps1): UAT smoke run automation.
 - [scripts/Invoke-LicenseToolAutomation.ps1](../../scripts/Invoke-LicenseToolAutomation.ps1): License tool automation support.

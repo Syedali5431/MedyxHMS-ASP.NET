@@ -33,6 +33,15 @@ namespace MedyxHMS.Services.Implementations
             await SeedOpdVisitsAsync();
             await SeedIpdAdmissionsAsync();
             await SeedBillsAsync();
+            await SeedLabAsync();
+            await SeedRadiologyAsync();
+            await SeedPharmacyAsync();
+            await SeedBloodBankAsync();
+            await SeedOperationTheatreAsync();
+            await SeedReferralsAsync();
+            await SeedBirthDeathAsync();
+            await SeedFrontOfficeAsync();
+            await SeedStaffAttendanceAndPayrollAsync();
 
             _logger.LogInformation("Demo data seeding complete.");
         }
@@ -533,6 +542,441 @@ END");
             await _context.Bills.AddRangeAsync(bills);
             await _context.SaveChangesAsync();
             _logger.LogInformation("Seeded {Count} bills", bills.Count);
+        }
+
+        // ── Lab ──────────────────────────────────────────────────────────────────
+
+        private async Task SeedLabAsync()
+        {
+            if (await _context.LabTests.AnyAsync()) return;
+
+            var now = DateTime.UtcNow;
+            var tests = new[]
+            {
+                new LabTest { TestName="Complete Blood Count",  TestCode="CBC",     Category="Hematology",    Description="Full blood count panel",                              Price=350, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Fasting Blood Sugar",   TestCode="FBS",     Category="Biochemistry",  Description="Glucose level after 8h fast",                         Price=80,  NormalRange="70-100",     Unit="mg/dL", PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="HbA1c",                 TestCode="HBA1C",   Category="Biochemistry",  Description="Glycated haemoglobin — 3-month glucose average",     Price=350, NormalRange="4.0-5.6",    Unit="%",     PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Lipid Profile",         TestCode="LIPID",   Category="Biochemistry",  Description="Cholesterol, triglycerides, HDL, LDL",                Price=500, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Thyroid Function Test", TestCode="TFT",     Category="Endocrinology", Description="TSH, T3, T4",                                          Price=600, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Liver Function Test",   TestCode="LFT",     Category="Biochemistry",  Description="ALT, AST, ALP, bilirubin, albumin",                    Price=550, NormalRange="See report", Unit="",      PreparationTimeHours=6,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Renal Function Test",   TestCode="RFT",     Category="Biochemistry",  Description="Urea, creatinine, uric acid, electrolytes",           Price=450, NormalRange="See report", Unit="",      PreparationTimeHours=4,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Urine Routine",         TestCode="URINE-R", Category="Microbiology",  Description="Urine microscopy and culture",                         Price=150, NormalRange="See report", Unit="",      PreparationTimeHours=2,  IsActive=true, CreatedDate=now },
+                new LabTest { TestName="ECG",                   TestCode="ECG",     Category="Cardiology",    Description="12-lead electrocardiogram",                            Price=200, NormalRange="Normal sinus rhythm", Unit="", PreparationTimeHours=1, IsActive=true, CreatedDate=now },
+                new LabTest { TestName="Sputum Culture",        TestCode="SPUTUM",  Category="Microbiology",  Description="Culture and sensitivity for respiratory pathogens",   Price=400, NormalRange="No growth",  Unit="",      PreparationTimeHours=48, IsActive=true, CreatedDate=now },
+            };
+
+            await _context.LabTests.AddRangeAsync(tests);
+            await _context.SaveChangesAsync();
+
+            var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
+            if (!patients.Any()) { _logger.LogInformation("Seeded {Count} lab tests", tests.Length); return; }
+
+            var results = new List<LabResult>();
+            var statuses = new[] { "Completed", "Completed", "Completed", "In Progress", "Ordered" };
+            var interpretations = new[] { "Normal", "High", "Low", "Abnormal", "Normal" };
+
+            for (var i = 0; i < 12; i++)
+            {
+                var patient  = patients[i % patients.Count];
+                var test     = tests[i % tests.Length];
+                var ordered  = now.AddDays(-(i + 1));
+                var status   = statuses[i % statuses.Length];
+
+                results.Add(new LabResult
+                {
+                    PatientId       = patient.Id,
+                    LabTestId       = test.Id,
+                    OrderNumber     = $"LAB-{now.Year}-{(i + 1):D4}",
+                    OrderDate       = ordered,
+                    ResultDate      = status == "Completed" ? ordered.AddHours(6) : (DateTime?)null,
+                    ResultValue     = status == "Completed" ? "See report" : string.Empty,
+                    NormalRange     = test.NormalRange,
+                    Unit            = test.Unit,
+                    Interpretation  = status == "Completed" ? interpretations[i % interpretations.Length] : string.Empty,
+                    Status          = status,
+                    PerformedBy     = "Lab Technician",
+                    VerifiedBy      = status == "Completed" ? "Pathologist" : string.Empty,
+                    Notes           = string.Empty,
+                    CreatedDate     = ordered,
+                });
+            }
+
+            await _context.LabResults.AddRangeAsync(results);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {TestCount} lab tests and {ResultCount} lab results", tests.Length, results.Count);
+        }
+
+        // ── Radiology ────────────────────────────────────────────────────────────
+
+        private async Task SeedRadiologyAsync()
+        {
+            if (await _context.RadiologyTests.AnyAsync()) return;
+
+            var now = DateTime.UtcNow;
+            var tests = new[]
+            {
+                new RadiologyTest { TestName="Chest X-Ray PA",        TestCode="CXR-PA",   Category="X-Ray",      Description="Postero-anterior chest radiograph",         Price=300,  PreparationTimeHours=1, SpecialInstructions="Remove metal objects", RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="X-Ray Knee AP/Lateral", TestCode="XR-KNEE",  Category="X-Ray",      Description="Knee joint radiograph",                       Price=350,  PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="USG Abdomen & Pelvis",  TestCode="USG-ABD",  Category="Ultrasound", Description="Abdominal and pelvic ultrasonography",       Price=600,  PreparationTimeHours=4, SpecialInstructions="Full bladder required", RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="CT Chest",              TestCode="CT-CHEST", Category="CT Scan",    Description="Computed tomography of chest",                Price=2500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="Echocardiogram",        TestCode="ECHO",     Category="Ultrasound", Description="2D and Doppler echocardiography",             Price=1500, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="MRI Knee",              TestCode="MRI-KNEE", Category="MRI",        Description="Magnetic resonance imaging of knee joint",    Price=3500, PreparationTimeHours=2, SpecialInstructions="No metal implants",    RequiresContrast=false, IsActive=true, CreatedDate=now },
+                new RadiologyTest { TestName="CT KUB",                TestCode="CT-KUB",   Category="CT Scan",    Description="CT of kidneys, ureters and bladder",          Price=2000, PreparationTimeHours=1, SpecialInstructions="",                     RequiresContrast=false, IsActive=true, CreatedDate=now },
+            };
+
+            await _context.RadiologyTests.AddRangeAsync(tests);
+            await _context.SaveChangesAsync();
+
+            var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
+            if (!patients.Any()) { _logger.LogInformation("Seeded {Count} radiology tests", tests.Length); return; }
+
+            var findings = new[]
+            {
+                "Hyperinflated lung fields, flattened diaphragm",
+                "Joint space narrowing medial compartment, osteophytes",
+                "No focal abnormality detected",
+                "Regional wall motion abnormality inferior wall",
+                "8mm calculus right ureter, mild hydronephrosis",
+            };
+            var impressions = new[] { "Features consistent with COPD", "OA Grade 3", "Unremarkable study", "LV dysfunction", "Right ureteric calculus with HN" };
+            var statuses = new[] { "Completed", "Completed", "Completed", "In Progress" };
+
+            var results = new List<RadiologyResult>();
+
+            for (var i = 0; i < 8; i++)
+            {
+                var patient = patients[i % patients.Count];
+                var test    = tests[i % tests.Length];
+                var ordered = now.AddDays(-(i + 1));
+                var status  = statuses[i % statuses.Length];
+
+                results.Add(new RadiologyResult
+                {
+                    PatientId       = patient.Id,
+                    RadiologyTestId = test.Id,
+                    OrderNumber     = $"RAD-{now.Year}-{(i + 1):D4}",
+                    OrderDate       = ordered,
+                    ResultDate      = status == "Completed" ? ordered.AddHours(8) : (DateTime?)null,
+                    Findings        = status == "Completed" ? findings[i % findings.Length] : string.Empty,
+                    Impression      = status == "Completed" ? impressions[i % impressions.Length] : string.Empty,
+                    Status          = status,
+                    PerformedBy     = "Radiographer",
+                    VerifiedBy      = status == "Completed" ? "Radiologist" : string.Empty,
+                    ImagePath       = string.Empty,
+                    Notes           = string.Empty,
+                    CreatedDate     = ordered,
+                });
+            }
+
+            await _context.RadiologyResults.AddRangeAsync(results);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {TestCount} radiology tests and {ResultCount} radiology results", tests.Length, results.Count);
+        }
+
+        // ── Pharmacy ─────────────────────────────────────────────────────────────
+
+        private async Task SeedPharmacyAsync()
+        {
+            if (await _context.PharmacyBills.AnyAsync()) return;
+
+            var patients  = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
+            var medicines = await _context.Medicines.OrderBy(m => m.Id).ToListAsync();
+            if (!patients.Any() || !medicines.Any()) return;
+
+            var now   = DateTime.UtcNow;
+            var bills = new List<PharmacyBill>();
+
+            for (var i = 0; i < 10; i++)
+            {
+                var patient  = patients[i % patients.Count];
+                var billDate = now.AddDays(-(i + 1));
+                var isPaid   = i < 8;
+                var items    = new List<Prescription>();
+
+                for (var j = 0; j <= i % 2; j++)
+                {
+                    var medicine = medicines[(i + j) % medicines.Count];
+                    var qty      = 10 + (i % 3) * 5;
+                    items.Add(new Prescription
+                    {
+                        MedicineId   = medicine.Id,
+                        Dosage       = medicine.Strength,
+                        Frequency    = "BD",
+                        Duration     = 7,
+                        Quantity     = qty,
+                        UnitPrice    = medicine.UnitPrice,
+                        TotalPrice   = medicine.UnitPrice * qty,
+                        Instructions = "After food",
+                        CreatedDate  = billDate,
+                    });
+                }
+
+                var total = items.Sum(x => x.TotalPrice);
+                var paid  = isPaid ? total : 0m;
+
+                bills.Add(new PharmacyBill
+                {
+                    BillNumber    = $"RXBILL-{now.Year}-{(i + 1):D4}",
+                    PatientId     = patient.Id,
+                    BillDate      = billDate,
+                    TotalAmount   = total,
+                    PaidAmount    = paid,
+                    Status        = isPaid ? "Paid" : "Pending",
+                    PaymentMethod = i % 2 == 0 ? "Cash" : "Card",
+                    Notes         = string.Empty,
+                    CreatedDate   = billDate,
+                    CreatedBy     = "System",
+                    Prescriptions = items,
+                });
+            }
+
+            await _context.PharmacyBills.AddRangeAsync(bills);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} pharmacy bills", bills.Count);
+        }
+
+        // ── Blood Bank ───────────────────────────────────────────────────────────
+
+        private async Task SeedBloodBankAsync()
+        {
+            if (await _context.BloodInventories.AnyAsync()) return;
+
+            var now = DateTime.UtcNow;
+            var inventory = new[]
+            {
+                new BloodInventory { BloodGroup="A+",  UnitsAvailable=25, UnitsReserved=3, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="A-",  UnitsAvailable=8,  UnitsReserved=1, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="B+",  UnitsAvailable=30, UnitsReserved=4, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="B-",  UnitsAvailable=6,  UnitsReserved=0, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="AB+", UnitsAvailable=12, UnitsReserved=2, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="AB-", UnitsAvailable=4,  UnitsReserved=0, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="O+",  UnitsAvailable=35, UnitsReserved=5, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+                new BloodInventory { BloodGroup="O-",  UnitsAvailable=10, UnitsReserved=2, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
+            };
+
+            await _context.BloodInventories.AddRangeAsync(inventory);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} blood inventory groups", inventory.Length);
+        }
+
+        // ── Operation Theatre ────────────────────────────────────────────────────
+
+        private async Task SeedOperationTheatreAsync()
+        {
+            if (await _context.OTSchedules.AnyAsync()) return;
+
+            var patients = await _context.Patients.OrderBy(p => p.Id).Skip(2).Take(6).ToListAsync();
+            var doctors  = await _context.Doctors.OrderBy(d => d.Id).ToListAsync();
+            if (!patients.Any() || !doctors.Any()) return;
+
+            var now        = DateTime.UtcNow;
+            var procedures = new[] { "Appendectomy", "Knee Arthroscopy", "Cataract Surgery", "Cholecystectomy", "Hernia Repair", "Tonsillectomy" };
+            var statuses   = new[] { "Completed", "Completed", "Scheduled", "Scheduled", "In Progress", "Completed" };
+
+            var schedules = new List<OTSchedule>();
+            for (var i = 0; i < patients.Count; i++)
+            {
+                var daysOffset = i < 3 ? -(i + 1) : (i - 2);
+                schedules.Add(new OTSchedule
+                {
+                    PatientId                 = patients[i].Id,
+                    ProcedureName              = procedures[i % procedures.Length],
+                    SurgeonName                = $"Dr. {doctors[i % doctors.Count].FirstName} {doctors[i % doctors.Count].LastName}",
+                    ScheduledDate              = now.Date.AddDays(daysOffset).AddHours(9 + i),
+                    EstimatedDurationMinutes   = 60 + (i % 4) * 30,
+                    OperationTheatreNumber     = $"OT-{(i % 3) + 1}",
+                    Status                     = statuses[i % statuses.Length],
+                    Notes                      = string.Empty,
+                    CreatedDate                = now.AddDays(daysOffset - 1),
+                });
+            }
+
+            await _context.OTSchedules.AddRangeAsync(schedules);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} OT schedules", schedules.Count);
+        }
+
+        // ── Referrals ────────────────────────────────────────────────────────────
+
+        private async Task SeedReferralsAsync()
+        {
+            if (await _context.Referrals.AnyAsync()) return;
+
+            var patients = await _context.Patients.OrderBy(p => p.Id).Take(6).ToListAsync();
+            if (!patients.Any()) return;
+
+            var now   = DateTime.UtcNow;
+            var types = new[] { "External", "Internal", "TPA" };
+            var destinations = new[] { "City Cardiac Institute", "Cardiology Department", "MediCare TPA Services", "Regional Oncology Centre", "Orthopedic Specialty Clinic", "Nephrology Department" };
+            var reasons = new[] { "Advanced cardiac workup required", "Specialist consultation", "Insurance-approved procedure", "Further oncology evaluation", "Joint replacement assessment", "Dialysis planning" };
+
+            var referrals = new List<Referral>();
+            for (var i = 0; i < patients.Count; i++)
+            {
+                var type = types[i % types.Length];
+                referrals.Add(new Referral
+                {
+                    PatientId       = patients[i].Id,
+                    ReferralType    = type,
+                    ReferredTo      = destinations[i % destinations.Length],
+                    ReferralReason  = reasons[i % reasons.Length],
+                    ReferralDate    = now.AddDays(-(i + 2)),
+                    Status          = i < 3 ? "Approved" : (i == 3 ? "Pending" : "Completed"),
+                    TpaProvider     = type == "TPA" ? "MediCare TPA Services" : string.Empty,
+                    TpaPolicyNumber = type == "TPA" ? $"POL-{now.Year}-{(i + 1):D4}" : string.Empty,
+                    ApprovedAmount  = type == "TPA" ? 15000m + i * 500 : null,
+                    Notes           = string.Empty,
+                    CreatedDate     = now.AddDays(-(i + 2)),
+                });
+            }
+
+            await _context.Referrals.AddRangeAsync(referrals);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} referrals", referrals.Count);
+        }
+
+        // ── Birth / Death records ────────────────────────────────────────────────
+
+        private async Task SeedBirthDeathAsync()
+        {
+            if (!await _context.BirthRecords.AnyAsync())
+            {
+                var now = DateTime.UtcNow;
+                var patients = await _context.Patients.Where(p => p.Gender == "Female").OrderBy(p => p.Id).Take(3).ToListAsync();
+
+                var births = new List<BirthRecord>
+                {
+                    new() { BabyName="Baby of Nair",      Gender="Female", DateOfBirth=now.AddDays(-6),  TimeOfBirth="03:45", WeightKg=3.1m, MotherName="Deepa Nair",      FatherName="Rajan Nair",      GuardianContact="9200006002", DeliveryType="Normal",   AttendingDoctorName="Dr. Amina Hassan", PatientId=patients.ElementAtOrDefault(0)?.Id, CertificateNumber=$"BC-{now.Year}-0001", CertificateIssued=true,  Notes=string.Empty, CreatedDate=now.AddDays(-6) },
+                    new() { BabyName="Baby of Gupta",     Gender="Male",   DateOfBirth=now.AddDays(-14), TimeOfBirth="11:20", WeightKg=2.9m, MotherName="Priya Gupta",     FatherName="Suresh Gupta",     GuardianContact="9200004002", DeliveryType="C-Section",AttendingDoctorName="Dr. Amina Hassan", PatientId=patients.ElementAtOrDefault(1)?.Id, CertificateNumber=$"BC-{now.Year}-0002", CertificateIssued=true,  Notes=string.Empty, CreatedDate=now.AddDays(-14) },
+                    new() { BabyName="Baby of Chaudhary",  Gender="Female", DateOfBirth=now.AddDays(-2),  TimeOfBirth="19:05", WeightKg=3.4m, MotherName="Anita Chaudhary", FatherName="Ravi Chaudhary",   GuardianContact="9200014002", DeliveryType="Normal",   AttendingDoctorName="Dr. Amina Hassan", PatientId=patients.ElementAtOrDefault(2)?.Id, CertificateNumber=$"BC-{now.Year}-0003", CertificateIssued=false, Notes=string.Empty, CreatedDate=now.AddDays(-2) },
+                };
+
+                await _context.BirthRecords.AddRangeAsync(births);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Seeded {Count} birth records", births.Count);
+            }
+
+            if (!await _context.DeathRecords.AnyAsync())
+            {
+                var now = DateTime.UtcNow;
+                var deaths = new List<DeathRecord>
+                {
+                    new() { PatientName="Omar Khalil",  Gender="Male",   DateOfDeath=now.AddDays(-9),  TimeOfDeath="04:10", CauseOfDeath="Cardiac arrest — end-stage heart failure", AttendingDoctorName="Dr. Sarah Williams", NextOfKinName="Salma Khalil",  NextOfKinContact="9200013002", CertificateNumber=$"DC-{now.Year}-0001", CertificateIssued=true, Notes=string.Empty, CreatedDate=now.AddDays(-9) },
+                    new() { PatientName="Balram Singh", Gender="Male",   DateOfDeath=now.AddDays(-21), TimeOfDeath="22:40", CauseOfDeath="Congestive heart failure",                  AttendingDoctorName="Dr. Sarah Williams", NextOfKinName="Geeta Singh",   NextOfKinContact="9200015002", CertificateNumber=$"DC-{now.Year}-0002", CertificateIssued=true, Notes=string.Empty, CreatedDate=now.AddDays(-21) },
+                };
+
+                await _context.DeathRecords.AddRangeAsync(deaths);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Seeded {Count} death records", deaths.Count);
+            }
+        }
+
+        // ── Front Office ─────────────────────────────────────────────────────────
+
+        private async Task SeedFrontOfficeAsync()
+        {
+            if (await _context.VisitorLogs.AnyAsync()) return;
+
+            var now = DateTime.UtcNow;
+            var purposes = new[] { "Patient enquiry", "Bill payment", "Meeting doctor", "Document collection", "Appointment booking", "Delivery" };
+            var contacts = new[] { "Dr. Ahmad Khan", "Billing Desk", "Dr. Sarah Williams", "Records Office", "Front Desk", "Pharmacy" };
+
+            var visitors = new List<VisitorLog>();
+            for (var i = 0; i < 10; i++)
+            {
+                var visitDate = now.Date.AddDays(-(i % 5));
+                var checkedOut = i % 4 != 0;
+                visitors.Add(new VisitorLog
+                {
+                    VisitorName   = $"Visitor {i + 1}",
+                    Phone         = $"93000{i:D5}",
+                    Purpose       = purposes[i % purposes.Length],
+                    PersonToMeet  = contacts[i % contacts.Length],
+                    VisitDate     = visitDate,
+                    CheckInTime   = visitDate.AddHours(9 + (i % 8)),
+                    CheckOutTime  = checkedOut ? visitDate.AddHours(9 + (i % 8) + 1) : (DateTime?)null,
+                    Status        = checkedOut ? "CheckedOut" : "CheckedIn",
+                    Notes         = string.Empty,
+                    CreatedDate   = visitDate,
+                });
+            }
+
+            await _context.VisitorLogs.AddRangeAsync(visitors);
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("Seeded {Count} visitor log entries", visitors.Count);
+        }
+
+        // ── Staff attendance & payroll ───────────────────────────────────────────
+
+        private async Task SeedStaffAttendanceAndPayrollAsync()
+        {
+            var staff = await _context.Staff.OrderBy(s => s.Id).ToListAsync();
+            if (!staff.Any()) return;
+
+            var now = DateTime.UtcNow;
+
+            if (!await _context.StaffAttendances.AnyAsync())
+            {
+                var attendance = new List<StaffAttendance>();
+                foreach (var member in staff)
+                {
+                    for (var d = 0; d < 14; d++)
+                    {
+                        var date = now.Date.AddDays(-d);
+                        if (date.DayOfWeek == DayOfWeek.Sunday) continue;
+
+                        var status = d % 11 == 0 ? "Absent" : (d % 7 == 0 ? "HalfDay" : "Present");
+                        attendance.Add(new StaffAttendance
+                        {
+                            StaffId       = member.Id,
+                            AttendanceDate= date,
+                            CheckInTime   = status == "Absent" ? (DateTime?)null : date.AddHours(9),
+                            CheckOutTime  = status == "Absent" ? (DateTime?)null : date.AddHours(status == "HalfDay" ? 13 : 18),
+                            Status        = status,
+                            Notes         = string.Empty,
+                            CreatedDate   = date,
+                        });
+                    }
+                }
+
+                await _context.StaffAttendances.AddRangeAsync(attendance);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Seeded {Count} staff attendance records", attendance.Count);
+            }
+
+            if (!await _context.PayrollRecords.AnyAsync())
+            {
+                var payroll = new List<PayrollRecord>();
+                foreach (var member in staff)
+                {
+                    for (var m = 0; m < 2; m++)
+                    {
+                        var month       = new DateTime(now.Year, now.Month, 1).AddMonths(-m);
+                        var basic       = member.Salary;
+                        var allowances  = Math.Round(basic * 0.1m, 2);
+                        var deductions  = Math.Round(basic * 0.05m, 2);
+                        var net         = basic + allowances - deductions;
+
+                        payroll.Add(new PayrollRecord
+                        {
+                            StaffId      = member.Id,
+                            PayrollMonth = month,
+                            BasicSalary  = basic,
+                            Allowances   = allowances,
+                            Deductions   = deductions,
+                            NetSalary    = net,
+                            Status       = m == 0 ? "Processed" : "Paid",
+                            PaymentDate  = m == 0 ? null : (DateTime?)month.AddMonths(1).AddDays(4),
+                            Notes        = string.Empty,
+                            CreatedDate  = month,
+                        });
+                    }
+                }
+
+                await _context.PayrollRecords.AddRangeAsync(payroll);
+                await _context.SaveChangesAsync();
+                _logger.LogInformation("Seeded {Count} payroll records", payroll.Count);
+            }
         }
     }
 }

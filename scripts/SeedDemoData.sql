@@ -4,7 +4,8 @@
 --  Source:   Adapted from hospitaldemo_db.sql (MariaDB 10.4.27)
 --  Coverage: Departments, Doctors, Staff, Patients, Appointments,
 --            OPD, IPD, Wards, Beds, Bills, Payments, Pharmacy,
---            Lab, Radiology, Blood Bank
+--            Lab, Radiology, Blood Bank, Visitor Logs (Front Office),
+--            Staff Attendance, Payroll, OT Schedules, Referrals
 --
 --  Usage:
 --    sqlcmd -S .\SQLEXPRESS -d MedyxHMS -i SeedDemoData.sql
@@ -12,6 +13,12 @@
 --
 --  NOTE: Existing rows with the same Id will be skipped (WHERE NOT EXISTS).
 --        Run this script once on a clean or empty database.
+--
+--  NOT COVERED: BirthRecords / DeathRecords (M14 Birth & Death module).
+--        These tables exist in the EF model (Models/NewModules.cs) but are
+--        not yet defined in New-Database.sql / New-Database-Empty.sql — the
+--        hand-maintained schema script predates that module. Add the table
+--        definitions there before seeding demo rows for it.
 -- ============================================================
 
 
@@ -491,6 +498,105 @@ SELECT * FROM (VALUES
 WHERE NOT EXISTS (SELECT 1 FROM [BloodInventories] bi WHERE bi.[Id] = src.[Id]);
 
 SET IDENTITY_INSERT [BloodInventories] OFF;
+GO
+
+-- ============================================================
+-- 21. VISITOR LOGS (Front Office)
+-- ============================================================
+SET IDENTITY_INSERT [VisitorLogs] ON;
+
+INSERT INTO [VisitorLogs] ([Id],[VisitorName],[Phone],[Purpose],[PersonToMeet],[VisitDate],[CheckInTime],[CheckOutTime],[Status],[Notes],[CreatedDate])
+SELECT * FROM (VALUES
+  (1, 'Ramesh Bhatt',   '9300000001', 'Patient enquiry',      'Front Desk',              '2025-04-08', '2025-04-08 09:15:00', '2025-04-08 09:30:00', 'CheckedOut', '', '2025-04-08'),
+  (2, 'Sarita Kohli',   '9300000002', 'Bill payment',         'Billing Desk',            '2025-04-08', '2025-04-08 10:05:00', '2025-04-08 10:20:00', 'CheckedOut', '', '2025-04-08'),
+  (3, 'Anil Kapoor',    '9300000003', 'Meeting doctor',       'Dr. Vikram Patel',        '2025-04-09', '2025-04-09 11:00:00', '2025-04-09 11:45:00', 'CheckedOut', '', '2025-04-09'),
+  (4, 'Neha Sinha',     '9300000004', 'Document collection',  'Records Office',          '2025-04-09', '2025-04-09 14:20:00', NULL,                  'CheckedIn',  '', '2025-04-09'),
+  (5, 'Suresh Iyer',    '9300000005', 'Appointment booking',  'Front Desk',              '2025-04-10', '2025-04-10 09:40:00', '2025-04-10 09:55:00', 'CheckedOut', '', '2025-04-10'),
+  (6, 'Kavita Rane',    '9300000006', 'Delivery',             'Pharmacy',                '2025-04-10', '2025-04-10 16:10:00', '2025-04-10 16:20:00', 'CheckedOut', '', '2025-04-10'),
+  (7, 'Deepak Malhotra','9300000007', 'Patient enquiry',      'Front Desk',              '2025-04-11', '2025-04-11 08:50:00', NULL,                  'CheckedIn',  '', '2025-04-11')
+) AS src([Id],[VisitorName],[Phone],[Purpose],[PersonToMeet],[VisitDate],[CheckInTime],[CheckOutTime],[Status],[Notes],[CreatedDate])
+WHERE NOT EXISTS (SELECT 1 FROM [VisitorLogs] v WHERE v.[Id] = src.[Id]);
+
+SET IDENTITY_INSERT [VisitorLogs] OFF;
+GO
+
+-- ============================================================
+-- 22. STAFF ATTENDANCE
+-- ============================================================
+SET IDENTITY_INSERT [StaffAttendances] ON;
+
+INSERT INTO [StaffAttendances] ([Id],[StaffId],[AttendanceDate],[CheckInTime],[CheckOutTime],[Status],[Notes],[CreatedDate])
+SELECT * FROM (VALUES
+  (1,  'DEMO-STF-001', '2025-04-07', '2025-04-07 09:00:00', '2025-04-07 18:00:00', 'Present', '', '2025-04-07'),
+  (2,  'DEMO-STF-001', '2025-04-08', '2025-04-08 09:05:00', '2025-04-08 18:00:00', 'Present', '', '2025-04-08'),
+  (3,  'DEMO-STF-001', '2025-04-09', NULL,                   NULL,                  'Absent',  '', '2025-04-09'),
+  (4,  'DEMO-STF-002', '2025-04-07', '2025-04-07 08:55:00', '2025-04-07 17:50:00', 'Present', '', '2025-04-07'),
+  (5,  'DEMO-STF-002', '2025-04-08', '2025-04-08 09:00:00', '2025-04-08 13:00:00', 'HalfDay', '', '2025-04-08'),
+  (6,  'DEMO-STF-002', '2025-04-09', '2025-04-09 08:58:00', '2025-04-09 17:55:00', 'Present', '', '2025-04-09'),
+  (7,  'DEMO-STF-003', '2025-04-07', '2025-04-07 09:10:00', '2025-04-07 18:05:00', 'Present', '', '2025-04-07'),
+  (8,  'DEMO-STF-003', '2025-04-08', '2025-04-08 09:02:00', '2025-04-08 18:00:00', 'Present', '', '2025-04-08'),
+  (9,  'DEMO-STF-004', '2025-04-07', '2025-04-07 09:00:00', '2025-04-07 17:45:00', 'Present', '', '2025-04-07'),
+  (10, 'DEMO-STF-004', '2025-04-08', '2025-04-08 09:00:00', '2025-04-08 17:50:00', 'Present', '', '2025-04-08'),
+  (11, 'DEMO-STF-005', '2025-04-07', '2025-04-07 09:20:00', '2025-04-07 18:10:00', 'Present', '', '2025-04-07'),
+  (12, 'DEMO-STF-005', '2025-04-08', NULL,                   NULL,                  'Absent',  '', '2025-04-08')
+) AS src([Id],[StaffId],[AttendanceDate],[CheckInTime],[CheckOutTime],[Status],[Notes],[CreatedDate])
+WHERE NOT EXISTS (SELECT 1 FROM [StaffAttendances] sa WHERE sa.[Id] = src.[Id]);
+
+SET IDENTITY_INSERT [StaffAttendances] OFF;
+GO
+
+-- ============================================================
+-- 23. PAYROLL RECORDS
+-- ============================================================
+SET IDENTITY_INSERT [PayrollRecords] ON;
+
+INSERT INTO [PayrollRecords] ([Id],[StaffId],[PayrollMonth],[BasicSalary],[Allowances],[Deductions],[NetSalary],[Status],[PaymentDate],[Notes],[CreatedDate])
+SELECT * FROM (VALUES
+  (1, 'DEMO-STF-001', '2025-03-01', 22000.00, 2200.00, 1100.00, 23100.00, 'Paid',      '2025-04-05', '', '2025-03-01'),
+  (2, 'DEMO-STF-001', '2025-04-01', 22000.00, 2200.00, 1100.00, 23100.00, 'Processed', NULL,         '', '2025-04-01'),
+  (3, 'DEMO-STF-002', '2025-03-01', 28000.00, 2800.00, 1400.00, 29400.00, 'Paid',      '2025-04-05', '', '2025-03-01'),
+  (4, 'DEMO-STF-002', '2025-04-01', 28000.00, 2800.00, 1400.00, 29400.00, 'Processed', NULL,         '', '2025-04-01'),
+  (5, 'DEMO-STF-003', '2025-03-01', 25000.00, 2500.00, 1250.00, 26250.00, 'Paid',      '2025-04-05', '', '2025-03-01'),
+  (6, 'DEMO-STF-004', '2025-03-01', 30000.00, 3000.00, 1500.00, 31500.00, 'Paid',      '2025-04-05', '', '2025-03-01'),
+  (7, 'DEMO-STF-005', '2025-03-01', 25000.00, 2500.00, 1250.00, 26250.00, 'Paid',      '2025-04-05', '', '2025-03-01')
+) AS src([Id],[StaffId],[PayrollMonth],[BasicSalary],[Allowances],[Deductions],[NetSalary],[Status],[PaymentDate],[Notes],[CreatedDate])
+WHERE NOT EXISTS (SELECT 1 FROM [PayrollRecords] pr WHERE pr.[Id] = src.[Id]);
+
+SET IDENTITY_INSERT [PayrollRecords] OFF;
+GO
+
+-- ============================================================
+-- 24. OT SCHEDULES (Operation Theatre)
+-- ============================================================
+SET IDENTITY_INSERT [OTSchedules] ON;
+
+INSERT INTO [OTSchedules] ([Id],[PatientId],[ProcedureName],[SurgeonName],[ScheduledDate],[EstimatedDurationMinutes],[OperationTheatreNumber],[Status],[Notes],[BillId],[CreatedDate])
+SELECT * FROM (VALUES
+  (1, 5,  'Cholecystectomy',   'Dr. Pradeep Kumar', '2025-04-06 09:00:00', 90,  'OT-1', 'Completed', '', NULL, '2025-04-05'),
+  (2, 8,  'Knee Arthroscopy',  'Dr. Mohan Joshi',    '2025-04-07 10:30:00', 60,  'OT-2', 'Completed', '', NULL, '2025-04-06'),
+  (3, 11, 'Hernia Repair',     'Dr. Pradeep Kumar',  '2025-04-14 09:00:00', 75,  'OT-1', 'Scheduled', '', NULL, '2025-04-10'),
+  (4, 15, 'Cataract Surgery',  'Dr. Rajesh Sharma',  '2025-04-15 11:00:00', 45,  'OT-3', 'Scheduled', '', NULL, '2025-04-10')
+) AS src([Id],[PatientId],[ProcedureName],[SurgeonName],[ScheduledDate],[EstimatedDurationMinutes],[OperationTheatreNumber],[Status],[Notes],[BillId],[CreatedDate])
+WHERE NOT EXISTS (SELECT 1 FROM [OTSchedules] ot WHERE ot.[Id] = src.[Id]);
+
+SET IDENTITY_INSERT [OTSchedules] OFF;
+GO
+
+-- ============================================================
+-- 25. REFERRALS
+-- ============================================================
+SET IDENTITY_INSERT [Referrals] ON;
+
+INSERT INTO [Referrals] ([Id],[PatientId],[ReferralType],[ReferredTo],[ReferralReason],[ReferralDate],[Status],[TpaProvider],[TpaPolicyNumber],[ApprovedAmount],[Notes],[BillId],[CreatedDate])
+SELECT * FROM (VALUES
+  (1, 5,  'External', 'City Cardiac Institute',        'Advanced cardiac workup required',  '2025-04-04', 'Approved', '',                      '',              NULL,     '', NULL, '2025-04-04'),
+  (2, 11, 'Internal', 'Cardiology Department',         'Specialist consultation',           '2025-04-06', 'Pending',  '',                      '',              NULL,     '', NULL, '2025-04-06'),
+  (3, 15, 'TPA',      'MediCare TPA Services',         'Insurance-approved procedure',      '2025-04-07', 'Approved', 'MediCare TPA Services', 'POL-2025-0001', 15000.00, '', NULL, '2025-04-07'),
+  (4, 17, 'External', 'Nephrology Department',         'Dialysis planning',                 '2025-04-10', 'Completed','',                      '',              NULL,     '', NULL, '2025-04-10')
+) AS src([Id],[PatientId],[ReferralType],[ReferredTo],[ReferralReason],[ReferralDate],[Status],[TpaProvider],[TpaPolicyNumber],[ApprovedAmount],[Notes],[BillId],[CreatedDate])
+WHERE NOT EXISTS (SELECT 1 FROM [Referrals] r WHERE r.[Id] = src.[Id]);
+
+SET IDENTITY_INSERT [Referrals] OFF;
 GO
 
 -- ============================================================

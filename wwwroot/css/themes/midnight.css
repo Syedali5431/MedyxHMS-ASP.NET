@@ -3,7 +3,15 @@
     --hms-primary-dark: #2c6ed3;
     --hms-accent: #00d4ff;
     --hms-bg: #0f1724;
+    --hms-bg-start: #121a2b;
     --hms-text: #dfe9ff;
+
+    --hms-card-bg: #18263b;
+    --hms-border: #263852;
+    --hms-input-bg: #16233a;
+    --hms-input-border: #2c3e5c;
+    --hms-surface-muted: #1a2942;
+    --hms-hover-bg: rgba(58, 134, 255, 0.14);
 
     --sb-bg: #0a1220;
     --sb-border: rgba(255, 255, 255, 0.12);
@@ -13,18 +21,4 @@
     --sb-active-bg: rgba(58, 134, 255, 0.28);
     --sb-active-bar: #3a86ff;
     --sb-hover-bg: rgba(255, 255, 255, 0.08);
-}
-
-body {
-    background: linear-gradient(180deg, #121a2b 0%, var(--hms-bg) 100%);
-}
-
-.card {
-    background-color: #18263b;
-    border-color: #263852;
-    color: var(--hms-text);
-}
-
-.footer {
-    background-color: #111a2a;
 }
