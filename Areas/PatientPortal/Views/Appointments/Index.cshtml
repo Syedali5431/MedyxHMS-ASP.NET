@@ -86,6 +86,14 @@
                                 {
                                     <span class="badge bg-danger fs-6">Cancelled</span>
                                 }
+                                else if (appointment.Status == "Rescheduled")
+                                {
+                                    <span class="badge bg-info fs-6">Rescheduled</span>
+                                }
+                                else if (!string.IsNullOrEmpty(appointment.Status))
+                                {
+                                    <span class="badge bg-secondary fs-6">@appointment.Status</span>
+                                }
                             </div>
                         </div>
                     </div>
@@ -199,10 +207,38 @@ else
     </div>
 </div>
 
+<!-- Reschedule Modal -->
+<div class="modal fade" id="rescheduleModal" tabindex="-1" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rescheduleModalLabel">Reschedule Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-action="Reschedule">
+                <div class="modal-body">
+                    <input type="hidden" id="rescheduleAppointmentId" name="id" />
+                    <div class="mb-3">
+                        <label for="rescheduleDateTime" class="form-label">New Date &amp; Time</label>
+                        <input type="datetime-local" class="form-control" id="rescheduleDateTime" name="Appointment.AppointmentDate" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-sync"></i> Reschedule Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script>
         function setAppointmentId(id) {
             document.getElementById('appointmentId').value = id;
+            document.getElementById('rescheduleAppointmentId').value = id;
         }
     </script>
 }

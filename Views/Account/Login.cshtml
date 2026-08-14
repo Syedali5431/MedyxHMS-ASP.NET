@@ -190,7 +190,7 @@
                 select.appendChild(opt);
             });
 
-            document.getElementById('loggedInAs').textContent = 'Signed in as: ' + email;
+            document.getElementById('loggedInAs').textContent = 'Signed in as: ' + (data.displayName || email);
 
             if (data.roles.length === 1) {
                 document.getElementById('singleRoleNote').style.display = 'block';

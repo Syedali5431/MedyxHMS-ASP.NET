@@ -32,7 +32,7 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Patients = await _patientService.GetAllPatientsAsync();
-            return View(new OTSchedule { ScheduledDate = DateTime.Now.AddHours(1), Status = "Scheduled" });
+            return View(new OTSchedule { ScheduledDate = DateTime.Now.AddHours(1), Status = "Scheduled", EstimatedDurationMinutes = 60 });
         }
 
         [HttpPost]

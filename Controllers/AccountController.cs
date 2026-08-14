@@ -217,7 +217,11 @@ namespace MedyxHMS.Controllers
             if (roles.Count == 0)
                 return Json(new { success = false, message = "No roles assigned to this account." });
 
-            return Json(new { success = true, roles = roles.OrderBy(r => r).ToList() });
+            var displayName = $"{user.FirstName} {user.LastName}".Trim();
+            if (string.IsNullOrWhiteSpace(displayName))
+                displayName = user.UserName ?? email;
+
+            return Json(new { success = true, roles = roles.OrderBy(r => r).ToList(), displayName });
         }
 
         [HttpPost]

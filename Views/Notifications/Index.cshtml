@@ -2,6 +2,10 @@
 @model IEnumerable<SystemNotification>
 @{
     ViewData["Title"] = "Notifications";
+    if (User.IsInRole("Patient"))
+    {
+        Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    }
 }
 
 <div class="container-fluid">

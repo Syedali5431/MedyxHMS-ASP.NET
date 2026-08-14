@@ -213,16 +213,22 @@ namespace MedyxHMS.Controllers
                     Phone = model.Patient.Phone,
                     DateOfBirth = model.Patient.DateOfBirth,
                     Gender = model.Patient.Gender,
-                    Address = model.Patient.Address,
-                    City = model.Patient.City,
-                    State = model.Patient.State,
-                    Country = model.Patient.Country,
-                    PostalCode = model.Patient.PostalCode,
-                    BloodGroup = model.Patient.BloodGroup,
-                    EmergencyContactName = model.Patient.EmergencyContactName,
-                    EmergencyContactPhone = model.Patient.EmergencyContactPhone,
-                    MedicalHistory = model.Patient.MedicalHistory,
-                    Allergies = model.Patient.Allergies,
+                    Address = model.Patient.Address ?? string.Empty,
+                    City = model.Patient.City ?? string.Empty,
+                    State = model.Patient.State ?? string.Empty,
+                    Country = model.Patient.Country ?? string.Empty,
+                    PostalCode = model.Patient.PostalCode ?? string.Empty,
+                    BloodGroup = model.Patient.BloodGroup ?? string.Empty,
+                    EmergencyContactName = model.Patient.EmergencyContactName ?? string.Empty,
+                    EmergencyContactPhone = model.Patient.EmergencyContactPhone ?? string.Empty,
+                    EmergencyContactRelation = string.Empty,
+                    MedicalHistory = model.Patient.MedicalHistory ?? string.Empty,
+                    Allergies = model.Patient.Allergies ?? string.Empty,
+                    GuardianName = string.Empty,
+                    GuardianPhone = string.Empty,
+                    MaritalStatus = string.Empty,
+                    Occupation = string.Empty,
+                    ProfileImagePath = string.Empty,
                     IsActive = true
                 };
 
@@ -244,14 +250,23 @@ namespace MedyxHMS.Controllers
             catch (Exception ex)
             {
                 ModelState.AddModelError("", "An error occurred while creating the patient. Please try again.");
-                await _auditService.LogActivityAsync(
-                    User.FindFirstValue(ClaimTypes.NameIdentifier),
-                    "Create",
-                    "Patient",
-                    "Failed",
-                    null,
-                    $"Failed to create patient: {ex.Message}"
-                );
+                try
+                {
+                    await _auditService.LogActivityAsync(
+                        User.FindFirstValue(ClaimTypes.NameIdentifier),
+                        "Create",
+                        "Patient",
+                        "Failed",
+                        null,
+                        $"Failed to create patient: {ex.Message}"
+                    );
+                }
+                catch
+                {
+                    // The DbContext may still be holding the failed entity from the SaveChangesAsync
+                    // above, which would make this logging call fail too - never let that mask the
+                    // original error and turn a graceful validation message into a 500.
+                }
                 return View(model);
             }
         }

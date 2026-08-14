@@ -26,6 +26,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<List<dynamic>> GenerateDepartmentReportAsync(int? departmentId, DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:department:{departmentId?.ToString() ?? "all"}:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<List<DepartmentReportCacheItem>>(cacheKey);
             if (cached != null)
@@ -113,6 +114,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Dictionary<string, decimal>> GenerateFinancialReportAsync(DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:financial:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<Dictionary<string, decimal>>(cacheKey);
             if (cached != null)
@@ -170,6 +172,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<decimal> GetTotalRevenueByDepartmentAsync(int departmentId, DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var revenue = await _context.Bills
                 .Where(b => b.CreatedDate >= startDate && b.CreatedDate <= endDate)
                 .SumAsync(b => b.TotalAmount);
@@ -271,6 +274,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<List<dynamic>> GenerateStaffAttendanceReportAsync(string staffId, DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var attendanceRecords = await _context.StaffAttendances
                 .Where(sa => sa.StaffId == staffId && sa.AttendanceDate >= startDate && sa.AttendanceDate <= endDate)
                 .OrderByDescending(sa => sa.AttendanceDate)
@@ -385,6 +389,7 @@ namespace MedyxHMS.Services.Implementations
         /// </summary>
         public async Task<AllTransactionReportViewModel> GenerateAllTransactionReportAsync(DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:all-transactions:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<AllTransactionReportViewModel>(cacheKey);
             if (cached != null) return cached;
@@ -435,6 +440,7 @@ namespace MedyxHMS.Services.Implementations
         /// </summary>
         public async Task<AppointmentReportViewModel> GenerateAppointmentReportAsync(DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:appointments:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<AppointmentReportViewModel>(cacheKey);
             if (cached != null) return cached;
@@ -494,6 +500,7 @@ namespace MedyxHMS.Services.Implementations
         /// </summary>
         public async Task<OPDReportViewModel> GenerateOPDReportAsync(DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:opd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<OPDReportViewModel>(cacheKey);
             if (cached != null) return cached;
@@ -551,6 +558,7 @@ namespace MedyxHMS.Services.Implementations
         /// </summary>
         public async Task<IPDReportViewModel> GenerateIPDReportAsync(DateTime startDate, DateTime endDate)
         {
+            endDate = EndOfDay(endDate);
             var cacheKey = $"report:ipd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
             var cached = await _cacheService.GetAsync<IPDReportViewModel>(cacheKey);
             if (cached != null) return cached;
@@ -575,9 +583,9 @@ namespace MedyxHMS.Services.Implementations
                 BedNumber = a.Bed?.BedNumber ?? "N/A",
                 AdmissionDate = a.AdmissionDate.ToString("yyyy-MM-dd"),
                 DischargeDate = a.DischargeDate.HasValue ? a.DischargeDate.Value.ToString("yyyy-MM-dd") : "Still Admitted",
-                LengthOfStay = a.DischargeDate.HasValue 
-                    ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays 
-                    : (int)(DateTime.UtcNow - a.AdmissionDate).TotalDays,
+                LengthOfStay = a.DischargeDate.HasValue
+                    ? Math.Max(1, (a.DischargeDate.Value.Date - a.AdmissionDate.Date).Days)
+                    : Math.Max(1, (DateTime.UtcNow.Date - a.AdmissionDate.Date).Days),
                 a.AdmissionType,
                 a.Diagnosis,
                 a.Status,
@@ -591,9 +599,9 @@ namespace MedyxHMS.Services.Implementations
             var avgLengthOfStay = 0.0;
             if (admissions.Count > 0)
             {
-                var totalDays = admissions.Sum(a => a.DischargeDate.HasValue 
-                    ? (int)(a.DischargeDate.Value - a.AdmissionDate).TotalDays 
-                    : (int)(DateTime.UtcNow - a.AdmissionDate).TotalDays);
+                var totalDays = admissions.Sum(a => a.DischargeDate.HasValue
+                    ? Math.Max(1, (a.DischargeDate.Value.Date - a.AdmissionDate.Date).Days)
+                    : Math.Max(1, (DateTime.UtcNow.Date - a.AdmissionDate.Date).Days));
                 avgLengthOfStay = (double)totalDays / admissions.Count;
             }
 
@@ -637,7 +645,7 @@ namespace MedyxHMS.Services.Implementations
                 new { Id=5, TransactionId="TXN-0045", TransactionType="Payment", Amount=(decimal)800.00, Description="Emergency Services", ReferenceNumber="EMR-007", TransactionDate=d.AddHours(14).AddMinutes(20).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Admin", Status="Completed" },
                 new { Id=6, TransactionId="TXN-0046", TransactionType="Payment", Amount=(decimal)250.00, Description="Pharmacy Purchase", ReferenceNumber="PHA-088", TransactionDate=d.AddHours(15).AddMinutes(10).ToString("yyyy-MM-dd HH:mm"), ProcessedBy="Pharmacist", Status="Completed" },
             };
-            return new DailyTransactionReportViewModel { TransactionData = data, ReportDate = reportDate.Date, TotalTransactions = 3100m, TotalPayments = 2950m, TotalRefunds = 150m, TransactionCount = 6 };
+            return new DailyTransactionReportViewModel { TransactionData = data, ReportDate = reportDate.Date, TotalTransactions = 3100m, TotalPayments = 2950m, TotalRefunds = 150m, TransactionCount = 6, IsDemoData = true };
         }
 
         private static AllTransactionReportViewModel BuildAllTransactionDemoData(DateTime startDate, DateTime endDate)
@@ -653,7 +661,7 @@ namespace MedyxHMS.Services.Implementations
                 new { Id=7, TransactionId="TXN-0047", TransactionType="Payment", Amount=(decimal)750.00, Description="Blood Bank Services", ReferenceNumber="BBK-009", TransactionDate=startDate.AddDays(18).ToString("yyyy-MM-dd"), ProcessedBy="Admin", Status="Completed" },
                 new { Id=8, TransactionId="TXN-0048", TransactionType="Refund", Amount=(decimal)250.00, Description="Cancelled Appointment", ReferenceNumber="APT-022", TransactionDate=startDate.AddDays(22).ToString("yyyy-MM-dd"), ProcessedBy="Reception", Status="Completed" },
             };
-            return new AllTransactionReportViewModel { TransactionData = data, StartDate = startDate, EndDate = endDate, TotalAmount = 7000m, TotalPayments = 7000m, TotalRefunds = 650m, TransactionCount = 8, BreakdownByType = new Dictionary<string, decimal> { ["Payment"] = 7000m, ["Refund"] = 650m } };
+            return new AllTransactionReportViewModel { TransactionData = data, StartDate = startDate, EndDate = endDate, TotalAmount = 7000m, TotalPayments = 7000m, TotalRefunds = 650m, TransactionCount = 8, BreakdownByType = new Dictionary<string, decimal> { ["Payment"] = 7000m, ["Refund"] = 650m }, IsDemoData = true };
         }
 
         private static AppointmentReportViewModel BuildAppointmentDemoData(DateTime startDate, DateTime endDate)
@@ -668,7 +676,7 @@ namespace MedyxHMS.Services.Implementations
                 new { Id=6, AppointmentId="APT-1006", PatientName="Sana Mirza", DoctorName="Dr. Usman Ali", AppointmentDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), AppointmentTime="11:30", Status="Completed", AppointmentType="Follow-up", Priority="Normal" },
                 new { Id=7, AppointmentId="APT-1007", PatientName="Bilal Ahmed", DoctorName="Dr. Sarah Khan", AppointmentDate=startDate.AddDays(12).ToString("yyyy-MM-dd"), AppointmentTime="15:00", Status="Scheduled", AppointmentType="Consultation", Priority="Normal" },
             };
-            return new AppointmentReportViewModel { AppointmentData = data, StartDate = startDate, EndDate = endDate, TotalAppointments = 7, CompletedAppointments = 4, CancelledAppointments = 1, ScheduledAppointments = 2, CompletionRate = 57.1m, AppointmentsByType = new Dictionary<string, int> { ["General Checkup"] = 2, ["Follow-up"] = 2, ["Consultation"] = 2, ["Emergency"] = 1 }, AppointmentsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 3, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 } };
+            return new AppointmentReportViewModel { AppointmentData = data, StartDate = startDate, EndDate = endDate, TotalAppointments = 7, CompletedAppointments = 4, CancelledAppointments = 1, ScheduledAppointments = 2, CompletionRate = 57.1m, AppointmentsByType = new Dictionary<string, int> { ["General Checkup"] = 2, ["Follow-up"] = 2, ["Consultation"] = 2, ["Emergency"] = 1 }, AppointmentsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 3, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 }, IsDemoData = true };
         }
 
         private static OPDReportViewModel BuildOPDDemoData(DateTime startDate, DateTime endDate)
@@ -682,7 +690,7 @@ namespace MedyxHMS.Services.Implementations
                 new { Id=5, PatientName="Omar Farooq", DoctorName="Dr. Ahmed Malik", VisitDate=startDate.AddDays(8).ToString("yyyy-MM-dd"), Diagnosis="Acute Gastritis", ConsultationFee=(decimal)550.00, PaymentStatus="Pending", CreatedBy="Reception" },
                 new { Id=6, PatientName="Sana Mirza", DoctorName="Dr. Usman Ali", VisitDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), Diagnosis="Allergic Rhinitis", ConsultationFee=(decimal)450.00, PaymentStatus="Paid", CreatedBy="Reception" },
             };
-            return new OPDReportViewModel { OPDVisitData = data, StartDate = startDate, EndDate = endDate, TotalVisits = 6, UniquePatients = 6, TotalConsultationFees = 3000m, AverageConsultationFee = 500m, PaidVisits = 4, PendingPaymentVisits = 2, VisitsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 2, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 } };
+            return new OPDReportViewModel { OPDVisitData = data, StartDate = startDate, EndDate = endDate, TotalVisits = 6, UniquePatients = 6, TotalConsultationFees = 3000m, AverageConsultationFee = 500m, PaidVisits = 4, PendingPaymentVisits = 2, VisitsByDoctor = new Dictionary<string, int> { ["Dr. Sarah Khan"] = 2, ["Dr. Ahmed Malik"] = 2, ["Dr. Usman Ali"] = 2 }, IsDemoData = true };
         }
 
         private static IPDReportViewModel BuildIPDDemoData(DateTime startDate, DateTime endDate)
@@ -695,7 +703,7 @@ namespace MedyxHMS.Services.Implementations
                 new { Id=4, PatientName="Zainab Qureshi", DoctorName="Dr. Sarah Khan", WardName="Maternity Ward", BedNumber="M-05", AdmissionDate=startDate.AddDays(7).ToString("yyyy-MM-dd"), DischargeDate=startDate.AddDays(10).ToString("yyyy-MM-dd"), LengthOfStay=3, AdmissionType="Planned", Diagnosis="Normal Delivery", Status="Discharged", DailyCharges=(decimal)2100.00 },
                 new { Id=5, PatientName="Omar Farooq", DoctorName="Dr. Ahmed Malik", WardName="General Ward", BedNumber="G-08", AdmissionDate=startDate.AddDays(12).ToString("yyyy-MM-dd"), DischargeDate="Still Admitted", LengthOfStay=9, AdmissionType="Emergency", Diagnosis="Hepatitis B", Status="Admitted", DailyCharges=(decimal)4500.00 },
             };
-            return new IPDReportViewModel { IPDAdmissionData = data, StartDate = startDate, EndDate = endDate, TotalAdmissions = 5, DischargedPatients = 3, CurrentlyAdmitted = 2, AverageLengthOfStay = 8.0, TotalDailyCharges = 27300m, AdmissionsByType = new Dictionary<string, int> { ["Emergency"] = 3, ["Planned"] = 2 }, AdmissionsByWard = new Dictionary<string, int> { ["General Ward"] = 2, ["Surgical Ward"] = 1, ["ICU"] = 1, ["Maternity Ward"] = 1 } };
+            return new IPDReportViewModel { IPDAdmissionData = data, StartDate = startDate, EndDate = endDate, TotalAdmissions = 5, DischargedPatients = 3, CurrentlyAdmitted = 2, AverageLengthOfStay = 8.0, TotalDailyCharges = 27300m, AdmissionsByType = new Dictionary<string, int> { ["Emergency"] = 3, ["Planned"] = 2 }, AdmissionsByWard = new Dictionary<string, int> { ["General Ward"] = 2, ["Surgical Ward"] = 1, ["ICU"] = 1, ["Maternity Ward"] = 1 }, IsDemoData = true };
         }
 
         #endregion
@@ -933,6 +941,11 @@ namespace MedyxHMS.Services.Implementations
 
             return rows;
         }
+
+        // Report date-range filters use "<=" against a date-only bound, so an untouched
+        // endDate (midnight) would silently exclude every record from that day that has
+        // a non-midnight timestamp. Push the bound to the last tick of the day instead.
+        private static DateTime EndOfDay(DateTime date) => date.Date.AddDays(1).AddTicks(-1);
 
         private static string GetString(Dictionary<string, object> row, string key)
         {

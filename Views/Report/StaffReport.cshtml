@@ -53,7 +53,7 @@
                                     <td>@(rowType.GetProperty("PresentDays")?.GetValue(row)?.ToString() ?? "0")</td>
                                     <td>@(rowType.GetProperty("AbsentDays")?.GetValue(row)?.ToString() ?? "0")</td>
                                     <td>@(rowType.GetProperty("HalfDays")?.GetValue(row)?.ToString() ?? "0")</td>
-                                    <td>@(rowType.GetProperty("AttendancePercentage")?.GetValue(row)?.ToString() ?? "0")</td>
+                                    <td>@(((double?)rowType.GetProperty("AttendancePercentage")?.GetValue(row))?.ToString("F1") ?? "0.0")%</td>
                                 </tr>
                             }
                         }

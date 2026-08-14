@@ -1,4 +1,6 @@
-﻿<!DOCTYPE html>
+﻿@using Microsoft.AspNetCore.Identity
+@inject UserManager<ApplicationUser> LayoutUserManager
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -93,6 +95,14 @@
                     <ul class="navbar-nav ms-auto">
                         @if (User.Identity != null && User.Identity.IsAuthenticated)
                         {
+                            var currentLayoutUser = await LayoutUserManager.GetUserAsync(User);
+                            var currentLayoutDisplayName = currentLayoutUser != null
+                                ? $"{currentLayoutUser.FirstName} {currentLayoutUser.LastName}".Trim()
+                                : string.Empty;
+                            if (string.IsNullOrWhiteSpace(currentLayoutDisplayName))
+                            {
+                                currentLayoutDisplayName = User.Identity.Name;
+                            }
                             <li class="nav-item me-2 d-flex align-items-center">
                                 <a class="btn btn-outline-secondary btn-sm position-relative" asp-controller="Notifications" asp-action="Index" title="Notifications">
                                     <i class="fas fa-bell"></i>
@@ -103,7 +113,7 @@
                                 @await Component.InvokeAsync("ProfileImage")
                             </li>
                             <li class="nav-item me-2 d-flex align-items-center text-muted small">
-                                Signed in as @User.Identity.Name
+                                Signed in as @currentLayoutDisplayName
                             </li>
                             <li class="nav-item">
                                 <form action="/Account/Logout" method="post" class="d-inline">

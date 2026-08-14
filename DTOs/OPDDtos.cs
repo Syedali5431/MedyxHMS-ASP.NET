@@ -117,7 +117,13 @@ namespace MedyxHMS.DTOs
         public decimal DailyCharges { get; set; }
         public DateTime CreatedDate { get; set; }
         public string CreatedBy { get; set; }
-        public int? DaysAdmitted => DischargeDate.HasValue ? (int?)(DischargeDate.Value - AdmissionDate).TotalDays : null;
+        // Date-only comparison with a 1-day floor, matching the billing calculation in
+        // IPDService.CreateOrUpdateDischargeBillAsync - a raw DateTime subtraction here would
+        // count the admission's time-of-day (e.g. admitted 3:58 PM, discharged same-day at the
+        // default midnight timestamp) and truncate to 0 or even a negative number of days.
+        public int? DaysAdmitted => DischargeDate.HasValue
+            ? Math.Max(1, (DischargeDate.Value.Date - AdmissionDate.Date).Days)
+            : null;
         public string FormattedAdmissionDate => AdmissionDate.ToString("MMM dd, yyyy HH:mm");
         public string FormattedDischargeDate => DischargeDate?.ToString("MMM dd, yyyy HH:mm");
         public string StatusBadgeClass => Status switch

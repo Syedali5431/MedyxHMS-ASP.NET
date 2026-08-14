@@ -131,6 +131,10 @@ namespace MedyxHMS.ViewModels
         public decimal TotalPayments { get; set; }
         public decimal TotalRefunds { get; set; }
         public int TransactionCount { get; set; }
+        // True when no real transactions exist for the selected date, so the report is
+        // showing illustrative example data instead - must be surfaced in the view so it's
+        // never mistaken for real output.
+        public bool IsDemoData { get; set; }
     }
 
     /// <summary>
@@ -147,6 +151,7 @@ namespace MedyxHMS.ViewModels
         public decimal TotalRefunds { get; set; }
         public int TransactionCount { get; set; }
         public Dictionary<string, decimal> BreakdownByType { get; set; } = new();
+        public bool IsDemoData { get; set; }
     }
 
     /// <summary>
@@ -165,6 +170,7 @@ namespace MedyxHMS.ViewModels
         public decimal CompletionRate { get; set; }
         public Dictionary<string, int> AppointmentsByType { get; set; } = new();
         public Dictionary<string, int> AppointmentsByDoctor { get; set; } = new();
+        public bool IsDemoData { get; set; }
     }
 
     /// <summary>
@@ -183,6 +189,7 @@ namespace MedyxHMS.ViewModels
         public int PaidVisits { get; set; }
         public int PendingPaymentVisits { get; set; }
         public Dictionary<string, int> VisitsByDoctor { get; set; } = new();
+        public bool IsDemoData { get; set; }
     }
 
     /// <summary>
@@ -201,5 +208,6 @@ namespace MedyxHMS.ViewModels
         public decimal TotalDailyCharges { get; set; }
         public Dictionary<string, int> AdmissionsByType { get; set; } = new();
         public Dictionary<string, int> AdmissionsByWard { get; set; } = new();
+        public bool IsDemoData { get; set; }
     }
 }

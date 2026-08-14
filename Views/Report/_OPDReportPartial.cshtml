@@ -24,6 +24,14 @@
             </div>
         </div>
 
+        @if (Model.IsDemoData)
+        {
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                No real OPD visits were found for this date range, so this report is showing illustrative example data (not actual records). Pick a different date range to see real data.
+            </div>
+        }
+
         <!-- Summary Statistics -->
         <div class="row mb-4">
             <div class="col-md-3">
