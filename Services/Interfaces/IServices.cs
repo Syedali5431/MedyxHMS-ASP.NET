@@ -325,8 +325,9 @@ namespace MedyxHMS.Services.Interfaces
 
     public interface ILicenseFileService
     {
-        Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string performedByUserId, string? ipAddress = null);
+        Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string? performedByUserId, string? ipAddress = null);
         Task<bool> IsCurrentLicenseCryptographicallyValidAsync();
+        Task<LicenseRecord?> ImportFromApplicationFolderIfNeededAsync();
     }
 
     public interface IConcurrentSessionService

@@ -273,6 +273,19 @@ using (var scope = app.Services.CreateScope())
     // Multi-hospital: records added without a hospital (e.g. by seed scripts) belong to the default hospital.
     await initializer.BackfillHospitalAssignmentsAsync();
 
+    // Licence: when the active licence is missing or not signed with a trusted vendor key, load MedyxHMS.lic
+    // from the application folder (a licence re-issued by the vendor, e.g. after a key change).
+    try
+    {
+        var imported = await services.GetRequiredService<ILicenseFileService>().ImportFromApplicationFolderIfNeededAsync();
+        if (imported != null)
+            services.GetRequiredService<ILogger<Program>>().LogInformation("Licence {LicenseId} imported from MedyxHMS.lic at start-up", imported.LicenseGuid);
+    }
+    catch (Exception ex)
+    {
+        services.GetRequiredService<ILogger<Program>>().LogWarning(ex, "MedyxHMS.lic in the application folder could not be imported at start-up");
+    }
+
     // Patient records: every OPD visit and IPD admission has its medical record (also for data added by seeds or imports).
     try
     {

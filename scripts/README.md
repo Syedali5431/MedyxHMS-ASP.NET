@@ -68,9 +68,18 @@ two-step login** (SuperAdmin accounts can never be listed there). Switch `Seedin
 test-account list) on a production database.
 
 **First start – licence:** a new database has no licence, so until one is installed only the SuperAdmin
-can sign in (other users see *"Valid signed license not found."*). Sign in as SuperAdmin → **License** →
-**Load from file** (reads `MedyxHMS.lic` from the application folder; the matching public key is read from
-`MedyxHMS-Lic\current`) or upload the signed `.lic` file there.
+can sign in (other users see *"Valid signed license not found."*). Copy the signed `MedyxHMS.lic` into the
+application folder: at start-up the application imports it automatically whenever the active licence is
+missing, expired or not signed with a trusted vendor key. A SuperAdmin can also use **License** → **Load from
+file** or upload the `.lic` file there. The matching public key is read from `MedyxHMS-Lic\current`.
+
+**Licence keys:** the application accepts only licences signed with the vendor keys listed in
+`Services/Implementations/LicenseTrust.cs` (public keys in Settings or in `MedyxHMS-Lic\current` that are not
+listed there are ignored). The vendor **private** key (`medyxhms-private-key-*.json`) must stay on the vendor's
+computer – it is never committed (`.gitignore`) and never copied to a server; `.lic` files are not committed
+either. To replace the vendor key: generate a new pair with `MedyxHMS-Lic` (option 1), add its verification
+key to `LicenseTrust.cs` (and remove the old one), put the new public key in `MedyxHMS-Lic\current`, sign new
+licences (option 2) and place `MedyxHMS.lic` in each installation's folder before starting the new version.
 
 **Another database name:** in `New-Database.sql` / `New-Database-Empty.sql` replace `[MedyxHMS]` and
 `N'MedyxHMS'` at the top of the file. Scripts 2–4 and `MFA-Migration.sql` run in the database given with

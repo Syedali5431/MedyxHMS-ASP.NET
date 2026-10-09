@@ -29,7 +29,7 @@ namespace MedyxHMS.Services.Implementations
             _environment = environment;
         }
 
-        public async Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string performedByUserId, string? ipAddress = null)
+        public async Task<LicenseRecord> ValidateAndActivateAsync(IFormFile licenseFile, string? performedByUserId, string? ipAddress = null)
         {
             if (licenseFile == null || licenseFile.Length == 0)
                 throw new InvalidDataException("License file is required.");
@@ -58,6 +58,9 @@ namespace MedyxHMS.Services.Implementations
                 throw new InvalidDataException("Unsupported signature algorithm.");
 
             ValidatePayloadFields(signed.Payload);
+
+            if (!LicenseTrust.IsTrusted(signed.Payload.VerificationKey))
+                throw new InvalidDataException(LicenseTrust.UntrustedKeyMessage);
 
             var normalizedModules = NormalizeModuleKeys(signed.Payload.LicensedModules);
             var knownModuleKeys = await _context.SystemModules
@@ -243,6 +246,8 @@ namespace MedyxHMS.Services.Implementations
                         continue;
 
                     var verificationKey = LicenseCryptoUtility.ComputeVerificationKey(modulusHex, exponentHex);
+                    if (!LicenseTrust.IsTrusted(verificationKey))
+                        continue;
                     if (!string.IsNullOrWhiteSpace(expectedVerificationKey)
                         && !string.Equals(verificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
                     {
@@ -285,6 +290,30 @@ namespace MedyxHMS.Services.Implementations
                 (c >= '0' && c <= '9') ||
                 (c >= 'A' && c <= 'F') ||
                 (c >= 'a' && c <= 'f'));
+        }
+
+        /// <summary>
+        /// Start-up: when the active licence is missing, expired or not signed with a trusted vendor key, imports
+        /// MedyxHMS.lic from the application folder (if present and valid). This is how an installation moves to a
+        /// licence signed with a new vendor key without signing in. Returns the imported licence, or null.
+        /// </summary>
+        public async Task<LicenseRecord?> ImportFromApplicationFolderIfNeededAsync()
+        {
+            if (await IsCurrentLicenseCryptographicallyValidAsync())
+                return null;
+
+            var filePath = Path.Combine(_environment.ContentRootPath, "MedyxHMS.lic");
+            if (!File.Exists(filePath))
+                return null;
+
+            var bytes = await File.ReadAllBytesAsync(filePath);
+            using var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, bytes.Length, "licenseFile", "MedyxHMS.lic")
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = "application/octet-stream"
+            };
+            return await ValidateAndActivateAsync(formFile, null, null);
         }
 
         public async Task<bool> IsCurrentLicenseCryptographicallyValidAsync()
@@ -331,6 +360,10 @@ namespace MedyxHMS.Services.Implementations
 
             var expectedVerificationKey = LicenseCryptoUtility.ComputeVerificationKey(modulusHex, exponentHex);
             if (!string.Equals(license.VerificationKey, expectedVerificationKey, StringComparison.OrdinalIgnoreCase))
+                return false;
+
+            // Licences signed with a key this version no longer trusts (e.g. a replaced vendor key) are not valid.
+            if (!LicenseTrust.IsTrusted(expectedVerificationKey))
                 return false;
 
             bool isValid;

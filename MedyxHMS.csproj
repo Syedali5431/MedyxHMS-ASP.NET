@@ -32,6 +32,12 @@
     <Content Remove="tests\**\*" />
     <Content Remove="temp_build_output\**\*" />
     <Content Remove="MedyxHMS-Lic\**\*" />
+    <!-- Files users upload at run time (profile pictures, Download Center) are data: never part of a build or a published copy. -->
+    <Content Remove="wwwroot\uploads\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="MedyxHMS.BedManagement.Tests" />
   </ItemGroup>
 
 </Project>

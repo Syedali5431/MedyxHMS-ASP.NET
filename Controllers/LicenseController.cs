@@ -94,6 +94,8 @@ namespace MedyxHMS.Controllers
 
                 ValidatePublicKeyHex(normalizedModulus, normalizedExponent);
                 var verificationKey = LicenseCryptoUtility.ComputeVerificationKey(normalizedModulus, normalizedExponent);
+                if (!LicenseTrust.IsTrusted(verificationKey))
+                    throw new InvalidDataException(LicenseTrust.UntrustedKeyMessage);
 
                 await _settingService.UpdateSettingAsync("LicensePublicKeyModulusHex", normalizedModulus);
                 await _settingService.UpdateSettingAsync("LicensePublicKeyExponentHex", normalizedExponent);
@@ -145,13 +147,15 @@ namespace MedyxHMS.Controllers
                     {
                         throw new InvalidDataException("Public key JSON verification key does not match modulus/exponent.");
                     }
+                    if (!LicenseTrust.IsTrusted(computedVerificationKey))
+                        throw new InvalidDataException(LicenseTrust.UntrustedKeyMessage);
 
                     await _settingService.UpdateSettingAsync("LicensePublicKeyModulusHex", normalizedModulus);
                     await _settingService.UpdateSettingAsync("LicensePublicKeyExponentHex", normalizedExponent);
                     await _settingService.UpdateSettingAsync("LicenseVerificationKey", computedVerificationKey);
                 }
 
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 await _licenseFileService.ValidateAndActivateAsync(
                     licenseFile,
                     userId,
@@ -187,7 +191,7 @@ namespace MedyxHMS.Controllers
                     ContentType = "application/octet-stream"
                 };
 
-                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? "Unknown";
+                var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 await _licenseFileService.ValidateAndActivateAsync(
                     formFile,
                     userId,

@@ -42,3 +42,6 @@ wwwroot/uploads/
 
 # Licence signing private keys - never commit (the public key files are fine)
 *private-key*.json
+
+# Signed licence files are issued per installation by the vendor - never commit
+*.lic
