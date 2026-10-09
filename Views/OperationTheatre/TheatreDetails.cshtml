@@ -1,0 +1,94 @@
+@model MedyxHMS.Models.OperationTheatre
+@{
+    ViewData["Title"] = $"Theatre {Model.Code}";
+    var blocks = ViewBag.Blocks as List<MedyxHMS.Models.OTBlock> ?? new List<MedyxHMS.Models.OTBlock>();
+    var cases = ViewBag.Cases as List<OTSchedule> ?? new List<OTSchedule>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var nextHour = DateTime.Today.AddHours(DateTime.Now.Hour + 1);
+}
+
+<div class="container mt-3" style="max-width:1150px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-door-open text-primary me-2"></i>@Model.DisplayName</h4>
+            <small class="text-muted">@Model.TheatreType · @(Model.Is24Hours ? "open 24 hours" : $"open {Model.OpensAt:hh\\:mm}–{Model.ClosesAt:hh\\:mm}") · turnover @Model.TurnoverMinutes min@(string.IsNullOrWhiteSpace(Model.Location) ? "" : " · " + Model.Location)</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <span class="badge fs-6 @(Model.IsActive ? "bg-success" : "bg-secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
+            @if (canManage)
+            {
+                <a asp-action="TheatreEdit" asp-route-id="@Model.Id" class="btn btn-outline-primary btn-sm">Edit</a>
+                <form asp-action="ToggleTheatre" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success")">@(Model.IsActive ? "Deactivate" : "Activate")</button>
+                </form>
+            }
+            <a asp-action="Theatres" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Theatres</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Features)) { <p class="small mb-3"><span class="fw-semibold">Equipment / features:</span> @Model.Features</p> }
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold d-flex justify-content-between align-items-center">
+                    <span>Cases – next 14 days</span>
+                    @if (Model.IsActive) { <a asp-action="Create" asp-route-theatreId="@Model.Id" class="btn btn-sm btn-primary">Book this theatre</a> }
+                </div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light"><tr><th>When</th><th>Procedure</th><th>Patient</th><th>Surgeon</th><th>Status</th></tr></thead>
+                        <tbody>
+                            @foreach (var c in cases)
+                            {
+                                <tr>
+                                    <td class="small text-nowrap"><a asp-action="Details" asp-route-id="@c.Id">@c.ScheduledDate.ToString("ddd dd-MMM HH:mm")</a>–@c.EndsAt.ToString("HH:mm")</td>
+                                    <td class="small">@c.ProcedureName</td>
+                                    <td class="small">@c.Patient?.FirstName @c.Patient?.LastName</td>
+                                    <td class="small">@c.SurgeonName</td>
+                                    <td class="small">@c.Status</td>
+                                </tr>
+                            }
+                            @if (!cases.Any()) { <tr><td colspan="5" class="text-center text-muted small py-3">No cases in the next 14 days.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Block times (not bookable)</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0 align-middle">
+                        <tbody>
+                            @foreach (var b in blocks)
+                            {
+                                <tr>
+                                    <td class="small">@b.StartsAt.ToString("dd-MMM HH:mm") – @b.EndsAt.ToString("dd-MMM HH:mm")<div class="text-muted">@b.Reason · @b.CreatedBy</div></td>
+                                    @if (canManage)
+                                    {
+                                        <td class="text-end"><form asp-action="RemoveBlock" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<input type="hidden" name="blockId" value="@b.Id" /><button type="submit" class="btn btn-sm btn-link text-danger p-0">Remove</button></form></td>
+                                    }
+                                </tr>
+                            }
+                            @if (!blocks.Any()) { <tr><td class="text-center text-muted small py-3">No current or future blocks.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+                @if (canManage && Model.IsActive)
+                {
+                    <div class="card-footer">
+                        <form asp-action="AddBlock" asp-route-id="@Model.Id" method="post" class="row g-2">
+                            @Html.AntiForgeryToken()
+                            <div class="col-6"><label class="form-label small mb-0" for="blockFrom">From</label><input id="blockFrom" name="startsAt" type="datetime-local" class="form-control form-control-sm" value="@nextHour.ToString("yyyy-MM-ddTHH:mm")" /></div>
+                            <div class="col-6"><label class="form-label small mb-0" for="blockTo">To</label><input id="blockTo" name="endsAt" type="datetime-local" class="form-control form-control-sm" value="@nextHour.AddHours(2).ToString("yyyy-MM-ddTHH:mm")" /></div>
+                            <div class="col-8"><input name="reason" class="form-control form-control-sm" placeholder="Reason (maintenance, deep cleaning…)" aria-label="Reason" /></div>
+                            <div class="col-4"><button type="submit" class="btn btn-sm btn-outline-danger w-100">Block</button></div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

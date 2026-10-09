@@ -21,17 +21,23 @@ namespace MedyxHMS.Controllers.PatientPortal
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationDbContext _context;
+        private readonly IEmailNotificationProvider _emailProvider;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             IPatientPortalService patientPortalService,
             UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
-            ApplicationDbContext context)
+            ApplicationDbContext context,
+            IEmailNotificationProvider emailProvider,
+            ILogger<AccountController> logger)
         {
             _patientPortalService = patientPortalService;
             _userManager = userManager;
             _signInManager = signInManager;
             _context = context;
+            _emailProvider = emailProvider;
+            _logger = logger;
         }
 
         // GET: /PatientPortal/Account/Login
@@ -53,7 +59,10 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             if (ModelState.IsValid)
             {
+                // Same lookup order as the staff login page, which this view shares
+                // ("Email, Username, or Employee ID").
                 var user = await _userManager.FindByEmailAsync(viewModel.Email)
+                    ?? await _userManager.FindByNameAsync(viewModel.Email)
                     ?? await _userManager.Users.FirstOrDefaultAsync(u => u.EmployeeId == viewModel.Email);
 
                 if (user == null)
@@ -76,7 +85,7 @@ namespace MedyxHMS.Controllers.PatientPortal
 
                 if (result.Succeeded)
                 {
-                    user.LastLoginDate = DateTime.UtcNow;
+                    user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
 
                     var roles = await _userManager.GetRolesAsync(user);
@@ -105,7 +114,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 if (result.IsLockedOut)
                 {
                     ModelState.AddModelError(string.Empty, "Your account is locked. Please try again later.");
-                    return View(viewModel);
+                    return View("~/Views/Account/Login.cshtml", viewModel);
                 }
 
                 ModelState.AddModelError(string.Empty, "Invalid email or password");
@@ -119,7 +128,7 @@ namespace MedyxHMS.Controllers.PatientPortal
         [AllowAnonymous]
         public IActionResult Register()
         {
-            return View("~/Views/PatientPortal/Account/Register.cshtml", new PatientPortalRegisterViewModel());
+            return View("~/Areas/PatientPortal/Views/Account/Register.cshtml", new PatientPortalRegisterViewModel());
         }
 
         // POST: /PatientPortal/Account/Register
@@ -135,7 +144,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     await _userManager.Users.AnyAsync(u => u.NormalizedUserName == normalizedUserName))
                 {
                     ModelState.AddModelError("Register.UserName", "User name is already in use");
-                    return View("~/Views/PatientPortal/Account/Register.cshtml", viewModel);
+                    return View("~/Areas/PatientPortal/Views/Account/Register.cshtml", viewModel);
                 }
 
                 try
@@ -207,7 +216,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 }
             }
 
-            return View("~/Views/PatientPortal/Account/Register.cshtml", viewModel);
+            return View("~/Areas/PatientPortal/Views/Account/Register.cshtml", viewModel);
         }
 
         // POST: /PatientPortal/Account/Logout
@@ -238,22 +247,30 @@ namespace MedyxHMS.Controllers.PatientPortal
             if (ModelState.IsValid)
             {
                 var user = await _userManager.FindByEmailAsync(viewModel.Email);
-                if (user != null)
+                if (user != null && user.IsActive)
                 {
-                    // In production, send email with reset link
                     var token = await _userManager.GeneratePasswordResetTokenAsync(user);
                     var resetUrl = Url.Action("ResetPassword", "Account",
-                        new { token, email = user.Email },
+                        new { area = "PatientPortal", token, email = user.Email },
                         protocol: Request.Scheme);
 
-                    // TODO: Send email with reset link
-                    TempData["SuccessMessage"] = "If an account exists with this email, a password reset link has been sent.";
+                    try
+                    {
+                        await _emailProvider.SendAsync(
+                            user.Email!,
+                            "Reset your Medyx Patient Portal password",
+                            $"Hello {user.FirstName},\n\nUse the link below to reset your patient portal password:\n{resetUrl}\n\n" +
+                            "If you did not request this, you can ignore this e-mail.");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Do not reveal delivery problems (or whether the account exists) to the visitor.
+                        _logger.LogError(ex, "Failed to send patient portal password reset e-mail");
+                    }
                 }
-                else
-                {
-                    // Don't reveal if account exists for security
-                    TempData["SuccessMessage"] = "If an account exists with this email, a password reset link has been sent.";
-                }
+
+                // Same message whether or not the account exists, for security.
+                TempData["SuccessMessage"] = "If an account exists with this email, a password reset link has been sent.";
 
                 return RedirectToAction("Login");
             }

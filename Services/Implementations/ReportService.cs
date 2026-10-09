@@ -14,13 +14,18 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly ICacheService _cacheService;
         private readonly ILogger<ReportService> _logger;
+        private readonly IHospitalContext _hospitalContext;
 
-        public ReportService(ApplicationDbContext context, ICacheService cacheService, ILogger<ReportService> logger)
+        public ReportService(ApplicationDbContext context, ICacheService cacheService, ILogger<ReportService> logger, IHospitalContext hospitalContext)
         {
             _context = context;
             _cacheService = cacheService;
             _logger = logger;
+            _hospitalContext = hospitalContext;
         }
+
+        // Multi-hospital: cached report data is kept per active hospital ("all" when viewing the whole group).
+        private string HospitalCacheSuffix => _hospitalContext.FilterEnabled ? $":h{_hospitalContext.ActiveHospitalId}" : ":all";
 
         #region Department Reports
 
@@ -115,36 +120,40 @@ namespace MedyxHMS.Services.Implementations
         public async Task<Dictionary<string, decimal>> GenerateFinancialReportAsync(DateTime startDate, DateTime endDate)
         {
             endDate = EndOfDay(endDate);
-            var cacheKey = $"report:financial:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:financial:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<Dictionary<string, decimal>>(cacheKey);
             if (cached != null)
             {
                 return cached;
             }
 
-            try
+            // The stored procedure totals the whole group; with an active hospital the filtered query below is used.
+            if (!_hospitalContext.FilterEnabled)
             {
-                var rows = await ExecuteStoredProcedureAsync(
-                    "sp_GetFinancialReport",
-                    new List<SqlParameter>
-                    {
-                        new("@StartDate", startDate),
-                        new("@EndDate", endDate)
-                    });
-
-                var result = new Dictionary<string, decimal>
+                try
                 {
-                    ["TotalPayroll"] = rows.Where(r => GetString(r, "TransactionType") == "Payroll").Sum(r => GetDecimal(r, "Amount")),
-                    ["TotalBills"] = rows.Where(r => GetString(r, "TransactionType") == "Bills").Sum(r => GetDecimal(r, "Amount")),
-                    ["TotalPayments"] = rows.Where(r => GetString(r, "TransactionType") == "Payments").Sum(r => GetDecimal(r, "Amount"))
-                };
-                result["NetRevenue"] = result["TotalBills"] - result["TotalPayroll"];
-                await _cacheService.SetAsync(cacheKey, result, 15);
-                return result;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Stored procedure path failed for financial report. Falling back to LINQ query.");
+                    var rows = await ExecuteStoredProcedureAsync(
+                        "sp_GetFinancialReport",
+                        new List<SqlParameter>
+                        {
+                            new("@StartDate", startDate),
+                            new("@EndDate", endDate)
+                        });
+
+                    var result = new Dictionary<string, decimal>
+                    {
+                        ["TotalPayroll"] = rows.Where(r => GetString(r, "TransactionType") == "Payroll").Sum(r => GetDecimal(r, "Amount")),
+                        ["TotalBills"] = rows.Where(r => GetString(r, "TransactionType") == "Bills").Sum(r => GetDecimal(r, "Amount")),
+                        ["TotalPayments"] = rows.Where(r => GetString(r, "TransactionType") == "Payments").Sum(r => GetDecimal(r, "Amount"))
+                    };
+                    result["NetRevenue"] = result["TotalBills"] - result["TotalPayroll"];
+                    await _cacheService.SetAsync(cacheKey, result, 15);
+                    return result;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Stored procedure path failed for financial report. Falling back to LINQ query.");
+                }
             }
 
             var payrollTotal = await _context.PayrollRecords
@@ -186,35 +195,39 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Dictionary<string, int>> GenerateOccupancyReportAsync(DateTime date)
         {
-            var cacheKey = $"report:occupancy:{date:yyyyMMdd}";
+            var cacheKey = $"report:occupancy:{date:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<Dictionary<string, int>>(cacheKey);
             if (cached != null)
             {
                 return cached;
             }
 
-            try
+            // The stored procedure totals the whole group; with an active hospital the filtered query below is used.
+            if (!_hospitalContext.FilterEnabled)
             {
-                var rows = await ExecuteStoredProcedureAsync(
-                    "sp_GetOccupancyReport",
-                    new List<SqlParameter> { new("@ReportDate", date) });
-
-                var first = rows.FirstOrDefault();
-                if (first != null)
+                try
                 {
-                    var result = new Dictionary<string, int>
+                    var rows = await ExecuteStoredProcedureAsync(
+                        "sp_GetOccupancyReport",
+                        new List<SqlParameter> { new("@ReportDate", date) });
+
+                    var first = rows.FirstOrDefault();
+                    if (first != null)
                     {
-                        { "TotalBeds", GetInt(first, "TotalBeds") },
-                        { "OccupiedBeds", GetInt(first, "OccupiedBeds") },
-                        { "AvailableBeds", GetInt(first, "AvailableBeds") }
-                    };
-                    await _cacheService.SetAsync(cacheKey, result, 10);
-                    return result;
+                        var result = new Dictionary<string, int>
+                        {
+                            { "TotalBeds", GetInt(first, "TotalBeds") },
+                            { "OccupiedBeds", GetInt(first, "OccupiedBeds") },
+                            { "AvailableBeds", GetInt(first, "AvailableBeds") }
+                        };
+                        await _cacheService.SetAsync(cacheKey, result, 10);
+                        return result;
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Stored procedure path failed for occupancy report. Falling back to LINQ query.");
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Stored procedure path failed for occupancy report. Falling back to LINQ query.");
+                }
             }
 
             var totalBeds = await _context.Beds.CountAsync();
@@ -237,7 +250,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<double> GetAverageOccupancyRateAsync(DateTime startDate, DateTime endDate)
         {
-            var cacheKey = $"report:occupancy:avg:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:occupancy:avg:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<OccupancyAverageCacheItem>(cacheKey);
             if (cached != null)
             {
@@ -343,7 +356,7 @@ namespace MedyxHMS.Services.Implementations
         /// </summary>
         public async Task<DailyTransactionReportViewModel> GenerateDailyTransactionReportAsync(DateTime reportDate)
         {
-            var cacheKey = $"report:daily-transaction:{reportDate:yyyyMMdd}";
+            var cacheKey = $"report:daily-transaction:{reportDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<DailyTransactionReportViewModel>(cacheKey);
             if (cached != null) return cached;
 
@@ -390,7 +403,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<AllTransactionReportViewModel> GenerateAllTransactionReportAsync(DateTime startDate, DateTime endDate)
         {
             endDate = EndOfDay(endDate);
-            var cacheKey = $"report:all-transactions:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:all-transactions:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<AllTransactionReportViewModel>(cacheKey);
             if (cached != null) return cached;
 
@@ -441,7 +454,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<AppointmentReportViewModel> GenerateAppointmentReportAsync(DateTime startDate, DateTime endDate)
         {
             endDate = EndOfDay(endDate);
-            var cacheKey = $"report:appointments:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:appointments:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<AppointmentReportViewModel>(cacheKey);
             if (cached != null) return cached;
 
@@ -501,7 +514,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<OPDReportViewModel> GenerateOPDReportAsync(DateTime startDate, DateTime endDate)
         {
             endDate = EndOfDay(endDate);
-            var cacheKey = $"report:opd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:opd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<OPDReportViewModel>(cacheKey);
             if (cached != null) return cached;
 
@@ -559,7 +572,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<IPDReportViewModel> GenerateIPDReportAsync(DateTime startDate, DateTime endDate)
         {
             endDate = EndOfDay(endDate);
-            var cacheKey = $"report:ipd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}";
+            var cacheKey = $"report:ipd:{startDate:yyyyMMdd}:{endDate:yyyyMMdd}" + HospitalCacheSuffix;
             var cached = await _cacheService.GetAsync<IPDReportViewModel>(cacheKey);
             if (cached != null) return cached;
 
@@ -585,7 +598,7 @@ namespace MedyxHMS.Services.Implementations
                 DischargeDate = a.DischargeDate.HasValue ? a.DischargeDate.Value.ToString("yyyy-MM-dd") : "Still Admitted",
                 LengthOfStay = a.DischargeDate.HasValue
                     ? Math.Max(1, (a.DischargeDate.Value.Date - a.AdmissionDate.Date).Days)
-                    : Math.Max(1, (DateTime.UtcNow.Date - a.AdmissionDate.Date).Days),
+                    : Math.Max(1, (DateTime.Now.Date - a.AdmissionDate.Date).Days),
                 a.AdmissionType,
                 a.Diagnosis,
                 a.Status,
@@ -601,7 +614,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 var totalDays = admissions.Sum(a => a.DischargeDate.HasValue
                     ? Math.Max(1, (a.DischargeDate.Value.Date - a.AdmissionDate.Date).Days)
-                    : Math.Max(1, (DateTime.UtcNow.Date - a.AdmissionDate.Date).Days));
+                    : Math.Max(1, (DateTime.Now.Date - a.AdmissionDate.Date).Days));
                 avgLengthOfStay = (double)totalDays / admissions.Count;
             }
 
@@ -750,7 +763,7 @@ namespace MedyxHMS.Services.Implementations
                 query = query.Where(gr => gr.CreatedDate >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(gr => gr.CreatedDate <= endDate.Value);
+                query = query.Where(gr => gr.CreatedDate <= EndOfDay(endDate.Value));
 
             var reports = await query.OrderByDescending(gr => gr.CreatedDate)
                 .Include(gr => gr.StaffGenerated)
@@ -842,7 +855,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<int> CreateReportTemplateAsync(ReportTemplate template)
         {
-            template.CreatedDate = DateTime.UtcNow;
+            template.CreatedDate = DateTime.Now;
             _context.ReportTemplates.Add(template);
             await _context.SaveChangesAsync();
             return template.Id;
@@ -863,7 +876,7 @@ namespace MedyxHMS.Services.Implementations
         private DateTime? CalculateNextRunDate(ReportSchedule schedule)
         {
             var timeOfDay = TimeSpan.Parse(schedule.TimeOfDay ?? "08:00");
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var nextRun = now.Date.Add(timeOfDay);
 
             return schedule.RecurrencePattern switch

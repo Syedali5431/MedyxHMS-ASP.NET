@@ -1,0 +1,32 @@
+@model MedyxHMS.ViewModels.DischargeFormViewModel
+@{
+    ViewData["Title"] = "Edit Discharge Report";
+}
+
+<div class="container-fluid mt-3 mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1"><i class="fas fa-file-medical me-2 text-primary"></i>Discharge Report @Model.ReportNumber</h1>
+            <div class="text-muted">
+                <strong>@Model.PatientName</strong> (@Model.PatientCode) · @Model.WardBed · @Model.AdmissionDate.ToString("dd-MMM-yyyy") to @Model.DischargeDate.ToString("dd-MMM-yyyy")
+                <span class="badge text-bg-warning ms-1">Draft</span>
+            </div>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.SummaryId" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back to report</a>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <partial name="_DischargeForm" model="Model" />
+        <input type="hidden" asp-for="Complete" id="completeFlag" />
+        <div class="d-flex flex-wrap gap-2 justify-content-end">
+            <a asp-action="Details" asp-route-id="@Model.SummaryId" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-outline-primary" onclick="document.getElementById('completeFlag').value='false'"><i class="fas fa-save me-1"></i>Save draft</button>
+            <button type="submit" class="btn btn-success" onclick="document.getElementById('completeFlag').value='true'; return confirm('Complete the discharge report? It can then no longer be changed (an administrator can reopen it).');"><i class="fas fa-check me-1"></i>Save and complete</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

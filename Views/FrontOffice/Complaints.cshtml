@@ -43,7 +43,7 @@
                         @foreach (var c in Model.Complaints)
                         {
                             <tr>
-                                <td>@c.CreatedDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                <td>@c.CreatedDate.ToString("yyyy-MM-dd")</td>
                                 <td>@c.ComplainantName</td>
                                 <td>@c.Subject</td>
                                 <td>@c.Status</td>

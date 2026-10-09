@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpOverrides;
 
@@ -47,6 +48,8 @@ namespace MedyxHMS.Extensions
                     "font-src 'self' data: fonts.gstatic.com cdn.jsdelivr.net cdnjs.cloudflare.com; " +
                     "img-src 'self' data: https:; " +
                     "connect-src 'self'; " +
+                    // Map embeds on the public Contact us / Location pages.
+                    "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org; " +
                     "frame-ancestors 'self'; " +
                     "form-action 'self';" +
                     (isLocalHttp ? string.Empty : " upgrade-insecure-requests;");
@@ -66,7 +69,12 @@ namespace MedyxHMS.Extensions
                 }
 
                 // Cross-Origin policies
-                response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+                // Not on the public website: its Contact / Location pages embed Google Maps, which a page with
+                // "require-corp" is not allowed to frame.
+                if (!context.Request.Path.StartsWithSegments("/Site"))
+                {
+                    response.Headers["Cross-Origin-Embedder-Policy"] = "require-corp";
+                }
                 response.Headers["Cross-Origin-Opener-Policy"] = "same-origin";
                 response.Headers["Cross-Origin-Resource-Policy"] = "cross-origin";
 
@@ -96,7 +104,8 @@ namespace MedyxHMS.Extensions
         private readonly ILogger<RateLimitingMiddleware> _logger;
         private static readonly Dictionary<string, (int Count, DateTime ResetTime)> RequestCounts = new();
         private const int MaxRequestsPerMinute = 100;
-        private const int MaxFailedAttempts = 5;
+        // Expired counters are purged once this many keys are tracked, so memory cannot grow without limit.
+        private const int PurgeThreshold = 10_000;
 
         public RateLimitingMiddleware(RequestDelegate next, ILogger<RateLimitingMiddleware> logger)
         {
@@ -106,37 +115,58 @@ namespace MedyxHMS.Extensions
 
         public async Task InvokeAsync(HttpContext context)
         {
-            var clientIp = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var key = $"{clientIp}:{context.Request.Path}";
+            var client = await ResolveClientAsync(context);
+            var key = $"{client}:{context.Request.Path}";
+            var now = DateTime.UtcNow;
+            var limited = false;
 
             lock (RequestCounts)
             {
-                if (RequestCounts.TryGetValue(key, out var data))
+                if (RequestCounts.Count >= PurgeThreshold)
                 {
-                    if (DateTime.UtcNow < data.ResetTime)
-                    {
-                        if (data.Count > MaxRequestsPerMinute)
-                        {
-                            _logger.LogWarning("Rate limit exceeded for IP: {ClientIp}", clientIp);
-                            context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
-                            context.Response.Headers["Retry-After"] = "60";
-                            return;
-                        }
+                    foreach (var expired in RequestCounts.Where(kv => kv.Value.ResetTime <= now).Select(kv => kv.Key).ToList())
+                        RequestCounts.Remove(expired);
+                }
 
-                        RequestCounts[key] = (data.Count + 1, data.ResetTime);
-                    }
+                if (RequestCounts.TryGetValue(key, out var data) && now < data.ResetTime)
+                {
+                    if (data.Count > MaxRequestsPerMinute)
+                        limited = true;
                     else
-                    {
-                        RequestCounts[key] = (1, DateTime.UtcNow.AddMinutes(1));
-                    }
+                        RequestCounts[key] = (data.Count + 1, data.ResetTime);
                 }
                 else
                 {
-                    RequestCounts[key] = (1, DateTime.UtcNow.AddMinutes(1));
+                    RequestCounts[key] = (1, now.AddMinutes(1));
                 }
             }
 
+            if (limited)
+            {
+                _logger.LogWarning("Rate limit exceeded for {Client} on {Path}", client, context.Request.Path);
+                context.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+                context.Response.Headers["Retry-After"] = "60";
+                return;
+            }
+
             await _next(context);
+        }
+
+        /// <summary>
+        /// Signed-in users get their own budget, so many staff behind one hospital NAT/proxy do not
+        /// share (and exhaust) a single per-IP limit. Anonymous requests and static files stay per IP.
+        /// </summary>
+        private static async Task<string> ResolveClientAsync(HttpContext context)
+        {
+            var ip = context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            if (context.Request.Cookies.Count == 0 || Path.HasExtension(context.Request.Path.Value))
+                return "ip:" + ip;
+
+            // Validates the auth cookie; the result is cached for the request, so the later
+            // authentication middleware does not repeat the work.
+            var auth = await context.AuthenticateAsync();
+            var userId = auth.Succeeded ? auth.Principal?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value : null;
+            return string.IsNullOrEmpty(userId) ? "ip:" + ip : "user:" + userId;
         }
     }
 
@@ -287,8 +317,8 @@ namespace MedyxHMS.Extensions
     {
         public static IApplicationBuilder UseEnhancedSecurity(this IApplicationBuilder app)
         {
-            // Enable HTTPS redirection
-            app.UseHttpsRedirection();
+            // HTTPS redirection is configured in Program.cs (outside Development); calling it here as well
+            // logged "Failed to determine the https port for redirect" when running over plain http.
 
             // Use X-Forwarded-For headers from reverse proxy
             app.UseForwardedHeaders(new ForwardedHeadersOptions

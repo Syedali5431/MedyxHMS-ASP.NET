@@ -46,7 +46,7 @@
                         <tr>
                             <td>@s.DoctorName</td>
                             <td>@(s.Patient != null ? $"{s.Patient.FirstName} {s.Patient.LastName}" : s.PatientName)</td>
-                            <td>@s.ScheduledAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                            <td>@s.ScheduledAt.ToString("MMM dd, yyyy HH:mm")</td>
                             <td>@s.DurationMinutes min</td>
                             <td><span class="badge bg-light text-dark border">@s.Platform</span></td>
                             <td><span class="badge @statusBadge">@s.Status</span></td>

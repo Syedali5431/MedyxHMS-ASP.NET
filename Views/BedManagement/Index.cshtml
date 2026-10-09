@@ -8,6 +8,7 @@
 	var wards    = (ViewBag.Wards   as IEnumerable<MedyxHMS.Models.Ward>)  ?? Enumerable.Empty<MedyxHMS.Models.Ward>();
 	var patients = (ViewBag.Patients as System.Collections.IEnumerable) ?? Array.Empty<object>();
 	var canManageBeds = User.IsInRole("SuperAdmin") || User.IsInRole("Admin") || User.IsInRole("Nurse");
+	var admissions = ViewBag.Admissions as Dictionary<int, int> ?? new Dictionary<int, int>();
 
 	var jsonOpts = new JsonSerializerOptions
 	{
@@ -29,7 +30,8 @@
 		patientName          = b.Patient != null ? (b.Patient.FirstName + " " + b.Patient.LastName) : (string?)null,
 		isIsolation          = b.IsIsolation,
 		requiresAdminApproval = b.RequiresAdminApproval,
-		dailyCharges         = b.DailyCharges
+		dailyCharges         = b.DailyCharges,
+		admissionId          = admissions.TryGetValue(b.Id, out var admissionId) ? admissionId : (int?)null
 	}), jsonOpts);
 }
 
@@ -64,6 +66,14 @@
 .cm-item.cm-info { cursor: default; font-weight: 600; }
 .cm-item.cm-info:hover { background: transparent; }
 .cm-divider { height: 1px; background: #dee2e6; margin: 4px 0; }
+.cm-head { padding: 4px 14px 2px; font-size: .7rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #6c757d; }
+.cm-item.cm-current { font-weight: 600; background: #f1f5ff; cursor: default; }
+.cm-item.cm-current::after { content: "\f00c"; font-family: "Font Awesome 6 Free"; font-weight: 900; margin-left: auto; color: #0d6efd; font-size: .75rem; }
+.cm-item.cm-disabled { color: #adb5bd; cursor: not-allowed; }
+.cm-item.cm-disabled:hover { background: transparent; }
+.cm-item.cm-sub { padding-left: 38px; font-size: .82rem; }
+.cm-note { padding: 4px 14px 6px; font-size: .74rem; color: #6c757d; max-width: 250px; white-space: normal; }
+.cm-chev { margin-left: auto; font-size: .7rem; color: #6c757d; }
 /* Room row */
 .room-row:hover     { background: #f0f4ff !important; cursor: pointer; }
 .room-row.active-room { background: #dde8fe !important; font-weight: 600; }
@@ -83,6 +93,9 @@
 			</button>
 			@if (canManageBeds)
 			{
+				<a asp-action="Wards" class="btn btn-outline-primary btn-sm">
+					<i class="fas fa-hospital-alt me-1"></i>Wards
+				</a>
 				<a asp-action="Create" class="btn btn-primary btn-sm">
 					<i class="fas fa-plus me-1"></i>Add Beds
 				</a>
@@ -112,7 +125,7 @@
 			<div class="card border-start border-primary border-4 shadow-sm h-100">
 				<div class="card-body py-3">
 					<div class="row align-items-center g-0">
-						<div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Beds</div><div class="h4 mb-0 fw-bold">@summary.TotalBeds</div></div>
+						<div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Total Beds</div><div class="h4 mb-0 fw-bold" id="sumTotal">@summary.TotalBeds</div></div>
 						<div class="col-auto"><i class="fas fa-bed fa-2x text-secondary opacity-50"></i></div>
 					</div>
 				</div>
@@ -122,7 +135,7 @@
 			<div class="card border-start border-success border-4 shadow-sm h-100">
 				<div class="card-body py-3">
 					<div class="row align-items-center g-0">
-						<div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Available</div><div class="h4 mb-0 fw-bold text-success">@summary.AvailableBeds</div></div>
+						<div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Available</div><div class="h4 mb-0 fw-bold text-success" id="sumAvailable">@summary.AvailableBeds</div></div>
 						<div class="col-auto"><i class="fas fa-check-circle fa-2x text-success opacity-50"></i></div>
 					</div>
 				</div>
@@ -132,7 +145,7 @@
 			<div class="card border-start border-danger border-4 shadow-sm h-100">
 				<div class="card-body py-3">
 					<div class="row align-items-center g-0">
-						<div class="col"><div class="text-xs fw-bold text-danger text-uppercase mb-1">Occupied</div><div class="h4 mb-0 fw-bold text-danger">@summary.OccupiedBeds</div></div>
+						<div class="col"><div class="text-xs fw-bold text-danger text-uppercase mb-1">Occupied</div><div class="h4 mb-0 fw-bold text-danger" id="sumOccupied">@summary.OccupiedBeds</div></div>
 						<div class="col-auto"><i class="fas fa-user-injured fa-2x text-danger opacity-50"></i></div>
 					</div>
 				</div>
@@ -142,7 +155,7 @@
 			<div class="card border-start border-warning border-4 shadow-sm h-100">
 				<div class="card-body py-3">
 					<div class="row align-items-center g-0">
-						<div class="col"><div class="text-xs fw-bold text-warning text-uppercase mb-1">Cleaning</div><div class="h4 mb-0 fw-bold text-warning">@summary.CleaningBeds</div></div>
+						<div class="col"><div class="text-xs fw-bold text-warning text-uppercase mb-1">Cleaning</div><div class="h4 mb-0 fw-bold text-warning" id="sumCleaning">@summary.CleaningBeds</div></div>
 						<div class="col-auto"><i class="fas fa-broom fa-2x text-warning opacity-50"></i></div>
 					</div>
 				</div>
@@ -152,7 +165,7 @@
 			<div class="card border-start border-secondary border-4 shadow-sm h-100">
 				<div class="card-body py-3">
 					<div class="row align-items-center g-0">
-						<div class="col"><div class="text-xs fw-bold text-secondary text-uppercase mb-1">Maintenance</div><div class="h4 mb-0 fw-bold text-secondary">@summary.MaintenanceBeds</div></div>
+						<div class="col"><div class="text-xs fw-bold text-secondary text-uppercase mb-1">Maint./Blocked</div><div class="h4 mb-0 fw-bold text-secondary" id="sumMaint">@summary.MaintenanceBeds</div></div>
 						<div class="col-auto"><i class="fas fa-tools fa-2x text-secondary opacity-50"></i></div>
 					</div>
 				</div>
@@ -223,7 +236,7 @@
 	<!-- Room Summary Table -->
 	<div class="card shadow mb-3">
 		<div class="card-header py-2 fw-semibold text-muted" style="font-size:.8rem;letter-spacing:.05em">
-			<i class="fas fa-table me-1"></i>ROOM OVERVIEW — click a row to view individual beds below
+			<i class="fas fa-table me-1"></i>ROOM OVERVIEW — click a row to view individual beds below@(canManageBeds ? " · right-click a bed to set Available, Occupied, Cleaning or Maint./Blocked" : "")
 		</div>
 		<div class="card-body p-0">
 			<div class="table-responsive">
@@ -261,7 +274,7 @@
 				<span class="badge" style="background:#d1e7dd;color:#0a3622;border:1px solid #a3cfbb">&#9632; Available</span>
 				<span class="badge" style="background:#f8d7da;color:#58151c;border:1px solid #f1aeb5">&#9632; Occupied</span>
 				<span class="badge" style="background:#fff3cd;color:#664d03;border:1px solid #ffe69c">&#9632; Cleaning</span>
-				<span class="badge" style="background:#e2e3e5;color:#41464b;border:1px solid #c4c8cb">&#9632; Maintenance/Blocked</span>
+				<span class="badge" style="background:#e2e3e5;color:#41464b;border:1px solid #c4c8cb">&#9632; Maint./Blocked</span>
 				@if (canManageBeds)
 				{
 					<span class="text-muted fst-italic">Right-click a bed icon to change its status</span>
@@ -292,7 +305,7 @@
 <div class="modal fade" id="assignModal" tabindex="-1" aria-labelledby="assignModalLabel" aria-hidden="true">
 	<div class="modal-dialog">
 		<div class="modal-content">
-			<form method="post" asp-action="Assign">
+			<form method="post" asp-action="Assign" id="assignForm">
 				@Html.AntiForgeryToken()
 				<input type="hidden" name="bedId" id="assignBedId" />
 				<div class="modal-header">
@@ -303,10 +316,10 @@
 					<div id="icuWarning" class="alert alert-warning d-none">
 						<i class="fas fa-lock me-2"></i>This is an <strong>ICU bed</strong> &mdash; Admin approval is required.
 					</div>
-					<p>Assigning bed: <strong id="assignBedNumber"></strong></p>
+					<p>Assigning bed: <strong id="assignBedNumber"></strong> <span class="text-muted small" id="assignBedStatus"></span></p>
 					<div class="mb-3">
 						<label class="form-label fw-bold">Select Patient</label>
-						<select name="patientId" class="form-select" required>
+						<select name="patientId" id="assignPatientId" class="form-select" required>
 							<option value="">— Choose a patient —</option>
 							@foreach (dynamic pt in patients)
 							{
@@ -317,7 +330,7 @@
 				</div>
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-					<button type="submit" class="btn btn-success"><i class="fas fa-user-plus me-1"></i>Assign</button>
+					<button type="submit" class="btn btn-success" id="assignSubmit"><i class="fas fa-user-plus me-1"></i>Mark Occupied</button>
 				</div>
 			</form>
 		</div>
@@ -366,7 +379,7 @@
 					<p>Transfer patient from bed: <strong id="transferFromBedNumber"></strong></p>
 					<div class="mb-3">
 						<label class="form-label fw-bold">Target Bed (Available only)</label>
-						<select name="toBedId" class="form-select" required>
+						<select name="toBedId" id="transferToBedId" class="form-select" required>
 							<option value="">— Choose target bed —</option>
 							@foreach (var bed in Model.Where(b => b.Status == "Available"))
 							{
@@ -535,119 +548,200 @@ function hideBedGrid() {
 	_activeKey = null;
 }
 
-// ── Context menu ──────────────────────────────────────────────
+// ── Context menu (right-click a bed) ──────────────────────────
 var ctxMenu = document.getElementById('bedCtxMenu');
 var ctxBed  = null;
+var STATUS_LABEL = {Available:'Available',Occupied:'Occupied',Cleaning:'Cleaning',Maintenance:'Maint./Blocked (Maintenance)',Blocked:'Maint./Blocked (Blocked)'};
+var STATUS_CLASS = {Available:'text-success',Occupied:'text-danger',Cleaning:'text-warning',Maintenance:'text-secondary',Blocked:'text-secondary'};
 
 document.addEventListener('contextmenu', function(e) {
 	var icon = e.target.closest ? e.target.closest('.bed-icon') : null;
 	hideCtx();
 	if (!icon) return;
 	e.preventDefault();
-	ctxBed = {
-		id:          parseInt(icon.dataset.bedId, 10),
-		number:      icon.dataset.bedNumber,
-		status:      icon.dataset.status,
-		patientId:   icon.dataset.patientId,
-		patientName: icon.dataset.patientName,
-		reqAdmin:    icon.dataset.reqAdmin === '1',
-		el:          icon
-	};
-	buildCtx(ctxBed);
-	ctxMenu.style.left    = Math.min(e.clientX, window.innerWidth  - 220)+'px';
-	ctxMenu.style.top     = Math.min(e.clientY, window.innerHeight - 260)+'px';
-	ctxMenu.style.display = 'block';
+	var data = bedsData.find(function(b){ return b.id === parseInt(icon.dataset.bedId, 10); });
+	if (!data) return;
+	ctxBed = { data: data, x: e.clientX, y: e.clientY };
+	buildCtx(ctxBed, false);
 });
 document.addEventListener('click',   hideCtx);
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape') hideCtx(); });
+window.addEventListener('scroll', hideCtx, true);
 function hideCtx() { ctxMenu.style.display = 'none'; }
 
-function buildCtx(bed) {
-	ctxMenu.innerHTML = '';
-	// Info rows (non-clickable)
-	ci(null, '<strong>'+esc(bed.number)+'</strong>', null, true);
-	var sc = {Available:'text-success',Occupied:'text-danger',Cleaning:'text-warning',Maintenance:'text-secondary',Blocked:'text-secondary'};
-	ci(null, '<span class="'+(sc[bed.status]||'text-muted')+'">'+esc(bed.status)+'</span>', null, true);
-	if (bed.patientName) ci('fas fa-user text-muted', esc(bed.patientName), null, true);
+function placeCtx(ctx) {
+	ctxMenu.style.display = 'block';
+	var w = ctxMenu.offsetWidth, h = ctxMenu.offsetHeight;
+	ctxMenu.style.left = Math.max(4, Math.min(ctx.x, window.innerWidth  - w - 8))+'px';
+	ctxMenu.style.top  = Math.max(4, Math.min(ctx.y, window.innerHeight - h - 8))+'px';
+}
 
-	if (canManage) {
-		cd();
-		if (bed.status !== 'Occupied') {
-			[{s:'Available',i:'fas fa-check-circle text-success'},
-			 {s:'Cleaning',i:'fas fa-broom text-warning'},
-			 {s:'Maintenance',i:'fas fa-tools text-secondary'},
-			 {s:'Blocked',i:'fas fa-ban text-secondary'}]
-			.filter(function(x){ return x.s!==bed.status; })
-			.forEach(function(x){
-				(function(s,ic){ ci(ic,'Mark '+s, function(){ setStatus(bed.id,s,bed.el); }); })(x.s,x.i);
-			});
-			cd();
-		}
-		if (bed.status === 'Available') {
-			ci('fas fa-user-plus text-success', 'Assign Patient', function(){
-				document.getElementById('assignBedId').value = bed.id;
-				document.getElementById('assignBedNumber').textContent = bed.number;
-				document.getElementById('icuWarning').classList.toggle('d-none', !bed.reqAdmin);
-				new bootstrap.Modal(document.getElementById('assignModal')).show();
-			});
-		}
-		if (bed.status === 'Occupied') {
+function buildCtx(ctx, maintOpen) {
+	var bed = ctx.data;
+	ctxMenu.innerHTML = '';
+	ci(null, '<i class="fas fa-bed text-primary"></i> <strong>Bed '+esc(bed.bedNumber)+'</strong>', null, 'cm-info');
+	ci(null, '<span class="'+(STATUS_CLASS[bed.status]||'text-muted')+'">'+esc(STATUS_LABEL[bed.status]||bed.status)+'</span>', null, 'cm-info');
+	if (bed.patientName) ci('fas fa-user text-muted', esc(bed.patientName), null, 'cm-info');
+	if (!canManage) { placeCtx(ctx); return; }
+
+	cd();
+	var head = document.createElement('div'); head.className = 'cm-head'; head.textContent = 'Set status'; ctxMenu.appendChild(head);
+	var admitted = bed.status === 'Occupied' && !!bed.admissionId;
+	function statusItem(status, icon, label, cls) {
+		var extra = cls ? ' '+cls : '';
+		if (bed.status === status) { ci(icon, label, null, 'cm-current'+extra); return; }
+		if (admitted) { ci(icon, label, null, 'cm-disabled'+extra); return; }
+		ci(icon, label, function(){ chooseStatus(bed, status); }, cls);
+	}
+	statusItem('Available', 'fas fa-check-circle text-success', 'Available');
+	if (bed.status === 'Occupied') statusItem('Occupied', 'fas fa-user-injured text-danger', 'Occupied');
+	else ci('fas fa-user-injured text-danger', 'Occupied&hellip;', function(){ openAssign(bed); });
+	statusItem('Cleaning', 'fas fa-broom text-warning', 'Cleaning');
+	var isMaint = bed.status === 'Maintenance' || bed.status === 'Blocked';
+	var open = (maintOpen || isMaint) && !admitted;
+	ci('fas fa-tools text-secondary', 'Maint./Blocked<i class="fas fa-chevron-'+(open?'up':'down')+' cm-chev"></i>',
+		admitted ? null : function(ev){ ev.stopPropagation(); buildCtx(ctx, !maintOpen); },
+		admitted ? 'cm-disabled' : '', true);
+	if (open) {
+		statusItem('Maintenance', 'fas fa-wrench text-secondary', 'Under maintenance', 'cm-sub');
+		statusItem('Blocked', 'fas fa-ban text-secondary', 'Blocked', 'cm-sub');
+	}
+	if (admitted) {
+		var note = document.createElement('div'); note.className = 'cm-note';
+		note.innerHTML = '<i class="fas fa-info-circle me-1"></i>Admitted (IPD #'+bed.admissionId+'). Discharge the patient or transfer to another bed to change the status.';
+		ctxMenu.appendChild(note);
+	}
+
+	cd();
+	if (bed.status === 'Occupied') {
+		if (!admitted) {
 			ci('fas fa-sign-out-alt text-warning', 'Release Bed', function(){
 				document.getElementById('releaseBedId').value = bed.id;
-				document.getElementById('releaseBedNumber').textContent = bed.number;
-				document.getElementById('releasePatientName').textContent = bed.patientName;
-				new bootstrap.Modal(document.getElementById('releaseModal')).show();
+				document.getElementById('releaseBedNumber').textContent = bed.bedNumber;
+				document.getElementById('releasePatientName').textContent = bed.patientName || '';
+				bootstrap.Modal.getOrCreateInstance(document.getElementById('releaseModal')).show();
 			});
-			ci('fas fa-exchange-alt text-info', 'Transfer Patient', function(){
-				document.getElementById('transferFromBedId').value = bed.id;
-				document.getElementById('transferFromBedNumber').textContent = bed.number;
-				new bootstrap.Modal(document.getElementById('transferModal')).show();
-			});
+		} else {
+			ci('fas fa-procedures text-primary', 'Open IPD admission', function(){ window.location.href = '/IPD/Details/'+bed.admissionId; });
 		}
-		cd();
-		ci('fas fa-edit text-primary', 'Edit Bed', function(){ window.location.href='/BedManagement/Edit/'+bed.id; });
+		ci('fas fa-exchange-alt text-info', 'Transfer Patient', function(){ openTransfer(bed); });
 	}
+	ci('fas fa-edit text-primary', 'Edit Bed', function(){ window.location.href = '/BedManagement/Edit/'+bed.id; });
+	placeCtx(ctx);
 }
 
-function ci(iconCls, label, onClick, isInfo) {
+function ci(iconCls, label, onClick, extraCls, keepOpen) {
 	var d = document.createElement('div');
-	d.className = 'cm-item'+(isInfo?' cm-info':'');
-	d.innerHTML = (iconCls?'<i class="'+iconCls+'"></i> ':'')+label;
-	if (onClick) d.addEventListener('click', function(){ hideCtx(); onClick(); });
-	ctxMenu.appendChild(d);
-}
-function cd() { var d=document.createElement('div'); d.className='cm-divider'; ctxMenu.appendChild(d); }
-
-// ── AJAX status change (no page reload) ───────────────────────
-function setStatus(bedId, newStatus, iconEl) {
-	fetch('/api/beds/status', {
-		method: 'POST',
-		headers: {'Content-Type':'application/json'},
-		body: JSON.stringify({bedId:bedId, status:newStatus})
-	}).then(function(r) {
-		if (!r.ok) {
-			return r.text().then(function(text){
-				try {
-					var parsed = JSON.parse(text);
-					throw (parsed.error || parsed.message || 'Update failed.');
-				} catch (parseErr) {
-					throw (text && text.trim()) || 'Update failed.';
-				}
-			});
-		}
-		var bed = bedsData.find(function(b){ return b.id===bedId; });
-		if (bed) {
-			bed.status = newStatus;
-			if (newStatus === 'Available') { bed.patientId = null; bed.patientName = null; }
-		}
-		iconEl.className = 'bed-icon s-'+newStatus.toLowerCase();
-		iconEl.dataset.status = newStatus;
-		iconEl.title = 'Bed '+iconEl.dataset.bedNumber+' \u2014 '+newStatus;
-		renderRoomTable();
-		toast('Bed '+iconEl.dataset.bedNumber+' marked '+newStatus, 'success');
-	}).catch(function(err){
-		toast(typeof err==='string'?err:'Network error.','danger');
+	d.className = 'cm-item'+(extraCls ? ' '+extraCls : '');
+	d.innerHTML = (iconCls ? '<i class="'+iconCls+' fa-fw"></i> ' : '')+label;
+	d.addEventListener('click', function(ev){
+		if (!onClick) { ev.stopPropagation(); return; }
+		if (!keepOpen) hideCtx();
+		onClick(ev);
 	});
+	ctxMenu.appendChild(d);
+	return d;
+}
+function cd() { var d = document.createElement('div'); d.className = 'cm-divider'; ctxMenu.appendChild(d); }
+
+function chooseStatus(bed, status) {
+	if (bed.status === 'Occupied' && bed.patientName &&
+		!confirm('Bed '+bed.bedNumber+' is occupied by '+bed.patientName+'.\nRelease the patient and mark the bed '+(STATUS_LABEL[status]||status)+'?')) {
+		return;
+	}
+	changeStatus(bed.id, status, null);
+}
+
+function openAssign(bed) {
+	document.getElementById('assignBedId').value = bed.id;
+	document.getElementById('assignBedNumber').textContent = bed.bedNumber;
+	document.getElementById('assignBedStatus').textContent = bed.status !== 'Available' ? '(now '+(STATUS_LABEL[bed.status]||bed.status)+')' : '';
+	document.getElementById('icuWarning').classList.toggle('d-none', !bed.requiresAdminApproval);
+	document.getElementById('assignPatientId').value = '';
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('assignModal')).show();
+}
+
+function openTransfer(bed) {
+	document.getElementById('transferFromBedId').value = bed.id;
+	document.getElementById('transferFromBedNumber').textContent = bed.bedNumber;
+	var sel = document.getElementById('transferToBedId');
+	sel.innerHTML = '<option value="">— Choose target bed —</option>';
+	bedsData.filter(function(b){ return b.status === 'Available' && b.id !== bed.id; })
+		.forEach(function(b){ sel.appendChild(new Option(b.bedNumber+' — '+b.ward+' ('+b.bedType+')', b.id)); });
+	bootstrap.Modal.getOrCreateInstance(document.getElementById('transferModal')).show();
+}
+
+// "Occupied" from the menu: the assign dialog saves without leaving the page.
+document.getElementById('assignForm').addEventListener('submit', function(e) {
+	e.preventDefault();
+	var bedId = parseInt(document.getElementById('assignBedId').value, 10);
+	var patientId = document.getElementById('assignPatientId').value;
+	if (!patientId) { document.getElementById('assignPatientId').focus(); return; }
+	var btn = document.getElementById('assignSubmit'); btn.disabled = true;
+	changeStatus(bedId, 'Occupied', patientId, function(ok){
+		btn.disabled = false;
+		if (ok) bootstrap.Modal.getOrCreateInstance(document.getElementById('assignModal')).hide();
+	});
+});
+
+// ── Status change (no page reload) ────────────────────────────
+function antiForgeryToken() {
+	var el = document.querySelector('input[name="__RequestVerificationToken"]');
+	return el ? el.value : '';
+}
+
+function changeStatus(bedId, newStatus, patientId, done) {
+	var body = new URLSearchParams();
+	body.append('bedId', bedId);
+	body.append('status', newStatus);
+	if (patientId) body.append('patientId', patientId);
+	body.append('__RequestVerificationToken', antiForgeryToken());
+	fetch('/BedManagement/ChangeStatus', { method: 'POST', body: body, credentials: 'same-origin' })
+		.then(function(r) {
+			return r.text().then(function(text) {
+				var data = null;
+				try { data = JSON.parse(text); } catch (ignore) { }
+				if (!r.ok || !data || !data.success) {
+					throw ((data && (data.error || data.message)) || 'Update failed ('+r.status+'). Please refresh the page and try again.');
+				}
+				return data;
+			});
+		})
+		.then(function(data) {
+			var bed = bedsData.find(function(b){ return b.id === bedId; });
+			if (bed) {
+				bed.status = data.bed.status;
+				bed.patientId = data.bed.patientId;
+				bed.patientName = data.bed.patientName;
+			}
+			renderRoomTable();
+			refreshSummary();
+			toast(data.message, 'success');
+			if (done) done(true);
+		})
+		.catch(function(err) {
+			toast(typeof err === 'string' ? err : 'Network error.', 'danger');
+			if (done) done(false);
+		});
+}
+
+// Summary cards and charts follow the bed list.
+var bedCharts = {};
+function refreshSummary() {
+	var c = { total: bedsData.length, av: 0, oc: 0, cl: 0, mt: 0 };
+	bedsData.forEach(function(b){
+		if (b.status === 'Available') c.av++;
+		else if (b.status === 'Occupied') c.oc++;
+		else if (b.status === 'Cleaning') c.cl++;
+		else if (b.status === 'Maintenance' || b.status === 'Blocked') c.mt++;
+	});
+	document.getElementById('sumTotal').textContent = c.total;
+	document.getElementById('sumAvailable').textContent = c.av;
+	document.getElementById('sumOccupied').textContent = c.oc;
+	document.getElementById('sumCleaning').textContent = c.cl;
+	document.getElementById('sumMaint').textContent = c.mt;
+	if (bedCharts.status) { bedCharts.status.data.datasets[0].data = [c.av, c.oc, c.cl, c.mt]; bedCharts.status.update(); }
+	if (bedCharts.overview) { bedCharts.overview.data.datasets[0].data = [c.total, c.av, c.oc, c.cl, c.mt]; bedCharts.overview.update(); }
 }
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -677,17 +771,19 @@ setTimeout(function(){
 // Init
 populateFilters();
 renderRoomTable();
+// Open the first room so its beds (and the right-click menu) are visible straight away.
+(function(){ var first = document.querySelector('#roomTableBody .room-row'); if (first) first.click(); })();
 
 // Bed Charts
 (function() {
-	new Chart(document.getElementById('bedStatusChart'), {
+	bedCharts.status = new Chart(document.getElementById('bedStatusChart'), {
 		type: 'doughnut',
-		data: { labels: ['Available','Occupied','Cleaning','Maintenance'], datasets: [{ data: [@summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#1cc88a','#e74a3b','#f6c23e','#858796'], borderWidth: 2 }] },
+		data: { labels: ['Available','Occupied','Cleaning','Maint./Blocked'], datasets: [{ data: [@summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#1cc88a','#e74a3b','#f6c23e','#858796'], borderWidth: 2 }] },
 		options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
 	});
-	new Chart(document.getElementById('bedOverviewChart'), {
+	bedCharts.overview = new Chart(document.getElementById('bedOverviewChart'), {
 		type: 'bar',
-		data: { labels: ['Total','Available','Occupied','Cleaning','Maintenance'], datasets: [{ label: 'Beds', data: [@summary.TotalBeds, @summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#4e73df','#1cc88a','#e74a3b','#f6c23e','#858796'] }] },
+		data: { labels: ['Total','Available','Occupied','Cleaning','Maint./Blocked'], datasets: [{ label: 'Beds', data: [@summary.TotalBeds, @summary.AvailableBeds, @summary.OccupiedBeds, @summary.CleaningBeds, @summary.MaintenanceBeds], backgroundColor: ['#4e73df','#1cc88a','#e74a3b','#f6c23e','#858796'] }] },
 		options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
 	});
 })();

@@ -1,0 +1,68 @@
+@model MedyxHMS.Models.QualityIncident
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = "Report Incident";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-exclamation-triangle text-danger me-2"></i>Report an Incident</h4>
+    <p class="text-muted small mb-0">Report anything that harmed or could have harmed a patient, visitor or staff member, including near misses. Reports are used to learn and improve.</p>
+    <div class="card mt-3 shadow-sm" style="max-width:820px">
+        <div class="card-body">
+            <form asp-action="ReportIncident" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="mb-3">
+                    <label asp-for="Title" class="form-label fw-semibold">What happened? (short title) <span class="text-danger">*</span></label>
+                    <input asp-for="Title" class="form-control" maxlength="200" />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4">
+                        <label asp-for="Category" class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+                        <select asp-for="Category" class="form-select">
+                            @foreach (var c in QualityService.IncidentCategories) { <option value="@c">@c</option> }
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Severity" class="form-label fw-semibold">Severity <span class="text-danger">*</span></label>
+                        <select asp-for="Severity" class="form-select">
+                            @foreach (var s in QualityService.Severities) { <option value="@s">@s</option> }
+                        </select>
+                        <span asp-validation-for="Severity" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="OccurredAt" class="form-label fw-semibold"></label>
+                        <input asp-for="OccurredAt" type="datetime-local" class="form-control" value="@Model.OccurredAt.ToString("yyyy-MM-ddTHH:mm")" />
+                        <span asp-validation-for="OccurredAt" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="Location" class="form-label fw-semibold"></label>
+                        <input asp-for="Location" class="form-control" maxlength="150" placeholder="e.g. Ward 2, Pharmacy counter" />
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="PatientId" class="form-label fw-semibold">Patient (record no., optional)</label>
+                        <input asp-for="PatientId" type="number" min="1" class="form-control" />
+                        <span asp-validation-for="PatientId" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+                    <textarea asp-for="Description" class="form-control" rows="4" placeholder="Facts only: what happened, who was involved, what was the outcome"></textarea>
+                    <span asp-validation-for="Description" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="ImmediateAction" class="form-label fw-semibold"></label>
+                    <textarea asp-for="ImmediateAction" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-danger">Submit report</button>
+                    <a asp-action="Incidents" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

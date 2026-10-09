@@ -301,7 +301,7 @@ namespace MedyxHMS.ViewModels
         public int BillId { get; set; }
         public string BillNumber { get; set; } = string.Empty;
         public decimal Amount { get; set; }
-        public string Currency { get; set; } = "USD";
+        public string Currency { get; set; } = "PKR";
         public string PatientName { get; set; } = string.Empty;
         public string PatientEmail { get; set; } = string.Empty;
         public string Gateway { get; set; } = string.Empty;

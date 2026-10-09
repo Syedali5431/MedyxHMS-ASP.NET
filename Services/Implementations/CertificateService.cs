@@ -38,8 +38,8 @@ namespace MedyxHMS.Services.Implementations
             if (string.IsNullOrWhiteSpace(certificate.StaffId))
                 throw new InvalidOperationException("Staff is required.");
 
-            certificate.IssueDate = certificate.IssueDate == default ? DateTime.UtcNow : certificate.IssueDate;
-            certificate.CreatedDate = DateTime.UtcNow;
+            certificate.IssueDate = certificate.IssueDate == default ? DateTime.Now : certificate.IssueDate;
+            certificate.CreatedDate = DateTime.Now;
 
             _context.CertificateRecords.Add(certificate);
             await _context.SaveChangesAsync();
@@ -71,11 +71,11 @@ namespace MedyxHMS.Services.Implementations
 
             if (string.IsNullOrWhiteSpace(idCard.CardNumber))
             {
-                idCard.CardNumber = $"ID-{DateTime.UtcNow:yyyyMMddHHmmss}";
+                idCard.CardNumber = $"ID-{DateTime.Now:yyyyMMddHHmmss}";
             }
 
             if (idCard.IssueDate == default)
-                idCard.IssueDate = DateTime.UtcNow;
+                idCard.IssueDate = DateTime.Now;
 
             _context.IdCardRecords.Add(idCard);
             await _context.SaveChangesAsync();

@@ -1,0 +1,62 @@
+@model List<MedyxHMS.Models.ControlledDocument>
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = "Controlled Documents";
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    var today = DateTime.Today;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-file-signature text-primary me-2"></i>Controlled Documents</h4>
+            <small class="text-muted">Policies, SOPs, work instructions and forms. Only the approved, effective version is in use.</small>
+        </div>
+        @if (isManager) { <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Document</a> }
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-4"><input name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search title or number" /></div>
+        <div class="col-sm-3">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">All categories</option>
+                @foreach (var c in QualityService.DocumentCategories) { <option value="@c" selected="@(ViewBag.Category == c)">@c</option> }
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Search</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>No.</th><th>Title</th><th>Category</th><th>Department</th><th>Effective version</th><th>Next review</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var d in Model)
+                    {
+                        var effective = d.Versions.FirstOrDefault(v => v.Status == "Approved");
+                        var pending = d.Versions.Any(v => v.Status == "Pending approval");
+                        var reviewDue = d.Status == "Effective" && d.NextReviewDate.HasValue && d.NextReviewDate.Value <= today.AddDays(30);
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="Details" asp-route-id="@d.Id">@d.DocumentNumber</a></td>
+                            <td>@d.Title</td>
+                            <td class="small">@d.Category</td>
+                            <td class="small">@d.Department</td>
+                            <td class="small">
+                                @if (effective != null) { <span>v@(effective.VersionNumber) · @effective.EffectiveDate?.ToString("dd-MMM-yyyy")</span> } else { <span class="text-muted">none</span> }
+                                @if (isManager && pending) { <span class="badge bg-warning text-dark ms-1">Approval pending</span> }
+                            </td>
+                            <td class="small @(reviewDue ? "text-danger fw-semibold" : "")">@(d.NextReviewDate?.ToString("dd-MMM-yyyy") ?? "–")</td>
+                            <td><span class="badge @(d.Status == "Effective" ? "bg-success" : d.Status == "Obsolete" ? "bg-dark" : "bg-secondary")">@d.Status</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No documents.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

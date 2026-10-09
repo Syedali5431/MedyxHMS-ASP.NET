@@ -1,0 +1,111 @@
+@model MedyxHMS.ViewModels.SecuritySettingsViewModel
+@using MedyxHMS.ViewModels
+@{
+    ViewData["Title"] = "Security & Backups";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-user-shield text-primary me-2"></i>Security &amp; Backups</h4>
+            <small class="text-muted">Information-security controls: two-step login, sign-in timeout, audit-log retention and database backups.</small>
+        </div>
+        <a asp-action="Backups" class="btn btn-outline-primary btn-sm"><i class="fas fa-database me-1"></i>Database Backups</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@TempData["SuccessMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+    }
+    @if (Model.EnforcementDisabledByConfig)
+    {
+        <div class="alert alert-warning small"><i class="fas fa-exclamation-triangle me-1"></i>Two-step login enforcement is switched off by the server configuration (Security:AdminMfaEnforcementDisabled). Remove that setting once access has been restored.</div>
+    }
+
+    <div class="row g-3">
+        <div class="col-xl-7">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Security policy</div>
+                <div class="card-body">
+                    <form asp-action="Index" method="post">
+                        @Html.AntiForgeryToken()
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        <div class="mb-3 form-check">
+                            <input asp-for="Policy.RequireMfaForAdmins" type="checkbox" class="form-check-input" id="reqMfa" />
+                            <label class="form-check-label fw-semibold" for="reqMfa">Require two-step login for Admin and SuperAdmin</label>
+                            <div class="form-text">Administrators must set up an authenticator app (Google/Microsoft Authenticator, Authy) and enter its 6-digit code at every sign-in. Other staff can still switch it on in their profile.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Policy.MfaExemptUserNames" class="form-label fw-semibold"></label>
+                            <input asp-for="Policy.MfaExemptUserNames" class="form-control" placeholder="Empty = every administrator uses two-step login" maxlength="500" />
+                            <span asp-validation-for="Policy.MfaExemptUserNames" class="text-danger small"></span>
+                            <div class="form-text">User names (comma-separated) of <strong>test accounts</strong> that sign in with their password only, even with the Admin role. Not possible for SuperAdmin accounts. Leave empty on a live system.</div>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label asp-for="Policy.SessionTimeoutMinutes" class="form-label fw-semibold"></label>
+                                <select asp-for="Policy.SessionTimeoutMinutes" class="form-select">
+                                    @foreach (var m in SecurityPolicy.TimeoutChoices)
+                                    {
+                                        <option value="@m">@m minutes</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="Policy.SessionTimeoutMinutes" class="text-danger small"></span>
+                                <div class="form-text">Users are signed out after this much inactivity (previously 14 days).</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label asp-for="Policy.AuditLogRetentionDays" class="form-label fw-semibold"></label>
+                                <input asp-for="Policy.AuditLogRetentionDays" type="number" min="0" max="3650" class="form-control" />
+                                <span asp-validation-for="Policy.AuditLogRetentionDays" class="text-danger small"></span>
+                                <div class="form-text">Older audit and user-action logs are deleted daily. 0 = keep forever; otherwise at least @SecurityPolicy.MinimumRetentionDays days.</div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Policy.BackupFolder" class="form-label fw-semibold"></label>
+                            <input asp-for="Policy.BackupFolder" class="form-control" placeholder="Empty = SQL Server's default backup folder" maxlength="400" />
+                            <span asp-validation-for="Policy.BackupFolder" class="text-danger small"></span>
+                            <div class="form-text">The SQL Server service account must be able to write to this folder.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Save</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Administrator accounts – two-step login</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0 align-middle">
+                        <thead class="table-light"><tr><th>User</th><th>Roles</th><th>Two-step login</th></tr></thead>
+                        <tbody>
+                            @foreach (var a in Model.Admins)
+                            {
+                                <tr>
+                                    <td><code>@a.UserName</code><div class="small text-muted">@a.FullName</div></td>
+                                    <td class="small">@a.Roles</td>
+                                    <td>
+                                        @if (a.MfaEnabled) { <span class="badge bg-success">Set up</span> }
+                                        else if (Model.Policy.IsMfaExempt(a.UserName) && !a.Roles.Contains("SuperAdmin")) { <span class="badge bg-info text-dark">Not required (test account)</span> }
+                                        else if (Model.Policy.RequireMfaForAdmins) { <span class="badge bg-warning text-dark">Required at next sign-in</span> }
+                                        else { <span class="badge bg-secondary">Off</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Audit logs</div>
+                <div class="card-body small">
+                    <p class="mb-1">Entries: <strong>@Model.AuditLogCount</strong>@(Model.OldestAuditLog.HasValue ? $" (oldest {Model.OldestAuditLog.Value:dd-MMM-yyyy})" : string.Empty)</p>
+                    <p class="mb-2">Last retention run: @(string.IsNullOrEmpty(Model.LastAuditPurge) ? "not run yet" : Model.LastAuditPurge)</p>
+                    <form asp-action="PurgeAuditLogs" method="post" onsubmit="return confirm('Delete audit logs older than the retention period now?');">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger btn-sm" @(Model.Policy.AuditLogRetentionDays <= 0 ? "disabled" : "")>Apply retention now</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

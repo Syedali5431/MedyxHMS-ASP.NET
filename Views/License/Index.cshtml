@@ -215,7 +215,7 @@
                             @foreach (var reminder in Model.ReminderHistory)
                             {
                                 <tr>
-                                    <td>@reminder.TriggeredAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@reminder.TriggeredAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>@reminder.ReminderType</td>
                                     <td>@reminder.Status</td>
                                     <td>@reminder.SentToCount</td>
@@ -253,7 +253,7 @@
                             @foreach (var audit in Model.AuditHistory)
                             {
                                 <tr>
-                                    <td>@audit.PerformedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>@audit.PerformedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                     <td>@audit.ActionType</td>
                                     <td>@(audit.RenewalTermYears?.ToString() ?? "-")</td>
                                     <td>@audit.Details</td>

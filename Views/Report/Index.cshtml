@@ -2,225 +2,175 @@
 @{
     ViewData["Title"] = "Reports Workspace";
     var selected = Model.SelectedReport;
+    var document = ViewData["ReportDocument"] as MedyxHMS.ViewModels.ReportDocument;
+    var reportError = ViewData["ReportError"] as string;
 }
 
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
-        <div>
-            <h1 class="h3 mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Reports Workspace</h1>
-            <p class="text-muted mb-0">Use the sidebar Reports list to select any active report and render its detail panel here.</p>
+<div class="container-fluid mt-3 mb-4">
+    @if (document != null)
+    {
+        @* A data report: full width, the report itself is the page. *@
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3 d-print-none">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a asp-action="Index"><i class="fas fa-chart-line me-1"></i>Reports</a></li>
+                    <li class="breadcrumb-item">@document.Category</li>
+                    <li class="breadcrumb-item active" aria-current="page">@document.Title</li>
+                </ol>
+            </nav>
+            <div class="d-flex gap-2 flex-wrap">
+                @if (selected != null && !string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
+                {
+                    <a class="btn btn-outline-secondary btn-sm" href="@selected.EmbeddedUrl" target="_blank" rel="noopener"><i class="fas fa-external-link-alt me-1"></i>Open in new tab</a>
+                }
+                @if (Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                {
+                    <a class="btn btn-outline-primary btn-sm" href="@Url.Action("Design", "Report", new { id = Model.MatchingTemplateId.Value })"><i class="fas fa-drafting-compass me-1"></i>Template builder</a>
+                }
+            </div>
         </div>
-        <div class="d-flex gap-2 flex-wrap">
-            <span class="badge text-bg-dark">49 total reports</span>
+        <partial name="_ReportDocument" model="document" />
+    }
+    else
+    {
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-4">
+            <div>
+                <h1 class="h3 mb-1"><i class="fas fa-chart-line me-2 text-primary"></i>Reports Workspace</h1>
+                <p class="text-muted mb-0">Choose a report below or from the Reports list in the sidebar. Every report can be printed and downloaded as PDF or Excel.</p>
+            </div>
+            <span class="badge text-bg-dark">@Model.Items.Count reports</span>
         </div>
-    </div>
 
-    <div class="row g-4">
-        <div class="col-xl-4">
-            <div class="card shadow-sm h-100">
-                <div class="card-header bg-white">
-                    <h2 class="h5 mb-0">@(selected == null ? "Selection" : $"{selected.Key} · {selected.Name}")</h2>
-                </div>
-                <div class="card-body">
-                    @if (selected == null)
-                    {
-                        <p class="text-muted">No report selected yet. Choose a report from the sidebar list under Reports.</p>
-                        <div class="list-group list-group-flush small">
-                            @foreach (var group in Model.Items.GroupBy(i => i.Category))
-                            {
-                                <div class="list-group-item px-0">
-                                    <div class="fw-semibold">@group.Key</div>
-                                    <div class="text-muted">@group.Count() report option(s)</div>
-                                </div>
-                            }
+        @if (!string.IsNullOrEmpty(reportError))
+        {
+            <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i>@reportError</div>
+        }
+
+        @if (selected == null)
+        {
+            @* Report directory grouped by category *@
+            <div class="row g-3">
+                @foreach (var group in Model.Items.GroupBy(i => i.Category))
+                {
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card shadow-sm h-100">
+                            <div class="card-header bg-white fw-semibold"><i class="fas fa-folder-open text-primary me-1"></i>@group.Key <span class="badge bg-light text-dark border ms-1">@group.Count()</span></div>
+                            <div class="list-group list-group-flush">
+                                @foreach (var item in group)
+                                {
+                                    <a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center gap-2" href="@Url.Action("Index", new { reportKey = item.Key })">
+                                        <span>@item.Name</span>
+                                        <span class="badge bg-light text-muted border">@item.Key</span>
+                                    </a>
+                                }
+                            </div>
                         </div>
-                    }
-                    else
-                    {
-                        <dl class="row small mb-3">
-                            <dt class="col-sm-5 text-muted">Category</dt>
-                            <dd class="col-sm-7">@selected.Category</dd>
-                            <dt class="col-sm-5 text-muted">Mode</dt>
-                            <dd class="col-sm-7">@(selected.IsLegacy ? "Legacy report definition" : "ASP.NET report page")</dd>
-                            <dt class="col-sm-5 text-muted">Summary</dt>
-                            <dd class="col-sm-7">@selected.Summary</dd>
-                            @if (!string.IsNullOrWhiteSpace(Model.MatchingTemplateName))
-                            {
-                                <dt class="col-sm-5 text-muted">Mapped Template</dt>
-                                <dd class="col-sm-7 text-success">@Model.MatchingTemplateName</dd>
-                            }
-                        </dl>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                <div class="col-xl-4">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-header bg-white">
+                            <h2 class="h5 mb-0">@selected.Key · @selected.Name</h2>
+                        </div>
+                        <div class="card-body">
+                            <dl class="row small mb-3">
+                                <dt class="col-sm-5 text-muted">Category</dt>
+                                <dd class="col-sm-7">@selected.Category</dd>
+                                <dt class="col-sm-5 text-muted">Summary</dt>
+                                <dd class="col-sm-7">@selected.Summary</dd>
+                                @if (!string.IsNullOrWhiteSpace(Model.MatchingTemplateName))
+                                {
+                                    <dt class="col-sm-5 text-muted">Mapped Template</dt>
+                                    <dd class="col-sm-7 text-success">@Model.MatchingTemplateName</dd>
+                                }
+                            </dl>
 
-                        <div class="d-grid gap-2">
+                            <div class="d-grid gap-2">
+                                @if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
+                                {
+                                    <a class="btn btn-primary" href="@selected.EmbeddedUrl" target="_blank" rel="noopener">Open Standalone</a>
+                                }
+
+                                @if (Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                                {
+                                    <a class="btn btn-outline-primary" href="@Url.Action("Design", "Report", new { id = Model.MatchingTemplateId.Value })">Open Template Builder</a>
+                                    <a class="btn btn-outline-secondary" href="@Url.Action("Preview", "Report", new { id = Model.MatchingTemplateId.Value })">Preview Template</a>
+                                }
+
+                                @if (selected.Key == "R49" && Model.PreviewableTemplates.Any())
+                                {
+                                    <div class="border rounded p-3 bg-light">
+                                        <div class="fw-semibold mb-2">Previewable Templates</div>
+                                        <div class="d-flex flex-column gap-2 small">
+                                            @foreach (var template in Model.PreviewableTemplates)
+                                            {
+                                                <a href="@Url.Action("Preview", "Report", new { id = template.Id })">@template.Name</a>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-8">
+                    <div class="card shadow-sm workspace-card">
+                        <div class="card-header bg-white">
+                            <h2 class="h5 mb-0">Report Detail</h2>
+                        </div>
+                        <div class="card-body p-0">
                             @if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
                             {
-                                <a class="btn btn-primary" href="@selected.EmbeddedUrl" target="_blank" rel="noopener">Open Standalone</a>
+                                <iframe src="@selected.EmbeddedUrl" title="@selected.Name" style="width:100%;min-height:900px;border:0;"></iframe>
                             }
-
-                            @if (selected.IsLegacy && Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                            else if (selected.Key == "R48")
                             {
-                                <a class="btn btn-outline-primary" href="@Url.Action("Design", "Report", new { id = Model.MatchingTemplateId.Value })">Open Template Builder</a>
-                                <a class="btn btn-outline-secondary" href="@Url.Action("Preview", "Report", new { id = Model.MatchingTemplateId.Value })">Preview Template</a>
+                                <div class="p-4">
+                                    <div class="alert alert-dark">
+                                        <div class="fw-semibold mb-1">Legacy PHP Report Import</div>
+                                        <div>Import migrated PHP report templates so they become editable and previewable in the ASP.NET report builder flow.</div>
+                                    </div>
+
+                                    @if (Model.CanManageTemplates)
+                                    {
+                                        <form asp-action="ImportLegacyPhpReports" method="post" class="mb-3">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-dark">Import Legacy PHP Reports</button>
+                                        </form>
+                                    }
+
+                                    <div class="text-muted small">Imported template count: @Model.ImportedLegacyTemplateCount</div>
+                                </div>
                             }
-
-                            @if (selected.IsLegacy && !Model.MatchingTemplateId.HasValue && Model.CanManageTemplates)
+                            else if (selected.Key == "R49")
                             {
-                                <form asp-action="ImportLegacyPhpReports" method="post">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-outline-dark w-100">Import Legacy PHP Reports</button>
-                                </form>
-                            }
-
-                            @if (selected.Key == "R49" && Model.PreviewableTemplates.Any())
-                            {
-                                <div class="border rounded p-3 bg-light">
-                                    <div class="fw-semibold mb-2">Previewable Templates</div>
-                                    <div class="d-flex flex-column gap-2 small">
-                                        @foreach (var template in Model.PreviewableTemplates)
-                                        {
-                                            <a href="@Url.Action("Preview", "Report", new { id = template.Id })">@template.Name</a>
-                                        }
+                                <div class="p-4">
+                                    <div class="alert alert-primary mb-0">
+                                        <div class="fw-semibold mb-1">Report Preview</div>
+                                        <div>Use the preview links in the left panel to open saved or imported report template previews.</div>
                                     </div>
                                 </div>
                             }
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-8">
-            <div class="card shadow-sm workspace-card">
-                <div class="card-header bg-white">
-                    <h2 class="h5 mb-0">Report Detail</h2>
-                </div>
-                <div class="card-body p-0">
-                    @if (selected == null)
-                    {
-                        <div class="p-4 text-muted">
-                            <p class="mb-2">The old dashboard-card report chooser has been replaced by the sidebar Reports list.</p>
-                            <p class="mb-0">Select any report under Reports in the left sidebar and its detail panel will render here on the right.</p>
-                        </div>
-                    }
-                    else if (selected.Key == "R1")
-                    {
-                        <!-- R1: Daily Transaction Report -->
-                        @await Html.PartialAsync("_DailyTransactionReportPartial", ViewData["R1Model"] as MedyxHMS.ViewModels.DailyTransactionReportViewModel ?? new MedyxHMS.ViewModels.DailyTransactionReportViewModel { ReportDate = DateTime.UtcNow.Date })
-                    }
-                    else if (selected.Key == "R2")
-                    {
-                        <!-- R2: All Transaction Report -->
-                        @await Html.PartialAsync("_AllTransactionReportPartial", ViewData["R2Model"] as MedyxHMS.ViewModels.AllTransactionReportViewModel ?? new MedyxHMS.ViewModels.AllTransactionReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
-                    }
-                    else if (selected.Key == "R3")
-                    {
-                        <!-- R3: Appointment Report -->
-                        @await Html.PartialAsync("_AppointmentReportPartial", ViewData["R3Model"] as MedyxHMS.ViewModels.AppointmentReportViewModel ?? new MedyxHMS.ViewModels.AppointmentReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
-                    }
-                    else if (selected.Key == "R4")
-                    {
-                        <!-- R4: OPD Report -->
-                        @await Html.PartialAsync("_OPDReportPartial", ViewData["R4Model"] as MedyxHMS.ViewModels.OPDReportViewModel ?? new MedyxHMS.ViewModels.OPDReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
-                    }
-                    else if (selected.Key == "R5")
-                    {
-                        <!-- R5: IPD Report -->
-                        @await Html.PartialAsync("_IPDReportPartial", ViewData["R5Model"] as MedyxHMS.ViewModels.IPDReportViewModel ?? new MedyxHMS.ViewModels.IPDReportViewModel { StartDate = DateTime.UtcNow.AddMonths(-1).Date, EndDate = DateTime.UtcNow.Date })
-                    }
-                    else if (!string.IsNullOrWhiteSpace(selected.EmbeddedUrl))
-                    {
-                        <iframe src="@selected.EmbeddedUrl" title="@selected.Name" style="width:100%;min-height:900px;border:0;"></iframe>
-                    }
-                    else if (selected.IsLegacy)
-                    {
-                        ViewData["DemoReportKey"] = selected.Key;
-                        ViewData["DemoReportName"] = selected.Name;
-                        @await Html.PartialAsync("_LegacyReportDemoPartial")
-                    }
-                    else if (selected.Key == "R48")
-                    {
-                        <div class="p-4">
-                            <div class="alert alert-dark">
-                                <div class="fw-semibold mb-1">Legacy PHP Report Import</div>
-                                <div>Import migrated PHP report templates so they become editable and previewable in the ASP.NET report builder flow.</div>
-                            </div>
-
-                            @if (Model.CanManageTemplates)
+                            else
                             {
-                                <form asp-action="ImportLegacyPhpReports" method="post" class="mb-3">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-dark">Import Legacy PHP Reports</button>
-                                </form>
+                                <div class="p-4 text-muted">This report could not be shown. Choose another report from the list.</div>
                             }
-
-                            <div class="text-muted small">Imported template count: @Model.ImportedLegacyTemplateCount</div>
                         </div>
-                    }
-                    else if (selected.Key == "R49")
-                    {
-                        <div class="p-4">
-                            <div class="alert alert-primary mb-0">
-                                <div class="fw-semibold mb-1">Report Preview</div>
-                                <div>Use the preview links in the left panel to open saved or imported report template previews.</div>
-                            </div>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="p-4 text-muted">This report is cataloged and selectable, but it does not have an embedded ASP.NET page assigned yet.</div>
-                    }
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
+        }
+    }
 </div>
 
 <style>
     .workspace-card {
-        min-height: 75vh;
+        min-height: 60vh;
     }
 </style>
-
-<script>
-    window.reportDownloadHelper = {
-        async downloadReport(baseUrl, options) {
-            const format = (options.format || 'pdf').toLowerCase();
-            const extension = format === 'excel' || format === 'xlsx' ? 'xlsx' : 'pdf';
-            const suggestedBaseName = window.prompt(`Enter ${format.toUpperCase()} file name`, options.defaultFileName || 'report');
-
-            if (suggestedBaseName === null) {
-                return;
-            }
-
-            const trimmedBaseName = suggestedBaseName.trim();
-            if (!trimmedBaseName) {
-                window.alert('Please enter a file name before saving the report.');
-                return;
-            }
-
-            const url = new URL(baseUrl, window.location.origin);
-            url.searchParams.set('format', format);
-            url.searchParams.set('fileName', trimmedBaseName);
-
-            Object.entries(options.query || {}).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== '') {
-                    url.searchParams.set(key, value);
-                }
-            });
-
-            try {
-                // Native browser download is the most reliable path for file saves.
-                const link = document.createElement('a');
-                link.href = url.toString();
-                link.download = `${trimmedBaseName}.${extension}`;
-                link.rel = 'noopener';
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            } catch (error) {
-                const message = error instanceof Error ? error.message : 'The report could not be downloaded.';
-                window.alert(message);
-            }
-        }
-    };
-</script>

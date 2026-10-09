@@ -1,5 +1,6 @@
 using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,8 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    // Staff only: the patient-portal role must not reach this staff area (it exposes other patients' data).
+    [Authorize(Roles = AppRoles.Staff)]
     public class BirthDeathController : Controller
     {
         private readonly ApplicationDbContext _context;

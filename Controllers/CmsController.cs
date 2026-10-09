@@ -98,7 +98,7 @@ namespace MedyxHMS.Controllers
                 p.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv("CMS Pages Export", headers, rows);
@@ -134,7 +134,7 @@ namespace MedyxHMS.Controllers
                 Status = vm.Status,
                 ShowInMenu = vm.ShowInMenu,
                 SortOrder = vm.SortOrder,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 CreatedBy = User.Identity.Name
             };
 
@@ -196,7 +196,7 @@ namespace MedyxHMS.Controllers
             page.Status = vm.Status;
             page.ShowInMenu = vm.ShowInMenu;
             page.SortOrder = vm.SortOrder;
-            page.UpdatedAt = DateTime.UtcNow;
+            page.UpdatedAt = DateTime.Now;
             page.UpdatedBy = User.Identity.Name;
 
             if (vm.FeaturedImageFile != null)
@@ -290,7 +290,7 @@ namespace MedyxHMS.Controllers
                 (n.PublishedAt ?? n.CreatedAt).ToString("yyyy-MM-dd HH:mm:ss")
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv("CMS Notices Export", headers, rows);
@@ -322,8 +322,8 @@ namespace MedyxHMS.Controllers
                 Content = vm.Content,
                 Type = vm.Type,
                 IsActive = vm.IsActive,
-                PublishedAt = vm.IsActive ? (vm.PublishedAt ?? DateTime.UtcNow) : vm.PublishedAt,
-                CreatedAt = DateTime.UtcNow,
+                PublishedAt = vm.IsActive ? (vm.PublishedAt ?? DateTime.Now) : vm.PublishedAt,
+                CreatedAt = DateTime.Now,
                 CreatedBy = User.Identity.Name
             };
             _db.CmsNotices.Add(notice);
@@ -372,8 +372,8 @@ namespace MedyxHMS.Controllers
             notice.Content = vm.Content;
             notice.Type = vm.Type;
             notice.IsActive = vm.IsActive;
-            notice.PublishedAt = vm.IsActive ? (vm.PublishedAt ?? notice.PublishedAt ?? DateTime.UtcNow) : vm.PublishedAt;
-            notice.UpdatedAt = DateTime.UtcNow;
+            notice.PublishedAt = vm.IsActive ? (vm.PublishedAt ?? notice.PublishedAt ?? DateTime.Now) : vm.PublishedAt;
+            notice.UpdatedAt = DateTime.Now;
 
             await _db.SaveChangesAsync();
             TempData["Success"] = "Notice updated.";
@@ -429,7 +429,7 @@ namespace MedyxHMS.Controllers
                 m.IsActive ? "Yes" : "No"
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv("CMS Menu Export", headers, rows);
@@ -808,7 +808,7 @@ namespace MedyxHMS.Controllers
             }).ToList();
 
             var title = "Notification Delivery Logs Export";
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
             if (format == "csv")
             {
@@ -947,7 +947,7 @@ namespace MedyxHMS.Controllers
                 r.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv("Public Appointment Requests Export", headers, rows);
@@ -1027,7 +1027,7 @@ namespace MedyxHMS.Controllers
                 r.AdminNotes ?? string.Empty
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             var title = $"Duplicate Requests Export (#{id})";
 
             if (format == "csv")
@@ -1066,7 +1066,7 @@ namespace MedyxHMS.Controllers
 
             request.Status = status;
             request.AdminNotes = normalizedNotes;
-            request.UpdatedAt = DateTime.UtcNow;
+            request.UpdatedAt = DateTime.Now;
             await _db.SaveChangesAsync();
 
             if (!string.Equals(previousStatus, "Confirmed", StringComparison.OrdinalIgnoreCase)
@@ -1203,7 +1203,7 @@ namespace MedyxHMS.Controllers
                     Category = category,
                     Description = description,
                     IsSystem = false,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     ModifiedBy = User?.Identity?.Name ?? string.Empty
                 });
             }
@@ -1213,7 +1213,7 @@ namespace MedyxHMS.Controllers
                 setting.Type = type;
                 setting.Category = category;
                 setting.Description = description;
-                setting.ModifiedDate = DateTime.UtcNow;
+                setting.ModifiedDate = DateTime.Now;
                 setting.ModifiedBy = User?.Identity?.Name ?? string.Empty;
             }
 

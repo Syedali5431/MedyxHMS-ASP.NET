@@ -1,0 +1,56 @@
+@model MedyxHMS.Models.Hospital
+
+<div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<div class="row g-3 mb-3">
+    <div class="col-md-8">
+        <label asp-for="Name" class="form-label fw-semibold">Hospital name <span class="text-danger">*</span></label>
+        <input asp-for="Name" class="form-control" maxlength="200" />
+        <span asp-validation-for="Name" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Code" class="form-label fw-semibold">Code <span class="text-danger">*</span></label>
+        <input asp-for="Code" class="form-control text-uppercase" maxlength="20" placeholder="e.g. NORTH" />
+        <span asp-validation-for="Code" class="text-danger small"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="Address" class="form-label fw-semibold">Address</label>
+    <textarea asp-for="Address" class="form-control" rows="2" maxlength="500"></textarea>
+    <span asp-validation-for="Address" class="text-danger small"></span>
+</div>
+<div class="row g-3 mb-3">
+    <div class="col-md-4">
+        <label asp-for="City" class="form-label fw-semibold">City</label>
+        <input asp-for="City" class="form-control" maxlength="100" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Phone" class="form-label fw-semibold">Phone</label>
+        <input asp-for="Phone" class="form-control" maxlength="50" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Email" class="form-label fw-semibold">Email</label>
+        <input asp-for="Email" type="email" class="form-control" maxlength="200" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+</div>
+<div class="mb-3">
+    <label asp-for="LicenseNumber" class="form-label fw-semibold">Registration / licence no.</label>
+    <input asp-for="LicenseNumber" class="form-control" maxlength="100" />
+</div>
+@if (ViewBag.CanChangeStatus != true)
+{
+    <div class="alert alert-light border small py-2">Only a SuperAdmin can switch a hospital on or off or change the default hospital.</div>
+}
+<fieldset class="mb-3 d-flex gap-4 flex-wrap" @(ViewBag.CanChangeStatus == true ? "" : "disabled")>
+    <div class="form-check">
+        <input asp-for="IsActive" type="checkbox" class="form-check-input" id="isActive" />
+        <label class="form-check-label fw-semibold" for="isActive">Active</label>
+        <div><span asp-validation-for="IsActive" class="text-danger small"></span></div>
+    </div>
+    <div class="form-check">
+        <input asp-for="IsDefault" type="checkbox" class="form-check-input" id="isDefault" />
+        <label class="form-check-label fw-semibold" for="isDefault">Default hospital</label>
+        <div class="small text-muted">Staff with no hospital assigned work here.</div>
+        <div><span asp-validation-for="IsDefault" class="text-danger small"></span></div>
+    </div>
+</fieldset>

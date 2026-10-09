@@ -126,7 +126,7 @@ namespace MedyxHMS.ViewModels
     public class DailyTransactionReportViewModel
     {
         public List<dynamic> TransactionData { get; set; } = new();
-        public DateTime ReportDate { get; set; } = DateTime.UtcNow.Date;
+        public DateTime ReportDate { get; set; } = DateTime.Now.Date;
         public decimal TotalTransactions { get; set; }
         public decimal TotalPayments { get; set; }
         public decimal TotalRefunds { get; set; }

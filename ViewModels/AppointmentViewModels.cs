@@ -71,31 +71,6 @@ namespace MedyxHMS.ViewModels
         public IEnumerable<AppointmentSummaryDto> DoctorTodayAppointments { get; set; } = new List<AppointmentSummaryDto>();
     }
 
-    public class AppointmentStatusUpdateViewModel
-    {
-        public AppointmentDto Appointment { get; set; } = new AppointmentDto();
-        public AppointmentStatusUpdateDto StatusUpdate { get; set; } = new AppointmentStatusUpdateDto();
-
-        public List<string> AvailableStatuses => new List<string>
-        {
-            "Scheduled", "Confirmed", "Completed", "Cancelled", "No-Show"
-        };
-
-        // Status transition rules
-        public List<string> GetValidStatuses(string currentStatus)
-        {
-            return currentStatus?.ToLower() switch
-            {
-                "scheduled" => new List<string> { "Confirmed", "Cancelled" },
-                "confirmed" => new List<string> { "Completed", "Cancelled", "No-Show" },
-                "completed" => new List<string> { "Completed" }, // Final state
-                "cancelled" => new List<string> { "Cancelled" }, // Final state
-                "no-show" => new List<string> { "No-Show" }, // Final state
-                _ => AvailableStatuses
-            };
-        }
-    }
-
     public class AppointmentCalendarViewModel
     {
         public DateTime CurrentDate { get; set; }
@@ -223,7 +198,8 @@ namespace MedyxHMS.ViewModels
             _ => "badge-secondary"
         };
         public string FormattedAppointmentDate => Appointment?.AppointmentDate.ToString("MMM dd, yyyy") ?? "";
-        public string FormattedAppointmentTime => Appointment?.AppointmentTime.ToString(@"hh\:mm tt") ?? "";
+        // TimeSpan has no AM/PM ("tt") format, so format it as a time of day.
+        public string FormattedAppointmentTime => Appointment == null ? "" : DateTime.Today.Add(Appointment.AppointmentTime).ToString("hh:mm tt");
     }
 
     public class AppointmentDeleteViewModel

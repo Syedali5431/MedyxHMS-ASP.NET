@@ -1,0 +1,61 @@
+@model List<MedyxHMS.Models.DischargeSummary>
+@{
+    ViewData["Title"] = "Discharge Reports";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+}
+
+<div class="medical-records-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title"><i class="fas fa-file-medical-alt text-primary"></i> Discharge Reports</h1>
+            <p class="text-muted">The summary of each hospital stay: diagnosis, treatment, medicines and follow-up. Bring it to your follow-up visit.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="@Url.Action("Index", "MedicalRecords", new { area = "PatientPortal" })" class="btn btn-outline-primary"><i class="fas fa-file-medical"></i> Medical Records</a>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="portalDischargeReports">
+            <thead class="table-light">
+                <tr>
+                    <th>Report</th>
+                    <th>Admitted</th>
+                    <th>Discharged</th>
+                    <th>Diagnosis</th>
+                    <th>Doctor</th>
+                    <th class="text-end"></th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Count == 0)
+                {
+                    <tr><td colspan="6" class="text-center text-muted py-4">You have no discharge reports. A report is created when you are discharged after a stay in hospital.</td></tr>
+                }
+                @foreach (var r in Model)
+                {
+                    <tr>
+                        <td class="fw-semibold">@r.ReportNumber</td>
+                        <td>@r.AdmissionDate.ToString("MMM dd, yyyy")</td>
+                        <td>@r.DischargeDate.ToString("MMM dd, yyyy")</td>
+                        <td>@(r.IsCompleted ? r.FinalDiagnosis : "")</td>
+                        <td>@r.AttendingDoctor</td>
+                        <td class="text-end text-nowrap">
+                            @if (r.IsCompleted)
+                            {
+                                <a href="@Url.Action("Download", "DischargeReports", new { area = "PatientPortal", id = r.Id, inline = true })" target="_blank" rel="noopener" class="btn btn-sm btn-outline-primary"><i class="fas fa-eye"></i> View</a>
+                                <a href="@Url.Action("Download", "DischargeReports", new { area = "PatientPortal", id = r.Id })" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download PDF</a>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">Being prepared by your care team</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

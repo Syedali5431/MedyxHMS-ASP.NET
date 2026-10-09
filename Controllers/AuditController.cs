@@ -16,32 +16,53 @@ namespace MedyxHMS.Controllers
         private readonly IAuditService _auditService;
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AuditController> _logger;
+        private readonly IExportService _exportService;
 
-        public AuditController(IAuditService auditService, ApplicationDbContext context, ILogger<AuditController> logger)
+        public AuditController(IAuditService auditService, ApplicationDbContext context, ILogger<AuditController> logger, IExportService exportService)
         {
+            _exportService = exportService;
             _auditService = auditService;
             _context = context;
             _logger = logger;
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string entityType, string userId)
+        public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string entityType, string userId, string? export = null)
         {
             // Meta-audit: log who viewed audit logs
             var currentUserId = User.FindFirstValue(System.Security.Claims.ClaimTypes.NameIdentifier);
             await _auditService.LogActivityAsync(currentUserId, "AUDIT_LOG_VIEWED", "AuditLog", "batch");
             if (!startDate.HasValue)
-                startDate = DateTime.UtcNow.AddDays(-7);
+                startDate = DateTime.Now.AddDays(-7);
 
             if (!endDate.HasValue)
-                endDate = DateTime.UtcNow;
+                endDate = DateTime.Now;
 
-            var logs = (await _auditService.GetAuditLogsAsync(startDate, endDate, userId)).AsQueryable();
+            // A date picked in the filter is midnight: include the whole end day.
+            var endOfRange = endDate.Value.TimeOfDay == TimeSpan.Zero ? endDate.Value.Date.AddDays(1).AddTicks(-1) : endDate.Value;
+            var logs = (await _auditService.GetAuditLogsAsync(startDate, endOfRange, userId)).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(entityType))
                 logs = logs.Where(x => x.EntityName == entityType);
 
             var items = logs.OrderByDescending(x => x.Timestamp).ToList();
+
+            // The "CSV" button on the page passes export=csv with the current filters.
+            if (string.Equals(export, "csv", StringComparison.OrdinalIgnoreCase))
+            {
+                var headers = new[] { "Timestamp", "User", "Action", "Entity", "Entity ID", "IP Address" };
+                var rows = items.Select(x => (IReadOnlyList<string>)new[]
+                {
+                    x.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"),
+                    x.User?.UserName ?? x.UserId ?? string.Empty,
+                    x.Action ?? string.Empty,
+                    x.EntityName ?? string.Empty,
+                    x.EntityId ?? string.Empty,
+                    x.IpAddress ?? string.Empty
+                }).ToList();
+                var bytes = _exportService.BuildCsv("Audit Logs", headers, rows);
+                return File(bytes, "text/csv", $"audit_logs_{DateTime.Now:yyyyMMdd_HHmmss}.csv");
+            }
 
             ViewData["EntityTypes"] = await _context.AuditLogs
                 .Where(a => !string.IsNullOrEmpty(a.EntityName))
@@ -96,7 +117,10 @@ namespace MedyxHMS.Controllers
                 query = query.Where(x => x.LoggedDate >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(x => x.LoggedDate <= endDate.Value);
+            {
+                var endOfRange = endDate.Value.TimeOfDay == TimeSpan.Zero ? endDate.Value.Date.AddDays(1).AddTicks(-1) : endDate.Value;
+                query = query.Where(x => x.LoggedDate <= endOfRange);
+            }
 
             var items = await query
                 .OrderByDescending(x => x.LoggedDate)

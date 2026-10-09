@@ -1,0 +1,30 @@
+@model PatientPortalAppointmentDetailsViewModel
+@{
+    ViewData["Title"] = "Reschedule Appointment";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+    var appt = Model.Appointment;
+    var minValue = DateTime.Today.AddDays(1).ToString("yyyy-MM-ddT00:00");
+}
+
+<div class="py-4" style="max-width:640px">
+    <h3 class="mb-4"><i class="fas fa-sync me-2"></i>Reschedule Appointment</h3>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <p class="mb-1"><strong>Doctor:</strong> @(string.IsNullOrWhiteSpace(appt.DoctorName) ? "—" : appt.DoctorName)</p>
+            <p class="mb-4"><strong>Current date &amp; time:</strong> @appt.FormattedAppointmentDate</p>
+
+            <form asp-action="Reschedule" asp-route-id="@appt.Id" method="post">
+                @Html.AntiForgeryToken()
+                <div class="mb-3">
+                    <label for="newDateTime" class="form-label">New date &amp; time</label>
+                    <input type="datetime-local" class="form-control" id="newDateTime" name="Appointment.AppointmentDate" min="@minValue" required />
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-warning"><i class="fas fa-sync me-1"></i>Reschedule</button>
+                    <a asp-action="Details" asp-route-id="@appt.Id" class="btn btn-outline-secondary">Back</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,121 @@
+@model MedyxHMS.Models.ControlledDocument
+@{
+    ViewData["Title"] = Model.DocumentNumber;
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    var userId = ViewBag.UserId as string ?? string.Empty;
+    var versions = Model.Versions.OrderByDescending(v => v.VersionNumber).ToList();
+    var effective = versions.FirstOrDefault(v => v.Status == "Approved");
+    var openDraft = versions.Any(v => v.Status == "Draft" || v.Status == "Pending approval");
+    string Size(long b) => b >= 1048576 ? $"{b / 1048576d:0.0} MB" : $"{Math.Max(1, b / 1024)} KB";
+}
+
+<div class="container-fluid mt-3" style="max-width:1200px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-file-signature text-primary me-2"></i>@Model.DocumentNumber – @Model.Title</h4>
+            <small class="text-muted">@Model.Category · @(string.IsNullOrWhiteSpace(Model.Department) ? "No department" : Model.Department) · review every @Model.ReviewIntervalMonths months@(Model.NextReviewDate.HasValue ? $" (next {Model.NextReviewDate:dd-MMM-yyyy})" : string.Empty)</small>
+        </div>
+        <div class="d-flex gap-2">
+            @if (effective != null)
+            {
+                <a asp-action="Download" asp-route-versionId="@effective.Id" class="btn btn-success btn-sm"><i class="fas fa-download me-1"></i>Effective version (v@(effective.VersionNumber))</a>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Documents</a>
+        </div>
+    </div>
+
+    <div class="mb-3"><span class="badge fs-6 @(Model.Status == "Effective" ? "bg-success" : Model.Status == "Obsolete" ? "bg-dark" : "bg-secondary")">@Model.Status</span></div>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold">Version history</div>
+        <div class="card-body table-responsive p-0">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Version</th><th>Change</th><th>File</th><th>Author</th><th>Status</th><th>Approval</th>@if (isManager) { <th style="min-width:260px"></th> }</tr></thead>
+                <tbody>
+                    @foreach (var v in versions)
+                    {
+                        <tr>
+                            <td>v@(v.VersionNumber)</td>
+                            <td class="small">@v.ChangeSummary</td>
+                            <td class="small">
+                                @if (isManager || v.Status == "Approved") { <a asp-action="Download" asp-route-versionId="@v.Id">@v.OriginalFileName</a> } else { @v.OriginalFileName }
+                                <span class="text-muted">(@Size(v.FileSize))</span>
+                            </td>
+                            <td class="small">@v.CreatedBy<div class="text-muted">@v.CreatedAt.ToString("dd-MMM-yyyy")</div></td>
+                            <td><span class="badge @(v.Status == "Approved" ? "bg-success" : v.Status == "Pending approval" ? "bg-warning text-dark" : v.Status == "Rejected" ? "bg-danger" : "bg-secondary")">@v.Status</span></td>
+                            <td class="small">
+                                @if (!string.IsNullOrEmpty(v.ApprovedBy)) { <span>@v.ApprovedBy, @v.ApprovedAt?.ToString("dd-MMM-yyyy")</span> }
+                                @if (!string.IsNullOrEmpty(v.ApprovalComments)) { <div class="text-muted">@v.ApprovalComments</div> }
+                            </td>
+                            @if (isManager)
+                            {
+                                <td>
+                                    @if ((v.Status == "Draft" || v.Status == "Rejected") && Model.Status != "Obsolete")
+                                    {
+                                        <form asp-action="Submit" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="versionId" value="@v.Id" />
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Submit for approval</button>
+                                        </form>
+                                    }
+                                    else if (v.Status == "Pending approval" && v.CreatedByUserId != userId)
+                                    {
+                                        <form asp-action="Decide" method="post" class="d-flex gap-1 flex-wrap">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="versionId" value="@v.Id" />
+                                            <input name="comments" class="form-control form-control-sm" placeholder="Comments (required to reject)" style="min-width:140px;flex:1" />
+                                            <button type="submit" name="approve" value="true" class="btn btn-sm btn-success">Approve</button>
+                                            <button type="submit" name="approve" value="false" class="btn btn-sm btn-outline-danger">Reject</button>
+                                        </form>
+                                    }
+                                    else if (v.Status == "Pending approval")
+                                    {
+                                        <span class="small text-muted">Waiting for another administrator to approve.</span>
+                                    }
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @if (isManager && Model.Status != "Obsolete")
+    {
+        <div class="row g-3">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light fw-semibold">Upload a new version</div>
+                    <div class="card-body">
+                        @if (openDraft)
+                        {
+                            <p class="small text-muted mb-0">A draft or a version waiting for approval already exists. Approve or reject it first.</p>
+                        }
+                        else
+                        {
+                            <form asp-action="UploadVersion" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+                                @Html.AntiForgeryToken()
+                                <div class="col-md-5"><input type="file" name="file" class="form-control form-control-sm" /></div>
+                                <div class="col-md-5"><input name="changeSummary" class="form-control form-control-sm" placeholder="What changed?" /></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100">Upload</button></div>
+                            </form>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-dark">
+                    <div class="card-body">
+                        <form asp-action="MarkObsolete" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Withdraw this document? It stays in the system for the record.');">
+                            @Html.AntiForgeryToken()
+                            <label class="form-label small fw-semibold">Withdraw document</label>
+                            <input name="reason" class="form-control form-control-sm mb-2" placeholder="Reason" />
+                            <button type="submit" class="btn btn-sm btn-outline-dark">Mark obsolete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

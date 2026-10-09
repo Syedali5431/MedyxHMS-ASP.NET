@@ -63,12 +63,16 @@ namespace MedyxHMS.ViewModels
         public DateTime SelectedDate { get; set; } = DateTime.Today;
         public string? SelectedTime { get; set; }
         public List<TimeSlotViewModel> AvailableTimeSlots { get; set; } = new();
+
+        /// <summary>Multi-hospital: the hospital (branch) to visit. Asked only when the group has several hospitals.</summary>
+        public int? HospitalId { get; set; }
     }
 
     public class TimeSlotViewModel
     {
         public TimeSpan Time { get; set; }
-        public string FormattedTime => Time.ToString(@"hh\:mm tt");
+        // TimeSpan has no AM/PM ("tt") format, so format it as a time of day.
+        public string FormattedTime => DateTime.Today.Add(Time).ToString("hh:mm tt");
         public bool IsAvailable { get; set; }
         public bool IsBooked { get; set; }
         public string Status => IsBooked ? "Booked" : IsAvailable ? "Available" : "Unavailable";

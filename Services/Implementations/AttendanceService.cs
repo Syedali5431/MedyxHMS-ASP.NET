@@ -53,7 +53,7 @@ namespace MedyxHMS.Services.Implementations
 
             if (existing == null)
             {
-                attendance.CreatedDate = DateTime.UtcNow;
+                attendance.CreatedDate = DateTime.Now;
                 _context.StaffAttendances.Add(attendance);
                 await _context.SaveChangesAsync();
                 return attendance;
@@ -63,7 +63,7 @@ namespace MedyxHMS.Services.Implementations
             existing.CheckInTime = attendance.CheckInTime;
             existing.CheckOutTime = attendance.CheckOutTime;
             existing.Notes = attendance.Notes;
-            existing.UpdatedDate = DateTime.UtcNow;
+            existing.UpdatedDate = DateTime.Now;
 
             _context.StaffAttendances.Update(existing);
             await _context.SaveChangesAsync();
@@ -88,7 +88,7 @@ namespace MedyxHMS.Services.Implementations
                     CheckInTime = checkInTime,
                     Status = "Present",
                     Notes = notes,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 };
 
                 _context.StaffAttendances.Add(attendance);
@@ -105,7 +105,7 @@ namespace MedyxHMS.Services.Implementations
                     ? notes
                     : $"{existing.Notes}; {notes}";
             }
-            existing.UpdatedDate = DateTime.UtcNow;
+            existing.UpdatedDate = DateTime.Now;
 
             _context.StaffAttendances.Update(existing);
             await _context.SaveChangesAsync();
@@ -136,7 +136,7 @@ namespace MedyxHMS.Services.Implementations
                     : $"{existing.Notes}; {notes}";
             }
 
-            existing.UpdatedDate = DateTime.UtcNow;
+            existing.UpdatedDate = DateTime.Now;
             _context.StaffAttendances.Update(existing);
             await _context.SaveChangesAsync();
 

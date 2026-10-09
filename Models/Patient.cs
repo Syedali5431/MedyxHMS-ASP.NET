@@ -32,7 +32,7 @@ namespace MedyxHMS.Models
         public string ProfileImagePath { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
         public bool HasInsurance { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? LastVisitDate { get; set; }
 
         // Navigation properties
@@ -45,9 +45,12 @@ namespace MedyxHMS.Models
         public ApplicationUser? User { get; set; }
     }
 
-    public class Appointment
+    public class Appointment : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
 
         // AppointmentId is a legacy pass-through around Id, backed by its own real (and
         // redundant) database column. Because it has a public getter/setter, EF Core mapped it
@@ -82,7 +85,7 @@ namespace MedyxHMS.Models
         public string Priority { get; set; } = string.Empty;
         public string Symptoms { get; set; } = string.Empty;
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = string.Empty;
         public DateTime? UpdatedDate { get; set; }
         public string UpdatedBy { get; set; } = string.Empty;
@@ -107,7 +110,7 @@ namespace MedyxHMS.Models
         public int DepartmentId { get; set; }
         public string Name => $"{FirstName} {LastName}".Trim();
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public Department Department { get; set; } = null!;
@@ -121,7 +124,7 @@ namespace MedyxHMS.Models
         public string Description { get; set; } = string.Empty;
         public string HeadOfDepartment { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();

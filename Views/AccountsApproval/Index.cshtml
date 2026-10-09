@@ -45,7 +45,7 @@
                         <th>Employee ID</th>
                         <th>Role</th>
                         <th>Status</th>
-                        <th>Requested (UTC)</th>
+                        <th>Requested</th>
                         <th>Approved By</th>
                         <th>Notes</th>
                         <th>Actions</th>
@@ -68,7 +68,7 @@
                             <td>
                                 <span class="badge @(row.Status == "Approved" ? "bg-success" : row.Status == "Rejected" ? "bg-danger" : "bg-warning text-dark")">@row.Status</span>
                             </td>
-                            <td>@row.RequestedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                            <td>@row.RequestedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                             <td>@(string.IsNullOrWhiteSpace(row.ApprovedBy) ? "-" : row.ApprovedBy)</td>
                             <td>@(string.IsNullOrWhiteSpace(row.Notes) ? "-" : row.Notes)</td>
                             <td>

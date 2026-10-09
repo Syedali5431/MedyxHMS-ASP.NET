@@ -1,0 +1,115 @@
+@model OTSchedule
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
+@{
+    ViewData["Title"] = "OT Booking";
+    var canOpenBills = await Nav.CanAccessAsync("/Billing/Details/1");
+    IEnumerable<dynamic> history = ViewBag.History;
+    var badge = Model.Status switch { "Scheduled" => "bg-primary", "In Progress" => "bg-warning text-dark", "Completed" => "bg-success", "Cancelled" => "bg-secondary", _ => "bg-light text-dark border" };
+}
+
+<div class="container mt-3" style="max-width:1100px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-procedures text-primary me-2"></i>@Model.ProcedureName</h4>
+            <small class="text-muted">@Model.Patient?.FirstName @Model.Patient?.LastName (@Model.Patient?.PatientId) · @(Model.Theatre?.DisplayName ?? Model.OperationTheatreNumber) · @Model.ScheduledDate.ToString("dd-MMM-yyyy HH:mm")–@Model.EndsAt.ToString("HH:mm")</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            @if (Model.IsEmergency) { <span class="badge bg-danger fs-6">Emergency</span> }
+            <span class="badge fs-6 @badge">@Model.Status</span>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>OT schedule</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-7">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Booking</div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-sm-4">Patient</dt><dd class="col-sm-8">@Model.Patient?.FirstName @Model.Patient?.LastName (@Model.Patient?.PatientId)</dd>
+                        <dt class="col-sm-4">Procedure</dt><dd class="col-sm-8">@Model.ProcedureName</dd>
+                        <dt class="col-sm-4">Surgeon</dt><dd class="col-sm-8">@Model.SurgeonName@(Model.SurgeonDoctorId.HasValue ? "" : " (visiting)")</dd>
+                        <dt class="col-sm-4">Theatre</dt><dd class="col-sm-8">@if (Model.Theatre != null) { <a asp-action="TheatreDetails" asp-route-id="@Model.Theatre.Id">@Model.Theatre.DisplayName</a> } else { @Model.OperationTheatreNumber }</dd>
+                        <dt class="col-sm-4">Planned</dt><dd class="col-sm-8">@Model.ScheduledDate.ToString("dddd dd-MMM-yyyy HH:mm") – @Model.EndsAt.ToString("HH:mm") (@Model.EstimatedDurationMinutes min)</dd>
+                        @if (Model.StartedAt.HasValue) { <dt class="col-sm-4">Started</dt><dd class="col-sm-8">@Model.StartedAt.Value.ToString("dd-MMM-yyyy HH:mm")</dd> }
+                        @if (Model.CompletedAt.HasValue) { <dt class="col-sm-4">Completed</dt><dd class="col-sm-8">@Model.CompletedAt.Value.ToString("dd-MMM-yyyy HH:mm")</dd> }
+                        @if (Model.Status == "Cancelled") { <dt class="col-sm-4">Cancelled</dt><dd class="col-sm-8">@Model.CancelReason</dd> }
+                        <dt class="col-sm-4">Bill</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.Bill != null)
+                            {
+                                if (canOpenBills) { <a asp-controller="Billing" asp-action="Details" asp-route-id="@Model.Bill.Id">@Model.Bill.BillNumber</a> } else { @Model.Bill.BillNumber }
+                                <span class="text-muted">· @Model.Bill.TotalAmount.ToString("N2") · @Model.Bill.Status</span>
+                            }
+                            else { <span class="text-muted">–</span> }
+                        </dd>
+                        @if (!string.IsNullOrWhiteSpace(Model.Notes)) { <dt class="col-sm-4">Notes</dt><dd class="col-sm-8">@Model.Notes</dd> }
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">History</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var h in history)
+                            {
+                                <tr><td class="small text-nowrap">@(((DateTime)h.Timestamp).ToString("dd-MMM-yyyy HH:mm"))</td><td class="small">@h.Action</td><td class="small">@h.NewValues</td><td class="small text-muted">@h.User</td></tr>
+                            }
+                            @if (!history.Any()) { <tr><td class="small text-muted text-center py-2">No history recorded.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Actions</div>
+                <div class="card-body d-grid gap-2">
+                    @if (Model.Status == "Scheduled")
+                    {
+                        if (Model.ScheduledDate.Date <= DateTime.Today)
+                        {
+                            <form method="post" asp-action="UpdateStatus" class="d-grid">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="In Progress" />
+                                <button class="btn btn-warning" type="submit"><i class="fas fa-play me-1"></i>Start operation</button>
+                            </form>
+                        }
+                        if (Model.ScheduledDate <= DateTime.Now)
+                        {
+                            <form method="post" asp-action="UpdateStatus" class="d-grid">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Completed" />
+                                <button class="btn btn-outline-success" type="submit"><i class="fas fa-check me-1"></i>Record as completed</button>
+                            </form>
+                        }
+                        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary"><i class="fas fa-calendar-alt me-1"></i>Reschedule / change theatre</a>
+                        <form method="post" asp-action="UpdateStatus" class="d-flex gap-2">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Cancelled" />
+                            <input name="reason" class="form-control form-control-sm" placeholder="Reason for cancelling" aria-label="Reason for cancelling" />
+                            <button class="btn btn-sm btn-outline-danger text-nowrap" type="submit">Cancel booking</button>
+                        </form>
+                        <p class="small text-muted mb-0">Cancelling withdraws the OT charge if the bill has not been paid.</p>
+                    }
+                    else if (Model.Status == "In Progress")
+                    {
+                        <form method="post" asp-action="UpdateStatus" class="d-grid">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@Model.Id" /><input type="hidden" name="status" value="Completed" />
+                            <button class="btn btn-success" type="submit"><i class="fas fa-check me-1"></i>Complete operation</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="small text-muted mb-0">This booking is @Model.Status.ToLowerInvariant(); no further changes.</p>
+                    }
+                    <a asp-action="Availability" asp-route-date="@Model.ScheduledDate.ToString("yyyy-MM-dd")" class="btn btn-outline-secondary btn-sm">Theatre availability that day</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

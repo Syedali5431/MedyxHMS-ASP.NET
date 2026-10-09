@@ -1,0 +1,10 @@
+@model MedyxHMS.Components.UserAvatarModel
+@if (Model.ImageUrl != null)
+{
+    <img src="@Model.ImageUrl" alt="@Model.Name" title="@Model.Name" class="rounded-circle flex-shrink-0" style="width:@(Model.Size)px;height:@(Model.Size)px;object-fit:cover;" />
+}
+else
+{
+    <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center flex-shrink-0 fw-semibold" title="@Model.Name"
+         style="width:@(Model.Size)px;height:@(Model.Size)px;font-size:@(Math.Max(11, Model.Size * 2 / 5))px;">@Model.Initials</div>
+}

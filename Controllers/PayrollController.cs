@@ -83,7 +83,7 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> MarkPaid(int id, DateTime? paymentDate = null, string notes = null)
         {
-            var paid = await _payrollService.MarkPayrollAsPaidAsync(id, paymentDate ?? DateTime.UtcNow, notes);
+            var paid = await _payrollService.MarkPayrollAsPaidAsync(id, paymentDate ?? DateTime.Now, notes);
             if (!paid)
             {
                 TempData["ErrorMessage"] = "Payroll record not found.";

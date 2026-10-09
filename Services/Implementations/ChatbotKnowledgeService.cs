@@ -126,7 +126,7 @@ namespace MedyxHMS.Services.Implementations
                     if (patient != null)
                     {
                         var upcomingAppointments = await _context.Appointments.AsNoTracking()
-                            .Where(a => a.PatientId == patient.Id && a.AppointmentDate.Date >= DateTime.UtcNow.Date)
+                            .Where(a => a.PatientId == patient.Id && a.AppointmentDate.Date >= DateTime.Now.Date)
                             .OrderBy(a => a.AppointmentDate)
                             .Take(3)
                             .Select(a => new { a.AppointmentDate, a.Status })
@@ -248,6 +248,9 @@ namespace MedyxHMS.Services.Implementations
         private static string Truncate(string input, int max)
         {
             if (string.IsNullOrWhiteSpace(input)) return string.Empty;
+            // CMS pages are stored as HTML: show (and send to the model) plain text, not tags.
+            input = System.Net.WebUtility.HtmlDecode(System.Text.RegularExpressions.Regex.Replace(input, "<[^>]+>", " "));
+            input = System.Text.RegularExpressions.Regex.Replace(input, @"\s+", " ").Trim();
             if (input.Length <= max) return input;
             return input[..max] + "...";
         }

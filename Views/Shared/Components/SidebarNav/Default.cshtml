@@ -1,4 +1,5 @@
 @model MedyxHMS.Components.SidebarNavViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @* Staff portal sidebar navigation – v2.0 premium *@
 
@@ -17,7 +18,7 @@
     <li class="staff-sidebar-section">Clinical</li>
 
     @* M3 · Appointments *@
-    @if (Model.ModuleOn("Appointment"))
+    @if ((Model.ModuleOn("Appointment")) && await Nav.CanAccessAnyAsync("/Appointment", "/Appointment/Calendar", "/Appointment/Create"))
     {
         <li class="nav-item">
             <a href="#sb-appointment"
@@ -31,16 +32,16 @@
             <div id="sb-appointment"
                  class="collapse @(Model.IsActive("/Appointment") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Appointment" class="staff-sidebar-sublink">All Appointments</a></li>
-                    <li><a href="/Appointment/Calendar" class="staff-sidebar-sublink">Calendar</a></li>
-                    <li><a href="/Appointment/Create" class="staff-sidebar-sublink">Schedule New</a></li>
+                    @if (await Nav.CanAccessAsync("/Appointment")) { <li><a href="/Appointment" class="staff-sidebar-sublink">All Appointments</a></li> }
+                    @if (await Nav.CanAccessAsync("/Appointment/Calendar")) { <li><a href="/Appointment/Calendar" class="staff-sidebar-sublink">Calendar</a></li> }
+                    @if (await Nav.CanAccessAsync("/Appointment/Create")) { <li><a href="/Appointment/Create" class="staff-sidebar-sublink">Schedule New</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M4 · OPD *@
-    @if (Model.ModuleOn("OPD"))
+    @if ((Model.ModuleOn("OPD")) && await Nav.CanAccessAnyAsync("/OPD", "/OPD/Create"))
     {
         <li class="nav-item">
             <a href="#sb-opd"
@@ -53,15 +54,15 @@
             </a>
             <div id="sb-opd" class="collapse @(Model.IsActive("/OPD") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/OPD" class="staff-sidebar-sublink">OPD Visits</a></li>
-                    <li><a href="/OPD/Create" class="staff-sidebar-sublink">New OPD Visit</a></li>
+                    @if (await Nav.CanAccessAsync("/OPD")) { <li><a href="/OPD" class="staff-sidebar-sublink">OPD Visits</a></li> }
+                    @if (await Nav.CanAccessAsync("/OPD/Create")) { <li><a href="/OPD/Create" class="staff-sidebar-sublink">New OPD Visit</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M5 · IPD *@
-    @if (Model.ModuleOn("IPD"))
+    @if ((Model.ModuleOn("IPD")) && await Nav.CanAccessAnyAsync("/IPD", "/IPD/Create"))
     {
         <li class="nav-item">
             <a href="#sb-ipd"
@@ -74,15 +75,16 @@
             </a>
             <div id="sb-ipd" class="collapse @(Model.IsActive("/IPD") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/IPD" class="staff-sidebar-sublink">Admissions</a></li>
-                    <li><a href="/IPD/Create" class="staff-sidebar-sublink">New Admission</a></li>
+                    @if (await Nav.CanAccessAsync("/IPD")) { <li><a href="/IPD" class="staff-sidebar-sublink">Admissions</a></li> }
+                    @if (await Nav.CanAccessAsync("/IPD/Create")) { <li><a href="/IPD/Create" class="staff-sidebar-sublink">New Admission</a></li> }
+                    @if (await Nav.CanAccessAsync("/Discharge")) { <li><a href="/Discharge" class="staff-sidebar-sublink">Discharge Reports</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M6 · Pharmacy *@
-    @if (Model.ModuleOn("Prescription"))
+    @if ((Model.ModuleOn("Prescription")) && await Nav.CanAccessAnyAsync("/Prescription", "/Prescription/Medicines"))
     {
         <li class="nav-item">
             <a href="#sb-pharmacy"
@@ -96,15 +98,15 @@
             <div id="sb-pharmacy"
                  class="collapse @(Model.IsActive("/Prescription") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Prescription" class="staff-sidebar-sublink">Prescriptions</a></li>
-                    <li><a href="/Prescription/Medicines" class="staff-sidebar-sublink">Medicines</a></li>
+                    @if (await Nav.CanAccessAsync("/Prescription")) { <li><a href="/Prescription" class="staff-sidebar-sublink">Prescriptions</a></li> }
+                    @if (await Nav.CanAccessAsync("/Prescription/Medicines")) { <li><a href="/Prescription/Medicines" class="staff-sidebar-sublink">Medicines</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M7 · Pathology *@
-    @if (Model.ModuleOn("Lab"))
+    @if ((Model.ModuleOn("Lab")) && await Nav.CanAccessAnyAsync("/Lab", "/Lab/Results", "/Lab/Samples"))
     {
         <li class="nav-item">
             <a href="#sb-lab"
@@ -117,15 +119,16 @@
             </a>
             <div id="sb-lab" class="collapse @(Model.IsActive("/Lab") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Lab" class="staff-sidebar-sublink">Lab Tests</a></li>
-                    <li><a href="/Lab/Results" class="staff-sidebar-sublink">Results</a></li>
+                    @if (await Nav.CanAccessAsync("/Lab")) { <li><a href="/Lab" class="staff-sidebar-sublink">Lab Tests</a></li> }
+                    @if (await Nav.CanAccessAsync("/Lab/Results")) { <li><a href="/Lab/Results" class="staff-sidebar-sublink">Results</a></li> }
+                    @if (await Nav.CanAccessAsync("/Lab/Samples")) { <li><a href="/Lab/Samples" class="staff-sidebar-sublink">Specimen Tracking</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M8 · Radiology *@
-    @if (Model.ModuleOn("Radiology"))
+    @if ((Model.ModuleOn("Radiology")) && await Nav.CanAccessAnyAsync("/Radiology", "/Radiology/Results"))
     {
         <li class="nav-item">
             <a href="#sb-radiology"
@@ -139,15 +142,15 @@
             <div id="sb-radiology"
                  class="collapse @(Model.IsActive("/Radiology") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Radiology" class="staff-sidebar-sublink">Tests</a></li>
-                    <li><a href="/Radiology/Results" class="staff-sidebar-sublink">Results</a></li>
+                    @if (await Nav.CanAccessAsync("/Radiology")) { <li><a href="/Radiology" class="staff-sidebar-sublink">Tests</a></li> }
+                    @if (await Nav.CanAccessAsync("/Radiology/Results")) { <li><a href="/Radiology/Results" class="staff-sidebar-sublink">Results</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M9 · Blood Bank *@
-    @if (Model.ModuleOn("BloodBank"))
+    @if ((Model.ModuleOn("BloodBank")) && await Nav.CanAccessAnyAsync("/BloodBank", "/BloodBank/Issue"))
     {
         <li class="nav-item">
             <a href="#sb-bloodbank"
@@ -161,15 +164,15 @@
             <div id="sb-bloodbank"
                  class="collapse @(Model.IsActive("/BloodBank") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/BloodBank" class="staff-sidebar-sublink">Inventory</a></li>
-                    <li><a href="/BloodBank/Issue" class="staff-sidebar-sublink">Issue Blood</a></li>
+                    @if (await Nav.CanAccessAsync("/BloodBank")) { <li><a href="/BloodBank" class="staff-sidebar-sublink">Inventory</a></li> }
+                    @if (await Nav.CanAccessAsync("/BloodBank/Issue")) { <li><a href="/BloodBank/Issue" class="staff-sidebar-sublink">Issue Blood</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M10 · Ambulance *@
-    @if (Model.ModuleOn("Ambulance"))
+    @if ((Model.ModuleOn("Ambulance")) && await Nav.CanAccessAnyAsync("/Ambulance", "/Ambulance/Dispatches", "/Ambulance/Dispatch"))
     {
         <li class="nav-item">
             <a href="#sb-ambulance"
@@ -182,16 +185,16 @@
             </a>
             <div id="sb-ambulance" class="collapse @(Model.IsActive("/Ambulance") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Ambulance" class="staff-sidebar-sublink">Vehicles</a></li>
-                    <li><a href="/Ambulance/Dispatches" class="staff-sidebar-sublink">Dispatch Log</a></li>
-                    <li><a href="/Ambulance/Dispatch" class="staff-sidebar-sublink">New Dispatch</a></li>
+                    @if (await Nav.CanAccessAsync("/Ambulance")) { <li><a href="/Ambulance" class="staff-sidebar-sublink">Vehicles</a></li> }
+                    @if (await Nav.CanAccessAsync("/Ambulance/Dispatches")) { <li><a href="/Ambulance/Dispatches" class="staff-sidebar-sublink">Dispatch Log</a></li> }
+                    @if (await Nav.CanAccessAsync("/Ambulance/Dispatch")) { <li><a href="/Ambulance/Dispatch" class="staff-sidebar-sublink">New Dispatch</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M11 · Operation Theatre *@
-    @if (Model.ModuleOn("OperationTheatre"))
+    @if ((Model.ModuleOn("OperationTheatre")) && await Nav.CanAccessAnyAsync("/OperationTheatre", "/OperationTheatre/Create", "/OperationTheatre/Availability"))
     {
         <li class="nav-item">
             <a href="#sb-ot"
@@ -205,8 +208,10 @@
             <div id="sb-ot"
                  class="collapse @(Model.IsActive("/OperationTheatre") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/OperationTheatre" class="staff-sidebar-sublink">OT Schedule</a></li>
-                    <li><a href="/OperationTheatre/Create" class="staff-sidebar-sublink">Add OT Case</a></li>
+                    @if (await Nav.CanAccessAsync("/OperationTheatre")) { <li><a href="/OperationTheatre" class="staff-sidebar-sublink">OT Schedule</a></li> }
+                    @if (await Nav.CanAccessAsync("/OperationTheatre/Create")) { <li><a href="/OperationTheatre/Create" class="staff-sidebar-sublink">Add OT Case</a></li> }
+                    @if (await Nav.CanAccessAsync("/OperationTheatre/Availability")) { <li><a href="/OperationTheatre/Availability" class="staff-sidebar-sublink">Theatre Availability</a></li> }
+                    @if (await Nav.CanAccessAsync("/OperationTheatre/Theatres")) { <li><a href="/OperationTheatre/Theatres" class="staff-sidebar-sublink">Theatres</a></li> }
                 </ul>
             </div>
         </li>
@@ -216,7 +221,7 @@
     <li class="staff-sidebar-section">Administrative</li>
 
     @* M2 · Billing *@
-    @if (Model.ModuleOn("Billing"))
+    @if ((Model.ModuleOn("Billing")) && await Nav.CanAccessAnyAsync("/Billing", "/Billing/Create"))
     {
         <li class="nav-item">
             <a href="#sb-billing"
@@ -230,15 +235,15 @@
             <div id="sb-billing"
                  class="collapse @(Model.IsActive("/Billing") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Billing" class="staff-sidebar-sublink">Bills</a></li>
-                    <li><a href="/Billing/Create" class="staff-sidebar-sublink">New Bill</a></li>
+                    @if (await Nav.CanAccessAsync("/Billing")) { <li><a href="/Billing" class="staff-sidebar-sublink">Bills</a></li> }
+                    @if (await Nav.CanAccessAsync("/Billing/Create")) { <li><a href="/Billing/Create" class="staff-sidebar-sublink">New Bill</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M11-FO · Front Office *@
-    @if (Model.ModuleOn("FrontOffice"))
+    @if ((Model.ModuleOn("FrontOffice")) && await Nav.CanAccessAnyAsync("/FrontOffice", "/FrontOffice/Visitors", "/FrontOffice/Complaints"))
     {
         <li class="nav-item">
             <a href="#sb-frontoffice"
@@ -252,16 +257,16 @@
             <div id="sb-frontoffice"
                  class="collapse @(Model.IsActive("/FrontOffice") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/FrontOffice" class="staff-sidebar-sublink">Overview</a></li>
-                    <li><a href="/FrontOffice/Visitors" class="staff-sidebar-sublink">Visitors</a></li>
-                    <li><a href="/FrontOffice/Complaints" class="staff-sidebar-sublink">Complaints</a></li>
+                    @if (await Nav.CanAccessAsync("/FrontOffice")) { <li><a href="/FrontOffice" class="staff-sidebar-sublink">Overview</a></li> }
+                    @if (await Nav.CanAccessAsync("/FrontOffice/Visitors")) { <li><a href="/FrontOffice/Visitors" class="staff-sidebar-sublink">Visitors</a></li> }
+                    @if (await Nav.CanAccessAsync("/FrontOffice/Complaints")) { <li><a href="/FrontOffice/Complaints" class="staff-sidebar-sublink">Complaints</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M14 · Referral *@
-    @if (Model.ModuleOn("Referral"))
+    @if ((Model.ModuleOn("Referral")) && await Nav.CanAccessAnyAsync("/Referral", "/Referral/Create"))
     {
         <li class="nav-item">
             <a href="#sb-referral"
@@ -275,8 +280,8 @@
             <div id="sb-referral"
                  class="collapse @(Model.IsActive("/Referral") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Referral" class="staff-sidebar-sublink">Referrals</a></li>
-                    <li><a href="/Referral/Create" class="staff-sidebar-sublink">Create Referral</a></li>
+                    @if (await Nav.CanAccessAsync("/Referral")) { <li><a href="/Referral" class="staff-sidebar-sublink">Referrals</a></li> }
+                    @if (await Nav.CanAccessAsync("/Referral/Create")) { <li><a href="/Referral/Create" class="staff-sidebar-sublink">Create Referral</a></li> }
                 </ul>
             </div>
         </li>
@@ -286,7 +291,7 @@
     <li class="staff-sidebar-section">Patients</li>
 
     @* Patient Management *@
-    @if (Model.ModuleOn("Patient"))
+    @if ((Model.ModuleOn("Patient")) && await Nav.CanAccessAnyAsync("/Patient", "/Patient/Create"))
     {
         <li class="nav-item">
             <a href="#sb-patient"
@@ -300,15 +305,15 @@
             <div id="sb-patient"
                  class="collapse @(Model.IsActive("/Patient") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Patient" class="staff-sidebar-sublink">Patient List</a></li>
-                    <li><a href="/Patient/Create" class="staff-sidebar-sublink">Add Patient</a></li>
+                    @if (await Nav.CanAccessAsync("/Patient")) { <li><a href="/Patient" class="staff-sidebar-sublink">Patient List</a></li> }
+                    @if (await Nav.CanAccessAsync("/Patient/Create")) { <li><a href="/Patient/Create" class="staff-sidebar-sublink">Add Patient</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M12 · Birth / Death Records *@
-    @if (Model.ModuleOn("BirthDeath"))
+    @if ((Model.ModuleOn("BirthDeath")) && await Nav.CanAccessAnyAsync("/BirthDeath", "/BirthDeath/Deaths", "/BirthDeath/CreateBirth", "/BirthDeath/CreateDeath"))
     {
         <li class="nav-item">
             <a href="#sb-birthdeath"
@@ -321,17 +326,17 @@
             </a>
             <div id="sb-birthdeath" class="collapse @(Model.IsActive("/BirthDeath") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/BirthDeath" class="staff-sidebar-sublink">Birth Records</a></li>
-                    <li><a href="/BirthDeath/Deaths" class="staff-sidebar-sublink">Death Records</a></li>
-                    <li><a href="/BirthDeath/CreateBirth" class="staff-sidebar-sublink">New Birth</a></li>
-                    <li><a href="/BirthDeath/CreateDeath" class="staff-sidebar-sublink">New Death</a></li>
+                    @if (await Nav.CanAccessAsync("/BirthDeath")) { <li><a href="/BirthDeath" class="staff-sidebar-sublink">Birth Records</a></li> }
+                    @if (await Nav.CanAccessAsync("/BirthDeath/Deaths")) { <li><a href="/BirthDeath/Deaths" class="staff-sidebar-sublink">Death Records</a></li> }
+                    @if (await Nav.CanAccessAsync("/BirthDeath/CreateBirth")) { <li><a href="/BirthDeath/CreateBirth" class="staff-sidebar-sublink">New Birth</a></li> }
+                    @if (await Nav.CanAccessAsync("/BirthDeath/CreateDeath")) { <li><a href="/BirthDeath/CreateDeath" class="staff-sidebar-sublink">New Death</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* ─────────── HUMAN RESOURCE ─────────── *@
-    @if (Model.ModuleOn("Attendance") || Model.ModuleOn("Leave") || Model.ModuleOn("Payroll") || Model.IsAdminOrSuper)
+    @if ((Model.ModuleOn("Attendance") || Model.ModuleOn("Leave") || Model.ModuleOn("Payroll") || Model.IsAdminOrSuper) && await Nav.CanAccessAnyAsync("/Staff", "/Attendance", "/Leave", "/Leave/Types", "/Leave/Balances", "/Payroll", "/Payroll/Generate"))
     {
         <li class="staff-sidebar-section">HR</li>
 
@@ -350,27 +355,27 @@
                 <ul class="nav flex-column ms-3">
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/Staff" class="staff-sidebar-sublink">Staff</a></li>
+                        @if (await Nav.CanAccessAsync("/Staff")) { <li><a href="/Staff" class="staff-sidebar-sublink">Staff</a></li> }
                     }
                     @if (Model.ModuleOn("Attendance"))
                     {
-                        <li><a href="/Attendance" class="staff-sidebar-sublink">Attendance</a></li>
+                        @if (await Nav.CanAccessAsync("/Attendance")) { <li><a href="/Attendance" class="staff-sidebar-sublink">Attendance</a></li> }
                     }
                     @if (Model.ModuleOn("Leave"))
                     {
-                        <li><a href="/Leave" class="staff-sidebar-sublink">Leave</a></li>
+                        @if (await Nav.CanAccessAsync("/Leave")) { <li><a href="/Leave" class="staff-sidebar-sublink">Leave</a></li> }
                         @if (Model.IsAdminOrSuper)
                         {
-                            <li><a href="/Leave/Types" class="staff-sidebar-sublink">Leave Types</a></li>
-                            <li><a href="/Leave/Balances" class="staff-sidebar-sublink">Balances</a></li>
+                            @if (await Nav.CanAccessAsync("/Leave/Types")) { <li><a href="/Leave/Types" class="staff-sidebar-sublink">Leave Types</a></li> }
+                            @if (await Nav.CanAccessAsync("/Leave/Balances")) { <li><a href="/Leave/Balances" class="staff-sidebar-sublink">Balances</a></li> }
                         }
                     }
                     @if (Model.ModuleOn("Payroll"))
                     {
-                        <li><a href="/Payroll" class="staff-sidebar-sublink">Payroll</a></li>
+                        @if (await Nav.CanAccessAsync("/Payroll")) { <li><a href="/Payroll" class="staff-sidebar-sublink">Payroll</a></li> }
                         @if (Model.IsAdminOrSuper)
                         {
-                            <li><a href="/Payroll/Generate" class="staff-sidebar-sublink">Generate Payroll</a></li>
+                            @if (await Nav.CanAccessAsync("/Payroll/Generate")) { <li><a href="/Payroll/Generate" class="staff-sidebar-sublink">Generate Payroll</a></li> }
                         }
                     }
                 </ul>
@@ -382,7 +387,7 @@
     <li class="staff-sidebar-section">Other</li>
 
     @* M16 · Finance *@
-    @if (Model.IsAdminOrSuper || Model.ModuleOn("Report"))
+    @if ((Model.IsAdminOrSuper || Model.ModuleOn("Report")) && await Nav.CanAccessAnyAsync("/Report/FinancialReport"))
     {
         <li class="nav-item">
             <a href="/Report/FinancialReport"
@@ -394,7 +399,7 @@
     }
 
     @* M20 · Certificate *@
-    @if (Model.ModuleOn("Certificate"))
+    @if ((Model.ModuleOn("Certificate")) && await Nav.CanAccessAnyAsync("/Certificate", "/Certificate/Birth", "/Certificate/Death", "/Certificate/GenerateCertificate", "/Certificate/GenerateIdCard"))
     {
         <li class="nav-item">
             <a href="#sb-certificate"
@@ -408,13 +413,13 @@
             <div id="sb-certificate"
                  class="collapse @(Model.IsActive("/Certificate") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Certificate" class="staff-sidebar-sublink">Overview</a></li>
-                    <li><a href="/Certificate/Birth" class="staff-sidebar-sublink">Birth Certificate</a></li>
-                    <li><a href="/Certificate/Death" class="staff-sidebar-sublink">Death Certificate</a></li>
+                    @if (await Nav.CanAccessAsync("/Certificate")) { <li><a href="/Certificate" class="staff-sidebar-sublink">Overview</a></li> }
+                    @if (await Nav.CanAccessAsync("/Certificate/Birth")) { <li><a href="/Certificate/Birth" class="staff-sidebar-sublink">Birth Certificate</a></li> }
+                    @if (await Nav.CanAccessAsync("/Certificate/Death")) { <li><a href="/Certificate/Death" class="staff-sidebar-sublink">Death Certificate</a></li> }
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/Certificate/GenerateCertificate" class="staff-sidebar-sublink">Generate Certificate</a></li>
-                        <li><a href="/Certificate/GenerateIdCard" class="staff-sidebar-sublink">Patient / Staff ID Card</a></li>
+                        @if (await Nav.CanAccessAsync("/Certificate/GenerateCertificate")) { <li><a href="/Certificate/GenerateCertificate" class="staff-sidebar-sublink">Generate Certificate</a></li> }
+                        @if (await Nav.CanAccessAsync("/Certificate/GenerateIdCard")) { <li><a href="/Certificate/GenerateIdCard" class="staff-sidebar-sublink">Patient / Staff ID Card</a></li> }
                     }
                 </ul>
             </div>
@@ -422,7 +427,7 @@
     }
 
     @* M23 · Reports *@
-    @if (Model.ModuleOn("Report"))
+    @if ((Model.ModuleOn("Report")) && await Nav.CanAccessAnyAsync("/Report", "/SystemManagement/ReportManagement"))
     {
         <li class="nav-item">
             <a href="#sb-reports"
@@ -436,8 +441,10 @@
             <div id="sb-reports"
                  class="collapse @(Model.IsActiveAny("/Report", "/Audit") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Report" class="staff-sidebar-sublink">Reports Workspace</a></li>
-                    <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report Details</a></li>
+                    @if (await Nav.CanAccessAsync("/Report")) { <li><a href="/Report" class="staff-sidebar-sublink">Reports Workspace</a></li> }
+                    @if (await Nav.CanAccessAsync("/SystemManagement/ReportManagement")) { <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report Details</a></li> }
+                    @if (await Nav.CanAccessAsync("/Report"))
+                    {
                     <li class="px-2 pt-2 pb-1">
                         <div class="form-label text-white-50 small mb-1">Reports List</div>
                         <div class="border border-secondary rounded p-2" style="max-height:320px; overflow-y:auto; background:#1f2732;">
@@ -455,6 +462,7 @@
                             }
                         </div>
                     </li>
+                    }
                 </ul>
             </div>
         </li>
@@ -469,7 +477,7 @@
         </a>
     </li>
 
-    @if (Model.ModuleOn("TPA"))
+    @if ((Model.ModuleOn("TPA")) && await Nav.CanAccessAnyAsync("/Tpa", "/Tpa/Claims", "/Tpa/CreateClaim", "/Tpa/Create"))
     {
         <li class="nav-item">
             <a href="#sb-tpa"
@@ -482,44 +490,48 @@
             </a>
             <div id="sb-tpa" class="collapse @(Model.IsActive("/Tpa") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Tpa" class="staff-sidebar-sublink">Providers</a></li>
-                    <li><a href="/Tpa/Claims" class="staff-sidebar-sublink">Claims</a></li>
-                    <li><a href="/Tpa/CreateClaim" class="staff-sidebar-sublink">New Claim</a></li>
+                    @if (await Nav.CanAccessAsync("/Tpa")) { <li><a href="/Tpa" class="staff-sidebar-sublink">Providers</a></li> }
+                    @if (await Nav.CanAccessAsync("/Tpa/Claims")) { <li><a href="/Tpa/Claims" class="staff-sidebar-sublink">Claims</a></li> }
+                    @if (await Nav.CanAccessAsync("/Tpa/CreateClaim")) { <li><a href="/Tpa/CreateClaim" class="staff-sidebar-sublink">New Claim</a></li> }
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/Tpa/Create" class="staff-sidebar-sublink">Add Provider</a></li>
+                        @if (await Nav.CanAccessAsync("/Tpa/Create")) { <li><a href="/Tpa/Create" class="staff-sidebar-sublink">Add Provider</a></li> }
                     }
                 </ul>
             </div>
         </li>
     }
 
-    @if (Model.ModuleOn("Inventory"))
+    @if ((Model.ModuleOn("Inventory")) && await Nav.CanAccessAnyAsync("/Inventory", "/Inventory/Transactions", "/Inventory/LowStock", "/Inventory/Create", "/Vendors", "/PurchaseBills"))
     {
         <li class="nav-item">
             <a href="#sb-inventory"
                data-bs-toggle="collapse"
-               class="staff-sidebar-link @(Model.IsActive("/Inventory") ? "" : "collapsed")"
-               aria-expanded="@(Model.IsActive("/Inventory") ? "true" : "false")">
+               class="staff-sidebar-link @(Model.IsActiveAny("/Inventory", "/Vendors", "/PurchaseBills") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/Inventory", "/Vendors", "/PurchaseBills") ? "true" : "false")">
                 <i class="fas fa-boxes staff-sidebar-icon"></i>
                 <span class="flex-grow-1">Inventory</span>
                 <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
             </a>
-            <div id="sb-inventory" class="collapse @(Model.IsActive("/Inventory") ? "show" : "")">
+            <div id="sb-inventory" class="collapse @(Model.IsActiveAny("/Inventory", "/Vendors", "/PurchaseBills") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Inventory" class="staff-sidebar-sublink">Items</a></li>
-                    <li><a href="/Inventory/Transactions" class="staff-sidebar-sublink">Transactions</a></li>
-                    <li><a href="/Inventory/LowStock" class="staff-sidebar-sublink">Low Stock</a></li>
+                    @if (await Nav.CanAccessAsync("/Inventory")) { <li><a href="/Inventory" class="staff-sidebar-sublink">Items</a></li> }
+                    @if (await Nav.CanAccessAsync("/Inventory/Transactions")) { <li><a href="/Inventory/Transactions" class="staff-sidebar-sublink">Transactions</a></li> }
+                    @if (await Nav.CanAccessAsync("/Inventory/LowStock")) { <li><a href="/Inventory/LowStock" class="staff-sidebar-sublink">Low Stock</a></li> }
+                    @if (await Nav.CanAccessAsync("/Vendors")) { <li><a href="/Vendors" class="staff-sidebar-sublink">Vendors</a></li> }
+                    @if (await Nav.CanAccessAsync("/PurchaseBills")) { <li><a href="/PurchaseBills" class="staff-sidebar-sublink">Purchase Bills</a></li> }
+                    @if (await Nav.CanAccessAsync("/Inventory/Consume")) { <li><a href="/Inventory/Consume" class="staff-sidebar-sublink">Record Consumption</a></li> }
+                    @if (await Nav.CanAccessAsync("/Inventory/Consumption")) { <li><a href="/Inventory/Consumption" class="staff-sidebar-sublink">Consumption Report</a></li> }
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/Inventory/Create" class="staff-sidebar-sublink">Add Item</a></li>
+                        @if (await Nav.CanAccessAsync("/Inventory/Create")) { <li><a href="/Inventory/Create" class="staff-sidebar-sublink">Add Item</a></li> }
                     }
                 </ul>
             </div>
         </li>
     }
 
-    @if (Model.ModuleOn("Messaging"))
+    @if ((Model.ModuleOn("Messaging")) && await Nav.CanAccessAnyAsync("/Messaging", "/Messaging/Sent", "/Messaging/Compose", "/Messaging/Broadcast"))
     {
         <li class="nav-item">
             <a href="#sb-messaging"
@@ -532,19 +544,19 @@
             </a>
             <div id="sb-messaging" class="collapse @(Model.IsActive("/Messaging") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/Messaging" class="staff-sidebar-sublink">Inbox</a></li>
-                    <li><a href="/Messaging/Sent" class="staff-sidebar-sublink">Sent</a></li>
-                    <li><a href="/Messaging/Compose" class="staff-sidebar-sublink">Compose</a></li>
+                    @if (await Nav.CanAccessAsync("/Messaging")) { <li><a href="/Messaging" class="staff-sidebar-sublink">Inbox</a></li> }
+                    @if (await Nav.CanAccessAsync("/Messaging/Sent")) { <li><a href="/Messaging/Sent" class="staff-sidebar-sublink">Sent</a></li> }
+                    @if (await Nav.CanAccessAsync("/Messaging/Compose")) { <li><a href="/Messaging/Compose" class="staff-sidebar-sublink">Compose</a></li> }
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/Messaging/Broadcast" class="staff-sidebar-sublink">Broadcast</a></li>
+                        @if (await Nav.CanAccessAsync("/Messaging/Broadcast")) { <li><a href="/Messaging/Broadcast" class="staff-sidebar-sublink">Broadcast</a></li> }
                     }
                 </ul>
             </div>
         </li>
     }
 
-    @if (Model.ModuleOn("DownloadCenter"))
+    @if ((Model.ModuleOn("DownloadCenter")) && await Nav.CanAccessAnyAsync("/DownloadCenter", "/DownloadCenter/Upload"))
     {
         <li class="nav-item">
             <a href="#sb-downloads"
@@ -557,17 +569,17 @@
             </a>
             <div id="sb-downloads" class="collapse @(Model.IsActive("/DownloadCenter") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/DownloadCenter" class="staff-sidebar-sublink">Files</a></li>
+                    @if (await Nav.CanAccessAsync("/DownloadCenter")) { <li><a href="/DownloadCenter" class="staff-sidebar-sublink">Files</a></li> }
                     @if (Model.IsAdminOrSuper)
                     {
-                        <li><a href="/DownloadCenter/Upload" class="staff-sidebar-sublink">Upload</a></li>
+                        @if (await Nav.CanAccessAsync("/DownloadCenter/Upload")) { <li><a href="/DownloadCenter/Upload" class="staff-sidebar-sublink">Upload</a></li> }
                     }
                 </ul>
             </div>
         </li>
     }
 
-    @if (Model.ModuleOn("LiveConsultation"))
+    @if ((Model.ModuleOn("LiveConsultation")) && await Nav.CanAccessAnyAsync("/LiveConsultation", "/LiveConsultation/Schedule"))
     {
         <li class="nav-item">
             <a href="#sb-liveconsult"
@@ -580,15 +592,15 @@
             </a>
             <div id="sb-liveconsult" class="collapse @(Model.IsActive("/LiveConsultation") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/LiveConsultation" class="staff-sidebar-sublink">Sessions</a></li>
-                    <li><a href="/LiveConsultation/Schedule" class="staff-sidebar-sublink">Schedule</a></li>
+                    @if (await Nav.CanAccessAsync("/LiveConsultation")) { <li><a href="/LiveConsultation" class="staff-sidebar-sublink">Sessions</a></li> }
+                    @if (await Nav.CanAccessAsync("/LiveConsultation/Schedule")) { <li><a href="/LiveConsultation/Schedule" class="staff-sidebar-sublink">Schedule</a></li> }
                 </ul>
             </div>
         </li>
     }
 
     @* M30 · Bed Management *@
-    @if (Model.ModuleOn("BedManagement"))
+    @if ((Model.ModuleOn("BedManagement")) && await Nav.CanAccessAnyAsync("/BedManagement", "/BedManagement/Create"))
     {
         <li class="nav-item">
             <a href="#sb-bedmgmt"
@@ -601,10 +613,10 @@
             </a>
             <div id="sb-bedmgmt" class="collapse @(Model.IsActive("/BedManagement") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/BedManagement" class="staff-sidebar-sublink">Bed Overview</a></li>
+                    @if (await Nav.CanAccessAsync("/BedManagement")) { <li><a href="/BedManagement" class="staff-sidebar-sublink">Bed Overview</a></li> }
                     @if (Model.IsSuperAdmin || Model.IsAdmin || Model.Roles.Contains("Nurse", StringComparer.OrdinalIgnoreCase))
                     {
-                        <li><a href="/BedManagement/Create" class="staff-sidebar-sublink">Add Bed</a></li>
+                        @if (await Nav.CanAccessAsync("/BedManagement/Create")) { <li><a href="/BedManagement/Create" class="staff-sidebar-sublink">Add Bed</a></li> }
                     }
                 </ul>
             </div>
@@ -612,12 +624,12 @@
     }
 
     @* ─────────── ADMIN SECTION ─────────── *@
-    @if (Model.IsAdminOrSuper)
+    @if ((Model.IsAdminOrSuper) && await Nav.CanAccessAnyAsync("/Cms", "/Cms/Notices", "/Cms/Menu", "/Cms/AppointmentRequests", "/Cms/NotificationSettings", "/PublicSiteAdmin/Settings", "/ChatbotAdmin/Settings", "/ChatbotAdmin/Analytics", "/ChatbotAdmin/Escalations", "/Audit", "/Audit/UserActions", "/AccountsApproval", "/AccountsApproval/Passwords", "/ModuleManagement", "/ModuleManagement/Users", "/License", "/Hospital", "/PrintSettings", "/SecuritySettings"))
     {
         <li class="staff-sidebar-section">Admin</li>
 
         @* M21 · Website CMS *@
-        @if (Model.ModuleOn("CMS"))
+        @if ((Model.ModuleOn("CMS")) && await Nav.CanAccessAnyAsync("/Cms", "/Cms/Notices", "/Cms/Menu", "/Cms/AppointmentRequests", "/Cms/NotificationSettings", "/PublicSiteAdmin/Settings"))
         {
             <li class="nav-item">
                 <a href="#sb-cms"
@@ -631,12 +643,12 @@
                 <div id="sb-cms"
                      class="collapse @(Model.IsActiveAny("/Cms", "/PublicSiteAdmin") ? "show" : "")">
                     <ul class="nav flex-column ms-3">
-                        <li><a href="/Cms" class="staff-sidebar-sublink">Pages</a></li>
-                        <li><a href="/Cms/Notices" class="staff-sidebar-sublink">Notices</a></li>
-                        <li><a href="/Cms/Menu" class="staff-sidebar-sublink">Menu</a></li>
-                        <li><a href="/Cms/AppointmentRequests" class="staff-sidebar-sublink">Booking Requests</a></li>
-                        <li><a href="/Cms/NotificationSettings" class="staff-sidebar-sublink">Notification Settings</a></li>
-                        <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">Site Settings</a></li>
+                        @if (await Nav.CanAccessAsync("/Cms")) { <li><a href="/Cms" class="staff-sidebar-sublink">Pages</a></li> }
+                        @if (await Nav.CanAccessAsync("/Cms/Notices")) { <li><a href="/Cms/Notices" class="staff-sidebar-sublink">Notices</a></li> }
+                        @if (await Nav.CanAccessAsync("/Cms/Menu")) { <li><a href="/Cms/Menu" class="staff-sidebar-sublink">Menu</a></li> }
+                        @if (await Nav.CanAccessAsync("/Cms/AppointmentRequests")) { <li><a href="/Cms/AppointmentRequests" class="staff-sidebar-sublink">Booking Requests</a></li> }
+                        @if (await Nav.CanAccessAsync("/Cms/NotificationSettings")) { <li><a href="/Cms/NotificationSettings" class="staff-sidebar-sublink">Notification Settings</a></li> }
+                        @if (await Nav.CanAccessAsync("/PublicSiteAdmin/Settings")) { <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">Site Settings</a></li> }
                         <li>
                             <a href="/Site" class="staff-sidebar-sublink" target="_blank">
                                 View Public Site <i class="fas fa-external-link-alt fa-xs ms-1"></i>
@@ -648,7 +660,7 @@
         }
 
         @* Chatbot Admin *@
-        @if (Model.ModuleOn("Chatbot"))
+        @if ((Model.ModuleOn("Chatbot")) && await Nav.CanAccessAnyAsync("/ChatbotAdmin/Settings", "/ChatbotAdmin/Analytics", "/ChatbotAdmin/Escalations"))
         {
             <li class="nav-item">
                 <a href="#sb-chatbot"
@@ -662,15 +674,17 @@
                 <div id="sb-chatbot"
                      class="collapse @(Model.IsActive("/ChatbotAdmin") ? "show" : "")">
                     <ul class="nav flex-column ms-3">
-                        <li><a href="/ChatbotAdmin/Settings" class="staff-sidebar-sublink">Settings</a></li>
-                        <li><a href="/ChatbotAdmin/Analytics" class="staff-sidebar-sublink">Analytics</a></li>
-                        <li><a href="/ChatbotAdmin/Escalations" class="staff-sidebar-sublink">Escalations</a></li>
+                        @if (await Nav.CanAccessAsync("/ChatbotAdmin/Settings")) { <li><a href="/ChatbotAdmin/Settings" class="staff-sidebar-sublink">Settings</a></li> }
+                        @if (await Nav.CanAccessAsync("/ChatbotAdmin/Analytics")) { <li><a href="/ChatbotAdmin/Analytics" class="staff-sidebar-sublink">Analytics</a></li> }
+                        @if (await Nav.CanAccessAsync("/ChatbotAdmin/Escalations")) { <li><a href="/ChatbotAdmin/Escalations" class="staff-sidebar-sublink">Escalations</a></li> }
                     </ul>
                 </div>
             </li>
         }
 
         @* Audit Logs *@
+        @if (await Nav.CanAccessAsync("/Audit"))
+        {
         <li class="nav-item">
             <a href="/Audit"
                class="staff-sidebar-link @(Model.IsActive("/Audit") ? "active" : "")">
@@ -678,6 +692,9 @@
                 <span class="flex-grow-1">Audit Logs</span>
             </a>
         </li>
+        }
+        @if (await Nav.CanAccessAsync("/Audit/UserActions"))
+        {
         <li class="nav-item">
             <a href="/Audit/UserActions"
                class="staff-sidebar-link @(Model.IsActive("/Audit/UserActions") ? "active" : "")">
@@ -685,28 +702,32 @@
                 <span class="flex-grow-1">User Actions</span>
             </a>
         </li>
+        }
 
         @* M24 · Setup / Settings *@
         <li class="nav-item">
             <a href="#sb-setup"
                data-bs-toggle="collapse"
-               class="staff-sidebar-link @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "" : "collapsed")"
-               aria-expanded="@(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "true" : "false")">
+               class="staff-sidebar-link @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval", "/Hospital", "/PrintSettings", "/SecuritySettings") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval", "/Hospital", "/PrintSettings", "/SecuritySettings") ? "true" : "false")">
                 <i class="fas fa-cog staff-sidebar-icon"></i>
                 <span class="flex-grow-1">Setup / Settings</span>
                 <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
             </a>
             <div id="sb-setup"
-                 class="collapse @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval") ? "show" : "")">
+                 class="collapse @(Model.IsActiveAny("/PublicSiteAdmin", "/ModuleManagement", "/AccountsApproval", "/Hospital", "/PrintSettings", "/SecuritySettings") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">App Config</a></li>
-                    <li><a href="/AccountsApproval" class="staff-sidebar-sublink">Accounts Approval</a></li>
-                    <li><a href="/AccountsApproval/Passwords" class="staff-sidebar-sublink">Password Mgmt</a></li>
-                    <li><a href="/ModuleManagement" class="staff-sidebar-sublink">Module Management</a></li>
-                    <li><a href="/ModuleManagement/Users" class="staff-sidebar-sublink">User Module Access</a></li>
+                    @if (await Nav.CanAccessAsync("/PublicSiteAdmin/Settings")) { <li><a href="/PublicSiteAdmin/Settings" class="staff-sidebar-sublink">App Config</a></li> }
+                    @if (await Nav.CanAccessAsync("/Hospital")) { <li><a href="/Hospital" class="staff-sidebar-sublink">Hospitals / Branches</a></li> }
+                    @if (await Nav.CanAccessAsync("/PrintSettings")) { <li><a href="/PrintSettings" class="staff-sidebar-sublink">Printers</a></li> }
+                    @if (await Nav.CanAccessAsync("/SecuritySettings")) { <li><a href="/SecuritySettings" class="staff-sidebar-sublink">Security &amp; Backups</a></li> }
+                    @if (await Nav.CanAccessAsync("/AccountsApproval")) { <li><a href="/AccountsApproval" class="staff-sidebar-sublink">Accounts Approval</a></li> }
+                    @if (await Nav.CanAccessAsync("/AccountsApproval/Passwords")) { <li><a href="/AccountsApproval/Passwords" class="staff-sidebar-sublink">Password Mgmt</a></li> }
+                    @if (await Nav.CanAccessAsync("/ModuleManagement")) { <li><a href="/ModuleManagement" class="staff-sidebar-sublink">Module Management</a></li> }
+                    @if (await Nav.CanAccessAsync("/ModuleManagement/Users")) { <li><a href="/ModuleManagement/Users" class="staff-sidebar-sublink">User Module Access</a></li> }
                     @if (Model.IsSuperAdmin)
                     {
-                        <li><a href="/License" class="staff-sidebar-sublink">License</a></li>
+                        @if (await Nav.CanAccessAsync("/License")) { <li><a href="/License" class="staff-sidebar-sublink">License</a></li> }
                     }
                 </ul>
             </div>
@@ -714,8 +735,35 @@
 
     }
 
+    @* Quality & Compliance (ISO): incidents, CAPA, controlled documents, internal audits, training *@
+    @if (await Nav.CanAccessAnyAsync("/Quality/ReportIncident", "/Quality", "/QualityDocuments", "/InternalAudit", "/Training", "/Equipment"))
+    {
+        <li class="nav-item">
+            <a href="#sb-quality"
+               data-bs-toggle="collapse"
+               class="staff-sidebar-link @(Model.IsActiveAny("/Quality", "/QualityDocuments", "/InternalAudit", "/Training", "/Equipment") ? "" : "collapsed")"
+               aria-expanded="@(Model.IsActiveAny("/Quality", "/QualityDocuments", "/InternalAudit", "/Training", "/Equipment") ? "true" : "false")">
+                <i class="fas fa-award staff-sidebar-icon"></i>
+                <span class="flex-grow-1">Quality &amp; Compliance</span>
+                <i class="fas fa-chevron-down staff-sidebar-chevron"></i>
+            </a>
+            <div id="sb-quality" class="collapse @(Model.IsActiveAny("/Quality", "/QualityDocuments", "/InternalAudit", "/Training", "/Equipment") ? "show" : "")">
+                <ul class="nav flex-column ms-3">
+                    @if (await Nav.CanAccessAsync("/Quality")) { <li><a href="/Quality" class="staff-sidebar-sublink">Quality Dashboard</a></li> }
+                    @if (await Nav.CanAccessAsync("/Quality/ReportIncident")) { <li><a href="/Quality/ReportIncident" class="staff-sidebar-sublink">Report Incident</a></li> }
+                    @if (await Nav.CanAccessAsync("/Quality/Incidents")) { <li><a href="/Quality/Incidents" class="staff-sidebar-sublink">Incidents</a></li> }
+                    @if (await Nav.CanAccessAsync("/Quality/Capa")) { <li><a href="/Quality/Capa" class="staff-sidebar-sublink">Corrective Actions</a></li> }
+                    @if (await Nav.CanAccessAsync("/QualityDocuments")) { <li><a href="/QualityDocuments" class="staff-sidebar-sublink">Controlled Documents</a></li> }
+                    @if (await Nav.CanAccessAsync("/InternalAudit")) { <li><a href="/InternalAudit" class="staff-sidebar-sublink">Internal Audits</a></li> }
+                    @if (await Nav.CanAccessAsync("/Training")) { <li><a href="/Training" class="staff-sidebar-sublink">Training Records</a></li> }
+                    @if (await Nav.CanAccessAsync("/Equipment")) { <li><a href="/Equipment" class="staff-sidebar-sublink">Equipment Register</a></li> }
+                </ul>
+            </div>
+        </li>
+    }
+
     @* Stage 7 · System Management (non-patient roles) *@
-    @if (!Model.Roles.Contains("Patient", StringComparer.OrdinalIgnoreCase))
+    @if ((!Model.Roles.Contains("Patient", StringComparer.OrdinalIgnoreCase)) && await Nav.CanAccessAnyAsync("/SystemManagement/ReportManagement", "/SystemManagement/CreateReport", "/SystemManagement/EditReport", "/SystemManagement/DownloadReport", "/SystemManagement/UserManagement", "/SystemManagement/ThemeManagement"))
     {
         <li class="nav-item">
             <a href="#sb-systemmgmt"
@@ -728,18 +776,18 @@
             </a>
             <div id="sb-systemmgmt" class="collapse @(Model.IsActive("/SystemManagement") ? "show" : "")">
                 <ul class="nav flex-column ms-3">
-                    <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report List</a></li>
+                    @if (await Nav.CanAccessAsync("/SystemManagement/ReportManagement")) { <li><a href="/SystemManagement/ReportManagement" class="staff-sidebar-sublink">Report List</a></li> }
                     @if (Model.IsSuperAdmin || Model.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
                     {
-                        <li><a href="/SystemManagement/CreateReport" class="staff-sidebar-sublink">Create Report</a></li>
-                        <li><a href="/SystemManagement/EditReport" class="staff-sidebar-sublink">Edit Report</a></li>
+                        @if (await Nav.CanAccessAsync("/SystemManagement/CreateReport")) { <li><a href="/SystemManagement/CreateReport" class="staff-sidebar-sublink">Create Report</a></li> }
+                        @if (await Nav.CanAccessAsync("/SystemManagement/EditReport")) { <li><a href="/SystemManagement/EditReport" class="staff-sidebar-sublink">Edit Report</a></li> }
                     }
-                    <li><a href="/SystemManagement/DownloadReport" class="staff-sidebar-sublink">Download Report</a></li>
+                    @if (await Nav.CanAccessAsync("/SystemManagement/DownloadReport")) { <li><a href="/SystemManagement/DownloadReport" class="staff-sidebar-sublink">Download Report</a></li> }
                     @if (Model.IsSuperAdmin || Model.Roles.Contains("Admin", StringComparer.OrdinalIgnoreCase))
                     {
-                        <li><a href="/SystemManagement/UserManagement" class="staff-sidebar-sublink">User Management</a></li>
+                        @if (await Nav.CanAccessAsync("/SystemManagement/UserManagement")) { <li><a href="/SystemManagement/UserManagement" class="staff-sidebar-sublink">User Management</a></li> }
                     }
-                    <li><a href="/SystemManagement/ThemeManagement" class="staff-sidebar-sublink">Theme Management</a></li>
+                    @if (await Nav.CanAccessAsync("/SystemManagement/ThemeManagement")) { <li><a href="/SystemManagement/ThemeManagement" class="staff-sidebar-sublink">Theme Management</a></li> }
                 </ul>
             </div>
         </li>

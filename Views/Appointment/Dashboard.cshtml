@@ -1,4 +1,5 @@
 @model MedyxHMS.ViewModels.AppointmentDashboardViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Appointment Dashboard";
@@ -14,7 +15,7 @@
                     <p class="text-muted">Analytics and insights for appointment management</p>
                 </div>
                 <div>
-                    @if (User.HasPermission("Appointment", "Add"))
+                    @if (await Nav.CanAccessAsync("/Appointment/Create"))
                     {
                         <a href="@Url.Action("Create", "Appointment")" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Schedule Appointment

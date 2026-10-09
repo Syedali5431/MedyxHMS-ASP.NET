@@ -180,23 +180,11 @@ namespace MedyxHMS.Controllers.PatientPortal
                 return LocalRedirect("/PatientPortal/Account/Login");
             }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    // Process payment (integrate with payment gateway)
-                    // This is a placeholder for payment processing logic
-
-                    TempData["SuccessMessage"] = "Payment processed successfully! Transaction ID: " + Guid.NewGuid().ToString().Substring(0, 8);
-                    return RedirectToAction("Details", new { id });
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Error processing payment: {ex.Message}";
-                }
-            }
-
-            return View(viewModel);
+            // Online payment is not integrated for the patient portal yet. This action used to report
+            // "Payment processed successfully" with a made-up transaction id without recording anything,
+            // so never claim a payment that was not taken.
+            TempData["WarningMessage"] = "Online payment is not available yet. Please pay the amount due at the hospital billing counter.";
+            return RedirectToAction("Details", new { id });
         }
 
         // GET: /PatientPortal/Bills/Download/5
@@ -223,21 +211,10 @@ namespace MedyxHMS.Controllers.PatientPortal
                     return Forbid();
                 }
 
-                var headers = new[] { "Field", "Value" };
-                var rows = new List<IReadOnlyList<string>>
-                {
-                    new [] { "Bill Number", bill.BillNumber ?? string.Empty },
-                    new [] { "Bill Date", bill.BillDate.ToString("yyyy-MM-dd") },
-                    new [] { "Due Date", bill.DueDate.ToString("yyyy-MM-dd") },
-                    new [] { "Total Amount", bill.TotalAmount.ToString("0.00") },
-                    new [] { "Paid Amount", bill.PaidAmount.ToString("0.00") },
-                    new [] { "Pending Amount", (bill.TotalAmount - bill.PaidAmount).ToString("0.00") },
-                    new [] { "Status", bill.Status ?? string.Empty }
-                };
-
-                var bytes = _exportService.BuildPdfTable("Patient Bill Receipt", headers, rows);
+                // Same invoice as at the billing counter (letterhead and logo, items, payments, balance).
+                var bytes = _exportService.BuildReportPdf(_exportService.InvoiceDocument(bill));
                 var safeBillNumber = string.IsNullOrWhiteSpace(bill.BillNumber) ? id : bill.BillNumber;
-                return File(bytes, "application/pdf", $"patient_bill_{safeBillNumber}.pdf");
+                return File(bytes, "application/pdf", $"invoice_{safeBillNumber}.pdf");
             }
             catch (Exception ex)
             {
@@ -274,7 +251,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             }).ToList();
 
             var title = "Patient Bills Export";
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "excel")
             {
                 var bytes = _exportService.BuildExcel(title, headers, rows);

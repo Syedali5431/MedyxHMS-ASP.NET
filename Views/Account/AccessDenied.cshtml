@@ -19,7 +19,11 @@
                 <h4>You don't have permission to access this resource.</h4>
                 <p>Please contact your administrator if you believe this is an error.</p>
                 <a href="@dashboardUrl" class="btn btn-primary">Go to Dashboard</a>
-                <a href="@logoutUrl" class="btn btn-secondary ml-2">Logout</a>
+                @* Logout endpoints accept POST only (with an antiforgery token). *@
+                <form action="@logoutUrl" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-secondary ml-2">Logout</button>
+                </form>
             </div>
         </div>
     </div>

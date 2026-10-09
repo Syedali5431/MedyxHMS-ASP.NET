@@ -35,7 +35,7 @@ namespace MedyxHMS.Services.Implementations
             if (referral == null)
                 throw new ArgumentNullException(nameof(referral));
 
-            referral.CreatedDate = DateTime.UtcNow;
+            referral.CreatedDate = DateTime.Now;
             if (string.IsNullOrWhiteSpace(referral.Status))
                 referral.Status = "Pending";
 
@@ -48,8 +48,8 @@ namespace MedyxHMS.Services.Implementations
                 {
                     BillNumber = GenerateBillNumber(),
                     PatientId = referral.PatientId,
-                    BillDate = DateTime.UtcNow,
-                    DueDate = DateTime.UtcNow.AddDays(15),
+                    BillDate = DateTime.Now,
+                    DueDate = DateTime.Now.AddDays(15),
                     TotalAmount = referral.ApprovedAmount.Value,
                     PaidAmount = 0,
                     PendingAmount = referral.ApprovedAmount.Value,
@@ -93,8 +93,9 @@ namespace MedyxHMS.Services.Implementations
 
         private string GenerateBillNumber()
         {
-            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var datePart = DateTime.Now.ToString("yyyyMMdd");
             var lastBill = _context.Bills
+                .IgnoreQueryFilters() // bill numbers are unique across all hospitals of the group
                 .Where(b => b.BillNumber.StartsWith($"REFBILL{datePart}"))
                 .OrderByDescending(b => b.Id)
                 .FirstOrDefault();

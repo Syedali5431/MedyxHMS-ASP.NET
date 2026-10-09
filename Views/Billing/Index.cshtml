@@ -4,6 +4,7 @@
 }
 
 @model BillViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 
 <div class="billing-header mb-4">
     <div class="row align-items-center">
@@ -55,6 +56,7 @@
         <table class="table table-hover align-middle">
             <thead class="table-light">
                 <tr>
+                    @if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                     <th>Bill #</th>
                     <th>Patient</th>
                     <th>Date</th>
@@ -69,16 +71,20 @@
                 @foreach (var bill in Model.Bills)
                 {
                     <tr>
+                        @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(bill.HospitalId)</td> }
                         <td><strong>@bill.BillNumber</strong></td>
                         <td>@bill.PatientName</td>
                         <td>@bill.BillDate.ToString("MMM dd, yyyy")</td>
-                        <td>₹@bill.TotalAmount.ToString("N2")</td>
-                        <td>₹@bill.PaidAmount.ToString("N2")</td>
+                        <td>@bill.TotalAmount.ToString("C")</td>
+                        <td>@bill.PaidAmount.ToString("C")</td>
                         <td><span class="badge @bill.StatusBadgeClass">@bill.Status</span></td>
                         <td>@bill.DueDate?.ToString("MMM dd, yyyy")</td>
                         <td class="text-end">
                             <a asp-action="Details" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-primary me-1">
                                 <i class="fas fa-eye"></i>
+                            </a>
+                            <a asp-action="ThermalReceipt" asp-route-id="@bill.Id" target="_blank" class="btn btn-sm btn-outline-secondary me-1" title="Thermal receipt">
+                                <i class="fas fa-receipt"></i>
                             </a>
                             <a asp-action="DownloadReceipt" asp-route-id="@bill.Id" class="btn btn-sm btn-outline-danger me-1" title="Download Receipt PDF">
                                 <i class="fas fa-file-pdf"></i>

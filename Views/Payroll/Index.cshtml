@@ -81,7 +81,7 @@
                                 <td>
                                     <span class="badge @(item.Status == "Paid" ? "bg-success" : item.Status == "Processed" ? "bg-info" : "bg-secondary")">@item.Status</span>
                                 </td>
-                                <td>@(item.PaymentDate.HasValue ? item.PaymentDate.Value.ToLocalTime().ToString("yyyy-MM-dd") : "-")</td>
+                                <td>@(item.PaymentDate.HasValue ? item.PaymentDate.Value.ToString("yyyy-MM-dd") : "-")</td>
                                 <td>
                                     @if ((User.IsInRole("Admin") || User.IsInRole("SuperAdmin")) && item.Status != "Paid")
                                     {

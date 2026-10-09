@@ -1,9 +1,12 @@
 ﻿// Purpose: Contains application code for Billing and its related runtime behavior.
 namespace MedyxHMS.Models
 {
-    public class Bill
+    public class Bill : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public string BillNumber { get; set; } = string.Empty;
         public int PatientId { get; set; }
         public int? AppointmentId { get; set; }
@@ -15,7 +18,7 @@ namespace MedyxHMS.Models
         public string Status { get; set; } = string.Empty; // Unpaid, Partially Paid, Paid, Overdue
         public string BillType { get; set; } = string.Empty; // OPD, IPD, Pharmacy, Lab, Radiology
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedDate { get; set; }
         public string CreatedBy { get; set; } = string.Empty;
         public bool CanPay => Status != "Paid" && Status != "Cancelled";
@@ -41,7 +44,7 @@ namespace MedyxHMS.Models
             set => TotalPrice = value;
         }
         public string Description { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public Bill Bill { get; set; } = null!;
@@ -57,7 +60,7 @@ namespace MedyxHMS.Models
         public string PaymentGateway { get; set; } = string.Empty; // PayPal, Stripe, etc.
         public string Status { get; set; } = string.Empty; // Pending, Completed, Failed, Refunded
         public string Notes { get; set; } = string.Empty;
-        public DateTime PaymentDate { get; set; } = DateTime.UtcNow;
+        public DateTime PaymentDate { get; set; } = DateTime.Now;
         public string ProcessedBy { get; set; } = string.Empty;
 
         // Navigation properties
@@ -72,7 +75,7 @@ namespace MedyxHMS.Models
         public decimal Amount { get; set; }
         public string Description { get; set; } = string.Empty;
         public string ReferenceNumber { get; set; } = string.Empty;
-        public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
+        public DateTime TransactionDate { get; set; } = DateTime.Now;
         public string ProcessedBy { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty; // Completed, Pending, Failed
     }

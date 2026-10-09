@@ -37,7 +37,7 @@ namespace MedyxHMS.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var vm = new SiteHomeViewModel
             {
@@ -54,7 +54,7 @@ namespace MedyxHMS.Controllers
                     .ToListAsync(),
 
                 UpcomingEvents = await _db.CmsNotices
-                    .Where(n => n.IsActive && n.Type == "Event" && (n.PublishedAt == null || n.PublishedAt >= now))
+                    .Where(n => n.IsActive && n.Type == "Event" && (n.PublishedAt == null || n.PublishedAt >= now.Date))
                     .OrderBy(n => n.PublishedAt)
                     .Take(3)
                     .ToListAsync(),
@@ -150,7 +150,7 @@ namespace MedyxHMS.Controllers
 
         public async Task<IActionResult> Notices(string type = "Notice", string search = null, int page = 1, int pageSize = 9)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var validTypes = new[] { "Notice", "News", "Event", "Program" };
             if (!validTypes.Contains(type)) type = "Notice";
 
@@ -191,7 +191,7 @@ namespace MedyxHMS.Controllers
         {
             if (string.IsNullOrWhiteSpace(slug)) return NotFound();
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var notice = await _db.CmsNotices
                 .FirstOrDefaultAsync(n => n.Slug == slug && n.IsActive && (n.PublishedAt == null || n.PublishedAt <= now));
 
@@ -212,7 +212,7 @@ namespace MedyxHMS.Controllers
             if (departmentId.HasValue)
                 doctorsQuery = doctorsQuery.Where(d => d.DepartmentId == departmentId.Value);
 
-            var doctors = await doctorsQuery.OrderBy(d => d.Department).ThenBy(d => d.FirstName).ToListAsync();
+            var doctors = await doctorsQuery.OrderBy(d => d.Department != null ? d.Department.Name : "").ThenBy(d => d.FirstName).ToListAsync();
 
             var shiftsByDoctor = await _db.DoctorShifts
                 .Where(s => s.IsActive && doctors.Select(d => d.Id).Contains(s.DoctorId))
@@ -338,7 +338,7 @@ namespace MedyxHMS.Controllers
                 Notes = vm.Notes,
                 Status = "Pending",
                 AdminNotes = null,
-                CreatedAt = DateTime.UtcNow,
+                CreatedAt = DateTime.Now,
                 IpAddress = ipAddress
             };
 
@@ -455,12 +455,17 @@ namespace MedyxHMS.Controllers
             var configured = await _settingService.GetSettingValueAsync("PublicSiteMapEmbedUrl");
             if (!string.IsNullOrWhiteSpace(configured))
             {
-                return configured;
+                // A plain "google.com/maps?q=…" link cannot be framed any more: convert it to an embed link.
+                var legacy = System.Text.RegularExpressions.Regex.Match(configured, @"^https://(www\.)?google\.[a-z.]+/maps\?(.*&)?q=([^&]+)", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+                return legacy.Success ? GoogleMapsEmbed(Uri.UnescapeDataString(legacy.Groups[3].Value.Replace('+', ' '))) : configured;
             }
 
             var address = await _settingService.GetSettingValueAsync("PublicSiteAddress") ?? "Medyx Hospital";
-            return $"https://www.google.com/maps?q={UrlEncoder.Default.Encode(address)}&output=embed";
+            return GoogleMapsEmbed(address);
         }
+
+        private static string GoogleMapsEmbed(string place) =>
+            "https://www.google.com/maps/embed?origin=mfe&pb=!1m2!2m1!1s" + Uri.EscapeDataString(place.Trim()).Replace("%20", "+");
 
         private void SetBookingCaptchaChallenge(PublicBookingViewModel vm)
         {
@@ -525,7 +530,7 @@ namespace MedyxHMS.Controllers
                 UserId = string.Empty,
                 ProfileImagePath = string.Empty,
                 IsActive = true,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 LastVisitDate = vm.PreferredDate.Date
             };
 
@@ -540,7 +545,7 @@ namespace MedyxHMS.Controllers
             string candidate;
             do
             {
-                candidate = $"PAT{DateTime.UtcNow:yyyyMMdd}{Random.Shared.Next(1000, 9999)}";
+                candidate = $"PAT{DateTime.Now:yyyyMMdd}{Random.Shared.Next(1000, 9999)}";
             }
             while (await _db.Patients.AnyAsync(p => p.PatientId == candidate));
 

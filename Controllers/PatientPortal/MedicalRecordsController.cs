@@ -1,4 +1,5 @@
 ﻿using MedyxHMS.DTOs;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -61,7 +62,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                             Id = r.Id.ToString(),
                             RecordDate = r.RecordDate,
                             DoctorName = r.DoctorName,
-                            Department = string.Empty,
+                            Department = MedicalRecordService.TypeLabel(r.RecordType),
                             Diagnosis = r.Diagnosis,
                             Treatment = r.Treatment,
                             Prescription = r.Prescription?.ToString(),
@@ -107,7 +108,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     Id = record.Id.ToString(),
                     RecordDate = record.RecordDate,
                     DoctorName = record.DoctorName,
-                    Department = string.Empty,
+                    Department = MedicalRecordService.TypeLabel(record.RecordType),
                     Diagnosis = record.Diagnosis,
                     Treatment = record.Treatment,
                     Prescription = record.Prescription?.ToString(),
@@ -193,7 +194,7 @@ namespace MedyxHMS.Controllers.PatientPortal
 
                 if (endDate.HasValue)
                 {
-                    results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+                    results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate.Value)).ToList();
                 }
 
                 var viewModel = new PatientPortalTestResultsViewModel
@@ -252,7 +253,7 @@ namespace MedyxHMS.Controllers.PatientPortal
 
                 if (endDate.HasValue)
                 {
-                    results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+                    results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate.Value)).ToList();
                 }
 
                 var viewModel = new PatientPortalTestResultsViewModel
@@ -322,12 +323,12 @@ namespace MedyxHMS.Controllers.PatientPortal
             {
                 r.RecordDate.ToString("yyyy-MM-dd"),
                 r.DoctorName ?? string.Empty,
-                string.Empty,
+                MedicalRecordService.TypeLabel(r.RecordType),
                 r.Diagnosis ?? string.Empty,
                 r.Treatment ?? string.Empty
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
             {
                 var excelBytes = _exportService.BuildExcel("Medical Records", headers, rows);
@@ -357,7 +358,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 p.TotalPrice.ToString("0.00")
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
             {
                 var excelBytes = _exportService.BuildExcel("Prescriptions", headers, rows);
@@ -378,7 +379,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             if (startDate.HasValue)
                 results = results.Where(r => (r.ResultDate ?? r.OrderDate) >= startDate.Value).ToList();
             if (endDate.HasValue)
-                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate.Value)).ToList();
 
             var headers = new[] { "Date", "Test", "Result", "Units", "Reference Range", "Status" };
             var rows = results.Select(r => (IReadOnlyList<string>)new[]
@@ -391,7 +392,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 r.Interpretation ?? r.Status ?? string.Empty
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
             {
                 var excelBytes = _exportService.BuildExcel("Lab Results", headers, rows);
@@ -412,7 +413,7 @@ namespace MedyxHMS.Controllers.PatientPortal
             if (startDate.HasValue)
                 results = results.Where(r => (r.ResultDate ?? r.OrderDate) >= startDate.Value).ToList();
             if (endDate.HasValue)
-                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= endDate.Value).ToList();
+                results = results.Where(r => (r.ResultDate ?? r.OrderDate) <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate.Value)).ToList();
 
             var headers = new[] { "Date", "Test", "Findings", "Impression", "Status" };
             var rows = results.Select(r => (IReadOnlyList<string>)new[]
@@ -424,7 +425,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 r.Status ?? string.Empty
             }).ToList();
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if ((format ?? "pdf").Equals("excel", StringComparison.OrdinalIgnoreCase))
             {
                 var excelBytes = _exportService.BuildExcel("Radiology Results", headers, rows);

@@ -23,12 +23,18 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <label asp-for="Bill.PatientId" class="form-label"></label>
-                    <input asp-for="Bill.PatientId" class="form-control" />
+                    <select asp-for="Bill.PatientId" class="form-select">
+                        <option value="0">Select patient</option>
+                        @foreach (var p in (ViewBag.Patients as IEnumerable<MedyxHMS.Models.Patient>) ?? Enumerable.Empty<MedyxHMS.Models.Patient>())
+                        {
+                            <option value="@p.Id">@p.FirstName @p.LastName - @p.PatientId</option>
+                        }
+                    </select>
                     <span asp-validation-for="Bill.PatientId" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">
                     <label asp-for="Bill.BillDate" class="form-label"></label>
-                    <input asp-for="Bill.BillDate" type="date" class="form-control" value="@DateTime.Today:yyyy-MM-dd" />
+                    <input asp-for="Bill.BillDate" type="date" class="form-control" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
                     <span asp-validation-for="Bill.BillDate" class="text-danger"></span>
                 </div>
                 <div class="col-md-4">

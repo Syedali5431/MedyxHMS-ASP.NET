@@ -1,4 +1,6 @@
 @model MedyxHMS.ViewModels.AppointmentIndexViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Appointment Management";
@@ -14,7 +16,7 @@
                     <p class="text-muted">Manage patient appointments and schedules</p>
                 </div>
                 <div>
-                    @if (User.HasPermission("Appointment", "Add"))
+                    @if (await Nav.CanAccessAsync("/Appointment/Create"))
                     {
                         <a href="@Url.Action("Create", "Appointment")" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Schedule Appointment
@@ -189,7 +191,7 @@
                     {
                         <p class="text-muted">Try adjusting your search criteria or <a href="@Url.Action("Index", "Appointment")">clear all filters</a>.</p>
                     }
-                    else
+                    else if (await Nav.CanAccessAsync("/Appointment/Create"))
                     {
                         <p class="text-muted">Start by <a href="@Url.Action("Create", "Appointment")">scheduling your first appointment</a>.</p>
                     }
@@ -201,6 +203,7 @@
                     <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                         <thead>
                             <tr>
+                                @if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                                 <th>Patient</th>
                                 <th>Doctor</th>
                                 <th>Date & Time</th>
@@ -213,6 +216,7 @@
                             @foreach (var appointment in Model.Appointments)
                             {
                                 <tr>
+                                    @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(appointment.HospitalId)</td> }
                                     <td>
                                         <strong>@appointment.PatientName</strong>
                                         <br><small class="text-muted">@appointment.PatientIdDisplay</small>
@@ -239,14 +243,14 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            @if (User.HasPermission("Appointment", "View"))
+                                            @if (await Nav.CanAccessAsync("/Appointment/Details"))
                                             {
                                                 <a href="@Url.Action("Details", "Appointment", new { id = appointment.Id })"
                                                    class="btn btn-sm btn-info" title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             }
-                                            @if (User.HasPermission("Appointment", "Edit"))
+                                            @if (await Nav.CanAccessAsync("/Appointment/Edit"))
                                             {
                                                 <a href="@Url.Action("UpdateStatus", "Appointment", new { id = appointment.Id })"
                                                    class="btn btn-sm btn-warning" title="Update Status">
@@ -257,7 +261,7 @@
                                                     <i class="fas fa-pencil-alt"></i>
                                                 </a>
                                             }
-                                            @if (User.HasPermission("Appointment", "Delete"))
+                                            @if (await Nav.CanAccessAsync("/Appointment/Delete"))
                                             {
                                                 <button type="button" class="btn btn-sm btn-danger" title="Delete Appointment"
                                                         onclick="confirmDelete(@appointment.Id, '@appointment.PatientName', '@appointment.FormattedDateTime')">

@@ -145,7 +145,7 @@ namespace MedyxHMS.Controllers
                 }).ToList();
 
             var title = "Appointment Management Export";
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
             if (format == "csv")
             {
@@ -298,6 +298,50 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        // GET: /Appointment/ThermalSlip/5 – appointment slip with token number for receipt printers.
+        [HttpGet]
+        public async Task<IActionResult> ThermalSlip(int id, int? w, [FromServices] IReceiptPrintService receiptPrint)
+        {
+            if (!await HasPermissionAsync("Appointment", "View"))
+            {
+                return Forbid();
+            }
+
+            var appointment = await _appointmentService.GetAppointmentByIdAsync(id);
+            if (appointment == null)
+            {
+                return NotFound();
+            }
+
+            // Token = position in the doctor's (not cancelled) appointments of that day, by time.
+            var day = appointment.AppointmentDate.Date;
+            var sameDay = await _context.Appointments
+                .Where(a => a.DoctorId == appointment.DoctorId && a.AppointmentDate >= day && a.AppointmentDate < day.AddDays(1) && a.Status != "Cancelled")
+                .OrderBy(a => a.AppointmentTime).ThenBy(a => a.Id)
+                .Select(a => a.Id)
+                .ToListAsync();
+            var token = sameDay.IndexOf(appointment.Id) + 1;
+
+            var vm = await receiptPrint.CreateAsync("Appointment Slip", appointment.HospitalId, w, User.Identity?.Name);
+            if (token > 0)
+            {
+                vm.HighlightLabel = "Token No.";
+                vm.Highlight = token.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            vm.Lines.Add(new ReceiptLine("Appointment", $"#{appointment.Id}"));
+            vm.Lines.Add(new ReceiptLine("Date", appointment.AppointmentDate.ToString("dd-MMM-yyyy", System.Globalization.CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Time", DateTime.Today.Add(appointment.AppointmentTime).ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Doctor", appointment.Doctor != null ? "Dr. " + appointment.Doctor.Name : "-"));
+            if (!string.IsNullOrWhiteSpace(appointment.Doctor?.Specialization)) vm.Lines.Add(new ReceiptLine("Dept.", appointment.Doctor!.Specialization));
+            vm.Lines.Add(new ReceiptLine("Patient", appointment.Patient != null ? $"{appointment.Patient.FirstName} {appointment.Patient.LastName}".Trim() : "Unknown"));
+            if (!string.IsNullOrWhiteSpace(appointment.Patient?.PatientId)) vm.Lines.Add(new ReceiptLine("Patient ID", appointment.Patient!.PatientId));
+            if (!string.IsNullOrWhiteSpace(appointment.AppointmentType)) vm.Lines.Add(new ReceiptLine("Type", appointment.AppointmentType));
+            vm.Lines.Add(new ReceiptLine("Status", string.IsNullOrWhiteSpace(appointment.Status) ? "-" : appointment.Status));
+            vm.Note = "Please arrive 15 minutes before your appointment time and bring this slip.";
+            vm.BackUrl = Url.Action(nameof(Details), new { id });
+            return View("ThermalReceipt", vm);
+        }
+
         // GET: Appointment/Details/5
         [HttpGet]
         public async Task<IActionResult> Details(int id)
@@ -390,6 +434,20 @@ namespace MedyxHMS.Controllers
                 return Forbid();
             }
 
+            // The patient is picked with a search box that fills a hidden PatientId (0 when nothing is
+            // picked), and unset int/date fields bind as 0 / 0001-01-01, so check them explicitly.
+            if (model.Appointment.PatientId <= 0)
+                ModelState.AddModelError("Appointment.PatientId", "Please select a patient.");
+            if (model.Appointment.DoctorId <= 0)
+                ModelState.AddModelError("Appointment.DoctorId", "Please select a doctor.");
+            if (model.Appointment.AppointmentDate == default)
+                ModelState.AddModelError("Appointment.AppointmentDate", "Please choose an appointment date.");
+            // A posted id may refer to a patient or doctor that no longer exists.
+            if (model.Appointment.PatientId > 0 && !await _context.Patients.AnyAsync(p => p.Id == model.Appointment.PatientId))
+                ModelState.AddModelError("Appointment.PatientId", "Please select a patient.");
+            if (model.Appointment.DoctorId > 0 && !await _context.Doctors.AnyAsync(d => d.Id == model.Appointment.DoctorId))
+                ModelState.AddModelError("Appointment.DoctorId", "Please select a doctor.");
+
             if (!ModelState.IsValid)
             {
                 model.AvailableDoctors = await GetAvailableDoctorsAsync();
@@ -438,6 +496,8 @@ namespace MedyxHMS.Controllers
             }
             catch (Exception ex)
             {
+                // Drop the entity whose save failed so the audit write below does not retry it.
+                _context.ChangeTracker.Clear();
                 ModelState.AddModelError("", "An error occurred while creating the appointment. Please try again.");
                 await _auditService.LogActivityAsync(
                     User.FindFirstValue(ClaimTypes.NameIdentifier),
@@ -522,9 +582,10 @@ namespace MedyxHMS.Controllers
                     return NotFound();
                 }
 
-                // Check for conflicts if date/time changed
+                // Check for conflicts if date/time changed (compare the day only: portal bookings also store the time in
+                // AppointmentDate, while this form posts the date alone; the time is AppointmentTime).
                 if (existingAppointment.DoctorId != model.Appointment.DoctorId ||
-                    existingAppointment.AppointmentDate != model.Appointment.AppointmentDate ||
+                    existingAppointment.AppointmentDate.Date != model.Appointment.AppointmentDate.Date ||
                     existingAppointment.AppointmentTime != model.Appointment.AppointmentTime)
                 {
                     if (await HasAppointmentConflict(model.Appointment.DoctorId, model.Appointment.AppointmentDate, model.Appointment.AppointmentTime, id))
@@ -575,6 +636,8 @@ namespace MedyxHMS.Controllers
             }
             catch (Exception ex)
             {
+                // Drop the entity whose save failed so the audit write below does not retry it.
+                _context.ChangeTracker.Clear();
                 ModelState.AddModelError("", "An error occurred while updating the appointment. Please try again.");
                 await _auditService.LogActivityAsync(
                     User.FindFirstValue(ClaimTypes.NameIdentifier),
@@ -608,24 +671,30 @@ namespace MedyxHMS.Controllers
                 return NotFound();
             }
 
-            var appointmentDto = MapToDto(appointment);
-            var statusViewModel = new AppointmentStatusUpdateViewModel
-            {
-                Appointment = appointmentDto,
-                StatusUpdate = new AppointmentStatusUpdateDto { Status = appointment.Status }
-            };
-
-            return View(statusViewModel);
+            return View(BuildUpdateStatusViewModel(appointment));
         }
 
         // POST: Appointment/UpdateStatus/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateStatus(int id, AppointmentStatusUpdateViewModel model)
+        public async Task<IActionResult> UpdateStatus(int id, AppointmentUpdateStatusViewModel model)
         {
             if (!await HasPermissionAsync("Appointment", "Edit"))
             {
                 return Forbid();
+            }
+
+            // The form posts NewStatus/StatusNotes, which write through to StatusUpdate.
+            if (string.IsNullOrWhiteSpace(model.StatusUpdate?.Status))
+            {
+                var current = await _appointmentService.GetAppointmentByIdAsync(id);
+                if (current == null)
+                {
+                    return NotFound();
+                }
+
+                ModelState.AddModelError("NewStatus", "Please select a status.");
+                return View(BuildUpdateStatusViewModel(current));
             }
 
             try
@@ -662,6 +731,8 @@ namespace MedyxHMS.Controllers
             }
             catch (Exception ex)
             {
+                // Drop the entity whose save failed so the audit write below does not retry it.
+                _context.ChangeTracker.Clear();
                 ModelState.AddModelError("", "An error occurred while updating the appointment status. Please try again.");
                 await _auditService.LogActivityAsync(
                     User.FindFirstValue(ClaimTypes.NameIdentifier),
@@ -672,9 +743,36 @@ namespace MedyxHMS.Controllers
                     $"Failed to update appointment status: {ex.Message}"
                 );
 
-                model.Appointment = MapToDto(await _appointmentService.GetAppointmentByIdAsync(id));
-                return View(model);
+                var reloaded = await _appointmentService.GetAppointmentByIdAsync(id);
+                if (reloaded == null)
+                {
+                    return NotFound();
+                }
+
+                var retryModel = BuildUpdateStatusViewModel(reloaded);
+                retryModel.StatusUpdate.Status = model.StatusUpdate?.Status;
+                retryModel.StatusUpdate.Notes = model.StatusUpdate?.Notes;
+                return View(retryModel);
             }
+        }
+
+        private AppointmentUpdateStatusViewModel BuildUpdateStatusViewModel(Appointment appointment)
+        {
+            return new AppointmentUpdateStatusViewModel
+            {
+                Appointment = MapToDto(appointment),
+                StatusUpdate = new AppointmentStatusUpdateDto { Status = appointment.Status },
+                Patient = appointment.Patient != null ? MapPatientToDto(appointment.Patient) : new PatientDto(),
+                Doctor = appointment.Doctor != null
+                    ? new DoctorDto
+                    {
+                        Id = appointment.Doctor.Id,
+                        Name = appointment.Doctor.Name,
+                        Specialization = appointment.Doctor.Specialization,
+                        IsActive = appointment.Doctor.IsActive
+                    }
+                    : new DoctorDto()
+            };
         }
 
         // POST: Appointment/Delete/5
@@ -718,6 +816,8 @@ namespace MedyxHMS.Controllers
             }
             catch (Exception ex)
             {
+                // Drop the entity whose save failed so the audit write below does not retry it.
+                _context.ChangeTracker.Clear();
                 await _auditService.LogActivityAsync(
                     User.FindFirstValue(ClaimTypes.NameIdentifier),
                     "Delete",
@@ -738,6 +838,7 @@ namespace MedyxHMS.Controllers
             return new AppointmentDto
             {
                 Id = appointment.Id,
+                HospitalId = appointment.HospitalId,
                 PatientId = appointment.PatientId,
                 DoctorId = appointment.DoctorId,
                 PatientName = appointment.Patient != null ? $"{appointment.Patient.FirstName} {appointment.Patient.LastName}" : "Unknown",
@@ -813,9 +914,12 @@ namespace MedyxHMS.Controllers
 
         private async Task<bool> HasAppointmentConflict(int doctorId, DateTime date, TimeSpan time, int? excludeAppointmentId = null)
         {
-            var appointments = await _appointmentService.GetAppointmentsByDoctorAsync(doctorId);
-            return appointments.Any(a =>
-                a.AppointmentDate.Date == date.Date &&
+            // Checked across all hospitals of the group: a doctor cannot be booked at two branches at the same time.
+            var day = date.Date;
+            var nextDay = day.AddDays(1);
+            return await _context.Appointments.IgnoreQueryFilters().AnyAsync(a =>
+                a.DoctorId == doctorId &&
+                a.AppointmentDate >= day && a.AppointmentDate < nextDay &&
                 a.AppointmentTime == time &&
                 a.Status != "Cancelled" &&
                 (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value));

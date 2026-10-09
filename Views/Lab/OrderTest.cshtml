@@ -45,7 +45,7 @@
                                 @foreach (var test in (IEnumerable<LabTest>)ViewBag.Tests)
                                 {
                                     <option value="@test.Id" data-price="@test.Price" data-preptime="@test.PreparationTimeHours" data-range="@test.NormalRange">
-                                        @test.TestName (Rs. @test.Price)
+                                        @test.TestName (@test.Price.ToString("C"))
                                     </option>
                                 }
                             </select>

@@ -1,0 +1,116 @@
+@model MedyxHMS.Models.Equipment
+@using MedyxHMS.Controllers
+@using System.Globalization
+@{
+    ViewData["Title"] = Model.AssetTag + " – " + Model.Name;
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    var today = DateTime.Today;
+    var soon = today.AddDays(EquipmentController.DueSoonDays);
+    string Due(DateTime? d) => d == null ? "Not scheduled" : d < today ? $"{d:dd-MMM-yyyy} (overdue {(today - d.Value).Days} days)" : d <= soon ? $"{d:dd-MMM-yyyy} (due in {(d.Value - today).Days} days)" : $"{d:dd-MMM-yyyy}";
+    string DueClass(DateTime? d) => d == null ? "text-muted" : d < today ? "text-danger fw-semibold" : d <= soon ? "text-warning fw-semibold" : "";
+}
+
+<div class="container-fluid mt-3" style="max-width:1200px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-stethoscope text-primary me-2"></i>@Model.AssetTag – @Model.Name</h4>
+            <small class="text-muted">@Model.Category · @Model.Location</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 @(Model.Status == "In service" ? "bg-success" : Model.Status == "Condemned" ? "bg-dark" : "bg-danger")">@Model.Status</span>
+            @if (isManager) { <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">Edit</a> }
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Register</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-5">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Details</div>
+                <div class="card-body small">
+                    <dl class="row mb-0">
+                        <dt class="col-5">Manufacturer / model</dt><dd class="col-7">@Model.Manufacturer @Model.Model</dd>
+                        <dt class="col-5">Serial no.</dt><dd class="col-7">@(string.IsNullOrWhiteSpace(Model.SerialNumber) ? "–" : Model.SerialNumber)</dd>
+                        <dt class="col-5">Supplier / vendor</dt><dd class="col-7">@(string.IsNullOrWhiteSpace(Model.Supplier) ? "–" : Model.Supplier)</dd>
+                        <dt class="col-5">Commissioned</dt><dd class="col-7">@(Model.PurchaseDate?.ToString("dd-MMM-yyyy") ?? "–")</dd>
+                        <dt class="col-5">Warranty until</dt><dd class="col-7">@(Model.WarrantyExpiry?.ToString("dd-MMM-yyyy") ?? "–")</dd>
+                        <dt class="col-5">Risk class</dt><dd class="col-7">@Model.RiskClass</dd>
+                    </dl>
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes)) { <hr /><p class="mb-0" style="white-space:pre-wrap">@Model.Notes</p> }
+                </div>
+            </div>
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Schedule</div>
+                <div class="card-body small">
+                    <dl class="row mb-0">
+                        <dt class="col-5">Preventive maintenance</dt>
+                        <dd class="col-7">@(Model.MaintenanceIntervalDays > 0 ? $"every {Model.MaintenanceIntervalDays} days" : "not required")<div class="text-muted">last: @(Model.LastMaintenanceDate?.ToString("dd-MMM-yyyy") ?? "–")</div><div class="@DueClass(Model.NextMaintenanceDue)">next: @Due(Model.NextMaintenanceDue)</div></dd>
+                        <dt class="col-5">Calibration</dt>
+                        <dd class="col-7">@(Model.CalibrationIntervalDays > 0 ? $"every {Model.CalibrationIntervalDays} days" : "not required")<div class="text-muted">last: @(Model.LastCalibrationDate?.ToString("dd-MMM-yyyy") ?? "–")</div><div class="@DueClass(Model.NextCalibrationDue)">next: @Due(Model.NextCalibrationDue)</div></dd>
+                    </dl>
+                </div>
+            </div>
+            @if (Model.Status != "Condemned")
+            {
+                <div class="card shadow-sm border-danger">
+                    <div class="card-body">
+                        <form asp-action="ReportFault" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <label class="form-label small fw-semibold">Report a fault</label>
+                            <textarea name="description" class="form-control form-control-sm mb-2" rows="2" placeholder="What is wrong? The device will be marked out of service."></textarea>
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Report fault</button>
+                        </form>
+                    </div>
+                </div>
+            }
+        </div>
+        <div class="col-lg-7">
+            @if (isManager && Model.Status != "Condemned")
+            {
+                <div class="card shadow-sm mb-3">
+                    <div class="card-header bg-light fw-semibold">Record a service</div>
+                    <div class="card-body">
+                        <form asp-action="LogService" asp-route-id="@Model.Id" method="post" class="row g-2">
+                            @Html.AntiForgeryToken()
+                            <div class="col-md-4">
+                                <select name="serviceType" class="form-select form-select-sm">@foreach (var t in EquipmentController.ServiceTypes) { <option value="@t">@t</option> }</select>
+                            </div>
+                            <div class="col-md-4"><input name="serviceDate" type="date" class="form-control form-control-sm" value="@today.ToString("yyyy-MM-dd")" /></div>
+                            <div class="col-md-4">
+                                <select name="result" class="form-select form-select-sm">@foreach (var r in EquipmentController.Results) { <option value="@r">@r</option> }</select>
+                            </div>
+                            <div class="col-md-5"><input name="performedBy" class="form-control form-control-sm" placeholder="Performed by (engineer / vendor)" /></div>
+                            <div class="col-md-4"><input name="certificateNumber" class="form-control form-control-sm" placeholder="Certificate / job no." /></div>
+                            <div class="col-md-3"><input name="cost" type="number" step="0.01" min="0" class="form-control form-control-sm" placeholder="Cost" /></div>
+                            <div class="col-md-9"><input name="notes" class="form-control form-control-sm" placeholder="Notes" /></div>
+                            <div class="col-md-3"><button type="submit" class="btn btn-sm btn-primary w-100">Save</button></div>
+                        </form>
+                    </div>
+                </div>
+            }
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Service history</div>
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Result</th><th>By</th><th>Cert. / job</th><th class="text-end">Cost</th><th>Notes</th></tr></thead>
+                        <tbody>
+                            @foreach (var r in Model.ServiceRecords.OrderByDescending(r => r.ServiceDate).ThenByDescending(r => r.Id))
+                            {
+                                <tr>
+                                    <td class="small text-nowrap">@r.ServiceDate.ToString("dd-MMM-yyyy")</td>
+                                    <td class="small">@r.ServiceType</td>
+                                    <td><span class="badge @(r.Result == "Fail" || r.Result == "Reported" ? "bg-danger" : "bg-success")">@r.Result</span></td>
+                                    <td class="small">@r.PerformedBy</td>
+                                    <td class="small">@r.CertificateNumber</td>
+                                    <td class="small text-end">@(r.Cost > 0 ? r.Cost.ToString("N2", CultureInfo.InvariantCulture) : "")</td>
+                                    <td class="small">@r.Notes</td>
+                                </tr>
+                            }
+                            @if (!Model.ServiceRecords.Any()) { <tr><td colspan="7" class="text-center text-muted py-3">No services recorded yet.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -21,6 +21,12 @@ namespace MedyxHMS.Services.Implementations
             if (string.IsNullOrWhiteSpace(userId))
                 return;
 
+            // Some records point at placeholder or deleted users (e.g. demo patients seeded with
+            // UserId "demo-patient"). Such a notification can never be delivered and would violate the
+            // foreign key, failing the bill/lab action that triggered it, so skip it.
+            if (!await _context.Users.AnyAsync(u => u.Id == userId))
+                return;
+
             _context.SystemNotifications.Add(new SystemNotification
             {
                 UserId = userId,

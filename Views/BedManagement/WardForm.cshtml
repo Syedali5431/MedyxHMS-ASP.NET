@@ -1,0 +1,40 @@
+@model MedyxHMS.Models.Ward
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Ward" : "Add Ward";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-hospital-alt text-primary me-2"></i>@ViewData["Title"]</h4>
+    @if (!isEdit && HospitalContext.AllHospitals.Count > 1)
+    {
+        <p class="text-muted small mb-0">The ward will be added to: <strong>@HospitalContext.HospitalName(HospitalContext.HospitalIdForNewRecords)</strong></p>
+    }
+    <div class="card mt-3 shadow-sm" style="max-width:640px">
+        <div class="card-body">
+            <form asp-action="@(isEdit ? "EditWard" : "CreateWard")" asp-route-id="@(isEdit ? Model.Id : (int?)null)" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label fw-semibold">Ward name <span class="text-danger">*</span></label>
+                    <input asp-for="Name" class="form-control" maxlength="100" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label fw-semibold">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="mb-3 form-check">
+                    <input asp-for="IsActive" type="checkbox" class="form-check-input" id="wardActive" />
+                    <label class="form-check-label fw-semibold" for="wardActive">Active</label>
+                    <div><span asp-validation-for="IsActive" class="text-danger small"></span></div>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a asp-action="Wards" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

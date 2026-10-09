@@ -34,7 +34,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<Patient> CreatePatientAsync(Patient patient)
         {
             patient.PatientId = GeneratePatientId();
-            patient.CreatedDate = DateTime.UtcNow;
+            patient.CreatedDate = DateTime.Now;
             patient.IsActive = true;
 
             _context.Patients.Add(patient);
@@ -101,7 +101,7 @@ namespace MedyxHMS.Services.Implementations
         private string GeneratePatientId()
         {
             // Generate unique patient ID: PTN + YYYY + sequential number
-            var year = DateTime.UtcNow.Year;
+            var year = DateTime.Now.Year;
             var lastPatient = _context.Patients
                 .Where(p => p.PatientId.StartsWith($"PTN{year}"))
                 .OrderByDescending(p => p.Id)

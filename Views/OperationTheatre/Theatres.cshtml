@@ -1,0 +1,50 @@
+@model List<MedyxHMS.Models.OperationTheatre>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    ViewData["Title"] = "Operation Theatres";
+    var upcoming = ViewBag.Upcoming as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var blocks = ViewBag.Blocks as Dictionary<int, int> ?? new Dictionary<int, int>();
+    var canManage = ViewBag.CanManage as bool? ?? false;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-door-open text-primary me-2"></i>Operation Theatres</h4>
+            <small class="text-muted">Theatres of the hospital with opening hours and the turnover (cleaning / set-up) time kept free after each case.</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">OT schedule</a>
+            <a class="btn btn-outline-primary btn-sm" asp-action="Availability">Availability</a>
+            @if (canManage) { <a class="btn btn-primary btn-sm" asp-action="TheatreCreate"><i class="fas fa-plus me-1"></i>Add Theatre</a> }
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Code</th><th>Name</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }<th>Type</th><th>Location</th><th>Hours</th><th>Turnover</th><th>Upcoming cases</th><th>Blocks</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model)
+                    {
+                        <tr class="@(t.IsActive ? "" : "text-muted")">
+                            <td class="fw-semibold"><a asp-action="TheatreDetails" asp-route-id="@t.Id">@t.Code</a></td>
+                            <td>@t.Name</td>
+                            @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(t.HospitalId)</td> }
+                            <td>@t.TheatreType</td>
+                            <td class="small">@t.Location</td>
+                            <td class="small text-nowrap">@(t.Is24Hours ? "24 hours" : $"{t.OpensAt:hh\\:mm}–{t.ClosesAt:hh\\:mm}")</td>
+                            <td class="small">@t.TurnoverMinutes min</td>
+                            <td>@(upcoming.TryGetValue(t.Id, out var u) ? u : 0)</td>
+                            <td>@(blocks.TryGetValue(t.Id, out var b) ? b : 0)</td>
+                            <td><span class="badge @(t.IsActive ? "bg-success" : "bg-secondary")">@(t.IsActive ? "Active" : "Inactive")</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any()) { <tr><td colspan="10" class="text-center text-muted py-4">No theatres yet.@(canManage ? " Use \"Add Theatre\" to set them up." : "")</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

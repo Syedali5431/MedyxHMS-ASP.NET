@@ -139,6 +139,44 @@ a {
 .btn {
     border-radius: 0.55rem;
     font-weight: 500;
+    /* A caption never breaks onto a second line; a row of buttons wraps whole buttons instead. */
+    white-space: nowrap;
+}
+
+.btn.btn-wrap {
+    white-space: normal;
+}
+
+/* Buttons in a flex row keep their size; the row wraps when there is not enough room. */
+.d-flex > .btn,
+.d-flex > form > .btn,
+.d-inline-flex > .btn,
+.input-group > .btn,
+.btn-toolbar > .btn,
+.btn-group > .btn {
+    flex-shrink: 0;
+}
+
+.d-flex:has(> .btn):not(.flex-nowrap),
+.d-flex:has(> form > .btn):not(.flex-nowrap),
+.d-flex:has(> .btn-group):not(.flex-nowrap) {
+    flex-wrap: wrap;
+}
+
+/* A grid column that only holds a button (filter rows: "Search", "Apply", "Reset") grows to fit it. */
+.row > [class*="col"]:has(> .btn:only-child),
+.row > [class*="col"]:has(> label:first-child + .btn:last-child),
+.row > [class*="col"]:has(> .d-flex:only-child > .btn) {
+    min-width: max-content;
+}
+
+/* Action columns in tables: buttons side by side, wrapping as whole buttons. */
+.table td .btn + .btn,
+.table td .btn + form,
+.table td form + .btn,
+.table td form + form {
+    margin-top: 2px;
+    margin-bottom: 2px;
 }
 
 .btn:hover {
@@ -928,4 +966,10 @@ a {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+}
+
+/* Signed-in pages on phones and tablets: same desktop layout, no automatic text enlargement. */
+html.desktop-view {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
 }

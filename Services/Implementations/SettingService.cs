@@ -28,7 +28,7 @@ namespace MedyxHMS.Services.Implementations
                 DefaultLanguage = settings.GetValueOrDefault("DefaultLanguage", "en"),
                 SupportedLanguages = settings.GetValueOrDefault("SupportedLanguages", "en,es,fr,ar").Split(',').ToList(),
                 TimeZone = settings.GetValueOrDefault("TimeZone", "UTC"),
-                Currency = settings.GetValueOrDefault("Currency", "USD"),
+                Currency = settings.GetValueOrDefault("Currency", "PKR"),
                 DateFormat = settings.GetValueOrDefault("DateFormat", "yyyy-MM-dd"),
                 EnableAuditLogging = bool.Parse(settings.GetValueOrDefault("EnableAuditLogging", "true")),
                 EnableEmailNotifications = bool.Parse(settings.GetValueOrDefault("EnableEmailNotifications", "true")),
@@ -88,7 +88,7 @@ namespace MedyxHMS.Services.Implementations
                     Category = "General",
                     Description = $"Auto-created setting for key '{key}'",
                     IsSystem = false,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     ModifiedBy = "System"
                 };
                 _context.Settings.Add(setting);
@@ -96,7 +96,7 @@ namespace MedyxHMS.Services.Implementations
             else
             {
                 setting.Value = value;
-                setting.ModifiedDate = DateTime.UtcNow;
+                setting.ModifiedDate = DateTime.Now;
             }
 
             await _context.SaveChangesAsync();

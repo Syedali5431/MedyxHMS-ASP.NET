@@ -1,0 +1,383 @@
+@model MedyxHMS.ViewModels.ReportDocument
+@using MedyxHMS.ViewModels
+@using System.Globalization
+@inject MedyxHMS.Services.Interfaces.INetworkPrintService NetworkPrint
+@inject MedyxHMS.Services.Interfaces.IReceiptPrintService PrintSettings
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@*
+    One report: filters and actions (PDF, Excel, print, network printer) above a printable "paper" with the hospital
+    letterhead, key figures, charts and tables. The PDF and Excel exports are built from the same ReportDocument.
+*@
+@{
+    var doc = Model;
+    var inv = CultureInfo.InvariantCulture;
+    var formAction = ViewData["ReportFormAction"] as string ?? Context.Request.Path.Value ?? "/Report";
+    var inWorkspace = formAction.TrimEnd('/').EndsWith("/Report", StringComparison.OrdinalIgnoreCase) || formAction.EndsWith("/Report/Index", StringComparison.OrdinalIgnoreCase);
+    var dateFormat = "yyyy-MM-dd";
+    // Pages that show a single document (e.g. a discharge report) have their own buttons.
+    var hideToolbar = ViewData["ReportHideToolbar"] is true;
+
+    // Query values for export links: the filters the document was really built with.
+    var query = new Dictionary<string, string?> { ["reportKey"] = doc.Key };
+    switch (doc.FilterKind)
+    {
+        case ReportFilterKind.DateRange:
+            query["startDate"] = doc.StartDate?.ToString(dateFormat, inv);
+            query["endDate"] = doc.EndDate?.ToString(dateFormat, inv);
+            break;
+        case ReportFilterKind.SingleDate:
+            query["reportDate"] = doc.Date?.ToString(dateFormat, inv);
+            break;
+        case ReportFilterKind.Month:
+            query["month"] = doc.Month?.ToString("yyyy-MM", inv);
+            break;
+        case ReportFilterKind.ExpiryRange:
+            query["endDate"] = doc.EndDate?.ToString(dateFormat, inv);
+            break;
+    }
+    if (!string.IsNullOrEmpty(doc.StaffId)) query["staffId"] = doc.StaffId;
+    string ExportUrl(string format) => Url.Action("Export", "Report") + "?" + string.Join("&", query.Where(q => !string.IsNullOrEmpty(q.Value)).Select(q => $"{q.Key}={Uri.EscapeDataString(q.Value!)}")) + "&format=" + format;
+
+    var settings = await PrintSettings.GetSettingsAsync();
+    var documentPrinters = settings.UsesNetworkPrinters
+        ? await NetworkPrint.GetPrintersForHospitalAsync(HospitalContext.ActiveHospitalId ?? HospitalContext.HospitalIdForNewRecords, MedyxHMS.Models.Printer.TypeDocument)
+        : new List<MedyxHMS.Models.Printer>();
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var chartId = 0;
+    string Tone(string tone) => tone switch { "success" => "#1f9d74", "danger" => "#c0392b", "warning" => "#e0a526", "info" => "#17a2b8", "secondary" => "#7a8594", _ => "#2e75b6" };
+}
+
+<div class="rpt-wrap">
+    @* ── Filters and actions ── *@
+    @if (!hideToolbar)
+    {
+    <div class="rpt-toolbar d-print-none">
+        <form method="get" action="@formAction" class="rpt-filters">
+            @if (inWorkspace)
+            {
+                <input type="hidden" name="reportKey" value="@doc.Key" />
+            }
+            @switch (doc.FilterKind)
+            {
+                case ReportFilterKind.DateRange:
+                    <div>
+                        <label class="form-label" for="rptStart">From</label>
+                        <input type="date" id="rptStart" name="startDate" class="form-control form-control-sm" value="@doc.StartDate?.ToString(dateFormat, inv)" />
+                    </div>
+                    <div>
+                        <label class="form-label" for="rptEnd">To</label>
+                        <input type="date" id="rptEnd" name="endDate" class="form-control form-control-sm" value="@doc.EndDate?.ToString(dateFormat, inv)" />
+                    </div>
+                    <div class="rpt-quick">
+                        <label class="form-label">Quick</label>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Quick periods">
+                            <button type="button" class="btn btn-outline-secondary" data-range="today">Today</button>
+                            <button type="button" class="btn btn-outline-secondary" data-range="7">7 days</button>
+                            <button type="button" class="btn btn-outline-secondary" data-range="month">This month</button>
+                            <button type="button" class="btn btn-outline-secondary" data-range="lastmonth">Last month</button>
+                            <button type="button" class="btn btn-outline-secondary" data-range="year">This year</button>
+                        </div>
+                    </div>
+                    break;
+                case ReportFilterKind.SingleDate:
+                    <div>
+                        <label class="form-label" for="rptDate">Date</label>
+                        <input type="date" id="rptDate" name="reportDate" class="form-control form-control-sm" value="@doc.Date?.ToString(dateFormat, inv)" />
+                    </div>
+                    break;
+                case ReportFilterKind.Month:
+                    <div>
+                        <label class="form-label" for="rptMonth">Month</label>
+                        <input type="month" id="rptMonth" name="month" class="form-control form-control-sm" value="@doc.Month?.ToString("yyyy-MM", inv)" />
+                    </div>
+                    break;
+                case ReportFilterKind.ExpiryRange:
+                    <div>
+                        <label class="form-label" for="rptExpiry">Expiring by</label>
+                        <input type="date" id="rptExpiry" name="endDate" class="form-control form-control-sm" value="@doc.EndDate?.ToString(dateFormat, inv)" />
+                    </div>
+                    break;
+            }
+            @if (doc.StaffOptions.Count > 0)
+            {
+                <div>
+                    <label class="form-label" for="rptStaff">Employee</label>
+                    <select id="rptStaff" name="staffId" class="form-select form-select-sm" style="min-width:200px">
+                        <option value="">All staff</option>
+                        @foreach (var s in doc.StaffOptions)
+                        {
+                            <option value="@s.Key" selected="@(s.Key == doc.StaffId)">@s.Value</option>
+                        }
+                    </select>
+                </div>
+            }
+            @if (doc.FilterKind != ReportFilterKind.None || doc.StaffOptions.Count > 0)
+            {
+                <div class="align-self-end">
+                    <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-sync-alt me-1"></i>Generate</button>
+                </div>
+            }
+            else
+            {
+                <div class="align-self-end small text-muted"><i class="fas fa-clock me-1"></i>Current figures</div>
+            }
+        </form>
+
+        <div class="rpt-actions">
+            <a class="btn btn-sm rpt-btn-pdf" href="@ExportUrl("pdf")" title="Download as PDF"><i class="fas fa-file-pdf me-1"></i>PDF</a>
+            <a class="btn btn-sm rpt-btn-excel" href="@ExportUrl("excel")" title="Download as Excel"><i class="fas fa-file-excel me-1"></i>Excel</a>
+            <button type="button" class="btn btn-sm btn-outline-dark" onclick="window.print()" title="Print with the print dialog (Windows default printer)"><i class="fas fa-print me-1"></i>Print</button>
+            @if (documentPrinters.Count > 0)
+            {
+                <form method="post" action="@Url.Action("PrintToPrinter", "Report")" class="d-flex gap-1 align-items-center">
+                    @Html.AntiForgeryToken()
+                    @foreach (var q in query.Where(q => !string.IsNullOrEmpty(q.Value)))
+                    {
+                        <input type="hidden" name="@q.Key" value="@q.Value" />
+                    }
+                    <input type="hidden" name="returnUrl" value="@returnUrl" />
+                    <select name="printerId" class="form-select form-select-sm" style="max-width:180px" aria-label="Network printer">
+                        @foreach (var p in documentPrinters)
+                        {
+                            <option value="@p.Id">@p.Name</option>
+                        }
+                    </select>
+                    <button type="submit" class="btn btn-sm btn-outline-primary" title="Send to the network printer"><i class="fas fa-network-wired me-1"></i>Send</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    }
+
+    @* ── The report ── *@
+    <article class="rpt-paper" id="reportPaper">
+        <header class="rpt-letterhead">
+            <div class="rpt-brand">
+                <img class="rpt-logo" src="@MedyxHMS.Services.Implementations.Branding.LogoUrl" alt="Medyx" />
+                <div>
+                    <div class="rpt-hospital">@(string.IsNullOrWhiteSpace(doc.HospitalName) ? "MedyxHMS" : doc.HospitalName)</div>
+                    @if (!string.IsNullOrWhiteSpace(doc.HospitalAddress)) { <div class="rpt-muted">@doc.HospitalAddress</div> }
+                    @if (!string.IsNullOrWhiteSpace(doc.HospitalContact)) { <div class="rpt-muted">@doc.HospitalContact</div> }
+                </div>
+            </div>
+            <div class="rpt-title-block">
+                <div class="rpt-category">@doc.Category@(doc.Key.StartsWith("R") ? " · " + doc.Key : "")</div>
+                <h2 class="rpt-title">@doc.Title</h2>
+                <div class="rpt-period">@doc.PeriodText</div>
+                <div class="rpt-muted small">Generated @doc.GeneratedAt.ToString("dd-MMM-yyyy hh:mm tt", inv)@(string.IsNullOrWhiteSpace(doc.GeneratedBy) ? "" : " by " + doc.GeneratedBy)</div>
+            </div>
+        </header>
+
+        @if (!string.IsNullOrWhiteSpace(doc.Description))
+        {
+            <p class="rpt-description">@doc.Description</p>
+        }
+
+        @if (doc.Metrics.Count > 0)
+        {
+            <div class="rpt-kpis">
+                @foreach (var m in doc.Metrics)
+                {
+                    <div class="rpt-kpi" style="--rpt-tone:@Tone(m.Tone)">
+                        <div class="rpt-kpi-label">@m.Label</div>
+                        <div class="rpt-kpi-value">@doc.Format(m.Value, m.Kind)</div>
+                    </div>
+                }
+            </div>
+        }
+
+        @{ var charts = doc.Charts.Where(c => c.Values.Count > 0 && c.Values.Any(v => v != 0)).ToList(); }
+        @if (charts.Count > 0)
+        {
+            <div class="rpt-charts">
+                @foreach (var chart in charts)
+                {
+                    chartId++;
+                    var id = $"rptChart{chartId}";
+                    <figure class="rpt-chart">
+                        <figcaption>@chart.Title</figcaption>
+                        <div class="rpt-chart-box"><canvas id="@id"></canvas></div>
+                        <script type="application/json" data-chart-for="@id">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(new { type = chart.Type, labels = chart.Labels, values = chart.Values, money = chart.IsMoney, currency = doc.CurrencySymbol }))</script>
+                    </figure>
+                }
+            </div>
+        }
+
+        @foreach (var part in doc.Sections)
+        {
+            <section class="rpt-section">
+                @if (!string.IsNullOrWhiteSpace(part.Title))
+                {
+                    <div class="rpt-section-head">
+                        <h3>@part.Title</h3>
+                        @if (!part.Compact) { <span class="rpt-muted small">@part.Rows.Count record(s)</span> }
+                    </div>
+                }
+                @if (part.Rows.Count == 0)
+                {
+                    <div class="rpt-empty"><i class="fas fa-inbox me-2"></i>@part.EmptyText</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="rpt-table">
+                            <thead>
+                                <tr>
+                                    @if (!part.Compact) { <th class="rpt-num-col">#</th> }
+                                    @foreach (var c in part.Columns)
+                                    {
+                                        <th class="@(c.IsNumeric ? "text-end" : "")">@c.Header</th>
+                                    }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (var r = 0; r < part.Rows.Count; r++)
+                                {
+                                    var row = part.Rows[r];
+                                    <tr>
+                                        @if (!part.Compact) { <td class="rpt-num-col">@(r + 1)</td> }
+                                        @for (var c = 0; c < part.Columns.Count; c++)
+                                        {
+                                            var column = part.Columns[c];
+                                            var value = c < row.Length ? row[c] : null;
+                                            <td class="@(column.IsNumeric ? "text-end text-nowrap" : column.Kind is ReportColumnKind.Date or ReportColumnKind.DateTime ? "text-nowrap" : "")">@doc.Format(value, column.Kind)</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                            @if (part.ShowTotals)
+                            {
+                                <tfoot>
+                                    <tr>
+                                        @if (!part.Compact) { <td class="rpt-num-col"></td> }
+                                        @for (var c = 0; c < part.Columns.Count; c++)
+                                        {
+                                            var column = part.Columns[c];
+                                            <td class="@(column.IsNumeric ? "text-end text-nowrap" : "")">@(c == 0 ? "Total" : doc.Format(part.TotalFor(c), column.Kind))</td>
+                                        }
+                                    </tr>
+                                </tfoot>
+                            }
+                        </table>
+                    </div>
+                }
+            </section>
+        }
+
+        @if (doc.Notes.Count > 0)
+        {
+            <ul class="rpt-notes">
+                @foreach (var note in doc.Notes) { <li>@note</li> }
+            </ul>
+        }
+
+        <footer class="rpt-footer">
+            <span>MedyxHMS · @doc.Title · @(doc.FooterNote ?? "Confidential – for internal use")</span>
+            @if (!doc.Sections.All(s => s.Compact)) { <span>@doc.RowCount record(s)</span> }
+        </footer>
+    </article>
+</div>
+
+<style>
+    .rpt-wrap { --rpt-navy: #1f3864; --rpt-blue: #2e75b6; --rpt-line: #d9e1ec; --rpt-muted: #5f6b7a; }
+    .rpt-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; background: #fff; border: 1px solid var(--rpt-line); border-radius: .6rem; padding: 12px 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+    .rpt-filters { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+    .rpt-filters .form-label { font-size: .72rem; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--rpt-muted); margin-bottom: 2px; }
+    .rpt-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .rpt-btn-pdf { background: #c0392b; border-color: #c0392b; color: #fff; }
+    .rpt-btn-pdf:hover, .rpt-btn-pdf:focus { background: #a93226; border-color: #a93226; color: #fff; }
+    .rpt-btn-excel { background: #1d6f42; border-color: #1d6f42; color: #fff; }
+    .rpt-btn-excel:hover, .rpt-btn-excel:focus { background: #185c37; border-color: #185c37; color: #fff; }
+    .rpt-paper { background: #fff; border: 1px solid var(--rpt-line); border-radius: .6rem; box-shadow: 0 4px 18px rgba(31,56,100,.08); padding: 28px 32px 18px; color: #1d2733; }
+    .rpt-letterhead { display: flex; justify-content: space-between; gap: 20px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 3px solid var(--rpt-navy); box-shadow: 0 2px 0 0 var(--rpt-blue); margin-bottom: 18px; }
+    .rpt-brand { display: flex; gap: 14px; align-items: flex-start; }
+    .rpt-logo { width: 58px; height: auto; flex: 0 0 auto; align-self: center; }
+    .rpt-hospital { font-size: 1.25rem; font-weight: 700; color: var(--rpt-navy); line-height: 1.2; }
+    .rpt-muted { color: var(--rpt-muted); font-size: .82rem; }
+    .rpt-title-block { text-align: right; margin-left: auto; }
+    .rpt-category { font-size: .7rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--rpt-blue); }
+    .rpt-title { font-size: 1.35rem; font-weight: 700; color: var(--rpt-navy); margin: 2px 0; }
+    .rpt-period { font-weight: 600; font-size: .9rem; }
+    .rpt-description { color: var(--rpt-muted); font-style: italic; font-size: .85rem; margin-bottom: 14px; }
+    .rpt-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; margin-bottom: 18px; }
+    .rpt-kpi { border: 1px solid var(--rpt-line); border-left: 4px solid var(--rpt-tone); border-radius: .45rem; padding: 10px 12px; background: #f8fafd; }
+    .rpt-kpi-label { font-size: .68rem; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--rpt-muted); }
+    .rpt-kpi-value { font-size: 1.25rem; font-weight: 700; color: var(--rpt-navy); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .rpt-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .rpt-chart { border: 1px solid var(--rpt-line); border-radius: .45rem; padding: 10px 12px; margin: 0; break-inside: avoid; }
+    .rpt-chart figcaption { font-weight: 700; color: var(--rpt-navy); font-size: .88rem; margin-bottom: 6px; }
+    .rpt-chart-box { position: relative; height: 230px; }
+    .rpt-section { margin-bottom: 20px; }
+    .rpt-section-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .rpt-section-head h3 { font-size: 1rem; font-weight: 700; color: var(--rpt-navy); margin: 0; }
+    .rpt-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
+    .rpt-table thead th { background: var(--rpt-navy); color: #fff; font-weight: 600; padding: 7px 8px; border: 0; white-space: nowrap; position: sticky; top: 0; }
+    .rpt-table tbody td { padding: 6px 8px; border-bottom: 1px solid #e8edf4; vertical-align: top; }
+    .rpt-table tbody tr:nth-child(even) td { background: #f5f8fc; }
+    .rpt-table tbody tr:hover td { background: #eaf1fb; }
+    .rpt-table tfoot td { background: #e8eef7; font-weight: 700; border-top: 2px solid var(--rpt-navy); padding: 7px 8px; }
+    .rpt-num-col { width: 34px; color: var(--rpt-muted); text-align: right; }
+    .rpt-empty { border: 1px dashed var(--rpt-line); border-radius: .45rem; padding: 22px; text-align: center; color: var(--rpt-muted); font-style: italic; }
+    .rpt-notes { color: var(--rpt-muted); font-size: .8rem; padding-left: 18px; margin-bottom: 10px; }
+    .rpt-footer { display: flex; justify-content: space-between; border-top: 1px solid var(--rpt-line); padding-top: 8px; margin-top: 8px; font-size: .74rem; color: var(--rpt-muted); }
+    @@media (max-width: 768px) { .rpt-paper { padding: 16px; } .rpt-title-block { text-align: left; margin-left: 0; } }
+    @@media print {
+        body * { visibility: hidden !important; }
+        .rpt-paper, .rpt-paper * { visibility: visible !important; }
+        .rpt-paper { position: absolute; left: 0; top: 0; width: 100%; border: 0; box-shadow: none; padding: 0; }
+        .rpt-table thead th, .rpt-logo, .rpt-table tfoot td, .rpt-table tbody tr:nth-child(even) td { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .rpt-table thead { display: table-header-group; }
+        .rpt-table tr, .rpt-kpi, .rpt-chart { break-inside: avoid; }
+        .table-responsive { overflow: visible !important; }
+        @@page { size: @(doc.Landscape ? "A4 landscape" : "A4"); margin: 12mm; }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Quick periods for date-range reports.
+        document.querySelectorAll('.rpt-quick [data-range]').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var now = new Date(), from = new Date(now), to = new Date(now);
+                switch (btn.dataset.range) {
+                    case '7': from.setDate(now.getDate() - 6); break;
+                    case 'month': from = new Date(now.getFullYear(), now.getMonth(), 1); break;
+                    case 'lastmonth': from = new Date(now.getFullYear(), now.getMonth() - 1, 1); to = new Date(now.getFullYear(), now.getMonth(), 0); break;
+                    case 'year': from = new Date(now.getFullYear(), 0, 1); break;
+                }
+                function iso(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+                var form = btn.closest('form');
+                form.querySelector('[name="startDate"]').value = iso(from);
+                form.querySelector('[name="endDate"]').value = iso(to);
+                form.submit();
+            });
+        });
+
+        if (typeof Chart === 'undefined') return;
+        var palette = ['#2e75b6', '#1f9d74', '#e0a526', '#c0504d', '#7e57c2', '#26a69a', '#8d6e63', '#5c6bc0', '#ef6c00', '#00838f', '#ad1457', '#558b2f'];
+        document.querySelectorAll('script[data-chart-for]').forEach(function (el) {
+            var cfg = JSON.parse(el.textContent);
+            var canvas = document.getElementById(el.dataset.chartFor);
+            if (!canvas) return;
+            var fmt = function (v) {
+                var n = Number(v).toLocaleString('en-US', { minimumFractionDigits: cfg.money ? 2 : 0, maximumFractionDigits: 2 });
+                return cfg.money ? (cfg.currency + (/[A-Za-z]/.test(cfg.currency) ? ' ' : '') + n) : n;
+            };
+            var doughnut = cfg.type === 'doughnut';
+            new Chart(canvas, {
+                type: doughnut ? 'doughnut' : 'bar',
+                data: { labels: cfg.labels, datasets: [{ data: cfg.values, backgroundColor: doughnut ? palette : '#2e75b6', borderRadius: doughnut ? 0 : 4, maxBarThickness: 38 }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    indexAxis: !doughnut && cfg.labels.length > 6 ? 'y' : 'x',
+                    plugins: {
+                        legend: { display: doughnut, position: 'right', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: { callbacks: { label: function (ctx) { return ' ' + fmt(ctx.parsed.y !== undefined && !doughnut ? (ctx.chart.options.indexAxis === 'y' ? ctx.parsed.x : ctx.parsed.y) : ctx.parsed); } } }
+                    },
+                    scales: doughnut ? {} : { x: { ticks: { font: { size: 10 } } }, y: { beginAtZero: true, ticks: { font: { size: 10 } } } }
+                }
+            });
+        });
+    });
+</script>

@@ -23,8 +23,12 @@ namespace MedyxHMS.DTOs
 
     public class PrescriptionCreateDto
     {
-        [Required(ErrorMessage = "Pharmacy Bill ID is required")]
+        // 0 = open a new pharmacy bill for PatientId (or add to the patient's open bill of today).
+        [Display(Name = "Pharmacy bill")]
         public int PharmacyBillId { get; set; }
+
+        [Display(Name = "Patient")]
+        public int? PatientId { get; set; }
 
         [Required(ErrorMessage = "Medicine ID is required")]
         public int MedicineId { get; set; }

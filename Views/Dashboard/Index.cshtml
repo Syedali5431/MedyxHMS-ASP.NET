@@ -1,4 +1,5 @@
 @model MedyxHMS.Controllers.DashboardViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 @{
     ViewData["Title"] = "Dashboard";
 }
@@ -121,7 +122,7 @@
                                         <tr>
                                             <td>@appointment.Patient?.FirstName @appointment.Patient?.LastName</td>
                                             <td>@appointment.Doctor?.FirstName @appointment.Doctor?.LastName</td>
-                                            <td>@appointment.AppointmentDate.ToShortDateString() @appointment.AppointmentTime</td>
+                                            <td>@appointment.AppointmentDate.ToString("MMM dd, yyyy") @appointment.AppointmentTime.ToString(@"hh\:mm")</td>
                                             <td>
                                                 <span class="badge badge-@(appointment.Status == "Confirmed" ? "success" : appointment.Status == "Pending" ? "warning" : "secondary")">
                                                     @appointment.Status
@@ -145,19 +146,19 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        @if (Model?.FeatureToggles?.PatientPortal == true)
+                        @if (Model?.FeatureToggles?.PatientPortal == true && await Nav.CanAccessAsync("/Patient/Create"))
                         {
                             <a asp-controller="Patient" asp-action="Create" class="btn btn-outline-primary"><i class="fas fa-user-plus me-1"></i>Add New Patient</a>
                         }
-                        @if (Model?.FeatureToggles?.AppointmentSystem == true)
+                        @if (Model?.FeatureToggles?.AppointmentSystem == true && await Nav.CanAccessAsync("/Appointment/Create"))
                         {
                             <a asp-controller="Appointment" asp-action="Create" class="btn btn-outline-success"><i class="fas fa-calendar-plus me-1"></i>Schedule Appointment</a>
                         }
-                        @if (Model?.FeatureToggles?.BillingModule == true)
+                        @if (Model?.FeatureToggles?.BillingModule == true && await Nav.CanAccessAsync("/Billing/Create"))
                         {
                             <a asp-controller="Billing" asp-action="Create" class="btn btn-outline-info"><i class="fas fa-file-invoice me-1"></i>Create Bill</a>
                         }
-                        @if (Model?.FeatureToggles?.OPDModule == true)
+                        @if (Model?.FeatureToggles?.OPDModule == true && await Nav.CanAccessAsync("/OPD/Create"))
                         {
                             <a asp-controller="OPD" asp-action="Create" class="btn btn-outline-warning">OPD Visit</a>
                         }

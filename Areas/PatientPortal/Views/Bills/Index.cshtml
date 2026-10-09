@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "Bills & Payments";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 @model PatientPortalBillsViewModel
@@ -77,8 +77,8 @@
                                 <tr>
                                     <td><strong>@bill.BillNumber</strong></td>
                                     <td>@bill.BillDate?.ToString("MMM dd, yyyy")</td>
-                                    <td>₹@bill.TotalAmount?.ToString("N2")</td>
-                                    <td>₹@bill.PaidAmount?.ToString("N2")</td>
+                                    <td>@bill.TotalAmount?.ToString("C")</td>
+                                    <td>@bill.PaidAmount?.ToString("C")</td>
                                     <td>@bill.DueDate?.ToString("MMM dd, yyyy")</td>
                                     <td>
                                         @if (bill.Status == "Paid")
@@ -93,10 +93,16 @@
                                                 <i class="fas fa-clock"></i> Pending
                                             </span>
                                         }
-                                        else if (bill.Status == "Overdue")
+                                        else if (bill.Status == "Overdue" || (bill.Status != "Cancelled" && bill.DueDate.HasValue && bill.DueDate.Value.Date < DateTime.Today))
                                         {
                                             <span class="badge bg-danger">
                                                 <i class="fas fa-exclamation-circle"></i> Overdue
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">
+                                                <i class="fas fa-clock"></i> @bill.Status
                                             </span>
                                         }
                                     </td>
@@ -186,29 +192,39 @@
                     <div class="billing-summary-item mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted">Total Bills:</span>
-                            <strong class="text-dark">₹@Model.Bills.Sum(b => b.TotalAmount)?.ToString("N2")</strong>
+                            <strong class="text-dark">@Model.Bills.Sum(b => b.TotalAmount)?.ToString("C")</strong>
                         </div>
                     </div>
 
                     <div class="billing-summary-item mb-3">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted">Total Paid:</span>
-                            <strong class="text-success">₹@Model.Bills.Sum(b => b.PaidAmount)?.ToString("N2")</strong>
+                            <strong class="text-success">@Model.Bills.Sum(b => b.PaidAmount)?.ToString("C")</strong>
                         </div>
                     </div>
 
                     <div class="billing-summary-item mb-3 p-3 bg-light rounded">
                         <div class="d-flex justify-content-between align-items-center">
                             <span class="text-muted"><strong>Outstanding:</strong></span>
-                            <strong class="text-danger fs-5">₹@Model.Bills.Where(b => b.Status != "Paid").Sum(b => b.TotalAmount - b.PaidAmount)?.ToString("N2")</strong>
+                            <strong class="text-danger fs-5">@Model.Bills.Where(b => b.Status != "Paid").Sum(b => b.TotalAmount - b.PaidAmount)?.ToString("C")</strong>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a href="@Url.Action("Pay", "Bills")" class="btn btn-success">
-                            <i class="fas fa-credit-card"></i> Pay Outstanding Balance
-                        </a>
-                    </div>
+                    @{
+                        // "Pay" needs a bill id: send the patient to the oldest bill that still has a balance.
+                        var firstUnpaidBill = Model.Bills
+                            .Where(b => b.Status != "Paid" && b.Status != "Cancelled" && (b.TotalAmount ?? 0) - (b.PaidAmount ?? 0) > 0)
+                            .OrderBy(b => b.BillDate)
+                            .FirstOrDefault();
+                    }
+                    @if (firstUnpaidBill != null)
+                    {
+                        <div class="d-grid gap-2">
+                            <a href="@Url.Action("Pay", "Bills", new { id = firstUnpaidBill.Id })" class="btn btn-success">
+                                <i class="fas fa-credit-card"></i> Pay Outstanding Balance
+                            </a>
+                        </div>
+                    }
 
                     <hr>
 

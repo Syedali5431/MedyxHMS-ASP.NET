@@ -69,7 +69,7 @@ namespace MedyxHMS.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CheckOutVisitor(int id, DateTime? date = null)
         {
-            var success = await _frontOfficeService.CheckOutVisitorAsync(id, DateTime.UtcNow);
+            var success = await _frontOfficeService.CheckOutVisitorAsync(id, DateTime.Now);
             TempData[success ? "SuccessMessage" : "ErrorMessage"] = success ? "Visitor checked out." : "Visitor not found.";
             return RedirectToAction(nameof(Visitors), new { date = date ?? DateTime.Today });
         }

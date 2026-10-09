@@ -1,0 +1,100 @@
+@model MedyxHMS.Models.Equipment
+@using MedyxHMS.Controllers
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Equipment" : "Add Equipment";
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-stethoscope text-primary me-2"></i>@ViewData["Title"]</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:900px">
+        <div class="card-body">
+            <form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : (int?)null)" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label asp-for="AssetTag" class="form-label fw-semibold"></label>
+                        <input asp-for="AssetTag" class="form-control text-uppercase" maxlength="30" placeholder="Auto (EQ-0001)" />
+                        <span asp-validation-for="AssetTag" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Name" class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" maxlength="150" placeholder="e.g. Defibrillator" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Category" class="form-label fw-semibold"></label>
+                        <select asp-for="Category" class="form-select">
+                            @foreach (var c in EquipmentController.Categories) { <option value="@c">@c</option> }
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4"><label asp-for="Manufacturer" class="form-label fw-semibold"></label><input asp-for="Manufacturer" class="form-control" maxlength="100" /></div>
+                    <div class="col-md-4"><label asp-for="Model" class="form-label fw-semibold"></label><input asp-for="Model" class="form-control" maxlength="100" /></div>
+                    <div class="col-md-4"><label asp-for="SerialNumber" class="form-label fw-semibold"></label><input asp-for="SerialNumber" class="form-control" maxlength="100" /></div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-4"><label asp-for="Location" class="form-label fw-semibold"></label><input asp-for="Location" class="form-control" maxlength="150" /></div>
+                    <div class="col-md-4"><label asp-for="Supplier" class="form-label fw-semibold"></label><input asp-for="Supplier" class="form-control" maxlength="150" /></div>
+                    <div class="col-md-2">
+                        <label asp-for="RiskClass" class="form-label fw-semibold"></label>
+                        <select asp-for="RiskClass" class="form-select">@foreach (var r in EquipmentController.RiskClasses) { <option value="@r">@r</option> }</select>
+                    </div>
+                    <div class="col-md-2">
+                        <label asp-for="Status" class="form-label fw-semibold"></label>
+                        <select asp-for="Status" class="form-select">@foreach (var s in EquipmentController.Statuses) { <option value="@s">@s</option> }</select>
+                        <span asp-validation-for="Status" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label asp-for="PurchaseDate" class="form-label fw-semibold"></label>
+                        <input asp-for="PurchaseDate" type="date" class="form-control" value="@Model.PurchaseDate?.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="PurchaseDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="WarrantyExpiry" class="form-label fw-semibold"></label>
+                        <input asp-for="WarrantyExpiry" type="date" class="form-control" value="@Model.WarrantyExpiry?.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <fieldset class="border rounded p-3 mb-3">
+                    <legend class="float-none w-auto px-2 fs-6 fw-semibold">Schedules (0 = not required)</legend>
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label asp-for="MaintenanceIntervalDays" class="form-label small fw-semibold"></label>
+                            <input asp-for="MaintenanceIntervalDays" type="number" min="0" max="3650" class="form-control" />
+                            <span asp-validation-for="MaintenanceIntervalDays" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="LastMaintenanceDate" class="form-label small fw-semibold"></label>
+                            <input asp-for="LastMaintenanceDate" type="date" class="form-control" value="@Model.LastMaintenanceDate?.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="LastMaintenanceDate" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="CalibrationIntervalDays" class="form-label small fw-semibold"></label>
+                            <input asp-for="CalibrationIntervalDays" type="number" min="0" max="3650" class="form-control" />
+                            <span asp-validation-for="CalibrationIntervalDays" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-3">
+                            <label asp-for="LastCalibrationDate" class="form-label small fw-semibold"></label>
+                            <input asp-for="LastCalibrationDate" type="date" class="form-control" value="@Model.LastCalibrationDate?.ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="LastCalibrationDate" class="text-danger small"></span>
+                        </div>
+                    </div>
+                    <div class="form-text">Next due date = last service (or the commissioning date) + interval. Recording a service on the equipment page updates it automatically.</div>
+                </fieldset>
+                <div class="mb-3">
+                    <label asp-for="Notes" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a asp-action="@(isEdit ? "Details" : "Index")" asp-route-id="@(isEdit ? Model.Id : (int?)null)" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

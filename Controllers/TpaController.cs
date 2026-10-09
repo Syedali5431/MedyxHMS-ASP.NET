@@ -123,7 +123,7 @@ namespace MedyxHMS.Controllers
             if (settledAmount.HasValue)
             {
                 claim.SettledAmount = settledAmount;
-                claim.SettlementDate = DateTime.UtcNow;
+                claim.SettlementDate = DateTime.Now;
             }
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Claim status updated.";

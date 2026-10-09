@@ -1,4 +1,5 @@
 @model MedyxHMS.ViewModels.PatientIndexViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Patient Management";
@@ -14,7 +15,7 @@
                     <p class="text-muted">Manage patient records and information</p>
                 </div>
                 <div>
-                    @if (User.HasPermission("Patient", "Add"))
+                    @if (await Nav.CanAccessAsync("/Patient/Create"))
                     {
                         <a href="@Url.Action("Create", "Patient")" class="btn btn-primary">
                             <i class="fas fa-plus"></i> Add New Patient
@@ -212,21 +213,21 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            @if (User.HasPermission("Patient", "View"))
+                                            @if (await Nav.CanAccessAsync("/Patient/Details"))
                                             {
                                                 <a href="@Url.Action("Details", "Patient", new { id = patient.Id })"
                                                    class="btn btn-sm btn-info" title="View Details">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                             }
-                                            @if (User.HasPermission("Patient", "Edit"))
+                                            @if (await Nav.CanAccessAsync("/Patient/Edit"))
                                             {
                                                 <a href="@Url.Action("Edit", "Patient", new { id = patient.Id })"
                                                    class="btn btn-sm btn-warning" title="Edit Patient">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                             }
-                                            @if (User.HasPermission("Patient", "Delete"))
+                                            @if (await Nav.CanAccessAsync("/Patient/Delete"))
                                             {
                                                 <a href="@Url.Action("Delete", "Patient", new { id = patient.Id })"
                                                    class="btn btn-sm btn-danger" title="Delete Patient">

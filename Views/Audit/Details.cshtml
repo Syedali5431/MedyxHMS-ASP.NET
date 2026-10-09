@@ -17,8 +17,8 @@
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-4"><strong>Id:</strong> @Model.AuditLog.Id</div>
-                <div class="col-md-4"><strong>User Id:</strong> @(string.IsNullOrWhiteSpace(Model.AuditLog.UserId) ? "System" : Model.AuditLog.UserId)</div>
-                <div class="col-md-4"><strong>Time (UTC):</strong> @Model.AuditLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</div>
+                <div class="col-md-4"><strong>User:</strong> @(string.IsNullOrWhiteSpace(Model.AuditLog.UserId) ? "System" : Model.AuditLog.User?.UserName ?? Model.AuditLog.UserId)</div>
+                <div class="col-md-4"><strong>Time:</strong> @Model.AuditLog.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</div>
                 <div class="col-md-4"><strong>Action:</strong> @Model.AuditLog.Action</div>
                 <div class="col-md-4"><strong>Entity:</strong> @Model.AuditLog.EntityName</div>
                 <div class="col-md-4"><strong>Entity Id:</strong> @Model.AuditLog.EntityId</div>

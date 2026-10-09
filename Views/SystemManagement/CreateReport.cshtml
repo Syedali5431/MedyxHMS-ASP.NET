@@ -198,8 +198,7 @@
                     </button>
                     <a asp-action="ReportManagement" class="btn btn-outline-secondary">Cancel</a>
                     <button type="button" class="btn btn-outline-info ms-auto"
-                            data-bs-toggle="tab" data-bs-target="#previewPane"
-                            onclick="renderPreview(); document.getElementById('preview-tab').click();">
+                            onclick="document.getElementById('preview-tab').click();">
                         <i class="bi bi-eye"></i> Preview
                     </button>
                 </div>
@@ -238,6 +237,7 @@
         let fieldCounter = 0;
 
         function addField() {
+            collectFieldValues(); // keep what was typed in the existing rows
             fieldCounter++;
             fields.push({
                 id: fieldCounter,
@@ -325,6 +325,8 @@
                     </td>
                 </tr>`).join('');
         }
+
+        document.getElementById('createReportForm')?.addEventListener('submit', function () { serializeFields(); });
 
         function serializeFields() {
             collectFieldValues();

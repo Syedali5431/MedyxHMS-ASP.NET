@@ -1,0 +1,63 @@
+@model List<MedyxHMS.Models.QualityIncident>
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = "Incidents";
+    var isManager = ViewBag.IsManager as bool? ?? false;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-exclamation-triangle text-danger me-2"></i>@(isManager ? "Incidents" : "My Reported Incidents")</h4>
+            <small class="text-muted">Adverse events, near misses and complaints. Reporting is encouraged and non-punitive.</small>
+        </div>
+        <div class="d-flex gap-2">
+            @if (isManager) { <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quality dashboard</a> }
+            <a asp-action="ReportIncident" class="btn btn-danger btn-sm"><i class="fas fa-plus me-1"></i>Report Incident</a>
+        </div>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All statuses</option>
+                @foreach (var s in QualityService.IncidentStatuses) { <option value="@s" selected="@(ViewBag.Status == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="severity" class="form-select form-select-sm">
+                <option value="">All severities</option>
+                @foreach (var s in QualityService.Severities) { <option value="@s" selected="@(ViewBag.Severity == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>No.</th><th>Title</th><th>Category</th><th>Severity</th><th>Occurred</th><th>Reported by</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="Incident" asp-route-id="@i.Id">@i.IncidentNumber</a></td>
+                            <td>@i.Title</td>
+                            <td class="small">@i.Category</td>
+                            <td><span class="badge @(i.Severity == "Critical" ? "bg-danger" : i.Severity == "High" ? "bg-warning text-dark" : i.Severity == "Medium" ? "bg-info text-dark" : "bg-secondary")">@i.Severity</span></td>
+                            <td class="small text-nowrap">@i.OccurredAt.ToString("dd-MMM-yyyy HH:mm")</td>
+                            <td class="small">@i.ReportedByName</td>
+                            <td><span class="badge @(i.Status == "Closed" ? "bg-success" : "bg-secondary")">@i.Status</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">No incidents found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

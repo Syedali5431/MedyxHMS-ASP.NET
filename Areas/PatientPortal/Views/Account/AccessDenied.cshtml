@@ -1,0 +1,22 @@
+@{
+    ViewData["Title"] = "Access Denied";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+}
+
+<div class="py-5 mx-auto text-center" style="max-width:520px">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <i class="fas fa-lock fa-3x text-danger mb-3"></i>
+            <h4 class="mb-2">Access denied</h4>
+            <p class="text-muted">You don't have permission to view this page.</p>
+            @if (User.Identity?.IsAuthenticated == true)
+            {
+                <a asp-controller="Dashboard" asp-action="Index" class="btn btn-primary">Go to my dashboard</a>
+            }
+            else
+            {
+                <a asp-action="Login" class="btn btn-primary">Go to login</a>
+            }
+        </div>
+    </div>
+</div>

@@ -15,6 +15,7 @@ namespace MedyxHMS.Services.Implementations
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IWebHostEnvironment _environment;
+        private readonly IConfiguration _configuration;
         private readonly ILogger<DatabaseInitializer> _logger;
 
         public DatabaseInitializer(
@@ -22,12 +23,14 @@ namespace MedyxHMS.Services.Implementations
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             IWebHostEnvironment environment,
+            IConfiguration configuration,
             ILogger<DatabaseInitializer> logger)
         {
             _context = context;
             _userManager = userManager;
             _roleManager = roleManager;
             _environment = environment;
+            _configuration = configuration;
             _logger = logger;
         }
 
@@ -47,9 +50,19 @@ namespace MedyxHMS.Services.Implementations
             await EnsureNewModuleTablesAsync();
             await EnsureUserThemePreferenceTableAsync();
             await EnsureUserIdentityConstraintsAsync();
+            await EnsureAuditLogUserIdNullableAsync();
             await EnsurePatientUserIdNullableAsync();
             await EnsureAppointmentIdColumnHasDefaultAsync();
             await EnsureAppointmentStaffIdNotEnforcedAsync();
+            await EnsureMultiHospitalSchemaAsync();
+            await EnsurePrintersTableAsync();
+            await EnsureSecurityTablesAsync();
+            await EnsureQualityTablesAsync();
+            await EnsureLabTraceabilityAsync();
+            await EnsurePurchasingSchemaAsync();
+            await EnsureOperationTheatreSchemaAsync();
+            await EnsurePatientRecordsSchemaAsync();
+            await EnsureProfileAndDischargeSchemaAsync();
             await EnsureReportStoredProceduresAsync();
 
             // Seed initial public website and booking data for Step 4.2
@@ -63,11 +76,15 @@ namespace MedyxHMS.Services.Implementations
 
             // Seed SuperAdmin user
             await SeedSuperAdminUserAsync();
-            await SeedUatRoleUsersAsync();
+
+            // Test accounts with shared, source-controlled passwords are for development/UAT only.
+            if (_configuration.GetValue<bool>("Seeding:UatAccounts"))
+                await SeedUatRoleUsersAsync();
             await EnsureIdentityRolesMatchStaffRolesForAllUsersAsync();
 
-            // Seed dummy/demo data for all core HMS modules
-            await SeedDummyDataAsync();
+            // Seed dummy/demo data for all core HMS modules (development/demo databases only)
+            if (_configuration.GetValue<bool>("Seeding:DemoData"))
+                await SeedDummyDataAsync();
         }
 
         private async Task EnsureReportStoredProceduresAsync()
@@ -805,6 +822,43 @@ BEGIN
         ON [dbo].[ChatbotEventLogs]([SessionId], [CreatedAtUtc]);
 END");
 
+            // Consent tables were added to the model after many databases were created, and
+            // EnsureCreated() never adds tables to an existing database.
+            await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[ChatbotConsents]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatbotConsents] (
+        [Id] BIGINT NOT NULL IDENTITY(1,1) CONSTRAINT [PK_ChatbotConsents] PRIMARY KEY,
+        [UserId] NVARCHAR(450) NULL,
+        [ConsentVersion] NVARCHAR(10) NOT NULL,
+        [ConsentedToAiProcessing] BIT NOT NULL,
+        [ConsentedToDataRetention] BIT NOT NULL,
+        [ConsentedToThirdPartyProcessing] BIT NOT NULL,
+        [UserIpAddress] NVARCHAR(50) NULL,
+        [UserAgent] NVARCHAR(500) NULL,
+        [ConsentedAtUtc] DATETIME2 NOT NULL,
+        [RevokedAtUtc] DATETIME2 NULL,
+        [IsActive] BIT NOT NULL,
+        [RevocationReason] NVARCHAR(500) NULL
+    );
+END
+
+IF OBJECT_ID(N'[dbo].[ChatbotConsentAudits]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[ChatbotConsentAudits] (
+        [Id] BIGINT NOT NULL IDENTITY(1,1) CONSTRAINT [PK_ChatbotConsentAudits] PRIMARY KEY,
+        [ConsentId] BIGINT NULL,
+        [UserId] NVARCHAR(450) NULL,
+        [Action] NVARCHAR(30) NOT NULL,
+        [ConsentVersion] NVARCHAR(10) NOT NULL,
+        [ConsentStateJson] NVARCHAR(MAX) NOT NULL,
+        [UserIpAddress] NVARCHAR(500) NULL,
+        [UserAgent] NVARCHAR(500) NULL,
+        [Notes] NVARCHAR(500) NULL,
+        [CreatedAtUtc] DATETIME2 NOT NULL
+    );
+END");
+
             await EnsureSystemSettingAsync("ChatbotEnabled", "true", "bool", "Chatbot", "Enable or disable chatbot globally.");
             await EnsureSystemSettingAsync("ChatbotEnabledForPatients", "true", "bool", "Chatbot", "Allow chatbot access for patient users.");
             await EnsureSystemSettingAsync("ChatbotEnabledForStaff", "true", "bool", "Chatbot", "Allow chatbot access for staff users.");
@@ -1042,7 +1096,7 @@ END");
                 Category = category,
                 Description = description,
                 IsSystem = true,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 ModifiedBy = "System"
             });
 
@@ -1590,6 +1644,8 @@ END");
                 "Pharmacist",
                 "LabTechnician",
                 "Radiologist",
+                // Authorises (electronically signs off) lab results; usually given in addition to Doctor or LabTechnician.
+                "Pathologist",
                 "Patient"
             };
 
@@ -1650,7 +1706,7 @@ END");
                         Module = featureData.Module,
                         Description = featureData.Description,
                         IsActive = true,
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.Now
                     };
                     _context.Features.Add(feature);
                 }
@@ -1672,7 +1728,7 @@ END");
                         Name = roleName,
                         Description = $"{roleName} role",
                         IsActive = true,
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.Now
                     };
                     _context.Roles.Add(role);
                     await _context.SaveChangesAsync();
@@ -1743,6 +1799,10 @@ END");
                     "ViewPatients", "AddPatients", "EditPatients",
                     "ViewLabTests", "AddLabTests"
                 },
+                "Pathologist" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewLabTests", "AddLabTests"
+                },
                 "Radiologist" => new[] {
                     "ViewPatients", "AddPatients", "EditPatients",
                     "ViewRadiologyTests", "AddRadiologyTests"
@@ -1764,7 +1824,7 @@ END");
                         CanAdd = permission.Contains("Add"),
                         CanEdit = permission.Contains("Edit"),
                         CanDelete = permission.Contains("Delete"),
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.Now
                     };
                     _context.RoleFeatures.Add(roleFeature);
                 }
@@ -1809,7 +1869,7 @@ END");
                         CanAdd = permission.Contains("Add"),
                         CanEdit = permission.Contains("Edit"),
                         CanDelete = permission.Contains("Delete"),
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.Now
                     });
                 }
             }
@@ -1875,6 +1935,10 @@ END");
                     "ViewPatients", "AddPatients", "EditPatients",
                     "ViewLabTests", "AddLabTests"
                 },
+                "Pathologist" => new[] {
+                    "ViewPatients", "AddPatients", "EditPatients",
+                    "ViewLabTests", "AddLabTests"
+                },
                 "Radiologist" => new[] {
                     "ViewPatients", "AddPatients", "EditPatients",
                     "ViewRadiologyTests", "AddRadiologyTests"
@@ -1903,37 +1967,962 @@ END");
                     FirstName = "Super",
                     LastName = "Admin",
                     IsActive = true,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 };
 
-                var result = await _userManager.CreateAsync(superAdminUser, "SuperAdmin@123!");
+                // The initial password comes from configuration (Seeding:SuperAdminInitialPassword).
+                // If none is configured, a random one is generated and written to the log once.
+                var initialPassword = _configuration["Seeding:SuperAdminInitialPassword"];
+                var generated = string.IsNullOrWhiteSpace(initialPassword);
+                if (generated)
+                    initialPassword = "Sa9" + Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
+
+                var result = await _userManager.CreateAsync(superAdminUser, initialPassword);
                 if (!result.Succeeded)
                 {
                     _logger.LogError("Failed to create SuperAdmin user: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
                     return;
                 }
                 _logger.LogInformation("SuperAdmin user created successfully.");
+                if (generated)
+                    _logger.LogWarning("SuperAdmin initial password (change it after first login): {Password}", initialPassword);
             }
             else
             {
-                // User exists — ensure email, EmployeeId, IsActive, and password are correct
+                // User exists — ensure email, EmployeeId and IsActive are correct.
+                // The existing password is never changed here.
                 var needsUpdate = false;
                 if (superAdminUser.Email != superAdminEmail) { superAdminUser.Email = superAdminEmail; superAdminUser.EmailConfirmed = true; needsUpdate = true; }
                 if (string.IsNullOrWhiteSpace(superAdminUser.EmployeeId)) { superAdminUser.EmployeeId = superAdminEmployeeId; needsUpdate = true; }
                 if (!superAdminUser.IsActive) { superAdminUser.IsActive = true; needsUpdate = true; }
                 if (needsUpdate) await _userManager.UpdateAsync(superAdminUser);
 
-                // Reset password to known default
-                var token = await _userManager.GeneratePasswordResetTokenAsync(superAdminUser);
-                var resetResult = await _userManager.ResetPasswordAsync(superAdminUser, token, "SuperAdmin@123!");
-                if (resetResult.Succeeded)
-                    _logger.LogInformation("SuperAdmin password reset to default.");
-                else
-                    _logger.LogWarning("SuperAdmin password reset failed: {Errors}", string.Join(", ", resetResult.Errors.Select(e => e.Description)));
+                // A new database gets the SuperAdmin row from the model's seed data (HasData), which has no
+                // password: give it the initial password so someone can sign in (an existing password is kept).
+                if (!await _userManager.HasPasswordAsync(superAdminUser))
+                {
+                    var initialPassword = _configuration["Seeding:SuperAdminInitialPassword"];
+                    var generated = string.IsNullOrWhiteSpace(initialPassword);
+                    if (generated)
+                        initialPassword = "Sa9" + Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(12));
+
+                    var result = await _userManager.AddPasswordAsync(superAdminUser, initialPassword!);
+                    if (!result.Succeeded)
+                        _logger.LogError("Failed to set the SuperAdmin initial password: {Errors}", string.Join(", ", result.Errors.Select(e => e.Description)));
+                    else if (generated)
+                        _logger.LogWarning("SuperAdmin initial password (change it after first login): {Password}", initialPassword);
+                    else
+                        _logger.LogInformation("SuperAdmin initial password set from configuration.");
+                }
             }
 
             await EnsureStaffAndSuperAdminRoleAsync(superAdminUser, superAdminEmployeeId);
             await EnsureIdentityRolesMatchStaffRolesAsync(superAdminUser);
+        }
+
+        /// <summary>
+        /// Older databases have AuditLogs.UserId as NOT NULL, but the model (and anonymous events
+        /// such as a failed login for an unknown user) need it nullable. The column keeps the same
+        /// length as AspNetUsers.Id (required by the foreign key), and the existing index and
+        /// ON DELETE CASCADE foreign key are recreated unchanged.
+        /// </summary>
+        // Hospital-scoped tables (multi-hospital: branches of one group). Each gets a nullable HospitalId.
+        private static readonly string[] HospitalScopedTables =
+            { "Appointments", "OPDVisits", "IPDAdmissions", "Wards", "Bills", "PharmacyBills", "InventoryItems", "OTSchedules",
+              "QualityIncidents", "CapaActions", "InternalAudits", "Equipment", "PurchaseBills", "OperationTheatres" };
+
+        /// <summary>
+        /// Multi-hospital schema for existing databases: Hospitals and UserHospitalAccesses tables, a default
+        /// hospital, and a HospitalId column (index + foreign key) on every hospital-scoped table. Idempotent.
+        /// </summary>
+        private async Task EnsureMultiHospitalSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Hospitals]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Hospitals] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Hospitals] PRIMARY KEY,
+        [Code] nvarchar(20) NOT NULL,
+        [Name] nvarchar(200) NOT NULL,
+        [Address] nvarchar(500) NOT NULL CONSTRAINT [DF_Hospitals_Address] DEFAULT(N''),
+        [City] nvarchar(100) NOT NULL CONSTRAINT [DF_Hospitals_City] DEFAULT(N''),
+        [Phone] nvarchar(50) NOT NULL CONSTRAINT [DF_Hospitals_Phone] DEFAULT(N''),
+        [Email] nvarchar(200) NOT NULL CONSTRAINT [DF_Hospitals_Email] DEFAULT(N''),
+        [LicenseNumber] nvarchar(100) NOT NULL CONSTRAINT [DF_Hospitals_LicenseNumber] DEFAULT(N''),
+        [IsActive] bit NOT NULL CONSTRAINT [DF_Hospitals_IsActive] DEFAULT(1),
+        [IsDefault] bit NOT NULL CONSTRAINT [DF_Hospitals_IsDefault] DEFAULT(0),
+        [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_Hospitals_CreatedDate] DEFAULT(SYSDATETIME()),
+        [UpdatedDate] datetime2 NULL
+    );
+    CREATE UNIQUE INDEX [IX_Hospitals_Code] ON [dbo].[Hospitals] ([Code]);
+END;
+
+-- All columns are given: on a new database EF creates this table without the column defaults above.
+IF NOT EXISTS (SELECT 1 FROM [dbo].[Hospitals])
+    INSERT INTO [dbo].[Hospitals] ([Code], [Name], [Address], [City], [Phone], [Email], [LicenseNumber], [IsActive], [IsDefault], [CreatedDate])
+    VALUES (N'MAIN', N'Main Hospital', N'', N'', N'', N'', N'', 1, 1, SYSDATETIME());
+
+IF NOT EXISTS (SELECT 1 FROM [dbo].[Hospitals] WHERE [IsDefault] = 1 AND [IsActive] = 1)
+    UPDATE [dbo].[Hospitals] SET [IsDefault] = 1
+    WHERE [Id] = (SELECT TOP (1) [Id] FROM [dbo].[Hospitals] ORDER BY [IsActive] DESC, [Id]);
+
+IF OBJECT_ID(N'[dbo].[UserHospitalAccesses]', N'U') IS NULL
+BEGIN
+    -- UserId must match AspNetUsers.Id exactly (nvarchar(128) in older databases, nvarchar(450) in new ones).
+    DECLARE @idLength int = (SELECT max_length FROM sys.columns
+                             WHERE object_id = OBJECT_ID(N'[dbo].[AspNetUsers]') AND name = N'Id');
+    DECLARE @create nvarchar(max) = N'CREATE TABLE [dbo].[UserHospitalAccesses] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_UserHospitalAccesses] PRIMARY KEY,
+        [UserId] nvarchar(' + CASE WHEN @idLength = -1 THEN N'max' ELSE CAST(@idLength / 2 AS nvarchar(10)) END + N') NOT NULL,
+        [HospitalId] int NOT NULL,
+        [IsDefault] bit NOT NULL CONSTRAINT [DF_UserHospitalAccesses_IsDefault] DEFAULT(0),
+        [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_UserHospitalAccesses_CreatedDate] DEFAULT(SYSDATETIME()),
+        CONSTRAINT [FK_UserHospitalAccesses_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_UserHospitalAccesses_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [IX_UserHospitalAccesses_UserId_HospitalId] ON [dbo].[UserHospitalAccesses] ([UserId], [HospitalId]);
+    CREATE INDEX [IX_UserHospitalAccesses_HospitalId] ON [dbo].[UserHospitalAccesses] ([HospitalId]);';
+    EXEC (@create);
+END;");
+
+                foreach (var table in HospitalScopedTables)
+                {
+                    // Column first (separate batch), then index and foreign key.
+                    var addColumn = $@"
+IF OBJECT_ID(N'[dbo].[{table}]', N'U') IS NOT NULL AND COL_LENGTH(N'dbo.{table}', N'HospitalId') IS NULL
+    ALTER TABLE [dbo].[{table}] ADD [HospitalId] int NULL;";
+                    await _context.Database.ExecuteSqlRawAsync(addColumn);
+
+                    var addIndexAndKey = $@"
+IF OBJECT_ID(N'[dbo].[{table}]', N'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_{table}_HospitalId' AND object_id = OBJECT_ID(N'[dbo].[{table}]'))
+        CREATE INDEX [IX_{table}_HospitalId] ON [dbo].[{table}] ([HospitalId]);
+    IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_{table}_Hospitals_HospitalId')
+        ALTER TABLE [dbo].[{table}] ADD CONSTRAINT [FK_{table}_Hospitals_HospitalId]
+            FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]);
+END;";
+                    await _context.Database.ExecuteSqlRawAsync(addIndexAndKey);
+                }
+
+                await BackfillHospitalAssignmentsAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure multi-hospital schema");
+            }
+        }
+
+        /// <summary>
+        /// Gives every hospital-scoped record without a hospital to the default hospital (existing data, and rows
+        /// written by scripts). Runs at start-up, also after demo seeding.
+        /// </summary>
+        public async Task BackfillHospitalAssignmentsAsync()
+        {
+            try
+            {
+                foreach (var table in HospitalScopedTables)
+                {
+                    var sql = $@"
+IF COL_LENGTH(N'dbo.{table}', N'HospitalId') IS NOT NULL
+    UPDATE [dbo].[{table}]
+    SET [HospitalId] = (SELECT TOP (1) [Id] FROM [dbo].[Hospitals] ORDER BY [IsDefault] DESC, [IsActive] DESC, [Id])
+    WHERE [HospitalId] IS NULL;";
+                    var updated = await _context.Database.ExecuteSqlRawAsync(sql);
+                    if (updated > 0)
+                    {
+                        _logger.LogInformation("Assigned {Count} {Table} rows to the default hospital", updated, table);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to assign existing records to the default hospital");
+            }
+        }
+
+        /// <summary>Security hardening: DatabaseBackups history table (idempotent).</summary>
+        /// <summary>Network printers (Settings → Printers): IP printers and Windows-shared LAN printers. Idempotent.</summary>
+        private async Task EnsurePrintersTableAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Printers]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Printers] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Printers] PRIMARY KEY,
+        [Name] nvarchar(100) NOT NULL,
+        [PrinterType] nvarchar(20) NOT NULL,
+        [ConnectionType] nvarchar(10) NOT NULL,
+        [IpAddress] nvarchar(255) NOT NULL,
+        [Port] int NOT NULL,
+        [SharePath] nvarchar(255) NOT NULL,
+        [PaperSize] nvarchar(20) NOT NULL,
+        [PrintLanguage] nvarchar(20) NOT NULL,
+        [Copies] int NOT NULL,
+        [CutPaper] bit NOT NULL,
+        [OpenCashDrawer] bit NOT NULL,
+        [HospitalId] int NULL,
+        [IsDefault] bit NOT NULL,
+        [IsActive] bit NOT NULL,
+        [Notes] nvarchar(500) NOT NULL,
+        [CreatedDate] datetime2 NOT NULL,
+        [UpdatedDate] datetime2 NULL,
+        [CreatedBy] nvarchar(256) NOT NULL,
+        [LastTestedDate] datetime2 NULL,
+        [LastTestResult] nvarchar(500) NOT NULL,
+        CONSTRAINT [FK_Printers_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])
+    );
+    CREATE INDEX [IX_Printers_HospitalId] ON [dbo].[Printers] ([HospitalId]);
+END;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure the Printers table");
+            }
+        }
+
+        private async Task EnsureSecurityTablesAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[DatabaseBackups]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[DatabaseBackups] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DatabaseBackups] PRIMARY KEY,
+        [DatabaseName] nvarchar(max) NOT NULL,
+        [FileName] nvarchar(max) NOT NULL,
+        [FilePath] nvarchar(max) NOT NULL,
+        [SizeBytes] bigint NULL,
+        [StartedAt] datetime2 NOT NULL,
+        [CompletedAt] datetime2 NULL,
+        [Status] nvarchar(max) NOT NULL,
+        [Verified] bit NOT NULL,
+        [Message] nvarchar(max) NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL
+    );
+END;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure security tables");
+            }
+        }
+
+        /// <summary>Quality management tables (incidents, CAPA, controlled documents, internal audits, training). Idempotent.</summary>
+        private async Task EnsureQualityTablesAsync()
+        {
+            var tables = new (string Name, string Ddl)[]
+            {
+                ("ControlledDocuments", @"
+    CREATE TABLE [dbo].[ControlledDocuments] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_ControlledDocuments] PRIMARY KEY,
+        [DocumentNumber] nvarchar(30) NOT NULL,
+        [Title] nvarchar(200) NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [Department] nvarchar(100) NOT NULL,
+        [ReviewIntervalMonths] int NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [NextReviewDate] datetime2 NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL
+    );
+    CREATE UNIQUE INDEX [IX_ControlledDocuments_DocumentNumber] ON [dbo].[ControlledDocuments] ([DocumentNumber]);"),
+                ("DocumentVersions", @"
+    CREATE TABLE [dbo].[DocumentVersions] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DocumentVersions] PRIMARY KEY,
+        [DocumentId] int NOT NULL,
+        [VersionNumber] int NOT NULL,
+        [ChangeSummary] nvarchar(max) NOT NULL,
+        [StoredFileName] nvarchar(max) NOT NULL,
+        [OriginalFileName] nvarchar(max) NOT NULL,
+        [FileSize] bigint NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [CreatedByUserId] nvarchar(max) NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [SubmittedAt] datetime2 NULL,
+        [ApprovedByUserId] nvarchar(max) NOT NULL,
+        [ApprovedBy] nvarchar(max) NOT NULL,
+        [ApprovedAt] datetime2 NULL,
+        [ApprovalComments] nvarchar(max) NOT NULL,
+        [EffectiveDate] datetime2 NULL,
+        CONSTRAINT [FK_DocumentVersions_ControlledDocuments_DocumentId] FOREIGN KEY ([DocumentId]) REFERENCES [dbo].[ControlledDocuments] ([Id]) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX [IX_DocumentVersions_DocumentId_VersionNumber] ON [dbo].[DocumentVersions] ([DocumentId], [VersionNumber]);"),
+                ("QualityIncidents", @"
+    CREATE TABLE [dbo].[QualityIncidents] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_QualityIncidents] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [IncidentNumber] nvarchar(30) NOT NULL,
+        [Title] nvarchar(200) NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [Severity] nvarchar(20) NOT NULL,
+        [OccurredAt] datetime2 NOT NULL,
+        [ReportedAt] datetime2 NOT NULL,
+        [Location] nvarchar(150) NOT NULL,
+        [Description] nvarchar(max) NOT NULL,
+        [ImmediateAction] nvarchar(max) NOT NULL,
+        [PatientId] int NULL,
+        [ReportedByUserId] nvarchar(max) NOT NULL,
+        [ReportedByName] nvarchar(max) NOT NULL,
+        [Status] nvarchar(30) NOT NULL,
+        [RootCause] nvarchar(max) NOT NULL,
+        [ClosedAt] datetime2 NULL,
+        [ClosedBy] nvarchar(max) NOT NULL,
+        [ClosureNotes] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_QualityIncidents_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]),
+        CONSTRAINT [FK_QualityIncidents_Patients_PatientId] FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_QualityIncidents_IncidentNumber] ON [dbo].[QualityIncidents] ([IncidentNumber]);
+    CREATE INDEX [IX_QualityIncidents_HospitalId] ON [dbo].[QualityIncidents] ([HospitalId]);
+    CREATE INDEX [IX_QualityIncidents_PatientId] ON [dbo].[QualityIncidents] ([PatientId]);"),
+                ("InternalAudits", @"
+    CREATE TABLE [dbo].[InternalAudits] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_InternalAudits] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [AuditNumber] nvarchar(30) NOT NULL,
+        [Title] nvarchar(200) NOT NULL,
+        [Scope] nvarchar(200) NOT NULL,
+        [Standard] nvarchar(50) NOT NULL,
+        [PlannedDate] datetime2 NOT NULL,
+        [LeadAuditor] nvarchar(100) NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [CompletedDate] datetime2 NULL,
+        [Summary] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_InternalAudits_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_InternalAudits_AuditNumber] ON [dbo].[InternalAudits] ([AuditNumber]);
+    CREATE INDEX [IX_InternalAudits_HospitalId] ON [dbo].[InternalAudits] ([HospitalId]);"),
+                ("AuditFindings", @"
+    CREATE TABLE [dbo].[AuditFindings] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_AuditFindings] PRIMARY KEY,
+        [AuditId] int NOT NULL,
+        [FindingType] nvarchar(40) NOT NULL,
+        [Clause] nvarchar(50) NOT NULL,
+        [Description] nvarchar(max) NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [FK_AuditFindings_InternalAudits_AuditId] FOREIGN KEY ([AuditId]) REFERENCES [dbo].[InternalAudits] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_AuditFindings_AuditId] ON [dbo].[AuditFindings] ([AuditId]);"),
+                ("CapaActions", @"
+    CREATE TABLE [dbo].[CapaActions] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_CapaActions] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [IncidentId] int NULL,
+        [AuditFindingId] int NULL,
+        [ActionType] nvarchar(20) NOT NULL,
+        [Description] nvarchar(max) NOT NULL,
+        [OwnerUserId] nvarchar(max) NOT NULL,
+        [OwnerName] nvarchar(max) NOT NULL,
+        [DueDate] datetime2 NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [CompletionNotes] nvarchar(max) NOT NULL,
+        [CompletedAt] datetime2 NULL,
+        [VerifiedBy] nvarchar(max) NOT NULL,
+        [VerifiedAt] datetime2 NULL,
+        [EffectivenessNotes] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_CapaActions_AuditFindings_AuditFindingId] FOREIGN KEY ([AuditFindingId]) REFERENCES [dbo].[AuditFindings] ([Id]),
+        CONSTRAINT [FK_CapaActions_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]),
+        CONSTRAINT [FK_CapaActions_QualityIncidents_IncidentId] FOREIGN KEY ([IncidentId]) REFERENCES [dbo].[QualityIncidents] ([Id])
+    );
+    CREATE INDEX [IX_CapaActions_AuditFindingId] ON [dbo].[CapaActions] ([AuditFindingId]);
+    CREATE INDEX [IX_CapaActions_HospitalId] ON [dbo].[CapaActions] ([HospitalId]);
+    CREATE INDEX [IX_CapaActions_IncidentId] ON [dbo].[CapaActions] ([IncidentId]);"),
+                ("TrainingRecords", @"
+    CREATE TABLE [dbo].[TrainingRecords] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_TrainingRecords] PRIMARY KEY,
+        [StaffId] nvarchar(450) NOT NULL,
+        [StaffName] nvarchar(max) NOT NULL,
+        [StaffDepartment] nvarchar(max) NOT NULL,
+        [CourseTitle] nvarchar(200) NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [Provider] nvarchar(150) NOT NULL,
+        [CompletedDate] datetime2 NOT NULL,
+        [ExpiryDate] datetime2 NULL,
+        [CertificateNumber] nvarchar(100) NOT NULL,
+        [Result] nvarchar(50) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL
+    );
+    CREATE INDEX [IX_TrainingRecords_StaffId] ON [dbo].[TrainingRecords] ([StaffId]);"),
+                ("Equipment", @"
+    CREATE TABLE [dbo].[Equipment] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Equipment] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [AssetTag] nvarchar(30) NOT NULL,
+        [Name] nvarchar(150) NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [Manufacturer] nvarchar(100) NOT NULL,
+        [Model] nvarchar(100) NOT NULL,
+        [SerialNumber] nvarchar(100) NOT NULL,
+        [Location] nvarchar(150) NOT NULL,
+        [Supplier] nvarchar(150) NOT NULL,
+        [PurchaseDate] datetime2 NULL,
+        [WarrantyExpiry] datetime2 NULL,
+        [RiskClass] nvarchar(10) NOT NULL,
+        [Status] nvarchar(30) NOT NULL,
+        [MaintenanceIntervalDays] int NOT NULL,
+        [CalibrationIntervalDays] int NOT NULL,
+        [LastMaintenanceDate] datetime2 NULL,
+        [NextMaintenanceDue] datetime2 NULL,
+        [LastCalibrationDate] datetime2 NULL,
+        [NextCalibrationDue] datetime2 NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_Equipment_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_Equipment_AssetTag] ON [dbo].[Equipment] ([AssetTag]);
+    CREATE INDEX [IX_Equipment_HospitalId] ON [dbo].[Equipment] ([HospitalId]);"),
+                ("EquipmentServiceRecords", @"
+    CREATE TABLE [dbo].[EquipmentServiceRecords] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_EquipmentServiceRecords] PRIMARY KEY,
+        [EquipmentId] int NOT NULL,
+        [ServiceType] nvarchar(30) NOT NULL,
+        [ServiceDate] datetime2 NOT NULL,
+        [PerformedBy] nvarchar(150) NOT NULL,
+        [Result] nvarchar(20) NOT NULL,
+        [Cost] decimal(18,2) NOT NULL,
+        [CertificateNumber] nvarchar(100) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_EquipmentServiceRecords_Equipment_EquipmentId] FOREIGN KEY ([EquipmentId]) REFERENCES [dbo].[Equipment] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_EquipmentServiceRecords_EquipmentId] ON [dbo].[EquipmentServiceRecords] ([EquipmentId]);"),
+            };
+
+            foreach (var (name, ddl) in tables)
+            {
+                try
+                {
+                    await _context.Database.ExecuteSqlRawAsync(
+                        $"IF OBJECT_ID(N'[dbo].[{name}]', N'U') IS NULL" + Environment.NewLine + "BEGIN" + ddl + Environment.NewLine + "END;");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to ensure quality table {Table}", name);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Lab traceability (ISO 15189): specimen columns on LabResults, the LabSampleEvents chain-of-custody table,
+        /// and accession numbers / sample status for orders created before this feature. Idempotent.
+        /// </summary>
+        private async Task EnsureLabTraceabilityAsync()
+        {
+            try
+            {
+                var columns = new (string Name, string Definition)[]
+                {
+                    ("AccessionNumber", "nvarchar(30) NULL"),
+                    ("SampleType", "nvarchar(50) NOT NULL CONSTRAINT [DF_LabResults_SampleType] DEFAULT(N'')"),
+                    ("SampleStatus", "nvarchar(30) NOT NULL CONSTRAINT [DF_LabResults_SampleStatus] DEFAULT(N'')"),
+                    ("CollectedAt", "datetime2 NULL"),
+                    ("CollectedBy", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_CollectedBy] DEFAULT(N'')"),
+                    ("ReceivedAt", "datetime2 NULL"),
+                    ("ReceivedBy", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_ReceivedBy] DEFAULT(N'')"),
+                    ("RejectionReason", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_RejectionReason] DEFAULT(N'')"),
+                    ("ResultEnteredAt", "datetime2 NULL"),
+                    ("ResultEnteredBy", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_ResultEnteredBy] DEFAULT(N'')"),
+                    ("SignedOffAt", "datetime2 NULL"),
+                    ("SignedOffBy", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffBy] DEFAULT(N'')"),
+                    ("SignedOffByUserId", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffByUserId] DEFAULT(N'')"),
+                    ("SignatureHash", "nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignatureHash] DEFAULT(N'')"),
+                };
+                foreach (var (name, definition) in columns)
+                {
+                    // Column names and definitions are constants above (no user input).
+                    var addColumn = $"IF COL_LENGTH(N'dbo.LabResults', N'{name}') IS NULL ALTER TABLE [dbo].[LabResults] ADD [{name}] {definition};";
+                    await _context.Database.ExecuteSqlRawAsync(addColumn);
+                }
+
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_LabResults_AccessionNumber' AND object_id = OBJECT_ID(N'[dbo].[LabResults]'))
+    CREATE UNIQUE INDEX [IX_LabResults_AccessionNumber] ON [dbo].[LabResults] ([AccessionNumber]) WHERE [AccessionNumber] IS NOT NULL;
+
+IF OBJECT_ID(N'[dbo].[LabSampleEvents]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[LabSampleEvents] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_LabSampleEvents] PRIMARY KEY,
+        [LabResultId] int NOT NULL,
+        [EventType] nvarchar(40) NOT NULL,
+        [OccurredAt] datetime2 NOT NULL,
+        [UserId] nvarchar(max) NOT NULL,
+        [UserName] nvarchar(max) NOT NULL,
+        [Details] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_LabSampleEvents_LabResults_LabResultId] FOREIGN KEY ([LabResultId]) REFERENCES [dbo].[LabResults] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_LabSampleEvents_LabResultId] ON [dbo].[LabSampleEvents] ([LabResultId]);
+END;
+
+-- Orders created before traceability: the sample status follows the order status.
+UPDATE [dbo].[LabResults] SET [SampleStatus] = CASE WHEN [Status] = N'Cancelled' THEN N'Cancelled'
+    WHEN [Status] IN (N'Completed', N'In Progress', N'Pending') OR ([ResultValue] IS NOT NULL AND [ResultValue] <> N'') THEN N'Received'
+    ELSE N'Awaiting collection' END
+WHERE [SampleStatus] = N'';");
+
+                // Accession numbers (L + yyMMdd of the order date + daily sequence) for older orders.
+                var pending = await _context.LabResults.Include(r => r.LabTest).Where(r => r.AccessionNumber == null)
+                    .OrderBy(r => r.OrderDate).ThenBy(r => r.Id).ToListAsync();
+                if (pending.Count > 0)
+                {
+                    var existing = await _context.LabResults.Where(r => r.AccessionNumber != null).Select(r => r.AccessionNumber!).ToListAsync();
+                    var lastByPrefix = existing.Where(a => a.Length == 11)
+                        .GroupBy(a => a[..7])
+                        .ToDictionary(g => g.Key, g => g.Max(a => int.TryParse(a[7..], out var n) ? n : 0));
+                    foreach (var r in pending)
+                    {
+                        var prefix = "L" + r.OrderDate.ToString("yyMMdd", System.Globalization.CultureInfo.InvariantCulture);
+                        var next = lastByPrefix.GetValueOrDefault(prefix) + 1;
+                        lastByPrefix[prefix] = next;
+                        r.AccessionNumber = $"{prefix}{next:D4}";
+                        if (string.IsNullOrWhiteSpace(r.SampleType)) r.SampleType = LabTraceabilityService.DefaultSampleType(r.LabTest?.Category);
+                    }
+
+                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Assigned accession numbers to {Count} existing lab orders", pending.Count);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure lab traceability schema");
+            }
+        }
+
+        /// <summary>
+        /// Patient records and documents: MedicalRecords.DoctorId becomes optional (OPD/IPD doctors usually have no login;
+        /// deleting a login no longer deletes medical records), records get a link to their source visit/admission, and the
+        /// PatientDocuments table is created. Records themselves are created after seeding (MedicalRecordService).
+        /// </summary>
+        // My Profile personal details (AspNetUsers), discharge reports (DischargeSummaries); the receipt paper width is
+        // no longer a setting (it is chosen on the receipt when printing).
+        private async Task EnsureProfileAndDischargeSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'dbo.AspNetUsers', N'Gender') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [Gender] nvarchar(20) NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'DateOfBirth') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [DateOfBirth] datetime2 NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'Address') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [Address] nvarchar(300) NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'City') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [City] nvarchar(100) NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'EmergencyContactName') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [EmergencyContactName] nvarchar(150) NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'EmergencyContactPhone') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [EmergencyContactPhone] nvarchar(30) NULL;
+IF COL_LENGTH(N'dbo.AspNetUsers', N'About') IS NULL ALTER TABLE [dbo].[AspNetUsers] ADD [About] nvarchar(1000) NULL;
+DELETE FROM [dbo].[Settings] WHERE [Key] = N'Printing:ReceiptPaperWidth';");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to add the profile columns to AspNetUsers");
+            }
+
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[DischargeSummaries]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[DischargeSummaries] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_DischargeSummaries] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [IPDAdmissionId] int NOT NULL,
+        [PatientId] int NOT NULL,
+        [AdmissionDate] datetime2 NOT NULL,
+        [DischargeDate] datetime2 NOT NULL,
+        [ConditionAtDischarge] nvarchar(60) NOT NULL,
+        [ReasonForAdmission] nvarchar(1000) NOT NULL,
+        [FinalDiagnosis] nvarchar(1000) NOT NULL,
+        [HospitalCourse] nvarchar(4000) NOT NULL,
+        [ProceduresPerformed] nvarchar(2000) NOT NULL,
+        [InvestigationsSummary] nvarchar(2000) NOT NULL,
+        [DischargeMedications] nvarchar(2000) NOT NULL,
+        [AdviceOnDischarge] nvarchar(2000) NOT NULL,
+        [FollowUpInstructions] nvarchar(1000) NOT NULL,
+        [FollowUpDate] datetime2 NULL,
+        [AttendingDoctor] nvarchar(150) NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [CreatedByUserId] nvarchar(450) NULL,
+        [CreatedByName] nvarchar(150) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [UpdatedAt] datetime2 NULL,
+        [CompletedByName] nvarchar(150) NULL,
+        [CompletedAt] datetime2 NULL,
+        CONSTRAINT [FK_DischargeSummaries_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]),
+        CONSTRAINT [FK_DischargeSummaries_IPDAdmissions_IPDAdmissionId] FOREIGN KEY ([IPDAdmissionId]) REFERENCES [dbo].[IPDAdmissions] ([Id]),
+        CONSTRAINT [FK_DischargeSummaries_Patients_PatientId] FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_DischargeSummaries_IPDAdmissionId] ON [dbo].[DischargeSummaries] ([IPDAdmissionId]);
+    CREATE INDEX [IX_DischargeSummaries_PatientId_DischargeDate] ON [dbo].[DischargeSummaries] ([PatientId], [DischargeDate]);
+    CREATE INDEX [IX_DischargeSummaries_HospitalId] ON [dbo].[DischargeSummaries] ([HospitalId]);
+END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create the DischargeSummaries table");
+            }
+        }
+
+        private async Task EnsurePatientRecordsSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[MedicalRecords]') AND name = N'DoctorId' AND is_nullable = 0)
+   OR EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MedicalRecords_AspNetUsers_DoctorId' AND delete_referential_action <> 0)
+BEGIN
+    -- The key column must match AspNetUsers.Id exactly (nvarchar(128) in older databases, 450 in new ones).
+    DECLARE @idLength int = (SELECT max_length FROM sys.columns WHERE object_id = OBJECT_ID(N'[dbo].[AspNetUsers]') AND name = N'Id');
+    DECLARE @alter nvarchar(400) = N'ALTER TABLE [dbo].[MedicalRecords] ALTER COLUMN [DoctorId] nvarchar('
+        + CASE WHEN @idLength = -1 THEN N'max' ELSE CAST(@idLength / 2 AS nvarchar(10)) END + N') NULL;';
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_MedicalRecords_AspNetUsers_DoctorId')
+            ALTER TABLE [dbo].[MedicalRecords] DROP CONSTRAINT [FK_MedicalRecords_AspNetUsers_DoctorId];
+        IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_MedicalRecords_DoctorId' AND object_id = OBJECT_ID(N'[dbo].[MedicalRecords]'))
+            DROP INDEX [IX_MedicalRecords_DoctorId] ON [dbo].[MedicalRecords];
+        EXEC (@alter);
+        CREATE INDEX [IX_MedicalRecords_DoctorId] ON [dbo].[MedicalRecords] ([DoctorId]);
+        ALTER TABLE [dbo].[MedicalRecords] ADD CONSTRAINT [FK_MedicalRecords_AspNetUsers_DoctorId] FOREIGN KEY ([DoctorId]) REFERENCES [dbo].[AspNetUsers] ([Id]);
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to make MedicalRecords.DoctorId optional");
+            }
+
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'dbo.MedicalRecords', N'SourceType') IS NULL
+    ALTER TABLE [dbo].[MedicalRecords] ADD [SourceType] nvarchar(30) NOT NULL CONSTRAINT [DF_MedicalRecords_SourceType] DEFAULT(N'');
+IF COL_LENGTH(N'dbo.MedicalRecords', N'SourceId') IS NULL
+    ALTER TABLE [dbo].[MedicalRecords] ADD [SourceId] int NULL;");
+
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_MedicalRecords_SourceType_SourceId' AND object_id = OBJECT_ID(N'[dbo].[MedicalRecords]'))
+    CREATE UNIQUE INDEX [IX_MedicalRecords_SourceType_SourceId] ON [dbo].[MedicalRecords] ([SourceType], [SourceId]) WHERE [SourceId] IS NOT NULL;
+
+IF OBJECT_ID(N'[dbo].[PatientDocuments]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PatientDocuments] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PatientDocuments] PRIMARY KEY,
+        [PatientId] int NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [Title] nvarchar(200) NOT NULL,
+        [Description] nvarchar(1000) NOT NULL,
+        [DocumentDate] datetime2 NULL,
+        [OriginalFileName] nvarchar(255) NOT NULL,
+        [StoredFileName] nvarchar(100) NOT NULL,
+        [ContentType] nvarchar(100) NOT NULL,
+        [SizeBytes] bigint NOT NULL,
+        [Sha256] nvarchar(64) NOT NULL,
+        [UploadedByPatient] bit NOT NULL,
+        [SharedWithPatient] bit NOT NULL,
+        [UploadedByUserId] nvarchar(max) NOT NULL,
+        [UploadedBy] nvarchar(max) NOT NULL,
+        [UploadedAt] datetime2 NOT NULL,
+        [IsDeleted] bit NOT NULL,
+        [DeletedBy] nvarchar(max) NOT NULL,
+        [DeletedAt] datetime2 NULL,
+        [DeleteReason] nvarchar(300) NOT NULL,
+        CONSTRAINT [FK_PatientDocuments_Patients_PatientId] FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])
+    );
+    CREATE INDEX [IX_PatientDocuments_PatientId_IsDeleted] ON [dbo].[PatientDocuments] ([PatientId], [IsDeleted]);
+END;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure patient records schema");
+            }
+        }
+
+        /// <summary>
+        /// Operation theatre master and availability: OperationTheatres and OTBlocks tables, new OTSchedules columns
+        /// (theatre and surgeon links, emergency flag, cancel reason, start/completion times). On first upgrade the
+        /// theatres are created from the theatre numbers already used in bookings, and bookings are linked to their
+        /// theatre and (where the name matches exactly one doctor) to their surgeon.
+        /// </summary>
+        private async Task EnsureOperationTheatreSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[OperationTheatres]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OperationTheatres] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_OperationTheatres] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [Code] nvarchar(20) NOT NULL,
+        [Name] nvarchar(100) NOT NULL,
+        [Location] nvarchar(100) NOT NULL,
+        [TheatreType] nvarchar(50) NOT NULL,
+        [Features] nvarchar(500) NOT NULL,
+        [OpensAt] time NOT NULL,
+        [ClosesAt] time NOT NULL,
+        [Is24Hours] bit NOT NULL,
+        [TurnoverMinutes] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [CreatedDate] datetime2 NOT NULL,
+        CONSTRAINT [FK_OperationTheatres_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])
+    );
+    CREATE INDEX [IX_OperationTheatres_HospitalId] ON [dbo].[OperationTheatres] ([HospitalId]);
+    CREATE UNIQUE INDEX [IX_OperationTheatres_HospitalId_Code] ON [dbo].[OperationTheatres] ([HospitalId], [Code]) WHERE [HospitalId] IS NOT NULL;
+END;
+
+IF OBJECT_ID(N'[dbo].[OTBlocks]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[OTBlocks] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_OTBlocks] PRIMARY KEY,
+        [OperationTheatreId] int NOT NULL,
+        [StartsAt] datetime2 NOT NULL,
+        [EndsAt] datetime2 NOT NULL,
+        [Reason] nvarchar(200) NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [FK_OTBlocks_OperationTheatres_OperationTheatreId] FOREIGN KEY ([OperationTheatreId]) REFERENCES [dbo].[OperationTheatres] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_OTBlocks_OperationTheatreId_StartsAt] ON [dbo].[OTBlocks] ([OperationTheatreId], [StartsAt]);
+END;");
+
+                var scheduleColumns = new (string Name, string Definition)[]
+                {
+                    ("OperationTheatreId", "int NULL"),
+                    ("SurgeonDoctorId", "int NULL"),
+                    ("IsEmergency", "bit NOT NULL CONSTRAINT [DF_OTSchedules_IsEmergency] DEFAULT(0)"),
+                    ("CancelReason", "nvarchar(max) NOT NULL CONSTRAINT [DF_OTSchedules_CancelReason] DEFAULT(N'')"),
+                    ("StartedAt", "datetime2 NULL"),
+                    ("CompletedAt", "datetime2 NULL"),
+                };
+                foreach (var (name, definition) in scheduleColumns)
+                {
+                    // Constant column names and definitions (no user input).
+                    var addColumn = $"IF COL_LENGTH(N'dbo.OTSchedules', N'{name}') IS NULL ALTER TABLE [dbo].[OTSchedules] ADD [{name}] {definition};";
+                    await _context.Database.ExecuteSqlRawAsync(addColumn);
+                }
+
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_OTSchedules_OperationTheatres_OperationTheatreId')
+    ALTER TABLE [dbo].[OTSchedules] ADD CONSTRAINT [FK_OTSchedules_OperationTheatres_OperationTheatreId] FOREIGN KEY ([OperationTheatreId]) REFERENCES [dbo].[OperationTheatres] ([Id]);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_OTSchedules_Doctors_SurgeonDoctorId')
+    ALTER TABLE [dbo].[OTSchedules] ADD CONSTRAINT [FK_OTSchedules_Doctors_SurgeonDoctorId] FOREIGN KEY ([SurgeonDoctorId]) REFERENCES [dbo].[Doctors] ([Id]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OTSchedules_OperationTheatreId_ScheduledDate' AND object_id = OBJECT_ID(N'[dbo].[OTSchedules]'))
+    CREATE INDEX [IX_OTSchedules_OperationTheatreId_ScheduledDate] ON [dbo].[OTSchedules] ([OperationTheatreId], [ScheduledDate]);
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_OTSchedules_SurgeonDoctorId' AND object_id = OBJECT_ID(N'[dbo].[OTSchedules]'))
+    CREATE INDEX [IX_OTSchedules_SurgeonDoctorId] ON [dbo].[OTSchedules] ([SurgeonDoctorId]);
+
+-- First upgrade: create the theatres already used in bookings (general theatres, 08:00-20:00, 30 min turnover).
+IF NOT EXISTS (SELECT 1 FROM [dbo].[OperationTheatres])
+    INSERT INTO [dbo].[OperationTheatres] ([HospitalId], [Code], [Name], [Location], [TheatreType], [Features], [OpensAt], [ClosesAt], [Is24Hours], [TurnoverMinutes], [IsActive], [CreatedDate])
+    SELECT DISTINCT o.[HospitalId], UPPER(LTRIM(RTRIM(o.[OperationTheatreNumber]))), UPPER(LTRIM(RTRIM(o.[OperationTheatreNumber]))), N'', N'General', N'', '08:00', '20:00', 0, 30, 1, SYSDATETIME()
+    FROM [dbo].[OTSchedules] o
+    WHERE o.[HospitalId] IS NOT NULL AND LEN(LTRIM(RTRIM(o.[OperationTheatreNumber]))) BETWEEN 1 AND 20;
+
+UPDATE o SET o.[OperationTheatreId] = t.[Id]
+FROM [dbo].[OTSchedules] o
+JOIN [dbo].[OperationTheatres] t ON t.[HospitalId] = o.[HospitalId] AND t.[Code] = UPPER(LTRIM(RTRIM(o.[OperationTheatreNumber])))
+WHERE o.[OperationTheatreId] IS NULL;
+
+UPDATE o SET o.[SurgeonDoctorId] = m.[DoctorId]
+FROM [dbo].[OTSchedules] o
+CROSS APPLY (SELECT MIN(d.[Id]) AS [DoctorId], COUNT(*) AS [Matches] FROM [dbo].[Doctors] d
+             WHERE LTRIM(RTRIM(o.[SurgeonName])) IN (N'Dr. ' + d.[FirstName] + N' ' + d.[LastName], d.[FirstName] + N' ' + d.[LastName])) m
+WHERE o.[SurgeonDoctorId] IS NULL AND m.[Matches] = 1;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure operation theatre schema");
+            }
+        }
+
+        /// <summary>Vendors master (and, for purchasing, the links from inventory items). Idempotent.</summary>
+        private async Task EnsurePurchasingSchemaAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[Vendors]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[Vendors] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_Vendors] PRIMARY KEY,
+        [VendorCode] nvarchar(20) NOT NULL,
+        [Name] nvarchar(150) NOT NULL,
+        [Category] nvarchar(50) NOT NULL,
+        [ContactPerson] nvarchar(100) NOT NULL,
+        [Phone] nvarchar(50) NOT NULL,
+        [Email] nvarchar(150) NOT NULL,
+        [Address] nvarchar(300) NOT NULL,
+        [City] nvarchar(100) NOT NULL,
+        [TaxNumber] nvarchar(50) NOT NULL,
+        [LicenseNumber] nvarchar(100) NOT NULL,
+        [PaymentTermsDays] int NOT NULL,
+        [BankName] nvarchar(100) NOT NULL,
+        [BankAccountName] nvarchar(100) NOT NULL,
+        [BankAccountNumber] nvarchar(50) NOT NULL,
+        [BankRoutingCode] nvarchar(30) NOT NULL,
+        [Rating] int NOT NULL,
+        [IsActive] bit NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        [UpdatedAt] datetime2 NULL
+    );
+    CREATE UNIQUE INDEX [IX_Vendors_VendorCode] ON [dbo].[Vendors] ([VendorCode]);
+END;");
+
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF COL_LENGTH(N'dbo.InventoryItems', N'VendorId') IS NULL
+    ALTER TABLE [dbo].[InventoryItems] ADD [VendorId] int NULL;");
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_InventoryItems_VendorId' AND object_id = OBJECT_ID(N'[dbo].[InventoryItems]'))
+    CREATE INDEX [IX_InventoryItems_VendorId] ON [dbo].[InventoryItems] ([VendorId]);
+IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_InventoryItems_Vendors_VendorId')
+    ALTER TABLE [dbo].[InventoryItems] ADD CONSTRAINT [FK_InventoryItems_Vendors_VendorId] FOREIGN KEY ([VendorId]) REFERENCES [dbo].[Vendors] ([Id]);");
+
+                // Consumption fields on stock transactions.
+                var transactionColumns = new (string Name, string Definition)[]
+                {
+                    ("Department", "nvarchar(100) NOT NULL CONSTRAINT [DF_InventoryTransactions_Department] DEFAULT(N'')"),
+                    ("PatientId", "int NULL"),
+                    ("BillId", "int NULL"),
+                    ("PurchaseBillId", "int NULL"),
+                };
+                foreach (var (name, definition) in transactionColumns)
+                {
+                    // Constant column names and definitions (no user input).
+                    var addColumn = $"IF COL_LENGTH(N'dbo.InventoryTransactions', N'{name}') IS NULL ALTER TABLE [dbo].[InventoryTransactions] ADD [{name}] {definition};";
+                    await _context.Database.ExecuteSqlRawAsync(addColumn);
+                }
+
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF OBJECT_ID(N'[dbo].[PurchaseBills]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PurchaseBills] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PurchaseBills] PRIMARY KEY,
+        [HospitalId] int NULL,
+        [BillNumber] nvarchar(30) NOT NULL,
+        [VendorId] int NOT NULL,
+        [VendorInvoiceNumber] nvarchar(50) NOT NULL,
+        [InvoiceDate] datetime2 NOT NULL,
+        [DueDate] datetime2 NOT NULL,
+        [Status] nvarchar(20) NOT NULL,
+        [PaymentStatus] nvarchar(20) NOT NULL,
+        [SubTotal] decimal(18,2) NOT NULL,
+        [TaxAmount] decimal(18,2) NOT NULL,
+        [TotalAmount] decimal(18,2) NOT NULL,
+        [PaidAmount] decimal(18,2) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedByUserId] nvarchar(max) NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        [SubmittedAt] datetime2 NULL,
+        [ApprovedBy] nvarchar(max) NOT NULL,
+        [ApprovedAt] datetime2 NULL,
+        [ApprovalComments] nvarchar(max) NOT NULL,
+        [ReceivedBy] nvarchar(max) NOT NULL,
+        [ReceivedAt] datetime2 NULL,
+        [CancelReason] nvarchar(max) NOT NULL,
+        CONSTRAINT [FK_PurchaseBills_Hospitals_HospitalId] FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id]),
+        CONSTRAINT [FK_PurchaseBills_Vendors_VendorId] FOREIGN KEY ([VendorId]) REFERENCES [dbo].[Vendors] ([Id])
+    );
+    CREATE UNIQUE INDEX [IX_PurchaseBills_BillNumber] ON [dbo].[PurchaseBills] ([BillNumber]);
+    CREATE INDEX [IX_PurchaseBills_HospitalId] ON [dbo].[PurchaseBills] ([HospitalId]);
+    CREATE INDEX [IX_PurchaseBills_VendorId_VendorInvoiceNumber] ON [dbo].[PurchaseBills] ([VendorId], [VendorInvoiceNumber]);
+END;
+
+IF OBJECT_ID(N'[dbo].[PurchaseBillItems]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[PurchaseBillItems] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_PurchaseBillItems] PRIMARY KEY,
+        [PurchaseBillId] int NOT NULL,
+        [InventoryItemId] int NULL,
+        [Description] nvarchar(200) NOT NULL,
+        [Quantity] decimal(18,2) NOT NULL,
+        [UnitCost] decimal(18,2) NOT NULL,
+        [TaxPercent] decimal(18,2) NOT NULL,
+        [LineTotal] decimal(18,2) NOT NULL,
+        [BatchNumber] nvarchar(50) NOT NULL,
+        [ExpiryDate] datetime2 NULL,
+        CONSTRAINT [FK_PurchaseBillItems_InventoryItems_InventoryItemId] FOREIGN KEY ([InventoryItemId]) REFERENCES [dbo].[InventoryItems] ([Id]),
+        CONSTRAINT [FK_PurchaseBillItems_PurchaseBills_PurchaseBillId] FOREIGN KEY ([PurchaseBillId]) REFERENCES [dbo].[PurchaseBills] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_PurchaseBillItems_InventoryItemId] ON [dbo].[PurchaseBillItems] ([InventoryItemId]);
+    CREATE INDEX [IX_PurchaseBillItems_PurchaseBillId] ON [dbo].[PurchaseBillItems] ([PurchaseBillId]);
+END;
+
+IF OBJECT_ID(N'[dbo].[VendorPayments]', N'U') IS NULL
+BEGIN
+    CREATE TABLE [dbo].[VendorPayments] (
+        [Id] int IDENTITY(1,1) NOT NULL CONSTRAINT [PK_VendorPayments] PRIMARY KEY,
+        [PurchaseBillId] int NOT NULL,
+        [Amount] decimal(18,2) NOT NULL,
+        [PaymentDate] datetime2 NOT NULL,
+        [Method] nvarchar(30) NOT NULL,
+        [Reference] nvarchar(100) NOT NULL,
+        [Notes] nvarchar(max) NOT NULL,
+        [CreatedBy] nvarchar(max) NOT NULL,
+        [CreatedAt] datetime2 NOT NULL,
+        CONSTRAINT [FK_VendorPayments_PurchaseBills_PurchaseBillId] FOREIGN KEY ([PurchaseBillId]) REFERENCES [dbo].[PurchaseBills] ([Id]) ON DELETE CASCADE
+    );
+    CREATE INDEX [IX_VendorPayments_PurchaseBillId] ON [dbo].[VendorPayments] ([PurchaseBillId]);
+END;");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to ensure purchasing schema");
+            }
+        }
+
+        private async Task EnsureAuditLogUserIdNullableAsync()
+        {
+            try
+            {
+                await _context.Database.ExecuteSqlRawAsync(@"
+IF EXISTS (SELECT 1 FROM sys.columns
+           WHERE object_id = OBJECT_ID(N'[dbo].[AuditLogs]') AND name = N'UserId' AND is_nullable = 0)
+BEGIN
+    DECLARE @idLength int = (SELECT max_length FROM sys.columns
+                             WHERE object_id = OBJECT_ID(N'[dbo].[AspNetUsers]') AND name = N'Id');
+    DECLARE @alter nvarchar(400) = N'ALTER TABLE [dbo].[AuditLogs] ALTER COLUMN [UserId] nvarchar('
+        + CASE WHEN @idLength = -1 THEN N'max' ELSE CAST(@idLength / 2 AS nvarchar(10)) END + N') NULL;';
+    BEGIN TRY
+        BEGIN TRANSACTION;
+        IF EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = N'FK_AuditLogs_AspNetUsers_UserId' AND parent_object_id = OBJECT_ID(N'[dbo].[AuditLogs]'))
+            ALTER TABLE [dbo].[AuditLogs] DROP CONSTRAINT [FK_AuditLogs_AspNetUsers_UserId];
+        IF EXISTS (SELECT 1 FROM sys.indexes WHERE name = N'IX_AuditLogs_UserId' AND object_id = OBJECT_ID(N'[dbo].[AuditLogs]'))
+            DROP INDEX [IX_AuditLogs_UserId] ON [dbo].[AuditLogs];
+        EXEC (@alter);
+        CREATE INDEX [IX_AuditLogs_UserId] ON [dbo].[AuditLogs] ([UserId]);
+        ALTER TABLE [dbo].[AuditLogs] ADD CONSTRAINT [FK_AuditLogs_AspNetUsers_UserId]
+            FOREIGN KEY ([UserId]) REFERENCES [dbo].[AspNetUsers] ([Id]) ON DELETE CASCADE;
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF @@TRANCOUNT > 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
+END");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to make AuditLogs.UserId nullable");
+            }
         }
 
         private async Task EnsureUserIdentityConstraintsAsync()
@@ -2038,7 +3027,11 @@ END");
                 // on INSERT, so the column needs a default to keep satisfying its NOT NULL
                 // constraint for any code path that still round-trips through EF's SQL layer.
                 await _context.Database.ExecuteSqlRawAsync(@"
-IF NOT EXISTS (
+-- Only older databases still have this column (new databases are created without it).
+IF COL_LENGTH(N'dbo.Appointments', N'AppointmentId') IS NOT NULL
+   AND COLUMNPROPERTY(OBJECT_ID(N'dbo.Appointments'), N'AppointmentId', 'IsIdentity') = 0
+   AND COLUMNPROPERTY(OBJECT_ID(N'dbo.Appointments'), N'AppointmentId', 'IsComputed') = 0
+   AND NOT EXISTS (
     SELECT 1 FROM sys.default_constraints dc
     JOIN sys.columns c ON c.object_id = dc.parent_object_id AND c.column_id = dc.parent_column_id
     WHERE dc.parent_object_id = OBJECT_ID(N'[dbo].[Appointments]') AND c.name = N'AppointmentId'
@@ -2099,14 +3092,14 @@ END");
                     LastName = superAdminUser.LastName ?? "Admin",
                     Department = "Administration",
                     Designation = "SuperAdmin",
-                    DateOfJoining = DateTime.UtcNow,
+                    DateOfJoining = DateTime.Now,
                     Salary = 0,
                     Email = superAdminUser.Email ?? "superadmin@hospital.com",
                     Phone = string.Empty,
                     Address = string.Empty,
                     About = "System generated SuperAdmin staff profile",
                     IsActive = true,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     User = superAdminUser
                 };
                 _context.Staff.Add(staff);
@@ -2129,7 +3122,7 @@ END");
             {
                 StaffId = superAdminUser.Id,
                 RoleId = superAdminRole.Id,
-                AssignedDate = DateTime.UtcNow,
+                AssignedDate = DateTime.Now,
                 AssignedBy = "System"
             };
             _context.StaffRoles.Add(staffRole);
@@ -2256,7 +3249,7 @@ END");
                     FirstName = firstName,
                     LastName = lastName,
                     IsActive = true,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 };
 
                 var createResult = await _userManager.CreateAsync(user, "UatRole@123!");
@@ -2290,7 +3283,7 @@ END");
                     FirstName = firstName,
                     LastName = lastName,
                     IsActive = true,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 };
 
                 var createResult = await _userManager.CreateAsync(user, "UatRole@123!");
@@ -2348,7 +3341,7 @@ END");
                 LastName = lastName,
                 Email = email,
                 Phone = "9000000000",
-                DateOfBirth = DateTime.UtcNow.Date.AddYears(-30),
+                DateOfBirth = DateTime.Now.Date.AddYears(-30),
                 Gender = "Other",
                 Address = "UAT Address",
                 City = "UAT City",
@@ -2368,8 +3361,8 @@ END");
                 UserId = user.Id,
                 ProfileImagePath = string.Empty,
                 IsActive = true,
-                CreatedDate = DateTime.UtcNow,
-                LastVisitDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now,
+                LastVisitDate = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -2391,14 +3384,14 @@ END");
                 LastName = user.LastName ?? "User",
                 Department = department,
                 Designation = designation,
-                DateOfJoining = DateTime.UtcNow,
+                DateOfJoining = DateTime.Now,
                 Salary = 0,
                 Email = user.Email ?? string.Empty,
                 Phone = string.Empty,
                 Address = string.Empty,
                 About = "System generated UAT staff profile",
                 IsActive = true,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 User = user
             });
 
@@ -2426,7 +3419,7 @@ END");
                 {
                     StaffId = user.Id,
                     RoleId = role.Id,
-                    AssignedDate = DateTime.UtcNow,
+                    AssignedDate = DateTime.Now,
                     AssignedBy = "System"
                 });
 
@@ -2636,6 +3629,7 @@ END");
             // ── IPD Admissions ───────────────────────────────────────────────
             var availableBeds = await _context.Beds
                 .Where(b => b.Status == "Available" && b.IsActive)
+                .OrderBy(b => b.Id)
                 .Take(5)
                 .ToListAsync();
 

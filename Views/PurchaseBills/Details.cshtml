@@ -1,0 +1,162 @@
+@model MedyxHMS.Models.PurchaseBill
+@using MedyxHMS.Controllers
+@using System.Globalization
+@{
+    ViewData["Title"] = Model.BillNumber;
+    var canApprove = ViewBag.CanApprove as bool? ?? false;
+    var userId = ViewBag.UserId as string ?? string.Empty;
+    var stock = ViewBag.Items as List<MedyxHMS.Models.InventoryItem> ?? new List<MedyxHMS.Models.InventoryItem>();
+    var editable = Model.Status == "Draft" || Model.Status == "Rejected";
+    var balance = Model.TotalAmount - Model.PaidAmount;
+    string M(decimal v) => v.ToString("N2", CultureInfo.InvariantCulture);
+    string Q(decimal v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+}
+
+<div class="container-fluid mt-3" style="max-width:1250px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>@Model.BillNumber – @Model.Vendor.Name</h4>
+            <small class="text-muted">Invoice @Model.VendorInvoiceNumber of @Model.InvoiceDate.ToString("dd-MMM-yyyy") · due @Model.DueDate.ToString("dd-MMM-yyyy") · entered by @Model.CreatedBy</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 @(Model.Status == "Received" ? "bg-success" : Model.Status == "Approved" ? "bg-primary" : Model.Status == "Submitted" ? "bg-warning text-dark" : Model.Status == "Rejected" ? "bg-danger" : "bg-secondary")">@Model.Status</span>
+            <span class="badge fs-6 @(Model.PaymentStatus == "Paid" ? "bg-success" : Model.PaymentStatus == "Partially paid" ? "bg-info text-dark" : "bg-light text-dark border")">@Model.PaymentStatus</span>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Purchase bills</a>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.ApprovalComments) || Model.ApprovedAt.HasValue)
+    {
+        <div class="alert @(Model.Status == "Rejected" ? "alert-danger" : "alert-light border") small">@(Model.Status == "Rejected" ? "Rejected" : "Approved") by @Model.ApprovedBy on @Model.ApprovedAt?.ToString("dd-MMM-yyyy HH:mm")@(string.IsNullOrEmpty(Model.ApprovalComments) ? "" : ": " + Model.ApprovalComments)</div>
+    }
+    @if (Model.Status == "Cancelled") { <div class="alert alert-secondary small">Cancelled: @Model.CancelReason</div> }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold">Items</div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Item</th><th>Stock item</th><th class="text-end">Qty</th><th class="text-end">Unit cost</th><th class="text-end">Tax %</th><th class="text-end">Line total</th><th>Batch / expiry</th>@if (editable) { <th></th> }</tr></thead>
+                <tbody>
+                    @foreach (var i in Model.Items.OrderBy(i => i.Id))
+                    {
+                        <tr>
+                            <td>@i.Description</td>
+                            <td class="small">@(i.InventoryItem != null ? i.InventoryItem.ItemCode : "– (not stocked)")</td>
+                            <td class="text-end">@Q(i.Quantity)</td>
+                            <td class="text-end">@M(i.UnitCost)</td>
+                            <td class="text-end">@Q(i.TaxPercent)</td>
+                            <td class="text-end">@M(i.LineTotal)</td>
+                            <td class="small">@i.BatchNumber @(i.ExpiryDate.HasValue ? "· " + i.ExpiryDate.Value.ToString("MMM-yyyy") : "")</td>
+                            @if (editable)
+                            {
+                                <td><form asp-action="RemoveLine" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<input type="hidden" name="lineId" value="@i.Id" /><button type="submit" class="btn btn-sm btn-link text-danger p-0">Remove</button></form></td>
+                            }
+                        </tr>
+                    }
+                    @if (!Model.Items.Any()) { <tr><td colspan="8" class="text-center text-muted py-3">No items yet.</td></tr> }
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="5" class="text-end">Subtotal</td><td class="text-end">@M(Model.SubTotal)</td><td colspan="2"></td></tr>
+                    <tr><td colspan="5" class="text-end">Tax</td><td class="text-end">@M(Model.TaxAmount)</td><td colspan="2"></td></tr>
+                    <tr class="fw-bold"><td colspan="5" class="text-end">Total</td><td class="text-end">@M(Model.TotalAmount)</td><td colspan="2"></td></tr>
+                </tfoot>
+            </table>
+        </div>
+        @if (editable)
+        {
+            <div class="card-footer">
+                <form asp-action="AddLine" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-3">
+                        <label class="form-label small mb-0">Stock item</label>
+                        <select name="inventoryItemId" class="form-select form-select-sm">
+                            <option value="">Not stocked (service / other)</option>
+                            @foreach (var s in stock) { <option value="@s.Id">@s.Name (@s.ItemCode)</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-2"><label class="form-label small mb-0">Description</label><input name="description" class="form-control form-control-sm" placeholder="(item name)" /></div>
+                    <div class="col-md-1"><label class="form-label small mb-0">Qty</label><input name="quantity" type="number" step="0.01" min="0.01" class="form-control form-control-sm" /></div>
+                    <div class="col-md-1"><label class="form-label small mb-0">Unit cost</label><input name="unitCost" type="number" step="0.01" min="0" class="form-control form-control-sm" /></div>
+                    <div class="col-md-1"><label class="form-label small mb-0">Tax %</label><input name="taxPercent" type="number" step="0.01" min="0" max="100" value="0" class="form-control form-control-sm" /></div>
+                    <div class="col-md-1"><label class="form-label small mb-0">Batch</label><input name="batchNumber" class="form-control form-control-sm" /></div>
+                    <div class="col-md-2"><label class="form-label small mb-0">Expiry</label><input name="expiryDate" type="date" class="form-control form-control-sm" /></div>
+                    <div class="col-md-1"><button type="submit" class="btn btn-sm btn-success w-100">Add</button></div>
+                </form>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Workflow</div>
+                <div class="card-body">
+                    @if (editable)
+                    {
+                        <form asp-action="Submit" asp-route-id="@Model.Id" method="post" class="d-inline">@Html.AntiForgeryToken()<button type="submit" class="btn btn-sm btn-primary">Submit for approval</button></form>
+                    }
+                    @if (Model.Status == "Submitted")
+                    {
+                        if (canApprove && Model.CreatedByUserId != userId)
+                        {
+                            <form asp-action="Decide" asp-route-id="@Model.Id" method="post" class="d-flex gap-1 flex-wrap">
+                                @Html.AntiForgeryToken()
+                                <input name="comments" class="form-control form-control-sm" placeholder="Comments (required to reject)" style="min-width:180px;flex:1" />
+                                <button type="submit" name="approve" value="true" class="btn btn-sm btn-success">Approve</button>
+                                <button type="submit" name="approve" value="false" class="btn btn-sm btn-outline-danger">Reject</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <p class="small text-muted mb-0">Waiting for approval by a finance user other than the person who entered it.</p>
+                        }
+                    }
+                    @if (Model.Status == "Approved")
+                    {
+                        <form asp-action="Receive" asp-route-id="@Model.Id" method="post" onsubmit="return confirm('Confirm that the goods have been received? Stock will be updated.');">@Html.AntiForgeryToken()<button type="submit" class="btn btn-sm btn-success"><i class="fas fa-dolly me-1"></i>Goods received – add to stock</button></form>
+                    }
+                    @if (Model.Status == "Received") { <p class="small mb-0 text-success">Goods received by @Model.ReceivedBy on @Model.ReceivedAt?.ToString("dd-MMM-yyyy HH:mm"); stock updated.</p> }
+                    @if (Model.Status is "Draft" or "Submitted" or "Rejected")
+                    {
+                        <form asp-action="Cancel" asp-route-id="@Model.Id" method="post" class="d-flex gap-1 mt-2">
+                            @Html.AntiForgeryToken()
+                            <input name="reason" class="form-control form-control-sm" placeholder="Reason for cancelling" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Cancel bill</button>
+                        </form>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes)) { <p class="small text-muted mt-2 mb-0">Notes: @Model.Notes</p> }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Payments (balance @M(balance))</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var p in Model.Payments.OrderBy(p => p.PaymentDate))
+                            {
+                                <tr><td class="small">@p.PaymentDate.ToString("dd-MMM-yyyy")</td><td class="small">@p.Method @p.Reference</td><td class="small text-end">@M(p.Amount)</td><td class="small text-muted">@p.CreatedBy</td></tr>
+                            }
+                            @if (!Model.Payments.Any()) { <tr><td class="text-muted small text-center py-2">No payments yet.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+                @if (canApprove && (Model.Status == "Approved" || Model.Status == "Received") && balance > 0)
+                {
+                    <div class="card-footer">
+                        <form asp-action="AddPayment" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end">
+                            @Html.AntiForgeryToken()
+                            <div class="col-md-3"><input name="amount" type="number" step="0.01" min="0.01" max="@balance.ToString(CultureInfo.InvariantCulture)" class="form-control form-control-sm" placeholder="Amount" /></div>
+                            <div class="col-md-3"><input name="paymentDate" type="date" class="form-control form-control-sm" value="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                            <div class="col-md-3"><select name="method" class="form-select form-select-sm">@foreach (var m in PurchaseBillsController.PaymentMethods) { <option>@m</option> }</select></div>
+                            <div class="col-md-3"><input name="reference" class="form-control form-control-sm" placeholder="Reference" /></div>
+                            <div class="col-md-9"><input name="notes" class="form-control form-control-sm" placeholder="Notes" /></div>
+                            <div class="col-md-3"><button type="submit" class="btn btn-sm btn-success w-100">Record payment</button></div>
+                        </form>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

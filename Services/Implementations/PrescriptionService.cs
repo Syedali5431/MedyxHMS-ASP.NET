@@ -35,18 +35,24 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Prescription> CreatePrescriptionAsync(Prescription prescription)
         {
-            prescription.CreatedDate = DateTime.UtcNow;
+            prescription.CreatedDate = DateTime.Now;
             prescription.TotalPrice = prescription.Quantity * prescription.UnitPrice;
 
             _context.Prescriptions.Add(prescription);
             await _context.SaveChangesAsync();
+            await RecalculatePharmacyBillAsync(prescription.PharmacyBillId);
             return prescription;
         }
 
         public async Task<Prescription> UpdatePrescriptionAsync(Prescription prescription)
         {
+            var previousBillId = await _context.Prescriptions.Where(p => p.Id == prescription.Id).Select(p => (int?)p.PharmacyBillId).FirstOrDefaultAsync();
+            prescription.TotalPrice = prescription.Quantity * prescription.UnitPrice;
             _context.Prescriptions.Update(prescription);
             await _context.SaveChangesAsync();
+            await RecalculatePharmacyBillAsync(prescription.PharmacyBillId);
+            if (previousBillId.HasValue && previousBillId.Value != prescription.PharmacyBillId)
+                await RecalculatePharmacyBillAsync(previousBillId.Value);
             return prescription;
         }
 
@@ -56,8 +62,10 @@ namespace MedyxHMS.Services.Implementations
             if (prescription == null)
                 return false;
 
+            var billId = prescription.PharmacyBillId;
             _context.Prescriptions.Remove(prescription);
             await _context.SaveChangesAsync();
+            await RecalculatePharmacyBillAsync(billId);
             return true;
         }
 
@@ -94,7 +102,7 @@ namespace MedyxHMS.Services.Implementations
             return await _context.Prescriptions
                 .Include(p => p.Medicine)
                 .Include(p => p.PharmacyBill)
-                .Where(p => p.CreatedDate >= startDate && p.CreatedDate <= endDate)
+                .Where(p => p.CreatedDate >= startDate && p.CreatedDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .OrderByDescending(p => p.CreatedDate)
                 .ToListAsync();
         }
@@ -115,7 +123,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Medicine> CreateMedicineAsync(Medicine medicine)
         {
-            medicine.CreatedDate = DateTime.UtcNow;
+            medicine.CreatedDate = DateTime.Now;
             _context.Medicines.Add(medicine);
             await _context.SaveChangesAsync();
             return medicine;
@@ -149,9 +157,9 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<IEnumerable<Medicine>> GetExpiringMedicinesAsync(int daysAhead = 30)
         {
-            var expiryDate = DateTime.UtcNow.AddDays(daysAhead);
+            var expiryDate = DateTime.Now.AddDays(daysAhead);
             return await _context.Medicines
-                .Where(m => m.IsActive && m.ExpiryDate <= expiryDate && m.ExpiryDate > DateTime.UtcNow)
+                .Where(m => m.IsActive && m.ExpiryDate <= expiryDate && m.ExpiryDate > DateTime.Now)
                 .OrderBy(m => m.ExpiryDate)
                 .ToListAsync();
         }
@@ -210,7 +218,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<PharmacyBill> CreatePharmacyBillAsync(PharmacyBill bill)
         {
-            bill.CreatedDate = DateTime.UtcNow;
+            bill.CreatedDate = DateTime.Now;
             bill.Status = "Pending";
 
             _context.PharmacyBills.Add(bill);
@@ -269,7 +277,7 @@ namespace MedyxHMS.Services.Implementations
                 .Include(b => b.Patient)
                 .Include(b => b.Prescriptions)
                     .ThenInclude(p => p.Medicine)
-                .Where(b => b.BillDate >= startDate && b.BillDate <= endDate)
+                .Where(b => b.BillDate >= startDate && b.BillDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .OrderByDescending(b => b.BillDate)
                 .ToListAsync();
         }
@@ -284,8 +292,25 @@ namespace MedyxHMS.Services.Implementations
         public async Task<int> GetTotalPrescriptionsCountAsync(DateTime startDate, DateTime endDate)
         {
             return await _context.Prescriptions
-                .Where(p => p.CreatedDate >= startDate && p.CreatedDate <= endDate)
+                .Where(p => p.CreatedDate >= startDate && p.CreatedDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .CountAsync();
+        }
+
+        /// <summary>
+        /// Keeps a pharmacy bill equal to the medicines on it: total = sum of its prescriptions, and the bill is
+        /// Pending while the paid amount is below the total (previously adding a medicine left the old total).
+        /// </summary>
+        private async Task RecalculatePharmacyBillAsync(int pharmacyBillId)
+        {
+            var bill = await _context.PharmacyBills.FirstOrDefaultAsync(b => b.Id == pharmacyBillId);
+            if (bill == null || bill.Status == "Cancelled")
+                return;
+
+            var total = await _context.Prescriptions.Where(p => p.PharmacyBillId == pharmacyBillId)
+                .SumAsync(p => (decimal?)(p.TotalPrice > 0 ? p.TotalPrice : p.Quantity * p.UnitPrice)) ?? 0m;
+            bill.TotalAmount = total;
+            bill.Status = total > 0 && bill.PaidAmount >= total ? "Paid" : "Pending";
+            await _context.SaveChangesAsync();
         }
     }
 }

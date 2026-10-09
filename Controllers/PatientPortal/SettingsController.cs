@@ -105,8 +105,9 @@ namespace MedyxHMS.Controllers.PatientPortal
             }
             catch (Exception ex)
             {
+                // There is no "Update" view; go back to the settings page, where the layout shows the error.
                 TempData["ErrorMessage"] = $"Error updating settings: {ex.Message}";
-                return View(viewModel);
+                return RedirectToAction("Index");
             }
         }
 

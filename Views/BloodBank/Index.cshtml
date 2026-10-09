@@ -61,14 +61,14 @@
                                 <td class="@(item.UnitsAvailable <= item.MinimumLevel ? "text-danger fw-bold" : "")">@item.UnitsAvailable</td>
                                 <td>@item.UnitsReserved</td>
                                 <td>@item.MinimumLevel</td>
-                                <td>@item.LastUpdatedDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@item.LastUpdatedDate.ToString("MMM dd, yyyy HH:mm")</td>
                                 <td>
-                                    <form method="post" asp-action="UpdateInventory" class="d-flex gap-2">
+                                    <form method="post" asp-action="UpdateInventory" class="d-flex flex-nowrap align-items-center gap-2">
                                         @Html.AntiForgeryToken()
                                         <input type="hidden" name="bloodGroup" value="@item.BloodGroup" />
-                                        <input class="form-control form-control-sm" type="number" name="unitsAvailable" value="@item.UnitsAvailable" min="0" />
-                                        <input class="form-control form-control-sm" type="number" name="minimumLevel" value="@item.MinimumLevel" min="0" />
-                                        <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
+                                        <input class="form-control form-control-sm" style="width:5.5rem" type="number" name="unitsAvailable" value="@item.UnitsAvailable" min="0" title="Units available" aria-label="Units available" />
+                                        <input class="form-control form-control-sm" style="width:5.5rem" type="number" name="minimumLevel" value="@item.MinimumLevel" min="0" title="Minimum level" aria-label="Minimum level" />
+                                        <button class="btn btn-sm btn-outline-primary text-nowrap" type="submit">Save</button>
                                     </form>
                                 </td>
                             </tr>
@@ -98,7 +98,7 @@
                         @foreach (var issue in issues)
                         {
                             <tr>
-                                <td>@issue.IssueDate.ToLocalTime().ToString("MMM dd, yyyy HH:mm")</td>
+                                <td>@issue.IssueDate.ToString("MMM dd, yyyy HH:mm")</td>
                                 <td>@issue.Patient?.FirstName @issue.Patient?.LastName</td>
                                 <td>@issue.BloodGroup</td>
                                 <td>@issue.UnitsIssued</td>

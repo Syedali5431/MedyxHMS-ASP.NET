@@ -476,7 +476,7 @@ namespace MedyxHMS.Controllers
             existing.Name = vm.ReportName;
             existing.ReportType = vm.ReportType;
             existing.Description = vm.Description;
-            existing.ModifiedDate = DateTime.UtcNow;
+            existing.ModifiedDate = DateTime.Now;
             existing.ModifiedBy = User.Identity?.Name ?? "System";
 
             existing.Fields.Clear();
@@ -525,7 +525,7 @@ namespace MedyxHMS.Controllers
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                 UserAgent = Request.Headers.UserAgent.ToString(),
                 SessionId = HttpContext.Session?.Id ?? string.Empty,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -543,8 +543,8 @@ namespace MedyxHMS.Controllers
             var vm = new DownloadReportViewModel
             {
                 TemplateId = templateId ?? filtered.FirstOrDefault()?.Id,
-                StartDate = DateTime.UtcNow.Date.AddMonths(-1),
-                EndDate = DateTime.UtcNow.Date,
+                StartDate = DateTime.Now.Date.AddMonths(-1),
+                EndDate = DateTime.Now.Date,
                 AvailableReports = filtered
                     .OrderBy(t => t.Name)
                     .Select(t => new ReportTemplateOptionViewModel
@@ -632,11 +632,11 @@ namespace MedyxHMS.Controllers
             if (string.Equals(format, "PDF", StringComparison.OrdinalIgnoreCase))
             {
                 var pdf = _exportService.BuildPdfTable(title, preview.Headers, preview.Rows);
-                return File(pdf, "application/pdf", $"{safeName}_{DateTime.UtcNow:yyyyMMddHHmm}.pdf");
+                return File(pdf, "application/pdf", $"{safeName}_{DateTime.Now:yyyyMMddHHmm}.pdf");
             }
 
             var csv = _exportService.BuildCsv(title, preview.Headers, preview.Rows);
-            return File(csv, "text/csv", $"{safeName}_{DateTime.UtcNow:yyyyMMddHHmm}.csv");
+            return File(csv, "text/csv", $"{safeName}_{DateTime.Now:yyyyMMddHHmm}.csv");
         }
 
         [HttpGet]
@@ -933,7 +933,9 @@ namespace MedyxHMS.Controllers
 
         // ── C. User Management ────────────────────────────────────────────────
 
+        // The user directory (names, e-mails, roles, last login) is for administrators only.
         [HttpGet]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> UserManagement(string? search, string statusFilter = "All", string roleFilter = "")
         {
             var canManage = User.IsInRole("SuperAdmin") || User.IsInRole("Admin");
@@ -970,9 +972,23 @@ namespace MedyxHMS.Controllers
             var orderedUsers = filtered.OrderByDescending(u => u.CreatedDate).ToList();
             var rows = new List<UserManagementRowViewModel>();
 
+            // Hospitals per user (multi-hospital groups).
+            var isSuperAdmin = User.IsInRole("SuperAdmin");
+            var hospitalAccess = await _context.UserHospitalAccesses.AsNoTracking()
+                .Select(a => new { a.UserId, a.IsDefault, a.Hospital.Name })
+                .ToListAsync();
+            var groupDefault = await _context.Hospitals.AsNoTracking().Where(h => h.IsDefault).Select(h => h.Name).FirstOrDefaultAsync() ?? string.Empty;
+            var hospitalsByUser = hospitalAccess.GroupBy(a => a.UserId)
+                .ToDictionary(g => g.Key, g => string.Join(", ", g.OrderByDescending(a => a.IsDefault).ThenBy(a => a.Name).Select(a => a.IsDefault ? a.Name + " (default)" : a.Name)));
+
             foreach (var (user, index) in orderedUsers.Select((u, i) => (u, i)))
             {
                 var roles = await _userManager.GetRolesAsync(user);
+                var isStaff = roles.Any(r => r != "Patient");
+                var isAdminAccount = roles.Contains("Admin") || roles.Contains("SuperAdmin");
+                var hospitals = !isStaff ? string.Empty
+                    : roles.Contains("SuperAdmin") ? "All hospitals"
+                    : hospitalsByUser.GetValueOrDefault(user.Id) ?? (groupDefault.Length > 0 ? groupDefault + " (not assigned)" : string.Empty);
                 rows.Add(new UserManagementRowViewModel
                 {
                     SerialNo = index + 1,
@@ -983,7 +999,9 @@ namespace MedyxHMS.Controllers
                     RolesList = string.Join(", ", roles),
                     IsActive = user.IsActive,
                     LastLoginDate = user.LastLoginDate,
-                    CreatedDate = user.CreatedDate
+                    CreatedDate = user.CreatedDate,
+                    Hospitals = hospitals,
+                    CanAssignHospitals = isStaff && (isSuperAdmin || !isAdminAccount)
                 });
             }
 
@@ -1028,7 +1046,7 @@ namespace MedyxHMS.Controllers
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                 UserAgent = Request.Headers.UserAgent.ToString(),
                 SessionId = HttpContext.Session?.Id ?? string.Empty,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -1067,7 +1085,7 @@ namespace MedyxHMS.Controllers
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                 UserAgent = Request.Headers.UserAgent.ToString(),
                 SessionId = HttpContext.Session?.Id ?? string.Empty,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             });
             await _context.SaveChangesAsync();
 
@@ -1085,6 +1103,7 @@ namespace MedyxHMS.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> UserDetails(string userId)
         {
             var user = await _userManager.FindByIdAsync(userId);
@@ -1165,7 +1184,7 @@ namespace MedyxHMS.Controllers
                 {
                     UserId = userId,
                     ThemeId = normalizedTheme,
-                    PreferenceSince = DateTime.UtcNow,
+                    PreferenceSince = DateTime.Now,
                     IsDefault = false
                 };
                 _context.UserThemePreferences.Add(preference);
@@ -1173,7 +1192,7 @@ namespace MedyxHMS.Controllers
             else
             {
                 preference.ThemeId = normalizedTheme;
-                preference.PreferenceSince = DateTime.UtcNow;
+                preference.PreferenceSince = DateTime.Now;
                 preference.IsDefault = false;
             }
 
@@ -1188,7 +1207,7 @@ namespace MedyxHMS.Controllers
                 IpAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? string.Empty,
                 UserAgent = Request.Headers.UserAgent.ToString(),
                 SessionId = HttpContext.Session?.Id ?? string.Empty,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.Now
             });
 
             await _context.SaveChangesAsync();
@@ -1197,7 +1216,10 @@ namespace MedyxHMS.Controllers
             return RedirectToAction(nameof(ThemeManagement));
         }
 
+        // The layout links this stylesheet on every signed-in page, including the Access Denied page a patient can
+        // land on; it only returns the caller's own theme (or the default), so any caller may load it.
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> ThemeStylesheet()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

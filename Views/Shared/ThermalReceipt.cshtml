@@ -1,0 +1,221 @@
+@model MedyxHMS.ViewModels.ThermalReceiptViewModel
+@using System.Globalization
+@inject MedyxHMS.Services.Interfaces.INetworkPrintService NetworkPrint
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    Layout = null;
+    // Printable width: 80 mm rolls print about 72 mm, 58 mm rolls about 48 mm.
+    var contentWidth = Model.PaperWidth == 58 ? "48mm" : "72mm";
+    var fontSize = Model.PaperWidth == 58 ? "10.5px" : "12px";
+    var cur = Model.Settings.CurrencySymbol ?? string.Empty;
+    string Money(decimal v) => Model.Settings.FormatMoney(v);
+    string Qty(decimal v) => v == Math.Truncate(v) ? v.ToString("0", CultureInfo.InvariantCulture) : v.ToString("0.##", CultureInfo.InvariantCulture);
+    var query = Context.Request.Query;
+    var autoPrint = Model.Settings.AutoPrint && query["autoprint"] != "0";
+
+    // Network receipt printers of the user's hospital (Settings → Printers, mode "network printers").
+    var networkPrinters = Model.Settings.UsesNetworkPrinters && User.Identity?.IsAuthenticated == true && !User.IsInRole("Patient")
+        ? await NetworkPrint.GetPrintersForHospitalAsync(HospitalContext.ActiveHospitalId ?? HospitalContext.HospitalIdForNewRecords, MedyxHMS.Models.Printer.TypeReceipt)
+        : new List<MedyxHMS.Models.Printer>();
+    var useNetwork = networkPrinters.Count > 0;
+    var receiptJson = useNetwork ? System.Text.Json.JsonSerializer.Serialize(Model) : "{}";
+    string WidthUrl(int w)
+    {
+        var pairs = query.Where(q => q.Key != "w" && q.Key != "autoprint").Select(q => $"{q.Key}={Uri.EscapeDataString(q.Value.ToString())}").ToList();
+        pairs.Add($"w={w}");
+        pairs.Add("autoprint=0");
+        return Context.Request.Path + "?" + string.Join("&", pairs);
+    }
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@Model.Title - @Model.Header.Name</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        @@page { margin: 0; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: #fff; color: #000; }
+        body { font-family: "Courier New", Consolas, monospace; font-size: @fontSize; line-height: 1.35; }
+        .receipt { width: @contentWidth; margin: 0 auto; padding: 3mm 0 6mm; }
+        .center { text-align: center; }
+        .hosp { font-size: 1.35em; font-weight: 700; text-transform: uppercase; }
+        .small { font-size: .9em; }
+        .title { font-weight: 700; margin-top: 2mm; letter-spacing: .5px; }
+        .highlight { font-size: 1.7em; font-weight: 700; margin: 1mm 0; }
+        .rule { border-top: 1px dashed #000; margin: 2mm 0; }
+        .row { display: flex; justify-content: space-between; gap: 2mm; }
+        .row > span:first-child { flex: 0 0 auto; }
+        .row > span:last-child { text-align: right; word-break: break-word; }
+        .item-desc { word-break: break-word; }
+        .item-calc { display: flex; justify-content: space-between; padding-left: 3mm; }
+        .total { font-weight: 700; font-size: 1.15em; }
+        .note { margin-top: 1mm; word-break: break-word; }
+        .toolbar { font-family: Arial, sans-serif; font-size: 13px; background: #f3f4f6; border-bottom: 1px solid #d1d5db; padding: 8px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+        .toolbar a, .toolbar button { font: inherit; padding: 5px 12px; border: 1px solid #9ca3af; border-radius: 4px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+        .toolbar .active { background: #1f3864; color: #fff; border-color: #1f3864; }
+        .toolbar .primary { background: #198754; color: #fff; border-color: #198754; }
+        .tip { font-family: Arial, sans-serif; font-size: 11px; color: #6b7280; text-align: center; padding: 4px 8px; }
+        .toolbar .lbl { align-self: center; color: #374151; }
+        .logo { display: block; margin: 0 auto 1.5mm; width: @(Model.PaperWidth == 58 ? "13mm" : "16mm"); height: auto; filter: grayscale(1) brightness(.55) contrast(1.6); }
+        .toolbar select { font: inherit; padding: 4px 6px; border: 1px solid #9ca3af; border-radius: 4px; max-width: 220px; }
+        .net-status { font-family: Arial, sans-serif; font-size: 12px; text-align: center; padding: 5px 8px; }
+        .net-status.ok { background: #d1e7dd; color: #0a3622; }
+        .net-status.err { background: #f8d7da; color: #58151c; }
+        .net-status.busy { background: #e7f1ff; color: #084298; }
+        @@media print { .no-print { display: none !important; } .receipt { padding-top: 0; } }
+    </style>
+</head>
+<body>
+    <div class="toolbar no-print">
+        @if (useNetwork)
+        {
+            <form id="netPrintForm" style="display:contents">
+                @Html.AntiForgeryToken()
+                <select id="netPrinter" aria-label="Network printer">
+                    @foreach (var p in networkPrinters)
+                    {
+                        <option value="@p.Id">@p.Name@(p.IsDefault ? " (default)" : "")</option>
+                    }
+                </select>
+                <button type="submit" class="primary" id="netPrintBtn">Print to network printer</button>
+            </form>
+            <button type="button" onclick="window.print()" title="Print dialog (Windows default printer)">Print dialog</button>
+        }
+        else
+        {
+            <button type="button" class="primary" onclick="window.print()">Print</button>
+        }
+        @* Paper width is chosen here when printing; the choice is remembered on this computer (cookie). *@
+        <span class="lbl">Paper width:</span>
+        <a href="@WidthUrl(80)" class="@(Model.PaperWidth == 80 ? "active" : "")" onclick="rememberWidth(80)" title="Standard 80 mm receipt roll">80 mm</a>
+        <a href="@WidthUrl(58)" class="@(Model.PaperWidth == 58 ? "active" : "")" onclick="rememberWidth(58)" title="Compact 58 mm receipt roll">58 mm</a>
+        @if (!string.IsNullOrEmpty(Model.BackUrl))
+        {
+            <a href="@Model.BackUrl">Back</a>
+        }
+        <button type="button" onclick="window.close()">Close</button>
+    </div>
+    @if (useNetwork)
+    {
+        <div class="net-status no-print" id="netStatus" hidden></div>
+        <div class="tip no-print">The receipt is sent straight to the network printer. "Print dialog" uses the default printer set in Windows.</div>
+    }
+    else
+    {
+        <div class="tip no-print">Choose the paper width of your receipt printer above, then Print. The print dialog opens with the default printer set in Windows; set Margins to "None" and turn off "Headers and footers".</div>
+    }
+
+    <div class="receipt">
+        <div class="center">
+            <img class="logo" src="/images/logo.png" alt="Medyx" />
+            <div class="hosp">@Model.Header.Name</div>
+            @if (Model.Settings.ShowHospitalAddress)
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.Header.Address)) { <div class="small">@Model.Header.Address</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.Header.Phone)) { <div class="small">Tel: @Model.Header.Phone</div> }
+                @if (!string.IsNullOrWhiteSpace(Model.Header.LicenseNumber)) { <div class="small">Reg: @Model.Header.LicenseNumber</div> }
+            }
+            <div class="title">@Model.Title.ToUpperInvariant()</div>
+            @if (!string.IsNullOrWhiteSpace(Model.Highlight))
+            {
+                @if (!string.IsNullOrWhiteSpace(Model.HighlightLabel)) { <div class="small">@Model.HighlightLabel</div> }
+                <div class="highlight">@Model.Highlight</div>
+            }
+        </div>
+        <div class="rule"></div>
+
+        @foreach (var line in Model.Lines)
+        {
+            <div class="row"><span>@line.Label</span><span>@line.Value</span></div>
+        }
+
+        @if (Model.Items.Any())
+        {
+            <div class="rule"></div>
+            @foreach (var item in Model.Items)
+            {
+                <div class="item-desc">@item.Description</div>
+                <div class="item-calc"><span>@Qty(item.Quantity) x @Money(item.UnitPrice)</span><span>@Money(item.Amount)</span></div>
+            }
+        }
+
+        @if (Model.Totals.Any())
+        {
+            <div class="rule"></div>
+            @foreach (var total in Model.Totals)
+            {
+                <div class="row @(total.Emphasis ? "total" : "")"><span>@total.Label</span><span>@Money(total.Amount)</span></div>
+            }
+        }
+
+        @if (Model.FooterLines.Any())
+        {
+            <div class="rule"></div>
+            @foreach (var line in Model.FooterLines)
+            {
+                <div class="row small"><span>@line.Label</span><span>@line.Value</span></div>
+            }
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.Note))
+        {
+            <div class="note small">@Model.Note</div>
+        }
+
+        <div class="rule"></div>
+        <div class="row small"><span>Printed</span><span>@Model.PrintedAt.ToString("dd-MMM-yyyy hh:mm tt", CultureInfo.InvariantCulture)</span></div>
+        @if (!string.IsNullOrWhiteSpace(Model.PrintedBy))
+        {
+            <div class="row small"><span>By</span><span>@Model.PrintedBy</span></div>
+        }
+        @if (!string.IsNullOrWhiteSpace(Model.Settings.FooterText))
+        {
+            <div class="center small" style="margin-top:2mm">@Model.Settings.FooterText</div>
+        }
+    </div>
+
+    <script>
+        // Remember the paper width chosen on the receipt for the next receipts on this computer.
+        function rememberWidth(w) { document.cookie = '@MedyxHMS.Services.Implementations.ReceiptPrintService.WidthCookie=' + w + ';path=/;max-age=31536000;samesite=lax'; }
+    </script>
+    @if (useNetwork)
+    {
+        <script id="receiptData" type="application/json">@Html.Raw(receiptJson)</script>
+        <script>
+            (function () {
+                var form = document.getElementById('netPrintForm');
+                var status = document.getElementById('netStatus');
+                var btn = document.getElementById('netPrintBtn');
+                function show(cls, text) { status.hidden = false; status.className = 'net-status no-print ' + cls; status.textContent = text; }
+                function send() {
+                    btn.disabled = true;
+                    show('busy', 'Sending to ' + document.getElementById('netPrinter').selectedOptions[0].text + '…');
+                    var body = new URLSearchParams();
+                    body.append('printerId', document.getElementById('netPrinter').value);
+                    body.append('receipt', document.getElementById('receiptData').textContent);
+                    body.append('__RequestVerificationToken', form.querySelector('input[name="__RequestVerificationToken"]').value);
+                    fetch('/Printing/Receipt', { method: 'POST', body: body, credentials: 'same-origin' })
+                        .then(function (r) { return r.json().catch(function () { return { success: false, message: 'Printing failed (' + r.status + ').' }; }); })
+                        .then(function (d) { show(d.success ? 'ok' : 'err', d.message || (d.success ? 'Sent.' : 'Printing failed.')); })
+                        .catch(function () { show('err', 'Cannot reach the server.'); })
+                        .finally(function () { btn.disabled = false; });
+                }
+                form.addEventListener('submit', function (e) { e.preventDefault(); send(); });
+                @if (autoPrint)
+                {
+                    @:window.addEventListener('load', function () { setTimeout(send, 200); });
+                }
+            })();
+        </script>
+    }
+    else if (autoPrint)
+    {
+        <script>
+            window.addEventListener('load', function () { setTimeout(function () { window.print(); }, 250); });
+        </script>
+    }
+</body>
+</html>

@@ -83,6 +83,7 @@ namespace MedyxHMS.Controllers
                 Visits = visitList.Select(v => new OPDVisitDto
                 {
                     Id = v.Id,
+                    HospitalId = v.HospitalId,
                     PatientId = v.PatientId,
                     PatientName = v.Patient != null ? $"{v.Patient.FirstName} {v.Patient.LastName}" : "Unknown",
                     DoctorId = v.DoctorId,
@@ -169,6 +170,30 @@ namespace MedyxHMS.Controllers
             };
 
             return View(viewModel);
+        }
+
+        // GET: /OPD/ThermalSlip/5 – OPD visit slip with consultation fee for receipt printers.
+        [HttpGet]
+        public async Task<IActionResult> ThermalSlip(int id, int? w, [FromServices] IReceiptPrintService receiptPrint)
+        {
+            var visit = await _opdService.GetOPDVisitByIdAsync(id);
+            if (visit == null)
+            {
+                return NotFound();
+            }
+
+            var vm = await receiptPrint.CreateAsync("OPD Visit Slip", visit.HospitalId, w, User.Identity?.Name);
+            vm.HighlightLabel = "Visit No.";
+            vm.Highlight = $"OPD-{visit.Id:D5}";
+            vm.Lines.Add(new ReceiptLine("Date", visit.VisitDate.ToString("dd-MMM-yyyy hh:mm tt", System.Globalization.CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Patient", visit.Patient != null ? $"{visit.Patient.FirstName} {visit.Patient.LastName}".Trim() : "Unknown"));
+            if (!string.IsNullOrWhiteSpace(visit.Patient?.PatientId)) vm.Lines.Add(new ReceiptLine("Patient ID", visit.Patient!.PatientId));
+            vm.Lines.Add(new ReceiptLine("Doctor", visit.Doctor != null ? "Dr. " + visit.Doctor.Name : "-"));
+            if (!string.IsNullOrWhiteSpace(visit.Doctor?.Specialization)) vm.Lines.Add(new ReceiptLine("Dept.", visit.Doctor!.Specialization));
+            vm.Lines.Add(new ReceiptLine("Payment", string.IsNullOrWhiteSpace(visit.PaymentStatus) ? "-" : visit.PaymentStatus));
+            vm.Totals.Add(new ReceiptTotal("Consultation fee", visit.ConsultationFee, emphasis: true));
+            vm.BackUrl = Url.Action(nameof(Details), new { id });
+            return View("ThermalReceipt", vm);
         }
 
         public async Task<IActionResult> Details(int id)
@@ -315,7 +340,7 @@ namespace MedyxHMS.Controllers
                                 UnitPrice = createdVisit.ConsultationFee,
                                 TotalPrice = createdVisit.ConsultationFee,
                                 Description = $"Consultation charge for OPD Visit #{createdVisit.Id}",
-                                CreatedDate = DateTime.UtcNow
+                                CreatedDate = DateTime.Now
                             }
                         }
                     };

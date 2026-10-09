@@ -113,6 +113,9 @@
                         <a href="@Url.Action("Index")" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to List
                         </a>
+                        <a href="@Url.Action("ThermalSlip", new { id = Model.Visit.Id })" target="_blank" class="btn btn-outline-secondary" title="Print OPD slip (receipt printer)">
+                            <i class="fas fa-receipt"></i> Print Slip
+                        </a>
                         @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
                         {
                             <a href="@Url.Action("Edit", new { id = Model.Visit.Id })" class="btn btn-warning">

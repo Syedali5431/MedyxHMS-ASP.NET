@@ -1,0 +1,76 @@
+@model MedyxHMS.Models.TrainingRecord
+@using MedyxHMS.Services.Implementations
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Edit Training Record" : "Add Training Record";
+    var staff = ViewBag.Staff as List<StaffOption> ?? new List<StaffOption>();
+}
+
+<div class="container mt-3">
+    <h4><i class="fas fa-user-graduate text-success me-2"></i>@ViewData["Title"]</h4>
+    <div class="card mt-3 shadow-sm" style="max-width:820px">
+        <div class="card-body">
+            <form asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : (int?)null)" method="post">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="StaffId" class="form-label fw-semibold">Staff member <span class="text-danger">*</span></label>
+                        <select asp-for="StaffId" class="form-select">
+                            <option value="">Choose…</option>
+                            @if (isEdit && !staff.Any(s => s.Id == Model.StaffId)) { <option value="@Model.StaffId" selected>@Model.StaffName (former staff)</option> }
+                            @foreach (var s in staff) { <option value="@s.Id">@s.Name@(string.IsNullOrWhiteSpace(s.Department) ? "" : " – " + s.Department)</option> }
+                        </select>
+                        <span asp-validation-for="StaffId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Category" class="form-label fw-semibold"></label>
+                        <select asp-for="Category" class="form-select">
+                            @foreach (var c in QualityService.TrainingCategories) { <option value="@c">@c</option> }
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger small"></span>
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label asp-for="CourseTitle" class="form-label fw-semibold">Course / certificate <span class="text-danger">*</span></label>
+                        <input asp-for="CourseTitle" class="form-control" maxlength="200" />
+                        <span asp-validation-for="CourseTitle" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="Provider" class="form-label fw-semibold"></label>
+                        <input asp-for="Provider" class="form-control" maxlength="150" />
+                    </div>
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-3">
+                        <label asp-for="CompletedDate" class="form-label fw-semibold"></label>
+                        <input asp-for="CompletedDate" type="date" class="form-control" value="@Model.CompletedDate.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="CompletedDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="ExpiryDate" class="form-label fw-semibold"></label>
+                        <input asp-for="ExpiryDate" type="date" class="form-control" value="@Model.ExpiryDate?.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="ExpiryDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="CertificateNumber" class="form-label fw-semibold"></label>
+                        <input asp-for="CertificateNumber" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="Result" class="form-label fw-semibold"></label>
+                        <input asp-for="Result" class="form-control" maxlength="50" placeholder="e.g. Pass, 85%" />
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Notes" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Notes" class="form-control" rows="2"></textarea>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Save</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

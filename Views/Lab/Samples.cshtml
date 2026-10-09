@@ -1,0 +1,94 @@
+@model List<MedyxHMS.Models.LabResult>
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = "Specimen Tracking";
+    string tab = ViewBag.Tab as string ?? "collect";
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var tabs = new[] { ("collect", "Awaiting collection"), ("receive", "Collected – to receive"), ("result", "In lab – awaiting result"), ("signoff", "Awaiting sign-off"), ("signed", "Signed off"), ("rejected", "Rejected") };
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-vials text-primary me-2"></i>Specimen Tracking</h4>
+            <small class="text-muted">Label, collect, receive and authorise samples. Every step is recorded in the sample's chain of custody.</small>
+        </div>
+        <form asp-action="Scan" method="get" class="d-flex gap-1">
+            <input name="code" class="form-control form-control-sm" placeholder="Scan / type accession no." autofocus autocomplete="off" style="min-width:220px" />
+            <button type="submit" class="btn btn-sm btn-primary"><i class="fas fa-barcode"></i></button>
+        </form>
+    </div>
+
+    <ul class="nav nav-tabs mb-3 small">
+        @foreach (var (key, label) in tabs)
+        {
+            <li class="nav-item"><a class="nav-link @(tab == key ? "active" : "")" asp-action="Samples" asp-route-tab="@key">@label</a></li>
+        }
+    </ul>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Accession</th><th>Patient</th><th>Test</th><th>Sample</th><th>Ordered</th><th>@(tab == "signed" ? "Signed off" : tab == "rejected" ? "Reason" : "Status")</th><th style="min-width:280px"></th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="ResultDetails" asp-route-id="@r.Id">@(r.AccessionNumber ?? r.OrderNumber)</a></td>
+                            <td>@r.Patient?.FirstName @r.Patient?.LastName<div class="small text-muted">@r.Patient?.PatientId</div></td>
+                            <td class="small">@r.LabTest?.TestName</td>
+                            <td class="small">@r.SampleType</td>
+                            <td class="small text-nowrap">@r.OrderDate.ToString("dd-MMM HH:mm")</td>
+                            <td class="small">
+                                @if (tab == "signed") { <span>@r.SignedOffBy<div class="text-muted">@r.SignedOffAt?.ToString("dd-MMM HH:mm")</div></span> }
+                                else if (tab == "rejected") { <span class="text-danger">@r.RejectionReason</span> }
+                                else { <span>@r.SampleStatus</span> }
+                            </td>
+                            <td>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    @if (!string.IsNullOrEmpty(r.AccessionNumber))
+                                    {
+                                        <a asp-action="PrintLabel" asp-route-id="@r.Id" target="_blank" class="btn btn-sm btn-outline-secondary" title="Print label"><i class="fas fa-barcode"></i></a>
+                                    }
+                                    @if (tab == "collect" || tab == "rejected")
+                                    {
+                                        <form asp-action="CollectSample" asp-route-id="@r.Id" method="post" class="d-flex gap-1">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <select name="sampleType" class="form-select form-select-sm" style="width:auto">
+                                                @foreach (var t in LabTraceabilityService.SampleTypes) { <option value="@t" selected="@(r.SampleType == t)">@t</option> }
+                                            </select>
+                                            <button type="submit" class="btn btn-sm btn-primary text-nowrap">@(tab == "rejected" ? "Re-collect" : "Collected")</button>
+                                        </form>
+                                    }
+                                    else if (tab == "receive")
+                                    {
+                                        <form asp-action="ReceiveSample" asp-route-id="@r.Id" method="post">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                            <button type="submit" class="btn btn-sm btn-primary">Receive</button>
+                                        </form>
+                                    }
+                                    else if (tab == "result")
+                                    {
+                                        <a asp-action="EditResult" asp-route-id="@r.Id" class="btn btn-sm btn-warning">Enter result</a>
+                                    }
+                                    else if (tab == "signoff")
+                                    {
+                                        <a asp-action="ResultDetails" asp-route-id="@r.Id" class="btn btn-sm btn-success">@(ViewBag.CanSignOff == true ? "Review & sign off" : "View")</a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Nothing in this list.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

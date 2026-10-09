@@ -1,0 +1,66 @@
+@model MedyxHMS.Models.LabResult
+@using MedyxHMS.Services.Implementations
+@{
+    Layout = null;
+    int copies = ViewBag.Copies as int? ?? 1;
+    var patient = Model.Patient;
+    var age = patient != null && patient.DateOfBirth != default ? (int)((DateTime.Today - patient.DateOfBirth).TotalDays / 365.25) : (int?)null;
+    var when = (Model.CollectedAt ?? Model.OrderDate);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Label @Model.AccessionNumber</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+        @@page { size: 50mm 25mm; margin: 0; }
+        html, body { margin: 0; padding: 0; background: #fff; color: #000; font-family: Arial, Helvetica, sans-serif; }
+        .label { width: 50mm; height: 25mm; box-sizing: border-box; padding: 1mm 1.5mm; overflow: hidden; page-break-after: always; }
+        .label:last-child { page-break-after: auto; }
+        .row1 { display: flex; justify-content: space-between; font-size: 7.5pt; font-weight: 700; white-space: nowrap; overflow: hidden; }
+        .row2 { display: flex; justify-content: space-between; font-size: 6.5pt; white-space: nowrap; overflow: hidden; }
+        .barcode { text-align: center; margin-top: .4mm; }
+        .barcode svg { max-width: 47mm; height: 11.5mm; }
+        .acc { text-align: center; font-family: "Courier New", monospace; font-size: 8pt; font-weight: 700; letter-spacing: .5px; }
+        .toolbar { font-size: 13px; background: #f3f4f6; border-bottom: 1px solid #d1d5db; padding: 8px; display: flex; gap: 8px; justify-content: center; }
+        .toolbar a, .toolbar button { font: inherit; padding: 5px 12px; border: 1px solid #9ca3af; border-radius: 4px; background: #fff; color: #111; text-decoration: none; cursor: pointer; }
+        .toolbar .primary { background: #198754; color: #fff; border-color: #198754; }
+        .screen-wrap { padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .screen-wrap .label { border: 1px dashed #9ca3af; }
+        @@media print { .no-print { display: none !important; } .screen-wrap { padding: 0; display: block; } .screen-wrap .label { border: 0; } }
+    </style>
+</head>
+<body>
+    <div class="toolbar no-print">
+        <button type="button" class="primary" onclick="window.print()">Print</button>
+        <a href="?copies=@(copies + 1)">+1 copy (@copies)</a>
+        <a href="@Url.Action("ResultDetails", new { id = Model.Id })">Back</a>
+    </div>
+    @Html.AntiForgeryToken()
+    <div class="screen-wrap">
+        @for (var i = 0; i < copies; i++)
+        {
+            <div class="label">
+                <div class="row1"><span>@patient?.FirstName @patient?.LastName</span><span>@patient?.PatientId</span></div>
+                <div class="row2"><span>@(age.HasValue ? age + "y" : "") @patient?.Gender</span><span>@when.ToString("dd-MMM-yy HH:mm")</span></div>
+                <div class="row2"><span>@Model.LabTest?.TestName</span><span>@Model.SampleType</span></div>
+                <div class="barcode">@Html.Raw(Code128Barcode.Svg(Model.AccessionNumber!, 0.25, 11.5, "mm"))</div>
+                <div class="acc">@Model.AccessionNumber</div>
+            </div>
+        }
+    </div>
+    <script>
+        (function () {
+            var logged = false;
+            window.addEventListener('afterprint', function () {
+                if (logged) return; logged = true;
+                var token = document.querySelector('input[name="__RequestVerificationToken"]');
+                var body = new URLSearchParams({ id: '@Model.Id', copies: '@copies', __RequestVerificationToken: token ? token.value : '' });
+                fetch('@Url.Action("LabelPrinted")', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body, credentials: 'same-origin' });
+            });
+        })();
+    </script>
+</body>
+</html>

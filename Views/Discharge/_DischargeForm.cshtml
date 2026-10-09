@@ -1,0 +1,91 @@
+@model MedyxHMS.ViewModels.DischargeFormViewModel
+@*
+    Fields of the discharge report: used on Discharge Patient (new) and Edit discharge report.
+    Pre-filled from the admission (diagnosis, treatment, operations and test results during the stay).
+*@
+@{
+    var conditions = MedyxHMS.Models.DischargeSummary.Conditions;
+}
+<input type="hidden" asp-for="AdmissionId" />
+<input type="hidden" asp-for="SummaryId" />
+<div asp-validation-summary="ModelOnly" class="text-danger small mb-2"></div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold"><i class="fas fa-procedures me-1 text-primary"></i>Discharge</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label asp-for="DischargeDate" class="form-label fw-semibold"></label>
+                <input asp-for="DischargeDate" type="datetime-local" class="form-control" value="@Model.DischargeDate.ToString("yyyy-MM-ddTHH:mm")" readonly="@(!Model.IsNewDischarge)" />
+                <span asp-validation-for="DischargeDate" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="ConditionAtDischarge" class="form-label fw-semibold"></label>
+                <select asp-for="ConditionAtDischarge" class="form-select">
+                    @foreach (var c in conditions)
+                    {
+                        <option value="@c">@c</option>
+                    }
+                </select>
+                <span asp-validation-for="ConditionAtDischarge" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="AttendingDoctor" class="form-label fw-semibold"></label>
+                <input asp-for="AttendingDoctor" class="form-control" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold"><i class="fas fa-notes-medical me-1 text-primary"></i>Clinical summary</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="ReasonForAdmission" class="form-label fw-semibold"></label>
+                <textarea asp-for="ReasonForAdmission" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="FinalDiagnosis" class="form-label fw-semibold"></label>
+                <textarea asp-for="FinalDiagnosis" class="form-control" rows="2"></textarea>
+                <span asp-validation-for="FinalDiagnosis" class="text-danger small"></span>
+            </div>
+            <div class="col-12">
+                <label asp-for="HospitalCourse" class="form-label fw-semibold"></label>
+                <textarea asp-for="HospitalCourse" class="form-control" rows="3" placeholder="Treatment given and how the patient progressed"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="ProceduresPerformed" class="form-label fw-semibold"></label>
+                <textarea asp-for="ProceduresPerformed" class="form-control" rows="3" placeholder="Operations and procedures during the stay"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="InvestigationsSummary" class="form-label fw-semibold"></label>
+                <textarea asp-for="InvestigationsSummary" class="form-control" rows="3" placeholder="Laboratory and radiology results"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header bg-white fw-semibold"><i class="fas fa-home me-1 text-primary"></i>Going home</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="DischargeMedications" class="form-label fw-semibold"></label>
+                <textarea asp-for="DischargeMedications" class="form-control" rows="3" placeholder="Medicine, dose, how often, for how long"></textarea>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="AdviceOnDischarge" class="form-label fw-semibold"></label>
+                <textarea asp-for="AdviceOnDischarge" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-md-8">
+                <label asp-for="FollowUpInstructions" class="form-label fw-semibold"></label>
+                <textarea asp-for="FollowUpInstructions" class="form-control" rows="2" placeholder="e.g. Review in the OPD with the reports"></textarea>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="FollowUpDate" class="form-label fw-semibold"></label>
+                <input asp-for="FollowUpDate" type="date" class="form-control" value="@Model.FollowUpDate?.ToString("yyyy-MM-dd")" />
+            </div>
+        </div>
+    </div>
+</div>

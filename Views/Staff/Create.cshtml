@@ -140,7 +140,7 @@
                                     <label for="Staff_Salary" class="form-label">Salary</label>
                                     <div class="input-group">
                                         <div class="input-group-prepend">
-                                            <span class="input-group-text">$</span>
+                                            <span class="input-group-text">@System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol</span>
                                         </div>
                                         <input type="number" step="0.01" class="form-control @Html.ValidationCssClassFor(m => m.Staff.Salary)"
                                                id="Staff_Salary" name="Staff.Salary" value="@Model.Staff.Salary">

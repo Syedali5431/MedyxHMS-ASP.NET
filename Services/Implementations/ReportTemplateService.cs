@@ -18,79 +18,64 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private readonly ICacheService _cacheService;
         private readonly ILogger<ReportTemplateService> _logger;
+        private readonly IHospitalContext _hospitalContext;
 
         public ReportTemplateService(
             ApplicationDbContext context,
             ICacheService cacheService,
-            ILogger<ReportTemplateService> logger)
+            ILogger<ReportTemplateService> logger,
+            IHospitalContext hospitalContext)
         {
             _context = context;
             _cacheService = cacheService;
             _logger = logger;
+            _hospitalContext = hospitalContext;
         }
 
-        /// <summary>Gets all report templates with caching (30 minutes).</summary>
+        /// <summary>Gets all report templates.</summary>
         public async Task<List<ReportTemplate>> GetAllTemplatesAsync()
         {
-            const string cacheKey = "templates:all";
-            return await _cacheService.GetOrSetAsync(
-                cacheKey,
-                async () =>
-                {
-                    _logger.LogInformation("Loading all report templates from database");
-                    return await _context.ReportTemplates
-                        .Include(t => t.Fields)
-                        .Include(t => t.Filters)
-                        .Include(t => t.Design)
-                        .Include(t => t.Charts)
-                        .OrderBy(t => t.Name)
-                        .ToListAsync();
-                },
-                durationMinutes: 30
-            ) ?? new List<ReportTemplate>();
+            // Loaded directly (not cached): callers modify and save these tracked entities, and the
+            // entity graph (Template <-> Design) cannot be serialised to the cache anyway.
+            _logger.LogInformation("Loading all report templates from database");
+            return await _context.ReportTemplates
+                .Include(t => t.Fields)
+                .Include(t => t.Filters)
+                .Include(t => t.Design)
+                .Include(t => t.Charts)
+                .OrderBy(t => t.Name)
+                .ToListAsync();
         }
 
-        /// <summary>Gets a specific template by ID with caching (60 minutes).</summary>
+        /// <summary>Gets a specific template by ID.</summary>
         public async Task<ReportTemplate?> GetTemplateByIdAsync(int templateId)
         {
-            var cacheKey = $"template:{templateId}";
-            var template = await _cacheService.GetOrSetAsync(
-                cacheKey,
-                async () =>
-                {
-                    _logger.LogInformation("Loading template {TemplateId} from database", templateId);
-                    return await _context.ReportTemplates
-                        .Include(t => t.Fields)
-                        .Include(t => t.Filters)
-                        .Include(t => t.Design)
-                        .Include(t => t.Charts)
-                        .FirstOrDefaultAsync(t => t.Id == templateId);
-                },
-                durationMinutes: 60
-            );
+            // Loaded directly (not cached): callers modify and save these tracked entities, and the
+            // entity graph (Template <-> Design) cannot be serialised to the cache anyway.
+            _logger.LogInformation("Loading template {TemplateId} from database", templateId);
+            var template = await _context.ReportTemplates
+                .Include(t => t.Fields)
+                .Include(t => t.Filters)
+                .Include(t => t.Design)
+                .Include(t => t.Charts)
+                .FirstOrDefaultAsync(t => t.Id == templateId);
             return template;
         }
 
         /// <summary>Gets templates by report type.</summary>
         public async Task<List<ReportTemplate>> GetTemplatesByTypeAsync(string reportType)
         {
-            var cacheKey = $"templates:type:{reportType}";
-            return await _cacheService.GetOrSetAsync(
-                cacheKey,
-                async () =>
-                {
-                    _logger.LogInformation("Loading templates for type {ReportType}", reportType);
-                    return await _context.ReportTemplates
-                        .Where(t => t.ReportType == reportType)
-                        .Include(t => t.Fields)
-                        .Include(t => t.Filters)
-                        .Include(t => t.Design)
-                        .Include(t => t.Charts)
-                        .OrderBy(t => t.Name)
-                        .ToListAsync();
-                },
-                durationMinutes: 45
-            ) ?? new List<ReportTemplate>();
+            // Loaded directly (not cached): callers modify and save these tracked entities, and the
+            // entity graph (Template <-> Design) cannot be serialised to the cache anyway.
+            _logger.LogInformation("Loading templates for type {ReportType}", reportType);
+            return await _context.ReportTemplates
+                .Where(t => t.ReportType == reportType)
+                .Include(t => t.Fields)
+                .Include(t => t.Filters)
+                .Include(t => t.Design)
+                .Include(t => t.Charts)
+                .OrderBy(t => t.Name)
+                .ToListAsync();
         }
 
         /// <summary>Creates a new report template and invalidates cache.</summary>
@@ -247,7 +232,8 @@ namespace MedyxHMS.Services.Implementations
                     };
                 }
 
-                var cacheKey = $"template-exec:{templateId}";
+                // Report data depends on the active hospital, so it is cached per hospital.
+                var cacheKey = $"template-exec:{templateId}:" + (_hospitalContext.FilterEnabled ? $"h{_hospitalContext.ActiveHospitalId}" : "all");
                 var cachedData = await _cacheService.GetAsync<List<Dictionary<string, object>>>(cacheKey);
                 if (cachedData != null)
                 {
@@ -332,7 +318,7 @@ namespace MedyxHMS.Services.Implementations
                     ReportType = template.ReportType,
                     Description = $"Clone of {template.Name}",
                     CreatedBy = template.CreatedBy,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     Fields = template.Fields?.Select(f => new ReportField
                     {
                         FieldName = f.FieldName,
@@ -381,7 +367,7 @@ namespace MedyxHMS.Services.Implementations
             ReportTemplate template,
             Dictionary<string, object>? parameters)
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var startDate = ResolveDate(parameters, "startDate", now.AddMonths(-1));
             var endDate = ResolveDate(parameters, "endDate", now);
 

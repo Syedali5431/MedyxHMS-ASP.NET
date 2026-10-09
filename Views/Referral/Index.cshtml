@@ -47,16 +47,16 @@
                             <td>@(item.ApprovedAmount.HasValue ? item.ApprovedAmount.Value.ToString("N2") : "-")</td>
                             <td>@(item.BillId.HasValue ? item.BillId.Value.ToString() : "-")</td>
                             <td>
-                                <form method="post" asp-action="UpdateStatus" class="d-flex gap-2">
+                                <form method="post" asp-action="UpdateStatus" class="d-flex flex-nowrap align-items-center gap-2">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@item.Id" />
-                                    <select class="form-select form-select-sm" name="status">
+                                    <select class="form-select form-select-sm" style="min-width:8rem" name="status" aria-label="Status">
                                         <option selected="@(item.Status == "Pending")">Pending</option>
                                         <option selected="@(item.Status == "Approved")">Approved</option>
                                         <option selected="@(item.Status == "Rejected")">Rejected</option>
                                         <option selected="@(item.Status == "Completed")">Completed</option>
                                     </select>
-                                    <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
+                                    <button class="btn btn-sm btn-outline-primary text-nowrap" type="submit">Save</button>
                                 </form>
                             </td>
                         </tr>

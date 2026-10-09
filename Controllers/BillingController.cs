@@ -50,6 +50,7 @@ namespace MedyxHMS.Controllers
                 Bills = billList.Select(b => new DTOs.BillDto
                 {
                     Id = b.Id.ToString(),
+                    HospitalId = b.HospitalId,
                     BillNumber = b.BillNumber,
                     PatientId = b.PatientId,
                     PatientName = b.Patient != null ? $"{b.Patient.FirstName} {b.Patient.LastName}" : "Unknown",
@@ -121,7 +122,7 @@ namespace MedyxHMS.Controllers
                 }).ToList();
 
             var title = "Billing Overview Export";
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "csv")
             {
                 var bytes = _exportService.BuildCsv(title, headers, rows);
@@ -139,22 +140,80 @@ namespace MedyxHMS.Controllers
             if (bill == null)
                 return NotFound();
 
-            var headers = new[] { "Field", "Value" };
-            var rows = new List<IReadOnlyList<string>>
-            {
-                new [] { "Bill Number", bill.BillNumber ?? string.Empty },
-                new [] { "Patient", bill.Patient != null ? (bill.Patient.FirstName + " " + bill.Patient.LastName).Trim() : "Unknown" },
-                new [] { "Bill Date", bill.BillDate.ToString("yyyy-MM-dd") },
-                new [] { "Due Date", bill.DueDate.ToString("yyyy-MM-dd") },
-                new [] { "Total Amount", bill.TotalAmount.ToString("0.00", CultureInfo.InvariantCulture) },
-                new [] { "Paid Amount", bill.PaidAmount.ToString("0.00", CultureInfo.InvariantCulture) },
-                new [] { "Pending Amount", bill.PendingAmount.ToString("0.00", CultureInfo.InvariantCulture) },
-                new [] { "Status", bill.Status ?? string.Empty }
-            };
-
-            var pdfBytes = _exportService.BuildPdfTable("Billing Receipt", headers, rows);
+            // Invoice with the hospital letterhead and logo: patient, items, payments and the balance.
+            var pdfBytes = _exportService.BuildReportPdf(_exportService.InvoiceDocument(bill));
             var safeBillNumber = string.IsNullOrWhiteSpace(bill.BillNumber) ? bill.Id.ToString(CultureInfo.InvariantCulture) : bill.BillNumber;
-            return File(pdfBytes, "application/pdf", $"receipt_{safeBillNumber}.pdf");
+            return File(pdfBytes, "application/pdf", $"invoice_{safeBillNumber}.pdf");
+        }
+
+        // GET: /Billing/ThermalReceipt/5 – bill receipt for 80 mm / 58 mm receipt printers (?w=58 for 58 mm rolls).
+        [HttpGet]
+        public async Task<IActionResult> ThermalReceipt(int id, int? w, [FromServices] IReceiptPrintService receiptPrint)
+        {
+            var bill = await _billingService.GetBillByIdAsync(id);
+            if (bill == null)
+                return NotFound();
+
+            var vm = await receiptPrint.CreateAsync("Bill Receipt", bill.HospitalId, w, User.Identity?.Name);
+            vm.HighlightLabel = "Bill No.";
+            vm.Highlight = string.IsNullOrWhiteSpace(bill.BillNumber) ? bill.Id.ToString(CultureInfo.InvariantCulture) : bill.BillNumber;
+            vm.Lines.Add(new ReceiptLine("Date", bill.BillDate.ToString("dd-MMM-yyyy", CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Patient", bill.Patient != null ? $"{bill.Patient.FirstName} {bill.Patient.LastName}".Trim() : "Unknown"));
+            if (!string.IsNullOrWhiteSpace(bill.Patient?.PatientId)) vm.Lines.Add(new ReceiptLine("Patient ID", bill.Patient!.PatientId));
+            if (!string.IsNullOrWhiteSpace(bill.BillType)) vm.Lines.Add(new ReceiptLine("Type", bill.BillType));
+            vm.Lines.Add(new ReceiptLine("Status", string.IsNullOrWhiteSpace(bill.Status) ? "-" : bill.Status));
+
+            vm.Items = (bill.BillItems ?? new List<BillItem>()).OrderBy(i => i.Id).Select(i => new ReceiptItem
+            {
+                Description = string.IsNullOrWhiteSpace(i.ItemName) ? (string.IsNullOrWhiteSpace(i.Description) ? i.ItemType : i.Description) : i.ItemName,
+                Quantity = i.Quantity,
+                UnitPrice = i.UnitPrice,
+                Amount = i.TotalPrice
+            }).ToList();
+
+            var paid = bill.PaidAmount;
+            vm.Totals.Add(new ReceiptTotal("Total", bill.TotalAmount, emphasis: true));
+            vm.Totals.Add(new ReceiptTotal("Paid", paid));
+            vm.Totals.Add(new ReceiptTotal("Balance due", Math.Max(0, bill.TotalAmount - paid), emphasis: true));
+
+            foreach (var payment in (bill.Payments ?? new List<Payment>()).OrderBy(p => p.PaymentDate))
+            {
+                vm.FooterLines.Add(new ReceiptLine($"{payment.PaymentDate.ToString("dd-MMM", CultureInfo.InvariantCulture)} {payment.PaymentMethod}".Trim(),
+                    vm.Settings.FormatMoney(payment.Amount)));
+            }
+
+            vm.BackUrl = Url.Action(nameof(Details), new { id });
+            return View("ThermalReceipt", vm);
+        }
+
+        // GET: /Billing/ThermalPaymentReceipt/5 – receipt for one payment (thermal printer).
+        [HttpGet]
+        public async Task<IActionResult> ThermalPaymentReceipt(int id, int? w, [FromServices] IReceiptPrintService receiptPrint)
+        {
+            var payment = await _db.Payments
+                .Include(p => p.Bill).ThenInclude(b => b.Patient)
+                .FirstOrDefaultAsync(p => p.Id == id);
+            if (payment == null || payment.Bill == null)
+                return NotFound();
+
+            var bill = payment.Bill;
+            var vm = await receiptPrint.CreateAsync("Payment Receipt", bill.HospitalId, w, User.Identity?.Name);
+            vm.HighlightLabel = "Receipt No.";
+            vm.Highlight = $"RCPT-{payment.Id:D6}";
+            vm.Lines.Add(new ReceiptLine("Date", payment.PaymentDate.ToString("dd-MMM-yyyy HH:mm", CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Bill No.", string.IsNullOrWhiteSpace(bill.BillNumber) ? bill.Id.ToString(CultureInfo.InvariantCulture) : bill.BillNumber));
+            vm.Lines.Add(new ReceiptLine("Patient", bill.Patient != null ? $"{bill.Patient.FirstName} {bill.Patient.LastName}".Trim() : "Unknown"));
+            if (!string.IsNullOrWhiteSpace(bill.Patient?.PatientId)) vm.Lines.Add(new ReceiptLine("Patient ID", bill.Patient!.PatientId));
+            vm.Lines.Add(new ReceiptLine("Method", string.IsNullOrWhiteSpace(payment.PaymentMethod) ? "-" : payment.PaymentMethod));
+            if (!string.IsNullOrWhiteSpace(payment.TransactionId)) vm.Lines.Add(new ReceiptLine("Txn ID", payment.TransactionId));
+            vm.Lines.Add(new ReceiptLine("Status", string.IsNullOrWhiteSpace(payment.Status) ? "-" : payment.Status));
+
+            vm.Totals.Add(new ReceiptTotal("Amount paid", payment.Amount, emphasis: true));
+            vm.Totals.Add(new ReceiptTotal("Bill total", bill.TotalAmount));
+            vm.Totals.Add(new ReceiptTotal("Balance due", Math.Max(0, bill.TotalAmount - bill.PaidAmount)));
+
+            vm.BackUrl = Url.Action(nameof(Details), new { id = bill.Id });
+            return View("ThermalReceipt", vm);
         }
 
         public async Task<IActionResult> Details(int id)
@@ -235,18 +294,44 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
             var viewModel = new CreateBillViewModel();
+            await LoadPatientsAsync();
             return View(viewModel);
+        }
+
+        private async Task LoadPatientsAsync()
+        {
+            ViewBag.Patients = await _db.Patients.AsNoTracking().Where(p => p.IsActive)
+                .OrderBy(p => p.FirstName).ThenBy(p => p.LastName).ToListAsync();
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(CreateBillViewModel viewModel)
         {
+            // The patient (and appointment) are typed in as numbers: unknown ids get a message instead of a database error.
+            if (viewModel.Bill != null && ModelState.IsValid)
+            {
+                if (viewModel.Bill.PatientId <= 0)
+                {
+                    ModelState.AddModelError("Bill.PatientId", "Choose the patient.");
+                }
+                else if (!await _db.Patients.AnyAsync(p => p.Id == viewModel.Bill.PatientId))
+                {
+                    ModelState.AddModelError("Bill.PatientId", "No patient has this ID. Check the patient ID.");
+                }
+                else if (viewModel.Bill.AppointmentId.HasValue
+                         && !await _db.Appointments.AnyAsync(a => a.Id == viewModel.Bill.AppointmentId.Value && a.PatientId == viewModel.Bill.PatientId))
+                {
+                    ModelState.AddModelError("Bill.AppointmentId", "This appointment does not exist or belongs to another patient.");
+                }
+            }
+
             if (!ModelState.IsValid)
             {
+                await LoadPatientsAsync();
                 return View(viewModel);
             }
 
@@ -261,7 +346,7 @@ namespace MedyxHMS.Controllers
                 PaidAmount = 0,
                 PendingAmount = viewModel.LineItems.Sum(i => i.Amount),
                 Status = "Unpaid",
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 BillItems = viewModel.LineItems.Select(i => new BillItem
                 {
                     ItemName = i.Description,
@@ -270,7 +355,7 @@ namespace MedyxHMS.Controllers
                     UnitPrice = i.UnitPrice,
                     TotalPrice = i.Amount,
                     Description = i.Description,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 }).ToList()
             };
 
@@ -278,6 +363,7 @@ namespace MedyxHMS.Controllers
             if (createdBill == null)
             {
                 ModelState.AddModelError(string.Empty, "Unable to create bill. Please try again.");
+                await LoadPatientsAsync();
                 return View(viewModel);
             }
 
@@ -327,7 +413,7 @@ namespace MedyxHMS.Controllers
                 PaymentGateway = "Internal",
                 Status = "Completed",
                 Notes = viewModel.Notes,
-                PaymentDate = DateTime.UtcNow,
+                PaymentDate = DateTime.Now,
                 ProcessedBy = User.Identity?.Name ?? "System"
             };
 
@@ -533,7 +619,7 @@ namespace MedyxHMS.Controllers
                 BillId       = id,
                 BillNumber   = bill.BillNumber ?? id.ToString(),
                 Amount       = bill.PendingAmount,
-                Currency     = await GetGwSetting("Payment:Currency") ?? "USD",
+                Currency     = await GetGwSetting("Payment:Currency") ?? "PKR",
                 PatientName  = patientName,
                 PatientEmail = patientEmail,
                 PatientPhone = patientPhone,
@@ -581,9 +667,12 @@ namespace MedyxHMS.Controllers
         /// <summary>Return URL after gateway redirect (success/failure).</summary>
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GatewayReturn(int id, string gateway, [FromQuery] IQueryCollection? _ = null)
+        public async Task<IActionResult> GatewayReturn(int id, string gateway)
         {
-            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, Request.Form);
+            // A browser redirect back from the gateway is a GET with no form body; reading
+            // Request.Form there throws, so only use it when a form was actually posted.
+            var form = Request.HasFormContentType ? Request.Form : FormCollection.Empty;
+            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, form);
             return await FinalizeGatewayPayment(result, id);
         }
 
@@ -593,7 +682,9 @@ namespace MedyxHMS.Controllers
         [IgnoreAntiforgeryToken]
         public async Task<IActionResult> GatewayCallback(string gateway)
         {
-            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, Request.Form);
+            // Some gateways post JSON webhooks rather than form data.
+            var form = Request.HasFormContentType ? Request.Form : FormCollection.Empty;
+            var result = await _gatewayService.HandleCallbackAsync(gateway, Request.Query, form);
             if (!result.Success)
             {
                 return Ok(); // return 200 to gateway even on failure to prevent retries
@@ -620,7 +711,7 @@ namespace MedyxHMS.Controllers
                 PaymentGateway = result.Gateway,
                 Status        = "Completed",
                 Notes         = $"Online payment via {result.Gateway}",
-                PaymentDate   = DateTime.UtcNow,
+                PaymentDate   = DateTime.Now,
                 ProcessedBy   = User?.Identity?.Name ?? "Gateway"
             };
             await _billingService.ProcessPaymentAsync(payment);
@@ -643,14 +734,14 @@ namespace MedyxHMS.Controllers
                 {
                     Key = key, Value = value, Type = "string",
                     Category = "Payment", Description = $"Payment gateway setting: {key}",
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
                     ModifiedBy = User?.Identity?.Name ?? string.Empty
                 });
             }
             else
             {
                 s.Value = value;
-                s.ModifiedDate = DateTime.UtcNow;
+                s.ModifiedDate = DateTime.Now;
                 s.ModifiedBy = User?.Identity?.Name ?? string.Empty;
             }
             await _db.SaveChangesAsync();

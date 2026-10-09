@@ -32,11 +32,11 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Bill Amount</label>
-                        <input class="form-control" value="₹@Model.BillAmount.ToString("N2")" readonly />
+                        <input class="form-control" value="@Model.BillAmount.ToString("C")" readonly />
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Pending Amount</label>
-                        <input class="form-control" value="₹@Model.PendingAmount.ToString("N2")" readonly />
+                        <input class="form-control" value="@Model.PendingAmount.ToString("C")" readonly />
                     </div>
                     <div class="mb-3">
                         <label asp-for="Amount" class="form-label"></label>

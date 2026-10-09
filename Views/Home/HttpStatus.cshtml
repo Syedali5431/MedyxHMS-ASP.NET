@@ -1,0 +1,20 @@
+@model int
+@{
+    var (title, message, icon) = Model switch
+    {
+        404 => ("Page not found", "The page you are looking for does not exist or has been moved.", "fa-search"),
+        403 => ("Access denied", "You don't have permission to open this page.", "fa-lock"),
+        429 => ("Too many requests", "You have made too many requests in a short time. Please wait a minute and try again.", "fa-hourglass-half"),
+        400 => ("Bad request", "The request could not be understood. Please check the link and try again.", "fa-exclamation-triangle"),
+        _ => ("Something went wrong", "The request could not be completed. Please try again.", "fa-exclamation-circle")
+    };
+    ViewData["Title"] = title;
+}
+
+<div class="text-center py-5">
+    <i class="fas @icon fa-3x text-muted mb-3"></i>
+    <h1 class="h3">@title</h1>
+    <p class="text-muted">@message</p>
+    <p class="text-muted small">Status code: @Model</p>
+    <a class="btn btn-primary" href="/">Go to home page</a>
+</div>

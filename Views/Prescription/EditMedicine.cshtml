@@ -117,7 +117,9 @@
 
                         <div class="mb-3">
                             <div class="form-check">
-                                <input asp-for="IsActive" type="checkbox" class="form-check-input" id="isActive" value="true" />
+                                @* IsActive is bool? (partial update), which the checkbox tag helper does not support. *@
+                                <input type="checkbox" class="form-check-input" id="isActive" name="IsActive" value="true" checked="@(Model.IsActive == true)" />
+                                <input type="hidden" name="IsActive" value="false" />
                                 <label class="form-check-label" for="isActive">Active</label>
                             </div>
                         </div>

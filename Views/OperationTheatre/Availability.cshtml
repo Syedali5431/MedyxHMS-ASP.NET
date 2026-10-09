@@ -1,0 +1,194 @@
+@model MedyxHMS.ViewModels.OTAvailabilityViewModel
+@{
+    ViewData["Title"] = "Theatre Availability";
+    var total = Math.Max(1, (Model.GridUntil - Model.GridFrom).TotalMinutes);
+    string Pct(DateTime t) => (Math.Clamp((t - Model.GridFrom).TotalMinutes / total, 0, 1) * 100).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    string Width(DateTime a, DateTime b)
+    {
+        var s = Math.Clamp((a - Model.GridFrom).TotalMinutes / total, 0, 1);
+        var e = Math.Clamp((b - Model.GridFrom).TotalMinutes / total, 0, 1);
+        return (Math.Max(0, e - s) * 100).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+    }
+    string Hm(int minutes) => minutes >= 60 ? $"{minutes / 60}h{(minutes % 60 > 0 ? $" {minutes % 60}m" : "")}" : $"{minutes}m";
+    var hours = new List<DateTime>();
+    for (var h = Model.GridFrom; h <= Model.GridUntil; h = h.AddHours(1)) hours.Add(h);
+    var hourStep = hours.Count > 14 ? 2 : 1;
+    var durations = new[] { 30, 45, 60, 90, 120, 180, 240, 360 };
+    var now = DateTime.Now;
+}
+
+<style>
+    .ot-grid { min-width: 720px; }
+    .ot-row { display: flex; align-items: stretch; border-top: 1px solid rgba(128,128,128,.25); }
+    .ot-label { flex: 0 0 170px; padding: .4rem .5rem; font-size: .8rem; }
+    .ot-track { position: relative; flex: 1 1 auto; height: 52px; background: rgba(128,128,128,.12); }
+    .ot-scale { position: relative; flex: 1 1 auto; height: 22px; font-size: .7rem; }
+    .ot-scale span { position: absolute; transform: translateX(-50%); white-space: nowrap; color: #6c757d; }
+    .ot-tick { position: absolute; top: 0; bottom: 0; border-left: 1px dashed rgba(128,128,128,.3); }
+    .ot-seg { position: absolute; top: 6px; bottom: 6px; border-radius: 4px; font-size: .7rem; line-height: 1.15; padding: 2px 4px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .ot-open { top: 0; bottom: 0; border-radius: 0; background: rgba(25,135,84,.08); padding: 0; }
+    .ot-free { top: 0; bottom: 0; border-radius: 0; background: rgba(25,135,84,.18); color: #146c43; text-decoration: none; padding: 0; }
+    .ot-free:hover, .ot-free:focus { background: rgba(25,135,84,.35); outline: 2px solid #198754; }
+    .ot-case { color: #fff; text-decoration: none; z-index: 2; }
+    .ot-case.s-scheduled { background: #0d6efd; }
+    .ot-case.s-progress { background: #fd7e14; }
+    .ot-case.s-completed { background: #6c757d; }
+    .ot-turnover { background: repeating-linear-gradient(45deg, rgba(13,110,253,.25), rgba(13,110,253,.25) 4px, transparent 4px, transparent 8px); z-index: 1; }
+    .ot-block { background: repeating-linear-gradient(45deg, rgba(220,53,69,.55), rgba(220,53,69,.55) 6px, rgba(220,53,69,.3) 6px, rgba(220,53,69,.3) 12px); color: #fff; z-index: 2; }
+    .ot-now { position: absolute; top: 0; bottom: 0; border-left: 2px solid #dc3545; z-index: 3; }
+    .ot-legend span { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 3px; }
+</style>
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-calendar-alt text-primary me-2"></i>Theatre Availability</h4>
+            <small class="text-muted">@Model.Date.ToString("dddd dd-MMM-yyyy") · green periods are free for a case of @Model.Duration min (turnover included) – click one to book it.</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Index">OT schedule</a>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Theatres">Theatres</a>
+            <a class="btn btn-primary btn-sm" asp-action="Create" asp-route-duration="@Model.Duration"><i class="fas fa-plus me-1"></i>Book OT</a>
+        </div>
+    </div>
+
+    <form method="get" class="row g-2 mb-3 align-items-end">
+        <div class="col-auto"><a class="btn btn-sm btn-outline-secondary" asp-action="Availability" asp-route-date="@Model.Date.AddDays(-1).ToString("yyyy-MM-dd")" asp-route-duration="@Model.Duration" aria-label="Previous day">&lsaquo;</a></div>
+        <div class="col-auto"><label class="form-label small mb-0" for="dateInput">Date</label><input id="dateInput" type="date" name="date" value="@Model.Date.ToString("yyyy-MM-dd")" class="form-control form-control-sm" /></div>
+        <div class="col-auto">
+            <label class="form-label small mb-0" for="durationInput">Case length</label>
+            <select id="durationInput" name="duration" class="form-select form-select-sm">
+                @foreach (var d in durations.Union(new[] { Model.Duration }).OrderBy(x => x)) { <option value="@d" selected="@(d == Model.Duration)">@Hm(d)</option> }
+            </select>
+        </div>
+        <div class="col-auto"><button type="submit" class="btn btn-sm btn-primary">Show</button></div>
+        <div class="col-auto"><a class="btn btn-sm btn-outline-secondary" asp-action="Availability" asp-route-duration="@Model.Duration">Today</a></div>
+        <div class="col-auto"><a class="btn btn-sm btn-outline-secondary" asp-action="Availability" asp-route-date="@Model.Date.AddDays(1).ToString("yyyy-MM-dd")" asp-route-duration="@Model.Duration" aria-label="Next day">&rsaquo;</a></div>
+    </form>
+
+    @if (!Model.Theatres.Any())
+    {
+        <div class="alert alert-warning">No active theatres. An administrator can add theatres under <a asp-action="Theatres">Theatres</a>.</div>
+    }
+    else
+    {
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <div class="small ot-legend mb-2">
+                    <span style="background:rgba(25,135,84,.35)"></span>Free
+                    <span class="ms-2" style="background:#0d6efd"></span>Scheduled
+                    <span class="ms-2" style="background:#fd7e14"></span>In progress
+                    <span class="ms-2" style="background:#6c757d"></span>Completed
+                    <span class="ms-2" style="background:rgba(13,110,253,.3)"></span>Turnover
+                    <span class="ms-2" style="background:rgba(220,53,69,.55)"></span>Blocked
+                    <span class="ms-2" style="background:rgba(128,128,128,.25)"></span>Closed
+                </div>
+                <div class="table-responsive">
+                    <div class="ot-grid">
+                        <div class="ot-row" style="border-top:0">
+                            <div class="ot-label"></div>
+                            <div class="ot-scale">
+                                @for (var i = 0; i < hours.Count; i += hourStep) { <span style="left:@Pct(hours[i])%">@hours[i].ToString("HH:mm")</span> }
+                            </div>
+                        </div>
+                        @foreach (var t in Model.Theatres)
+                        {
+                            var utilisation = t.OpenMinutes > 0 ? (int)Math.Round(100.0 * t.BookedMinutes / t.OpenMinutes) : 0;
+                            <div class="ot-row">
+                                <div class="ot-label">
+                                    <a asp-action="TheatreDetails" asp-route-id="@t.Theatre.Id" class="fw-semibold">@t.Theatre.Code</a> <span class="text-muted">@t.Theatre.TheatreType</span>
+                                    <div class="text-muted">@(t.Theatre.Is24Hours ? "24 h" : $"{t.Theatre.OpensAt:hh\\:mm}–{t.Theatre.ClosesAt:hh\\:mm}") · @utilisation% booked</div>
+                                </div>
+                                <div class="ot-track" role="group" aria-label="@t.Theatre.Code timeline">
+                                    <div class="ot-seg ot-open" style="left:@Pct(t.OpenFrom)%;width:@Width(t.OpenFrom, t.OpenUntil)%"></div>
+                                    @for (var i = 0; i < hours.Count; i += hourStep) { <div class="ot-tick" style="left:@Pct(hours[i])%"></div> }
+                                    @foreach (var f in t.Free.Where(f => f.LongestCaseMinutes >= Model.Duration))
+                                    {
+                                        <a class="ot-seg ot-free" style="left:@Pct(f.From)%;width:@Width(f.From, f.To)%" title="Free @f.From.ToString("HH:mm")–@f.To.ToString("HH:mm") (up to @Hm(f.LongestCaseMinutes)) – book" aria-label="Book @t.Theatre.Code at @f.From.ToString("HH:mm")"
+                                           asp-action="Create" asp-route-theatreId="@t.Theatre.Id" asp-route-start="@f.From.ToString("yyyy-MM-ddTHH:mm")" asp-route-duration="@Model.Duration"></a>
+                                    }
+                                    @foreach (var b in t.Blocks)
+                                    {
+                                        <div class="ot-seg ot-block" style="left:@Pct(b.StartsAt)%;width:@Width(b.StartsAt, b.EndsAt)%" title="Blocked @b.StartsAt.ToString("dd-MMM HH:mm")–@b.EndsAt.ToString("dd-MMM HH:mm"): @b.Reason">@b.Reason</div>
+                                    }
+                                    @foreach (var c in t.Cases)
+                                    {
+                                        var until = MedyxHMS.Services.Implementations.OperationTheatreService.OccupiedUntil(c, now);
+                                        var css = c.Status == "In Progress" ? "s-progress" : c.Status == "Completed" ? "s-completed" : "s-scheduled";
+                                        if (c.Status != "Completed" && t.Theatre.TurnoverMinutes > 0)
+                                        {
+                                            <div class="ot-seg ot-turnover" style="left:@Pct(until)%;width:@Width(until, until.AddMinutes(t.Theatre.TurnoverMinutes))%" title="Turnover @t.Theatre.TurnoverMinutes min"></div>
+                                        }
+                                        <a class="ot-seg ot-case @css" style="left:@Pct(c.ScheduledDate)%;width:@Width(c.ScheduledDate, until)%" asp-action="Details" asp-route-id="@c.Id"
+                                           title="@c.ScheduledDate.ToString("HH:mm")–@until.ToString("HH:mm") @c.ProcedureName – @c.Patient?.FirstName @c.Patient?.LastName, @c.SurgeonName (@c.Status)">@c.ScheduledDate.ToString("HH:mm") @c.ProcedureName<br />@c.SurgeonName</a>
+                                    }
+                                    @if (Model.Date == now.Date && now >= Model.GridFrom && now <= Model.GridUntil)
+                                    {
+                                        <div class="ot-now" style="left:@Pct(now)%" title="Now"></div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-lg-5">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light fw-semibold">Free slots for @Hm(Model.Duration)</div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0 align-middle">
+                            <tbody>
+                                @foreach (var t in Model.Theatres)
+                                {
+                                    var fits = t.Free.Where(f => f.LongestCaseMinutes >= Model.Duration).ToList();
+                                    <tr>
+                                        <td class="small fw-semibold text-nowrap">@t.Theatre.Code</td>
+                                        <td class="small">
+                                            @foreach (var f in fits)
+                                            {
+                                                <a class="btn btn-sm btn-outline-success me-1 mb-1" asp-action="Create" asp-route-theatreId="@t.Theatre.Id" asp-route-start="@f.From.ToString("yyyy-MM-ddTHH:mm")" asp-route-duration="@Model.Duration">@f.From.ToString("HH:mm")–@f.To.ToString("HH:mm")</a>
+                                            }
+                                            @if (!fits.Any()) { <span class="text-muted">No free period of this length.</span> }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light fw-semibold">Next 7 days – booked time</div>
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-sm mb-0 text-center align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start">Theatre</th>
+                                    @foreach (var d in Model.WeekDays) { <th class="small"><a asp-action="Availability" asp-route-date="@d.ToString("yyyy-MM-dd")" asp-route-duration="@Model.Duration">@d.ToString("ddd dd")</a></th> }
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in Model.Theatres)
+                                {
+                                    <tr>
+                                        <td class="text-start small fw-semibold">@t.Theatre.Code</td>
+                                        @foreach (var cell in Model.Week.TryGetValue(t.Theatre.Id, out var cells) ? cells : new List<(int Cases, int Booked, int Open)>())
+                                        {
+                                            var pct = cell.Open > 0 ? 100.0 * cell.Booked / cell.Open : 0;
+                                            var bg = pct >= 85 ? "rgba(220,53,69,.25)" : pct >= 50 ? "rgba(255,193,7,.3)" : pct > 0 ? "rgba(25,135,84,.18)" : "transparent";
+                                            <td class="small" style="background:@bg">@(cell.Cases > 0 ? $"{cell.Cases} · {Hm(cell.Booked)}" : "–")</td>
+                                        }
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

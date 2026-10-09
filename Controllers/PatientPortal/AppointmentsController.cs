@@ -15,10 +15,12 @@ namespace MedyxHMS.Controllers.PatientPortal
     public class AppointmentsController : Controller
     {
         private readonly IPatientPortalService _patientPortalService;
+        private readonly IHospitalContext _hospitalContext;
 
-        public AppointmentsController(IPatientPortalService patientPortalService)
+        public AppointmentsController(IPatientPortalService patientPortalService, IHospitalContext hospitalContext)
         {
             _patientPortalService = patientPortalService;
+            _hospitalContext = hospitalContext;
         }
 
         // GET: /PatientPortal/Appointments/Index
@@ -52,6 +54,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                         .Select(a => new PatientPortalAppointmentDto
                         {
                             Id = a.Id.ToString(),
+                            HospitalId = a.HospitalId,
                             AppointmentId = a.AppointmentId,
                             AppointmentDate = a.AppointmentDate,
                             DoctorName = a.Doctor != null ? $"{a.Doctor.FirstName} {a.Doctor.LastName}" : string.Empty,
@@ -105,6 +108,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 Appointment = new PatientPortalAppointmentDto
                 {
                     Id = appointment.Id.ToString(),
+                    HospitalId = appointment.HospitalId,
                     AppointmentId = appointment.AppointmentId,
                     AppointmentDate = appointment.AppointmentDate,
                     DoctorName = appointment.Doctor != null ? $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}" : string.Empty,
@@ -138,19 +142,9 @@ namespace MedyxHMS.Controllers.PatientPortal
 
             try
             {
-                var doctors = await _patientPortalService.GetAvailableDoctorsForBookingAsync();
-
                 var viewModel = new PatientPortalBookAppointmentViewModel
                 {
-                    AvailableDoctors = doctors.Select(d => new PatientPortalDoctorDto
-                    {
-                        Id = d.Id.ToString(),
-                        FirstName = d.FirstName,
-                        LastName = d.LastName,
-                        Department = d.Department != null ? d.Department.Name : string.Empty,
-                        Designation = "Doctor",
-                        Specialization = d.Specialization
-                    }).ToList()
+                    AvailableDoctors = await LoadBookableDoctorsAsync()
                 };
 
                 return View(viewModel);
@@ -179,6 +173,29 @@ namespace MedyxHMS.Controllers.PatientPortal
                 return LocalRedirect("/PatientPortal/Account/Login");
             }
 
+            // [Required] on an int never fails (a missing doctor binds as 0), so check it explicitly.
+            if (viewModel.Appointment == null || viewModel.Appointment.DoctorId <= 0)
+            {
+                ModelState.AddModelError("Appointment.DoctorId", "Please choose a doctor.");
+                viewModel.Appointment ??= new PatientPortalAppointmentCreateDto();
+            }
+
+            // Multi-hospital: the chosen branch must be an active hospital; with one hospital the default is used.
+            var activeHospitals = _hospitalContext.AllHospitals.Where(h => h.IsActive).ToList();
+            if (activeHospitals.Count > 1 && !activeHospitals.Any(h => h.Id == viewModel.HospitalId))
+            {
+                ModelState.AddModelError(nameof(viewModel.HospitalId), "Please choose the hospital you want to visit.");
+            }
+
+            // The doctor may already be booked at that time (by staff or another patient, in any hospital).
+            var requestedTime = TimeSpan.TryParse(viewModel.SelectedTime, out var requested) ? requested : new TimeSpan(9, 0, 0);
+            if (ModelState.IsValid
+                && await _patientPortalService.IsDoctorSlotTakenAsync(viewModel.Appointment.DoctorId, viewModel.SelectedDate.Date, requestedTime))
+            {
+                ModelState.AddModelError(nameof(viewModel.SelectedTime), "This doctor is already booked at that time. Please choose another time.");
+                TempData["ErrorMessage"] = "This doctor is already booked at that time. Please choose another time.";
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -198,7 +215,8 @@ namespace MedyxHMS.Controllers.PatientPortal
                         AppointmentTime = appointmentTime,
                         Symptoms = viewModel.Appointment.Symptoms,
                         Notes = viewModel.Appointment.Notes,
-                        Priority = viewModel.Appointment.Priority ?? "Normal"
+                        Priority = viewModel.Appointment.Priority ?? "Normal",
+                        HospitalId = activeHospitals.Count > 1 ? viewModel.HospitalId : _hospitalContext.DefaultHospitalId
                     };
 
                     var result = await _patientPortalService.BookAppointmentAsync(appointment);
@@ -215,8 +233,41 @@ namespace MedyxHMS.Controllers.PatientPortal
                     TempData["ErrorMessage"] = $"Error booking appointment: {ex.Message}";
                 }
             }
+            else if (TempData.Peek("ErrorMessage") == null)
+            {
+                // List every missing field (doctor, hospital, symptoms...) rather than only the first one.
+                var problems = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)
+                    .Where(m => !string.IsNullOrWhiteSpace(m)).Distinct().ToList();
+                TempData["ErrorMessage"] = problems.Count > 0
+                    ? string.Join(" ", problems.Select(m => m.TrimEnd('.') + "."))
+                    : "Please choose a doctor, a date and a time, and describe your symptoms.";
+            }
+
+            // Re-show the form with its doctor list (it is not posted back with the form).
+            try
+            {
+                viewModel.AvailableDoctors = await LoadBookableDoctorsAsync();
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error loading doctors: {ex.Message}";
+            }
 
             return View(viewModel);
+        }
+
+        private async Task<List<PatientPortalDoctorDto>> LoadBookableDoctorsAsync()
+        {
+            var doctors = await _patientPortalService.GetAvailableDoctorsForBookingAsync();
+            return doctors.Select(d => new PatientPortalDoctorDto
+            {
+                Id = d.Id.ToString(),
+                FirstName = d.FirstName,
+                LastName = d.LastName,
+                Department = d.Department != null ? d.Department.Name : string.Empty,
+                Designation = "Doctor",
+                Specialization = d.Specialization
+            }).ToList();
         }
 
         // GET: /PatientPortal/Appointments/Reschedule/5
@@ -250,6 +301,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 Appointment = new PatientPortalAppointmentDto
                 {
                     Id = appointment.Id.ToString(),
+                    HospitalId = appointment.HospitalId,
                     AppointmentId = appointment.AppointmentId,
                     AppointmentDate = appointment.AppointmentDate,
                     DoctorName = appointment.Doctor != null ? $"{appointment.Doctor.FirstName} {appointment.Doctor.LastName}" : string.Empty,
@@ -271,12 +323,26 @@ namespace MedyxHMS.Controllers.PatientPortal
                 return LocalRedirect("/PatientPortal/Account/Login");
             }
 
+            // Only the patient who owns the appointment may reschedule it.
+            var own = await GetOwnAppointmentAsync(id);
+            if (own == null)
+            {
+                return NotFound();
+            }
+
+            var newDateTime = viewModel.Appointment?.AppointmentDate ?? DateTime.Now;
+            if (await _patientPortalService.IsDoctorSlotTakenAsync(own.DoctorId, newDateTime.Date, newDateTime.TimeOfDay, own.Id))
+            {
+                TempData["ErrorMessage"] = "The doctor is already booked at that time. Please choose another time.";
+                return RedirectToAction("Reschedule", new { id });
+            }
+
             try
             {
                 var result = await _patientPortalService.RescheduleAppointmentAsync(
                     id,
-                    (viewModel.Appointment.AppointmentDate ?? DateTime.Now).Date,
-                    (viewModel.Appointment.AppointmentDate ?? DateTime.Now).TimeOfDay);
+                    newDateTime.Date,
+                    newDateTime.TimeOfDay);
 
                 if (result)
                 {
@@ -303,6 +369,12 @@ namespace MedyxHMS.Controllers.PatientPortal
             if (string.IsNullOrEmpty(userId))
             {
                 return LocalRedirect("/PatientPortal/Account/Login");
+            }
+
+            // Only the patient who owns the appointment may cancel it.
+            if (await GetOwnAppointmentAsync(id) == null)
+            {
+                return NotFound();
             }
 
             try
@@ -338,6 +410,19 @@ namespace MedyxHMS.Controllers.PatientPortal
             {
                 return Json(new { success = false, message = ex.Message });
             }
+        }
+
+        // The appointment when it belongs to the signed-in patient, otherwise null.
+        private async Task<Appointment?> GetOwnAppointmentAsync(string id)
+        {
+            var patientId = await ResolveCurrentPatientIdAsync();
+            if (!patientId.HasValue || string.IsNullOrWhiteSpace(id))
+            {
+                return null;
+            }
+
+            var appointment = await _patientPortalService.GetAppointmentDetailsAsync(id);
+            return appointment != null && appointment.PatientId == patientId.Value ? appointment : null;
         }
 
         private async Task<int?> ResolveCurrentPatientIdAsync()

@@ -15,6 +15,9 @@ namespace MedyxHMS.Services.Implementations
             _settingService = settingService;
         }
 
+        /// <summary>Discharge Summary Report: clinical details, for doctors, nurses and administrators only.</summary>
+        public const string DischargeReportKey = "R50";
+
         public async Task<IReadOnlyList<ReportCatalogItem>> GetVisibleItemsForUserAsync(
             bool canSeeAdminOnly,
             bool isSuperAdmin,
@@ -33,8 +36,14 @@ namespace MedyxHMS.Services.Implementations
                 userRoles ?? Enumerable.Empty<string>(),
                 StringComparer.OrdinalIgnoreCase);
 
+            var isManager = isSuperAdmin || roleSet.Contains("Admin") || roleSet.Contains("SuperAdmin");
+            var isClinician = roleSet.Contains("Doctor") || roleSet.Contains("Nurse");
+            var isAccountant = roleSet.Contains("Accountant");
             return items
                 .Where(item => !inactiveKeys.Contains(item.Key))
+                .Where(item => item.Key.Equals(DischargeReportKey, StringComparison.OrdinalIgnoreCase)
+                    ? isManager || isClinician
+                    : isManager || isAccountant || !isClinician)
                 .Where(item =>
                 {
                     if (!roleMap.TryGetValue(item.Key, out var allowedRoles) || allowedRoles.Count == 0)

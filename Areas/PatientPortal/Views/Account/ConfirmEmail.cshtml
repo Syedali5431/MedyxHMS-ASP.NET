@@ -1,0 +1,23 @@
+@model PatientPortalEmailConfirmationViewModel
+@{
+    ViewData["Title"] = "Confirm E-mail";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+    // The action returns View() without a model when the user cannot be found.
+    var confirmed = Model?.IsConfirmed == true;
+    var message = Model?.Message ?? "We could not confirm this e-mail address. The link may be invalid or expired.";
+}
+
+<div class="py-5 mx-auto text-center" style="max-width:520px">
+    <div class="card shadow-sm">
+        <div class="card-body p-4">
+            <i class="fas @(confirmed ? "fa-check-circle text-success" : "fa-exclamation-circle text-danger") fa-3x mb-3"></i>
+            <h4 class="mb-2">@(confirmed ? "E-mail confirmed" : "Confirmation failed")</h4>
+            <p class="text-muted">@message</p>
+            @if (!string.IsNullOrWhiteSpace(Model?.Email))
+            {
+                <p class="mb-3"><strong>@Model.Email</strong></p>
+            }
+            <a asp-action="Login" class="btn btn-primary">Go to login</a>
+        </div>
+    </div>
+</div>

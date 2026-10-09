@@ -1,4 +1,5 @@
 @model MedyxHMS.ViewModels.PatientDetailsViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Patient Details";
@@ -14,13 +15,13 @@
                     <p class="text-muted">@Model.Patient.FullName (@Model.Patient.PatientId)</p>
                 </div>
                 <div>
-                    @if (User.HasPermission("Patient", "Edit"))
+                    @if (await Nav.CanAccessAsync("/Patient/Edit"))
                     {
                         <a href="@Url.Action("Edit", "Patient", new { id = Model.Patient.Id })" class="btn btn-warning">
                             <i class="fas fa-edit"></i> Edit Patient
                         </a>
                     }
-                    @if (User.HasPermission("Patient", "Delete"))
+                    @if (await Nav.CanAccessAsync("/Patient/Delete"))
                     {
                         <a href="@Url.Action("Delete", "Patient", new { id = Model.Patient.Id })" class="btn btn-danger ml-2">
                             <i class="fas fa-trash"></i> Delete
@@ -30,6 +31,12 @@
                     {
                         <a href="@Url.Action("InsuranceList", "Patient", new { patientId = Model.Patient.Id })" class="btn btn-outline-info ml-2">
                             <i class="fas fa-shield-alt"></i> Insurance
+                        </a>
+                    }
+                    @if (await Nav.CanAccessAsync($"/PatientRecords/Index/{Model.Patient.Id}"))
+                    {
+                        <a href="@Url.Action("Index", "PatientRecords", new { id = Model.Patient.Id })" class="btn btn-outline-primary ml-2">
+                            <i class="fas fa-folder-open"></i> Records &amp; Documents
                         </a>
                     }
                     <a href="@Url.Action("Index", "Patient")" class="btn btn-secondary ml-2">
@@ -48,9 +55,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Patient Profile</h6>
                 </div>
                 <div class="card-body text-center">
-                    <div class="avatar-circle bg-primary text-white mx-auto mb-3" style="width: 80px; height: 80px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px;">
-                        @Model.Patient.FullName.Split(' ').Select(n => n.First()).FirstOrDefault()
-                    </div>
+                    <div class="d-flex justify-content-center mb-3">@await Component.InvokeAsync("UserAvatar", new { userId = (string?)ViewBag.PatientUserId, name = Model.Patient.FullName, size = 80 })</div>
                     <h4>@Model.Patient.FullName</h4>
                     <p class="text-muted mb-2">@Model.Patient.PatientId</p>
 

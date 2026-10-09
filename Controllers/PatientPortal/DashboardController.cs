@@ -5,6 +5,7 @@ using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 // Purpose: Contains application code for DashboardController and its related runtime behavior.
@@ -97,6 +98,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                     BillDate = b.BillDate,
                     TotalAmount = b.TotalAmount,
                     PaidAmount = b.PaidAmount,
+                    DueDate = b.DueDate,
                     Status = b.Status
                 }).ToList();
 
@@ -153,6 +155,74 @@ namespace MedyxHMS.Controllers.PatientPortal
             };
 
             return View(viewModel);
+        }
+
+        // POST: /PatientPortal/Dashboard/UploadPhoto – the patient's profile picture (also shown to the care team).
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UploadPhoto(IFormFile? photo)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return LocalRedirect("/PatientPortal/Account/Login");
+
+            var images = HttpContext.RequestServices.GetRequiredService<IProfileImageService>();
+            var users = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var db = HttpContext.RequestServices.GetRequiredService<MedyxHMS.Data.ApplicationDbContext>();
+            try
+            {
+                var fileName = photo == null ? null : await images.UploadAsync(userId, photo);
+                if (fileName == null)
+                {
+                    TempData["ErrorMessage"] = "Choose a JPG or PNG picture first.";
+                    return RedirectToAction(nameof(Profile));
+                }
+                var user = await users.FindByIdAsync(userId);
+                if (user != null)
+                {
+                    user.ProfileImage = fileName;
+                    await users.UpdateAsync(user);
+                }
+                var patient = await db.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+                if (patient != null)
+                {
+                    patient.ProfileImagePath = images.GetDisplayPath(fileName);
+                    await db.SaveChangesAsync();
+                }
+                TempData["SuccessMessage"] = "Profile picture updated.";
+            }
+            catch (InvalidOperationException ex)
+            {
+                TempData["ErrorMessage"] = ex.Message;
+            }
+            return RedirectToAction(nameof(Profile));
+        }
+
+        // POST: /PatientPortal/Dashboard/RemovePhoto
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RemovePhoto()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(userId)) return LocalRedirect("/PatientPortal/Account/Login");
+
+            var images = HttpContext.RequestServices.GetRequiredService<IProfileImageService>();
+            var users = HttpContext.RequestServices.GetRequiredService<Microsoft.AspNetCore.Identity.UserManager<ApplicationUser>>();
+            var db = HttpContext.RequestServices.GetRequiredService<MedyxHMS.Data.ApplicationDbContext>();
+            await images.DeleteAsync(userId);
+            var user = await users.FindByIdAsync(userId);
+            if (user != null)
+            {
+                user.ProfileImage = null;
+                await users.UpdateAsync(user);
+            }
+            var patient = await db.Patients.FirstOrDefaultAsync(p => p.UserId == userId);
+            if (patient != null)
+            {
+                patient.ProfileImagePath = string.Empty;
+                await db.SaveChangesAsync();
+            }
+            TempData["SuccessMessage"] = "Profile picture removed.";
+            return RedirectToAction(nameof(Profile));
         }
 
         // POST: /PatientPortal/Dashboard/UpdateProfile
@@ -319,7 +389,7 @@ namespace MedyxHMS.Controllers.PatientPortal
                 filePrefix = "dashboard_bills";
             }
 
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
             if (format == "excel")
             {
                 var bytes = _exportService.BuildExcel(title, headers, rows);

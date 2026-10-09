@@ -1,101 +1,137 @@
 @model MedyxHMS.Models.ApplicationUser
+@using MedyxHMS.ViewModels
+@inject Microsoft.AspNetCore.Identity.UserManager<MedyxHMS.Models.ApplicationUser> UserManager
+@inject MedyxHMS.Services.Interfaces.IProfileImageService ProfileImages
 @{
     ViewData["Title"] = "My Profile";
+    var imgPath = ProfileImages.GetDisplayPath(Model.ProfileImage);
+    var roles = await UserManager.GetRolesAsync(Model);
+    var initials = string.Concat(new[] { Model.FirstName, Model.LastName }.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => char.ToUpperInvariant(n.Trim()[0])));
 }
 
-<div class="container py-3">
-    <h4 class="mb-4"><i class="fas fa-user-circle me-2 text-primary"></i>My Profile</h4>
+<div class="container-fluid py-3" style="max-width:1200px">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        @if (string.IsNullOrEmpty(Model.ProfileImage))
+        {
+            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center fw-semibold" style="width:56px;height:56px;font-size:1.3rem">@initials</div>
+        }
+        else
+        {
+            <img src="@imgPath" alt="" class="rounded-circle" style="width:56px;height:56px;object-fit:cover" />
+        }
+        <div>
+            <h4 class="mb-0">@Model.FirstName @Model.LastName</h4>
+            <div class="text-muted small">@string.Join(", ", roles) · @Model.Email</div>
+        </div>
+    </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-    }
-
-    <div class="row">
+    <div class="row g-4">
         <div class="col-lg-4">
-            @* Profile Picture Card *@
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-camera me-2"></i>Profile Picture</h6>
-                </div>
+            @* Profile picture *@
+            <div class="card shadow-sm mb-4" id="profilePictureCard">
+                <div class="card-header bg-white fw-semibold"><i class="fas fa-camera me-2 text-primary"></i>Profile picture</div>
                 <div class="card-body text-center">
-                    @{
-                        var profileService = Context.RequestServices.GetService<MedyxHMS.Services.Interfaces.IProfileImageService>();
-                        var imgPath = profileService?.GetDisplayPath(Model.ProfileImage) ?? "/images/default-avatar.png";
-                    }
-                    <img src="@imgPath" alt="Profile Picture"
-                         class="rounded-circle img-thumbnail mb-3"
-                         style="width: 140px; height: 140px; object-fit: cover;" />
-
+                    <img src="@imgPath" alt="Profile picture" class="rounded-circle img-thumbnail mb-3" style="width:140px;height:140px;object-fit:cover;" />
                     <form asp-action="UploadProfileImage" method="post" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
-                        <div class="mb-2">
-                            <input type="file" class="form-control form-control-sm" id="profileImage"
-                                   name="profileImage" accept=".jpg,.jpeg,.png" />
-                            <div class="form-text small">JPG/PNG, max 2 MB</div>
-                            <span class="text-danger small">@Html.ValidationMessage("profileImage")</span>
+                        <div class="mb-2 text-start">
+                            <input type="file" class="form-control form-control-sm" id="profileImage" name="profileImage" accept=".jpg,.jpeg,.png" required />
+                            <div class="form-text small">JPG or PNG, at most 2 MB. Your picture is shown in the top bar and wherever your name appears with a picture (e.g. Staff Management).</div>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-sm w-100">
-                            <i class="fas fa-upload me-1"></i> Upload
-                        </button>
+                        <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-upload me-1"></i>Upload picture</button>
                     </form>
-
                     @if (!string.IsNullOrEmpty(Model.ProfileImage))
                     {
                         <form asp-action="DeleteProfileImage" method="post" class="mt-2">
                             @Html.AntiForgeryToken()
-                            <button type="submit" class="btn btn-outline-danger btn-sm w-100">
-                                <i class="fas fa-trash me-1"></i> Remove
-                            </button>
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100"><i class="fas fa-trash me-1"></i>Remove picture</button>
                         </form>
                     }
+                </div>
+            </div>
+
+            @* Account (managed by administrators) *@
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white fw-semibold"><i class="fas fa-id-card me-2 text-primary"></i>Account</div>
+                <div class="card-body">
+                    <dl class="row mb-0 small">
+                        <dt class="col-5 text-muted fw-normal">E-mail</dt><dd class="col-7">@Model.Email</dd>
+                        <dt class="col-5 text-muted fw-normal">User name</dt><dd class="col-7">@Model.UserName</dd>
+                        <dt class="col-5 text-muted fw-normal">Employee ID</dt><dd class="col-7">@(string.IsNullOrWhiteSpace(Model.EmployeeId) ? "–" : Model.EmployeeId)</dd>
+                        <dt class="col-5 text-muted fw-normal">Roles</dt><dd class="col-7">@string.Join(", ", roles)</dd>
+                        <dt class="col-5 text-muted fw-normal">Status</dt>
+                        <dd class="col-7"><span class="badge @(Model.IsActive ? "bg-success" : "bg-danger")">@(Model.IsActive ? "Active" : "Inactive")</span></dd>
+                        <dt class="col-5 text-muted fw-normal">Member since</dt><dd class="col-7 mb-0">@Model.CreatedDate.ToString("dd-MMM-yyyy")</dd>
+                    </dl>
+                    <div class="form-text mt-2">E-mail, user name and roles are changed by an administrator (User Management).</div>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-8">
-            <div class="card shadow-sm">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-id-card me-2"></i>Account Details</h6>
-                </div>
+            @* Personal details (editable) *@
+            <form asp-action="UpdateProfile" method="post" class="card shadow-sm mb-4" id="profileForm">
+                @Html.AntiForgeryToken()
+                <div class="card-header bg-white fw-semibold"><i class="fas fa-user-edit me-2 text-primary"></i>Personal details</div>
                 <div class="card-body">
-                    <dl class="row mb-0">
-                        <dt class="col-sm-4">Name</dt>
-                        <dd class="col-sm-8">@Model.FirstName @Model.LastName</dd>
-
-                        <dt class="col-sm-4">Email</dt>
-                        <dd class="col-sm-8">@Model.Email</dd>
-
-                        <dt class="col-sm-4">Username</dt>
-                        <dd class="col-sm-8">@Model.UserName</dd>
-
-                        <dt class="col-sm-4">Employee ID</dt>
-                        <dd class="col-sm-8">@Model.EmployeeId</dd>
-
-                        <dt class="col-sm-4">Phone</dt>
-                        <dd class="col-sm-8">@(Model.PhoneNumber ?? "N/A")</dd>
-
-                        <dt class="col-sm-4">Status</dt>
-                        <dd class="col-sm-8">
-                            <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger")">
-                                @(Model.IsActive ? "Active" : "Inactive")
-                            </span>
-                        </dd>
-
-                        <dt class="col-sm-4">Member Since</dt>
-                        <dd class="col-sm-8">@Model.CreatedDate.ToString("yyyy-MM-dd")</dd>
-                    </dl>
+                    <div asp-validation-summary="All" class="text-danger small mb-2"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="Edit_FirstName">First name *</label>
+                            <input class="form-control" id="Edit_FirstName" name="Edit.FirstName" value="@Model.FirstName" maxlength="50" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="Edit_LastName">Last name *</label>
+                            <input class="form-control" id="Edit_LastName" name="Edit.LastName" value="@Model.LastName" maxlength="50" required />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="Edit_PhoneNumber">Phone</label>
+                            <input class="form-control" id="Edit_PhoneNumber" name="Edit.PhoneNumber" value="@Model.PhoneNumber" maxlength="30" type="tel" placeholder="e.g. +92 300 1234567" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="Edit_Gender">Gender</label>
+                            <select class="form-select" id="Edit_Gender" name="Edit.Gender">
+                                <option value="">–</option>
+                                @foreach (var g in MyProfileEditViewModel.Genders)
+                                {
+                                    <option value="@g" selected="@(Model.Gender == g)">@g</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="Edit_DateOfBirth">Date of birth</label>
+                            <input class="form-control" id="Edit_DateOfBirth" name="Edit.DateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" max="@DateTime.Today.AddDays(-1).ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold" for="Edit_Address">Address</label>
+                            <input class="form-control" id="Edit_Address" name="Edit.Address" value="@Model.Address" maxlength="300" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold" for="Edit_City">City</label>
+                            <input class="form-control" id="Edit_City" name="Edit.City" value="@Model.City" maxlength="100" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="Edit_EmergencyContactName">Emergency contact</label>
+                            <input class="form-control" id="Edit_EmergencyContactName" name="Edit.EmergencyContactName" value="@Model.EmergencyContactName" maxlength="150" placeholder="Name and relation" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold" for="Edit_EmergencyContactPhone">Emergency contact phone</label>
+                            <input class="form-control" id="Edit_EmergencyContactPhone" name="Edit.EmergencyContactPhone" value="@Model.EmergencyContactPhone" maxlength="30" type="tel" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold" for="Edit_About">About me</label>
+                            <textarea class="form-control" id="Edit_About" name="Edit.About" rows="3" maxlength="1000" placeholder="Department, specialty, languages…">@Model.About</textarea>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
+                <div class="card-footer bg-white text-end">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save changes</button>
+                </div>
+            </form>
 
-    <div class="row mt-4">
-        <div class="col-lg-8 offset-lg-4">
+            @* Two-step login *@
             <div class="card shadow-sm">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Multi-Factor Authentication</h6>
-                </div>
+                <div class="card-header bg-white fw-semibold"><i class="fas fa-shield-alt me-2 text-primary"></i>Two-step login (MFA)</div>
                 <div class="card-body">
                     @if (Model.MFAEnabled)
                     {
@@ -106,11 +142,8 @@
                         <form asp-action="DisableMFA" method="post" class="mb-2">
                             @Html.AntiForgeryToken()
                             <div class="input-group">
-                                <input type="password" name="password" class="form-control form-control-sm"
-                                       placeholder="Enter password to disable MFA" required />
-                                <button type="submit" class="btn btn-outline-danger btn-sm">
-                                    <i class="fas fa-unlock me-1"></i> Disable MFA
-                                </button>
+                                <input type="password" name="password" class="form-control form-control-sm" placeholder="Enter password to disable MFA" required />
+                                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-unlock me-1"></i> Disable MFA</button>
                             </div>
                         </form>
                     }
@@ -120,9 +153,7 @@
                             <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
                             <div><strong>MFA is not enabled.</strong> Add extra security to your account.</div>
                         </div>
-                        <a asp-action="EnableMFA" class="btn btn-primary btn-sm">
-                            <i class="fas fa-shield-alt me-1"></i> Enable MFA
-                        </a>
+                        <a asp-action="EnableMFA" class="btn btn-primary btn-sm"><i class="fas fa-shield-alt me-1"></i> Enable MFA</a>
                     }
                 </div>
             </div>

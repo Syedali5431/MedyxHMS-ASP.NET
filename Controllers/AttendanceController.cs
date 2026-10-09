@@ -95,7 +95,7 @@ namespace MedyxHMS.Controllers
 
             try
             {
-                var checkInTime = DateTime.UtcNow;
+                var checkInTime = DateTime.Now;
                 if (date.HasValue)
                 {
                     checkInTime = date.Value.Date.Add(checkInTime.TimeOfDay);
@@ -124,7 +124,7 @@ namespace MedyxHMS.Controllers
 
             try
             {
-                var checkOutTime = DateTime.UtcNow;
+                var checkOutTime = DateTime.Now;
                 if (date.HasValue)
                 {
                     checkOutTime = date.Value.Date.Add(checkOutTime.TimeOfDay);

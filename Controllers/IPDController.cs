@@ -177,7 +177,7 @@ namespace MedyxHMS.Controllers
             var relatedBills = await _billingService.GetBillsByPatientAsync(admission.PatientId);
             var ipdBills = relatedBills.Where(b => b.BillType == "IPD").ToList();
 
-            var totalCharges = admission.DailyCharges * Math.Max(1, (decimal)((admission.DischargeDate ?? DateTime.UtcNow) - admission.AdmissionDate).TotalDays);
+            var totalCharges = admission.DailyCharges * Math.Max(1, (decimal)((admission.DischargeDate ?? DateTime.Now) - admission.AdmissionDate).TotalDays);
 
             var viewModel = new IPDAdmissionDetailsViewModel
             {
@@ -368,7 +368,9 @@ namespace MedyxHMS.Controllers
                 existingAdmission.Diagnosis = model.Admission.Diagnosis ?? existingAdmission.Diagnosis;
                 existingAdmission.Treatment = model.Admission.Treatment ?? existingAdmission.Treatment;
                 existingAdmission.Notes = model.Admission.Notes ?? existingAdmission.Notes;
-                existingAdmission.Status = model.Admission.Status ?? existingAdmission.Status;
+                // Setting the status to Discharged goes through Discharge Patient (bed, IPD bill, discharge report).
+                var dischargingNow = existingAdmission.Status != "Discharged" && model.Admission.Status == "Discharged";
+                existingAdmission.Status = dischargingNow ? existingAdmission.Status : model.Admission.Status ?? existingAdmission.Status;
 
                 if (model.Admission.DischargeDate.HasValue)
                 {
@@ -386,6 +388,12 @@ namespace MedyxHMS.Controllers
                     oldValues,
                     $"Status: {existingAdmission.Status}, Diagnosis: {existingAdmission.Diagnosis}"
                 );
+
+                if (dischargingNow)
+                {
+                    TempData["InfoMessage"] = "Changes saved. Complete the discharge here – this frees the bed, completes the IPD bill and creates the discharge report.";
+                    return RedirectToAction("Patient", "Discharge", new { admissionId = model.AdmissionId });
+                }
 
                 TempData["Success"] = "IPD admission updated successfully.";
                 return RedirectToAction(nameof(Details), new { id = model.AdmissionId });
@@ -412,13 +420,27 @@ namespace MedyxHMS.Controllers
         // Discharge patient
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,SuperAdmin,Doctor")]
-        public async Task<IActionResult> Discharge(int id, DateTime dischargeDate)
+        [Authorize(Roles = "Admin,SuperAdmin,Doctor,Nurse")]
+        public IActionResult Discharge(int id, DateTime dischargeDate)
+        {
+            // Discharging goes through the Discharge Patient form, which also creates the discharge report.
+            return RedirectToAction("Patient", "Discharge", new { admissionId = id });
+        }
+
+        // Former one-click discharge; replaced by Discharge Patient (DischargeController) and not routed.
+        [NonAction]
+        public async Task<IActionResult> DischargeImmediately(int id, DateTime dischargeDate)
         {
             var admission = await _ipdService.GetIPDAdmissionByIdAsync(id);
             if (admission == null)
             {
                 return NotFound();
+            }
+
+            // The Discharge buttons post only today's date: record the actual discharge time (not midnight).
+            if (dischargeDate == default || (dischargeDate.Date == DateTime.Today && dischargeDate.TimeOfDay == TimeSpan.Zero))
+            {
+                dischargeDate = DateTime.Now;
             }
 
             var result = await _ipdService.DischargePatientAsync(id, dischargeDate);
@@ -492,6 +514,7 @@ namespace MedyxHMS.Controllers
             return new IPDAdmissionDto
             {
                 Id = admission.Id,
+                HospitalId = admission.HospitalId,
                 PatientId = admission.PatientId,
                 PatientName = admission.Patient != null ? $"{admission.Patient.FirstName} {admission.Patient.LastName}" : "Unknown",
                 DoctorId = admission.DoctorId,

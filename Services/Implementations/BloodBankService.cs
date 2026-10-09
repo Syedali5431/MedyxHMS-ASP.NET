@@ -35,7 +35,7 @@ namespace MedyxHMS.Services.Implementations
                     BloodGroup = bloodGroup,
                     UnitsAvailable = unitsAvailable,
                     MinimumLevel = minimumLevel,
-                    LastUpdatedDate = DateTime.UtcNow
+                    LastUpdatedDate = DateTime.Now
                 };
                 _context.BloodInventories.Add(existing);
             }
@@ -43,7 +43,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 existing.UnitsAvailable = unitsAvailable;
                 existing.MinimumLevel = minimumLevel;
-                existing.LastUpdatedDate = DateTime.UtcNow;
+                existing.LastUpdatedDate = DateTime.Now;
                 _context.BloodInventories.Update(existing);
             }
 
@@ -75,15 +75,15 @@ namespace MedyxHMS.Services.Implementations
                 throw new InvalidOperationException("Insufficient blood units available.");
 
             inventory.UnitsAvailable -= issue.UnitsIssued;
-            inventory.LastUpdatedDate = DateTime.UtcNow;
+            inventory.LastUpdatedDate = DateTime.Now;
 
             var chargeAmount = issue.UnitsIssued * 1500m;
             var bill = new Bill
             {
                 BillNumber = GenerateBillNumber(),
                 PatientId = issue.PatientId,
-                BillDate = DateTime.UtcNow,
-                DueDate = DateTime.UtcNow.AddDays(7),
+                BillDate = DateTime.Now,
+                DueDate = DateTime.Now.AddDays(7),
                 TotalAmount = chargeAmount,
                 PaidAmount = 0,
                 PendingAmount = chargeAmount,
@@ -106,7 +106,7 @@ namespace MedyxHMS.Services.Implementations
             });
 
             issue.BillId = bill.Id;
-            issue.IssueDate = DateTime.UtcNow;
+            issue.IssueDate = DateTime.Now;
             _context.BloodIssues.Add(issue);
 
             await _context.SaveChangesAsync();
@@ -126,8 +126,9 @@ namespace MedyxHMS.Services.Implementations
 
         private string GenerateBillNumber()
         {
-            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var datePart = DateTime.Now.ToString("yyyyMMdd");
             var lastBill = _context.Bills
+                .IgnoreQueryFilters() // bill numbers are unique across all hospitals of the group
                 .Where(b => b.BillNumber.StartsWith($"BBBILL{datePart}"))
                 .OrderByDescending(b => b.Id)
                 .FirstOrDefault();

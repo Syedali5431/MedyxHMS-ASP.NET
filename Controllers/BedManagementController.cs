@@ -66,6 +66,13 @@ namespace MedyxHMS.Controllers
                 .Where(b => b.IsActive && b.RoomNumber != null && b.RoomNumber != "")
                 .Select(b => b.RoomNumber).Distinct().OrderBy(x => x).ToListAsync();
 
+            // Beds held by an IPD admission: their status follows the admission (discharge / transfer).
+            var admitted = await _context.IPDAdmissions.AsNoTracking()
+                .Where(a => a.Status == "Admitted" && a.BedId != null)
+                .Select(a => new { BedId = a.BedId!.Value, a.Id })
+                .ToListAsync();
+            ViewBag.Admissions = admitted.GroupBy(a => a.BedId).ToDictionary(g => g.Key, g => g.Max(a => a.Id));
+
             var availablePatients = await _context.Patients
                 .Where(p => p.IsActive)
                 .OrderBy(p => p.FirstName)
@@ -109,6 +116,12 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = BedManagementManageRoles)]
         public async Task<IActionResult> Release(int bedId)
         {
+            if (await ActiveAdmissionMessageAsync(bedId) is { } admittedMessage)
+            {
+                TempData["ErrorMessage"] = admittedMessage;
+                return RedirectToAction(nameof(Index));
+            }
+
             var (ok, error) = await _bedService.ReleaseBedAsync(bedId);
             if (!ok)
             {
@@ -168,10 +181,15 @@ namespace MedyxHMS.Controllers
                 TempData["ErrorMessage"] = "Cannot change status of an occupied bed. Release the bed first.";
                 return RedirectToAction(nameof(Index));
             }
+            if (bed.Status == "Occupied" && await ActiveAdmissionMessageAsync(bedId) is { } admittedMessage)
+            {
+                TempData["ErrorMessage"] = admittedMessage;
+                return RedirectToAction(nameof(Index));
+            }
 
             var old = bed.Status;
             bed.Status = status;
-            bed.LastUpdated = DateTime.UtcNow;
+            bed.LastUpdated = DateTime.Now;
             // If moving to Available, clear any stale patient reference
             if (status == "Available") bed.PatientId = null;
             await _context.SaveChangesAsync();
@@ -183,6 +201,101 @@ namespace MedyxHMS.Controllers
             TempData["SuccessMessage"] = $"Bed status updated to {status}.";
             return RedirectToAction(nameof(Index));
         }
+
+        // ── POST /BedManagement/ChangeStatus (right-click menu on a bed) ──
+        // Statuses: Available, Occupied (needs a patient), Cleaning, Maintenance, Blocked ("Maint./Blocked").
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = BedManagementManageRoles)]
+        public async Task<IActionResult> ChangeStatus(int bedId, string status, int? patientId)
+        {
+            var allowed = new[] { "Available", "Occupied", "Cleaning", "Maintenance", "Blocked" };
+            status = allowed.FirstOrDefault(s => string.Equals(s, (status ?? string.Empty).Trim(), StringComparison.OrdinalIgnoreCase)) ?? string.Empty;
+            if (status.Length == 0)
+                return BadRequest(new { success = false, error = "Choose Available, Occupied, Cleaning or Maint./Blocked." });
+
+            var bed = await _context.Beds.Include(b => b.Ward).Include(b => b.Patient).FirstOrDefaultAsync(b => b.Id == bedId && b.IsActive);
+            if (bed == null)
+                return NotFound(new { success = false, error = "Bed not found." });
+
+            var old = bed.Status;
+            if (string.Equals(old, status, StringComparison.OrdinalIgnoreCase))
+                return Ok(BedStatusResult(bed, $"Bed {bed.BedNumber} is already {StatusLabel(status)}."));
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (status == "Occupied")
+            {
+                if (patientId is null or <= 0)
+                    return BadRequest(new { success = false, error = "Choose the patient who occupies the bed." });
+                if (!await _context.Patients.AnyAsync(p => p.Id == patientId && p.IsActive))
+                    return BadRequest(new { success = false, error = "Patient not found." });
+
+                // A bed that is being cleaned or repaired can be taken straight into use from this menu.
+                if (old != "Available")
+                {
+                    bed.Status = "Available";
+                }
+
+                var roles = User.Claims.Where(c => c.Type == ClaimTypes.Role).Select(c => c.Value).ToList();
+                var effectiveRole = roles.Contains("SuperAdmin") ? "SuperAdmin" : roles.Contains("Admin") ? "Admin" : roles.FirstOrDefault() ?? string.Empty;
+                var (ok, error) = await _bedService.AssignBedAsync(bedId, patientId.Value, effectiveRole);
+                if (!ok)
+                {
+                    bed.Status = old;
+                    return BadRequest(new { success = false, error });
+                }
+
+                await _context.Entry(bed).Reference(b => b.Patient).LoadAsync();
+                await _audit.LogActivityAsync(userId, "STATUS_CHANGE", "Bed", bedId.ToString(), old,
+                    $"Occupied – patient {bed.Patient?.PatientId} {bed.Patient?.FirstName} {bed.Patient?.LastName}".Trim());
+                return Ok(BedStatusResult(bed, $"Bed {bed.BedNumber} marked Occupied ({bed.Patient?.FirstName} {bed.Patient?.LastName})."));
+            }
+
+            if (old == "Occupied")
+            {
+                // An admitted patient keeps the bed until discharge or transfer, so the admission stays correct.
+                var admitted = await ActiveAdmissionMessageAsync(bedId);
+                if (admitted != null)
+                    return BadRequest(new { success = false, error = admitted });
+
+                bed.PatientId = null;
+            }
+
+            bed.Status = status;
+            bed.LastUpdated = DateTime.Now;
+            if (status == "Available")
+                bed.PatientId = null;
+            await _context.SaveChangesAsync();
+
+            await _audit.LogActivityAsync(userId, "STATUS_CHANGE", "Bed", bedId.ToString(), old, status);
+            return Ok(BedStatusResult(bed, $"Bed {bed.BedNumber} marked {StatusLabel(status)}."));
+        }
+
+        /// <summary>Message when an IPD admission still holds the bed (null when none).</summary>
+        private async Task<string?> ActiveAdmissionMessageAsync(int bedId)
+        {
+            var admission = await _context.IPDAdmissions.AsNoTracking()
+                .Where(a => a.BedId == bedId && a.Status == "Admitted")
+                .Select(a => new { a.Id, a.Patient.FirstName, a.Patient.LastName })
+                .FirstOrDefaultAsync();
+            return admission == null
+                ? null
+                : $"{admission.FirstName} {admission.LastName} is admitted in this bed (IPD admission #{admission.Id}). Discharge the patient or move them to another bed first.";
+        }
+
+        private static string StatusLabel(string status) => status is "Maintenance" or "Blocked" ? $"Maint./Blocked ({status})" : status;
+
+        private static object BedStatusResult(Bed bed, string message) => new
+        {
+            success = true,
+            message,
+            bed = new
+            {
+                id = bed.Id,
+                status = bed.Status,
+                patientId = bed.PatientId,
+                patientName = bed.Patient != null && bed.PatientId != null ? (bed.Patient.FirstName + " " + bed.Patient.LastName) : null
+            }
+        };
 
         // ── API: GET /api/beds ─────────────────────────────────
         [HttpGet("/api/beds")]
@@ -299,10 +412,12 @@ namespace MedyxHMS.Controllers
 
             if (bed.Status == "Occupied" && request.Status != "Available")
                 return BadRequest(new { success = false, error = "Cannot change status of an occupied bed. Release the bed first." });
+            if (bed.Status == "Occupied" && await ActiveAdmissionMessageAsync(request.BedId) is { } admittedMessage)
+                return BadRequest(new { success = false, error = admittedMessage });
 
             var old = bed.Status;
             bed.Status = request.Status;
-            bed.LastUpdated = DateTime.UtcNow;
+            bed.LastUpdated = DateTime.Now;
             if (request.Status == "Available")
                 bed.PatientId = null;
 
@@ -333,6 +448,12 @@ namespace MedyxHMS.Controllers
             model.Block = (model.Block ?? string.Empty).Trim();
             model.Floor = (model.Floor ?? string.Empty).Trim();
             model.RoomNumber = (model.RoomNumber ?? string.Empty).Trim();
+
+            // Wards are per hospital: only wards of the active hospital can be chosen.
+            if (!await _context.Wards.AnyAsync(w => w.Id == model.WardId && w.IsActive))
+            {
+                ModelState.AddModelError(nameof(Bed.WardId), "Please choose a ward.");
+            }
 
             if (!ModelState.IsValid)
             {
@@ -365,8 +486,8 @@ namespace MedyxHMS.Controllers
                     DailyCharges = model.DailyCharges,
                     IsActive = model.IsActive,
                     Status = "Available",
-                    CreatedDate = DateTime.UtcNow,
-                    LastUpdated = DateTime.UtcNow,
+                    CreatedDate = DateTime.Now,
+                    LastUpdated = DateTime.Now,
                     RequiresAdminApproval = model.BedType == "ICU",
                     IsIsolation = model.BedType == "Isolation"
                 };
@@ -402,13 +523,18 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Edit(int id, Bed model)
         {
             if (id != model.Id) return BadRequest();
+            if (!await _context.Beds.AnyAsync(b => b.Id == id)) return NotFound();
+            if (!await _context.Wards.AnyAsync(w => w.Id == model.WardId))
+            {
+                ModelState.AddModelError(nameof(Bed.WardId), "Please choose a ward.");
+            }
             if (!ModelState.IsValid)
             {
                 ViewBag.Wards = await _context.Wards.Where(w => w.IsActive).OrderBy(w => w.Name).ToListAsync();
                 return View(model);
             }
 
-            model.LastUpdated = DateTime.UtcNow;
+            model.LastUpdated = DateTime.Now;
             if (model.BedType == "ICU") model.RequiresAdminApproval = true;
             if (model.BedType == "Isolation") model.IsIsolation = true;
             _context.Beds.Update(model);
@@ -416,6 +542,105 @@ namespace MedyxHMS.Controllers
 
             TempData["SuccessMessage"] = $"Bed {model.BedNumber} updated.";
             return RedirectToAction(nameof(Index));
+        }
+
+        // ── Wards (per hospital) ────────────────────────────────
+        [Authorize(Roles = BedManagementManageRoles)]
+        public async Task<IActionResult> Wards()
+        {
+            var wards = await _context.Wards.OrderBy(w => w.Name).ToListAsync();
+            var beds = await _context.Beds
+                .Where(b => b.IsActive)
+                .GroupBy(b => b.WardId)
+                .Select(g => new { WardId = g.Key, Total = g.Count(), Occupied = g.Count(b => b.Status == "Occupied") })
+                .ToListAsync();
+            ViewBag.BedCounts = beds.ToDictionary(b => b.WardId, b => (b.Total, b.Occupied));
+            return View(wards);
+        }
+
+        [Authorize(Roles = BedManagementManageRoles)]
+        public IActionResult CreateWard()
+        {
+            return View("WardForm", new Ward { IsActive = true });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = BedManagementManageRoles)]
+        public async Task<IActionResult> CreateWard(Ward model)
+        {
+            model.Name = (model.Name ?? string.Empty).Trim();
+            model.Description = model.Description?.Trim() ?? string.Empty;
+            await ValidateWardAsync(model);
+            if (!ModelState.IsValid)
+            {
+                return View("WardForm", model);
+            }
+
+            var ward = new Ward
+            {
+                Name = model.Name,
+                Description = model.Description,
+                IsActive = model.IsActive,
+                TotalBeds = 0,
+                OccupiedBeds = 0,
+                CreatedDate = DateTime.Now
+            };
+            _context.Wards.Add(ward);
+            await _context.SaveChangesAsync();
+            await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "CREATE", "Ward", ward.Id.ToString(), null, ward.Name);
+
+            TempData["SuccessMessage"] = $"Ward \"{ward.Name}\" created. Add beds to it with Add Beds.";
+            return RedirectToAction(nameof(Wards));
+        }
+
+        [Authorize(Roles = BedManagementManageRoles)]
+        public async Task<IActionResult> EditWard(int id)
+        {
+            var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == id);
+            if (ward == null) return NotFound();
+            return View("WardForm", ward);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = BedManagementManageRoles)]
+        public async Task<IActionResult> EditWard(int id, Ward model)
+        {
+            var ward = await _context.Wards.FirstOrDefaultAsync(w => w.Id == id);
+            if (ward == null) return NotFound();
+
+            model.Id = id;
+            model.Name = (model.Name ?? string.Empty).Trim();
+            model.Description = model.Description?.Trim() ?? string.Empty;
+            await ValidateWardAsync(model);
+            if (!model.IsActive && ward.IsActive && await _context.Beds.AnyAsync(b => b.WardId == id && b.Status == "Occupied"))
+            {
+                ModelState.AddModelError(nameof(Ward.IsActive), "This ward has occupied beds. Release or transfer the patients first.");
+            }
+            if (!ModelState.IsValid)
+            {
+                return View("WardForm", model);
+            }
+
+            var old = $"{ward.Name} (active: {ward.IsActive})";
+            ward.Name = model.Name;
+            ward.Description = model.Description;
+            ward.IsActive = model.IsActive;
+            await _context.SaveChangesAsync();
+            await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "UPDATE", "Ward", id.ToString(), old, $"{ward.Name} (active: {ward.IsActive})");
+
+            TempData["SuccessMessage"] = $"Ward \"{ward.Name}\" updated.";
+            return RedirectToAction(nameof(Wards));
+        }
+
+        private async Task ValidateWardAsync(Ward model)
+        {
+            ModelState.Remove(nameof(Ward.Beds));
+            if (string.IsNullOrWhiteSpace(model.Name))
+            {
+                ModelState.AddModelError(nameof(Ward.Name), "Ward name is required.");
+            }
+            else if (await _context.Wards.AnyAsync(w => w.Name == model.Name && w.Id != model.Id))
+            {
+                ModelState.AddModelError(nameof(Ward.Name), "This hospital already has a ward with this name.");
+            }
         }
 
         public sealed class AssignBedRequest

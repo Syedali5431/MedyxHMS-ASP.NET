@@ -1,4 +1,5 @@
 @model MedyxHMS.ViewModels.AppointmentDetailsViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Appointment Details";
@@ -14,7 +15,7 @@
                     <p class="text-muted">@Model.Patient?.FullName with @Model.Doctor?.Name</p>
                 </div>
                 <div>
-                    @if (User.HasPermission("Appointment", "Edit"))
+                    @if (await Nav.CanAccessAsync("/Appointment/Edit"))
                     {
                         <a href="@Url.Action("UpdateStatus", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-warning">
                             <i class="fas fa-edit"></i> Update Status
@@ -23,6 +24,9 @@
                             <i class="fas fa-pencil-alt"></i> Edit Details
                         </a>
                     }
+                    <a href="@Url.Action("ThermalSlip", "Appointment", new { id = Model.Appointment.Id })" target="_blank" class="btn btn-outline-secondary ml-2" title="Print appointment slip with token number (receipt printer)">
+                        <i class="fas fa-receipt"></i> Print Slip
+                    </a>
                     <a href="@Url.Action("Index", "Appointment")" class="btn btn-info ml-2">
                         <i class="fas fa-arrow-left"></i> Back to Appointments
                     </a>
@@ -109,7 +113,7 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        @if (User.HasPermission("Appointment", "Edit"))
+                        @if (await Nav.CanAccessAsync("/Appointment/Edit"))
                         {
                             <a href="@Url.Action("UpdateStatus", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-warning">
                                 <i class="fas fa-edit"></i> Update Status
@@ -118,15 +122,18 @@
                                 <i class="fas fa-pencil-alt"></i> Edit Details
                             </a>
                         }
-                        @if (User.HasPermission("Patient", "View"))
+                        @if (await Nav.CanAccessAsync("/Patient/Details"))
                         {
                             <a href="@Url.Action("Details", "Patient", new { id = Model.Appointment.PatientId })" class="btn btn-info">
                                 <i class="fas fa-user"></i> View Patient
                             </a>
                         }
-                        <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-success">
-                            <i class="fas fa-plus"></i> New Appointment
-                        </a>
+                        @if (await Nav.CanAccessAsync("/Appointment/Create"))
+                        {
+                            <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-success">
+                                <i class="fas fa-plus"></i> New Appointment
+                            </a>
+                        }
                     </div>
                 </div>
             </div>
@@ -278,7 +285,7 @@
                                    class="list-group-item list-group-item-action">
                                     <div class="d-flex w-100 justify-content-between">
                                         <h6 class="mb-1">@appointment.PatientName</h6>
-                                        <small>@appointment.AppointmentTime.ToString(@"hh\:mm tt")</small>
+                                        <small>@DateTime.Today.Add(appointment.AppointmentTime).ToString("hh:mm tt")</small>
                                     </div>
                                     <p class="mb-1">@appointment.AppointmentType</p>
                                     <small class="text-muted">@appointment.Status</small>

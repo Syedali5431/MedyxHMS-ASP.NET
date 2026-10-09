@@ -118,6 +118,7 @@ namespace MedyxHMS.Services.Interfaces
         Task<Appointment?> GetAppointmentDetailsAsync(string appointmentId);
         Task<Appointment> BookAppointmentAsync(Appointment appointment);
         Task<bool> RescheduleAppointmentAsync(string appointmentId, DateTime newDate, TimeSpan newTime);
+        Task<bool> IsDoctorSlotTakenAsync(int doctorId, DateTime date, TimeSpan time, int? excludeAppointmentId = null);
         Task<bool> CancelAppointmentAsync(string appointmentId, string cancelReason);
         Task<IEnumerable<Staff>> GetAvailableDoctorsAsync(DateTime date);
         Task<List<TimeSpan>> GetAvailableTimeSlotAsync(string doctorId, DateTime date);
@@ -194,6 +195,21 @@ namespace MedyxHMS.Services.Interfaces
         byte[] BuildCsv(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
         byte[] BuildPdfTable(string title, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
         byte[] BuildExcel(string sheetName, IReadOnlyList<string> headers, IReadOnlyList<IReadOnlyList<string>> rows);
+
+        /// <summary>Letterhead of the active hospital (name, address, contact), user and currency for a report.</summary>
+        void FillLetterhead(MedyxHMS.ViewModels.ReportDocument doc);
+
+        /// <summary>Letterhead of a given hospital (e.g. the hospital of a bill or admission); null = active hospital.</summary>
+        void FillLetterhead(MedyxHMS.ViewModels.ReportDocument doc, int? forHospitalId);
+
+        /// <summary>Invoice of one bill (patient, items, payments, balance) on the letterhead of the bill's hospital.</summary>
+        MedyxHMS.ViewModels.ReportDocument InvoiceDocument(MedyxHMS.Models.Bill bill);
+
+        /// <summary>Report as a PDF with letterhead, key figures, charts, tables and page numbers.</summary>
+        byte[] BuildReportPdf(MedyxHMS.ViewModels.ReportDocument doc);
+
+        /// <summary>Report as an Excel workbook with typed (numeric/date) cells, totals and filters.</summary>
+        byte[] BuildReportExcel(MedyxHMS.ViewModels.ReportDocument doc);
     }
 
     public interface IChatbotModerationService
@@ -522,6 +538,23 @@ namespace MedyxHMS.Services.Interfaces
         Task<OTSchedule> GetScheduleByIdAsync(int id);
         Task<OTSchedule> CreateScheduleAsync(OTSchedule schedule);
         Task<bool> UpdateStatusAsync(int id, string status);
+        /// <summary>Clashes with other cases (theatre + turnover, surgeon, patient), block times and opening hours.</summary>
+        Task<List<string>> FindConflictsAsync(OTSchedule booking, int? excludeId = null);
+        /// <summary>Saves a rescheduled booking; returns a note about its bill.</summary>
+        Task<string> UpdateScheduleAsync(OTSchedule schedule);
+        Task<(bool Ok, string Message)> ChangeStatusAsync(int id, string status, string? reason);
+        Task<List<MedyxHMS.ViewModels.OTTheatreDay>> GetDayAvailabilityAsync(DateTime day, int? theatreId = null);
+    }
+
+    /// <summary>Patient medical records kept in step with OPD visits and IPD admissions.</summary>
+    public interface IMedicalRecordService
+    {
+        Task SyncOpdVisitAsync(int visitId);
+        Task SyncIpdAdmissionAsync(int admissionId);
+        /// <summary>Marks the records of a visit/admission for removal; the caller saves.</summary>
+        Task RemoveForSourceAsync(string sourceType, int sourceId);
+        /// <summary>Creates any missing records (for one patient, or all); returns how many were created.</summary>
+        Task<int> EnsureRecordsAsync(int? patientId = null);
     }
 
     public interface IReferralService

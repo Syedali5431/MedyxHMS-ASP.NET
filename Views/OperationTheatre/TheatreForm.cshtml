@@ -1,0 +1,70 @@
+@model MedyxHMS.Models.OperationTheatre
+@{
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? $"Edit Theatre {Model.Code}" : "Add Theatre";
+    var types = ViewBag.Types as string[] ?? Array.Empty<string>();
+}
+
+<div class="container mt-3" style="max-width:860px">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0"><i class="fas fa-door-open text-primary me-2"></i>@ViewData["Title"]</h4>
+        <a class="btn btn-outline-secondary btn-sm" asp-action="@(isEdit ? "TheatreDetails" : "Theatres")" asp-route-id="@(isEdit ? Model.Id : null)">Back</a>
+    </div>
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form method="post" asp-action="@(isEdit ? "TheatreEdit" : "TheatreCreate")" asp-route-id="@(isEdit ? Model.Id : null)">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label asp-for="Code" class="form-label fw-semibold">Code <span class="text-danger">*</span></label>
+                        <input asp-for="Code" class="form-control" maxlength="20" placeholder="OT-1" />
+                        <span asp-validation-for="Code" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-5">
+                        <label asp-for="Name" class="form-label fw-semibold">Name <span class="text-danger">*</span></label>
+                        <input asp-for="Name" class="form-control" maxlength="100" placeholder="Main theatre 1" />
+                        <span asp-validation-for="Name" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label asp-for="TheatreType" class="form-label fw-semibold"></label>
+                        <select asp-for="TheatreType" class="form-select">
+                            @foreach (var t in types) { <option value="@t">@t</option> }
+                        </select>
+                        <span asp-validation-for="TheatreType" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Location" class="form-label fw-semibold"></label>
+                        <input asp-for="Location" class="form-control" maxlength="100" />
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="TurnoverMinutes" class="form-label fw-semibold"></label>
+                        <input asp-for="TurnoverMinutes" type="number" min="0" max="240" step="5" class="form-control" />
+                        <span asp-validation-for="TurnoverMinutes" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="OpensAt" class="form-label fw-semibold"></label>
+                        <input asp-for="OpensAt" type="time" class="form-control" value="@Model.OpensAt.ToString("hh\\:mm")" />
+                        <span asp-validation-for="OpensAt" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="ClosesAt" class="form-label fw-semibold"></label>
+                        <input asp-for="ClosesAt" type="time" class="form-control" value="@Model.ClosesAt.ToString("hh\\:mm")" />
+                        <span asp-validation-for="ClosesAt" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end">
+                        <div class="form-check mb-2">
+                            <input asp-for="Is24Hours" class="form-check-input" />
+                            <label asp-for="Is24Hours" class="form-check-label">Open 24 hours (e.g. emergency theatre)</label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Features" class="form-label fw-semibold"></label>
+                        <textarea asp-for="Features" class="form-control" rows="2" maxlength="500" placeholder="e.g. laminar flow, C-arm, laparoscopy tower"></textarea>
+                    </div>
+                </div>
+                <div class="mt-3"><button type="submit" class="btn btn-primary">@(isEdit ? "Save changes" : "Add theatre")</button></div>
+            </form>
+        </div>
+    </div>
+</div>

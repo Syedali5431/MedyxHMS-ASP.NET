@@ -1,0 +1,93 @@
+@model MedyxHMS.ViewModels.QualityDashboardViewModel
+@{
+    ViewData["Title"] = "Quality Dashboard";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-award text-primary me-2"></i>Quality Dashboard</h4>
+            <small class="text-muted">Incidents, corrective/preventive actions, controlled documents, internal audits and training.</small>
+        </div>
+        <a asp-action="ReportIncident" class="btn btn-danger btn-sm"><i class="fas fa-exclamation-triangle me-1"></i>Report Incident</a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        @{
+            var tiles = new (string Title, int Value, string Sub, string Icon, string Color, string Url)[]
+            {
+                ("Open incidents", Model.OpenIncidents, $"{Model.CriticalOpenIncidents} high/critical · {Model.IncidentsThisMonth} this month", "fa-exclamation-triangle", "danger", Url.Action("Incidents")!),
+                ("Open CAPA", Model.OpenCapa, $"{Model.OverdueCapa} overdue · {Model.CapaAwaitingVerification} to verify", "fa-tasks", "warning", Url.Action("Capa", new { filter = "open" })!),
+                ("Documents", Model.DocumentsPendingApproval, $"waiting for approval · {Model.DocumentsDueForReview} due for review", "fa-file-signature", "primary", Url.Action("Index", "QualityDocuments")!),
+                ("Internal audits", Model.UpcomingAudits, $"planned / in progress · {Model.OpenFindings} open findings", "fa-clipboard-check", "info", Url.Action("Index", "InternalAudit")!),
+                ("Equipment", Model.EquipmentOverdue, $"overdue maintenance/calibration · {Model.EquipmentDueSoon} due soon · {Model.EquipmentOutOfService} out of service", "fa-stethoscope", "dark", Url.Action("Index", "Equipment", new { filter = "overdue" })!),
+                ("Training", Model.TrainingExpiringSoon, $"expiring within 30 days · {Model.TrainingExpired} expired", "fa-user-graduate", "success", Url.Action("Index", "Training", new { filter = "expiring" })!),
+            };
+        }
+        @foreach (var t in tiles)
+        {
+            <div class="col-sm-6 col-xl">
+                <a href="@t.Url" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 border-start border-4 border-@t.Color">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div class="small text-uppercase text-muted">@t.Title</div>
+                                <i class="fas @t.Icon text-@t.Color"></i>
+                            </div>
+                            <div class="fs-3 fw-bold text-dark">@t.Value</div>
+                            <div class="small text-muted">@t.Sub</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3">
+        <div class="col-xl-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between"><span class="fw-semibold">Recent incidents</span><a asp-action="Incidents" class="small">All incidents</a></div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0 align-middle">
+                        <tbody>
+                            @foreach (var i in Model.RecentIncidents)
+                            {
+                                <tr>
+                                    <td class="small text-nowrap"><a asp-action="Incident" asp-route-id="@i.Id">@i.IncidentNumber</a></td>
+                                    <td class="small">@i.Title</td>
+                                    <td><span class="badge @SeverityBadge(i.Severity)">@i.Severity</span></td>
+                                    <td class="small">@i.Status</td>
+                                </tr>
+                            }
+                            @if (!Model.RecentIncidents.Any()) { <tr><td class="text-muted text-center py-3">No incidents reported.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between"><span class="fw-semibold">Overdue actions</span><a asp-action="Capa" asp-route-filter="overdue" class="small">All overdue</a></div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0 align-middle">
+                        <tbody>
+                            @foreach (var c in Model.OverdueCapaList)
+                            {
+                                <tr>
+                                    <td class="small">@c.Description</td>
+                                    <td class="small">@c.OwnerName</td>
+                                    <td class="small text-danger text-nowrap">@c.DueDate.ToString("dd-MMM-yyyy")</td>
+                                </tr>
+                            }
+                            @if (!Model.OverdueCapaList.Any()) { <tr><td class="text-muted text-center py-3">No overdue actions.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    static string SeverityBadge(string s) => s switch { "Critical" => "bg-danger", "High" => "bg-warning text-dark", "Medium" => "bg-info text-dark", _ => "bg-secondary" };
+}

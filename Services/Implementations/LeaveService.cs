@@ -36,7 +36,7 @@ namespace MedyxHMS.Services.Implementations
             if (string.IsNullOrWhiteSpace(leaveType.Name))
                 throw new InvalidOperationException("Leave type name is required.");
 
-            leaveType.CreatedDate = DateTime.UtcNow;
+            leaveType.CreatedDate = DateTime.Now;
             _context.LeaveTypes.Add(leaveType);
             await _context.SaveChangesAsync();
             return leaveType;
@@ -115,7 +115,7 @@ namespace MedyxHMS.Services.Implementations
             leaveRequest.EndDate = leaveRequest.EndDate.Date;
             leaveRequest.TotalDays = (leaveRequest.EndDate - leaveRequest.StartDate).Days + 1;
             leaveRequest.Status = "Pending";
-            leaveRequest.CreatedDate = DateTime.UtcNow;
+            leaveRequest.CreatedDate = DateTime.Now;
 
             var balance = await EnsureBalanceAsync(leaveRequest.StaffId, leaveRequest.LeaveTypeId, leaveRequest.StartDate.Year);
             if (balance.RemainingDays < leaveRequest.TotalDays)
@@ -150,15 +150,15 @@ namespace MedyxHMS.Services.Implementations
 
                 balance.UsedDays += request.TotalDays;
                 balance.RemainingDays = Math.Max(0, balance.AllocatedDays - balance.UsedDays);
-                balance.UpdatedDate = DateTime.UtcNow;
+                balance.UpdatedDate = DateTime.Now;
                 _context.LeaveBalances.Update(balance);
             }
 
             request.Status = normalizedStatus;
             request.ApproverId = approverId;
             request.ApproverRemarks = remarks;
-            request.ApprovedDate = normalizedStatus == "Approved" ? DateTime.UtcNow : null;
-            request.UpdatedDate = DateTime.UtcNow;
+            request.ApprovedDate = normalizedStatus == "Approved" ? DateTime.Now : null;
+            request.UpdatedDate = DateTime.Now;
 
             _context.LeaveRequests.Update(request);
             await _context.SaveChangesAsync();
@@ -167,7 +167,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<IEnumerable<LeaveBalance>> GetLeaveBalancesAsync(string? staffId = null, int? year = null)
         {
-            var targetYear = year ?? DateTime.UtcNow.Year;
+            var targetYear = year ?? DateTime.Now.Year;
             var query = _context.LeaveBalances
                 .Include(x => x.Staff)
                 .ThenInclude(s => s.User)
@@ -206,7 +206,7 @@ namespace MedyxHMS.Services.Implementations
                 AllocatedDays = leaveType.DefaultDaysPerYear,
                 UsedDays = 0,
                 RemainingDays = leaveType.DefaultDaysPerYear,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now
             };
 
             _context.LeaveBalances.Add(balance);

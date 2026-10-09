@@ -1,8 +1,10 @@
 ﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -10,7 +12,7 @@ using System.Security.Claims;
 // Purpose: Contains application code for LabController and its related runtime behavior.
 namespace MedyxHMS.Controllers
 {
-    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor,LabTechnician")]
+    [Authorize(Roles = "Admin,SuperAdmin,Staff,Doctor,LabTechnician,Pathologist")]
     public class LabController : Controller
     {
         private readonly ILabService _labService;
@@ -261,7 +263,7 @@ namespace MedyxHMS.Controllers
 
             try
             {
-                model.OrderDate = DateTime.UtcNow;
+                model.OrderDate = DateTime.Now;
                 var newResult = await _labService.CreateLabResultAsync(model);
                 await _auditService.LogActivityAsync(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, "Create", "LabResult", newResult.Id.ToString(), null, $"OrderNumber: {newResult.OrderNumber}");
                 TempData["SuccessMessage"] = $"Lab test ordered successfully! Order #: {newResult.OrderNumber}";
@@ -285,6 +287,9 @@ namespace MedyxHMS.Controllers
             if (result == null)
                 return NotFound();
 
+            ViewBag.Events = await _context.LabSampleEvents.AsNoTracking().Where(e => e.LabResultId == id).OrderBy(e => e.OccurredAt).ThenBy(e => e.Id).ToListAsync();
+            ViewBag.SignatureValid = LabTraceabilityService.IsSignatureValid(result);
+            ViewBag.CanSignOff = User.IsInRole(LabTraceabilityService.SignOffRole);
             return View(result);
         }
 
@@ -294,6 +299,11 @@ namespace MedyxHMS.Controllers
             var result = await _labService.GetLabResultByIdAsync(id);
             if (result == null)
                 return NotFound();
+            if (result.SignedOffAt.HasValue)
+            {
+                TempData["ErrorMessage"] = "This result has been signed off and is locked. A pathologist must revoke the sign-off (with a reason) before it can be changed.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
 
             ViewBag.NoteHistory = await _context.LabNoteHistories
                 .Where(h => h.LabResultId == id)
@@ -309,6 +319,12 @@ namespace MedyxHMS.Controllers
         {
             if (id != model.Id)
                 return BadRequest();
+
+            if (await _context.LabResults.AnyAsync(r => r.Id == id && r.SignedOffAt != null))
+            {
+                TempData["ErrorMessage"] = "This result has been signed off and is locked.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
 
             if (!ModelState.IsValid)
                 return View(model);
@@ -374,7 +390,7 @@ namespace MedyxHMS.Controllers
                     await _auditService.LogActivityAsync(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, "Update", "LabResult", id.ToString(), null, $"Status updated to: {status}");
                     return Json(new { success = true, message = "Status updated successfully!" });
                 }
-                return Json(new { success = false, message = "Lab result not found!" });
+                return Json(new { success = false, message = "Lab result not found, or it is signed off and locked." });
             }
             catch (Exception ex)
             {
@@ -391,6 +407,12 @@ namespace MedyxHMS.Controllers
                 if (result == null)
                     return NotFound();
 
+                if (result.SignedOffAt.HasValue)
+                {
+                    TempData["ErrorMessage"] = "A signed-off result cannot be deleted.";
+                    return RedirectToAction(nameof(ResultDetails), new { id });
+                }
+
                 await _labService.DeleteLabResultAsync(id);
                 await _auditService.LogActivityAsync(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, "Delete", "LabResult", id.ToString(), $"OrderNumber: {result.OrderNumber}", null);
                 TempData["SuccessMessage"] = "Lab result deleted successfully!";
@@ -402,6 +424,233 @@ namespace MedyxHMS.Controllers
                 return RedirectToAction(nameof(Results));
             }
         }
+
+        // ======== Specimen tracking (ISO 15189 traceability) ========
+
+        /// <summary>Worklist by stage: awaiting collection, collected, received (awaiting result), awaiting sign-off, signed off, rejected.</summary>
+        [HttpGet]
+        public async Task<IActionResult> Samples(string tab = "collect")
+        {
+            var query = _context.LabResults.AsNoTracking().Include(r => r.Patient).Include(r => r.LabTest)
+                .Where(r => r.Status != "Cancelled");
+            query = tab switch
+            {
+                "receive" => query.Where(r => r.SampleStatus == "Collected"),
+                "result" => query.Where(r => r.SampleStatus == "Received" && (r.ResultValue == null || r.ResultValue == "") && r.SignedOffAt == null),
+                "signoff" => query.Where(r => r.SampleStatus == "Received" && r.ResultValue != null && r.ResultValue != "" && r.SignedOffAt == null),
+                "signed" => query.Where(r => r.SignedOffAt != null),
+                "rejected" => query.Where(r => r.SampleStatus == "Rejected"),
+                _ => query.Where(r => r.SampleStatus == "Awaiting collection")
+            };
+
+            ViewBag.Tab = tab;
+            ViewBag.CanSignOff = User.IsInRole(LabTraceabilityService.SignOffRole);
+            var list = await (tab == "signed" ? query.OrderByDescending(r => r.SignedOffAt) : query.OrderBy(r => r.OrderDate)).Take(300).ToListAsync();
+            return View(list);
+        }
+
+        /// <summary>Barcode scanners type the code followed by Enter: find the order by accession or order number.</summary>
+        [HttpGet]
+        public async Task<IActionResult> Scan(string? code)
+        {
+            code = (code ?? string.Empty).Trim();
+            var id = string.IsNullOrEmpty(code) ? null : await _context.LabResults
+                .Where(r => r.AccessionNumber == code || r.OrderNumber == code)
+                .Select(r => (int?)r.Id)
+                .FirstOrDefaultAsync();
+            if (id == null)
+            {
+                TempData["ErrorMessage"] = string.IsNullOrEmpty(code) ? "Scan or type an accession number." : $"No sample found for \"{code}\".";
+                return RedirectToAction(nameof(Samples));
+            }
+
+            return RedirectToAction(nameof(ResultDetails), new { id });
+        }
+
+        /// <summary>Specimen label (50 x 25 mm) with the accession barcode, for label printers. Read-only; printing is logged by LabelPrinted.</summary>
+        [HttpGet]
+        public async Task<IActionResult> PrintLabel(int id, int copies = 1)
+        {
+            var result = await _context.LabResults.AsNoTracking().Include(r => r.Patient).Include(r => r.LabTest).FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null)
+                return NotFound();
+            if (string.IsNullOrEmpty(result.AccessionNumber) || !Code128Barcode.CanEncode(result.AccessionNumber))
+            {
+                TempData["ErrorMessage"] = "This order has no accession number yet.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
+
+            ViewBag.Copies = Math.Clamp(copies, 1, 10);
+            return View(result);
+        }
+
+        /// <summary>Called by the label page after the print dialog closes: records the label print in the chain of custody.</summary>
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> LabelPrinted(int id, int copies, [FromServices] LabTraceabilityService traceability)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+            traceability.AddEvent(result, "Label printed", $"{Math.Clamp(copies, 1, 10)} label(s)");
+            await _context.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> CollectSample(int id, string? sampleType, string? returnUrl, [FromServices] LabTraceabilityService traceability)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+            if (result.SampleStatus != "Awaiting collection" && result.SampleStatus != "Rejected")
+            {
+                TempData["ErrorMessage"] = $"The sample is already {result.SampleStatus.ToLowerInvariant()}.";
+                return BackTo(returnUrl, id);
+            }
+
+            if (!string.IsNullOrWhiteSpace(sampleType) && !LabTraceabilityService.SampleTypes.Contains(sampleType))
+            {
+                TempData["ErrorMessage"] = "Choose a valid sample type.";
+                return BackTo(returnUrl, id);
+            }
+
+            if (string.IsNullOrEmpty(result.AccessionNumber)) result.AccessionNumber = await traceability.NextAccessionNumberAsync();
+            if (!string.IsNullOrWhiteSpace(sampleType)) result.SampleType = sampleType;
+            var recollection = result.SampleStatus == "Rejected";
+            result.SampleStatus = "Collected";
+            result.CollectedAt = DateTime.Now;
+            result.CollectedBy = traceability.CurrentUserName;
+            result.RejectionReason = string.Empty;
+            traceability.AddEvent(result, recollection ? "Re-collected" : "Collected", result.SampleType);
+            await _context.SaveChangesAsync();
+            await _auditService.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "COLLECT", "LabResult", id.ToString(), null, $"{result.AccessionNumber} {result.SampleType}");
+            TempData["SuccessMessage"] = $"Sample {result.AccessionNumber} collected.";
+            return BackTo(returnUrl, id);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReceiveSample(int id, string? returnUrl, [FromServices] LabTraceabilityService traceability)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+            if (result.SampleStatus != "Collected")
+            {
+                TempData["ErrorMessage"] = "Only a collected sample can be received in the lab.";
+                return BackTo(returnUrl, id);
+            }
+
+            result.SampleStatus = "Received";
+            result.ReceivedAt = DateTime.Now;
+            result.ReceivedBy = traceability.CurrentUserName;
+            if (result.Status == "Ordered") result.Status = "In Progress";
+            traceability.AddEvent(result, "Received in lab");
+            await _context.SaveChangesAsync();
+            await _auditService.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "RECEIVE", "LabResult", id.ToString(), null, result.AccessionNumber);
+            TempData["SuccessMessage"] = $"Sample {result.AccessionNumber} received in the lab.";
+            return BackTo(returnUrl, id);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public async Task<IActionResult> RejectSample(int id, string? reason, string? returnUrl, [FromServices] LabTraceabilityService traceability)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+            if ((result.SampleStatus != "Collected" && result.SampleStatus != "Received") || result.SignedOffAt.HasValue || !string.IsNullOrWhiteSpace(result.ResultValue))
+            {
+                TempData["ErrorMessage"] = "Only a collected or received sample without a result can be rejected.";
+                return BackTo(returnUrl, id);
+            }
+
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["ErrorMessage"] = "Give the reason for rejecting the sample (e.g. haemolysed, unlabelled, insufficient).";
+                return BackTo(returnUrl, id);
+            }
+
+            result.SampleStatus = "Rejected";
+            result.RejectionReason = reason.Trim();
+            traceability.AddEvent(result, "Rejected", result.RejectionReason);
+            await _context.SaveChangesAsync();
+            await _auditService.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "REJECT", "LabResult", id.ToString(), null, $"{result.AccessionNumber}: {result.RejectionReason}");
+            TempData["SuccessMessage"] = $"Sample {result.AccessionNumber} rejected – a new sample must be collected.";
+            return BackTo(returnUrl, id);
+        }
+
+        /// <summary>Electronic sign-off by the logged-in pathologist, confirmed by re-entering the password.</summary>
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = LabTraceabilityService.SignOffRole)]
+        public async Task<IActionResult> SignOff(int id, string? password, bool confirm, [FromServices] LabTraceabilityService traceability, [FromServices] UserManager<ApplicationUser> userManager)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+
+            string? error = null;
+            if (result.SignedOffAt.HasValue) error = "This result is already signed off.";
+            else if (string.IsNullOrWhiteSpace(result.ResultValue)) error = "Enter the result before signing it off.";
+            else if (result.SampleStatus == "Rejected" || result.SampleStatus == "Awaiting collection" || result.SampleStatus == "Collected") error = "The sample must be received in the lab before the result can be signed off.";
+            else if (!confirm) error = "Tick the confirmation that you have reviewed the result.";
+            if (error != null)
+            {
+                TempData["ErrorMessage"] = error;
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
+
+            var signer = await userManager.GetUserAsync(User);
+            if (signer == null || string.IsNullOrEmpty(password) || !await userManager.CheckPasswordAsync(signer, password))
+            {
+                if (signer != null) await userManager.AccessFailedAsync(signer);
+                TempData["ErrorMessage"] = "Password incorrect – the result was not signed off.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
+
+            await userManager.ResetAccessFailedCountAsync(signer);
+            var name = $"{signer.FirstName} {signer.LastName}".Trim();
+            result.SignedOffAt = DateTime.Now;
+            result.SignedOffByUserId = signer.Id;
+            result.SignedOffBy = string.IsNullOrWhiteSpace(name) ? signer.UserName ?? signer.Id : name;
+            result.VerifiedBy = result.SignedOffBy;
+            result.Status = "Completed";
+            result.ResultDate ??= DateTime.Now;
+            result.SignatureHash = LabTraceabilityService.ComputeSignature(result, signer.Id, result.SignedOffAt.Value);
+            traceability.AddEvent(result, "Signed off", $"Electronically signed by {result.SignedOffBy}");
+            await _context.SaveChangesAsync();
+            await _auditService.LogActivityAsync(signer.Id, "SIGN_OFF", "LabResult", id.ToString(), null, $"{result.AccessionNumber ?? result.OrderNumber}: {result.ResultValue} {result.Unit} signed by {result.SignedOffBy}");
+            TempData["SuccessMessage"] = $"Result signed off by {result.SignedOffBy}. It is now locked.";
+            return RedirectToAction(nameof(ResultDetails), new { id });
+        }
+
+        /// <summary>Withdraws a sign-off so that a result can be corrected; the reason is kept in the chain of custody.</summary>
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = LabTraceabilityService.SignOffRole)]
+        public async Task<IActionResult> RevokeSignOff(int id, string? reason, string? password, [FromServices] LabTraceabilityService traceability, [FromServices] UserManager<ApplicationUser> userManager)
+        {
+            var result = await _context.LabResults.FirstOrDefaultAsync(r => r.Id == id);
+            if (result == null) return NotFound();
+            if (!result.SignedOffAt.HasValue || string.IsNullOrWhiteSpace(reason))
+            {
+                TempData["ErrorMessage"] = !result.SignedOffAt.HasValue ? "This result is not signed off." : "Give the reason for revoking the sign-off.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
+
+            var user = await userManager.GetUserAsync(User);
+            if (user == null || string.IsNullOrEmpty(password) || !await userManager.CheckPasswordAsync(user, password))
+            {
+                if (user != null) await userManager.AccessFailedAsync(user);
+                TempData["ErrorMessage"] = "Password incorrect – the sign-off was not revoked.";
+                return RedirectToAction(nameof(ResultDetails), new { id });
+            }
+
+            var previous = $"signed by {result.SignedOffBy} at {result.SignedOffAt:yyyy-MM-dd HH:mm} UTC";
+            result.SignedOffAt = null;
+            result.SignedOffBy = string.Empty;
+            result.SignedOffByUserId = string.Empty;
+            result.SignatureHash = string.Empty;
+            result.VerifiedBy = string.Empty;
+            traceability.AddEvent(result, "Sign-off revoked", $"{reason.Trim()} (was {previous})");
+            await _context.SaveChangesAsync();
+            await _auditService.LogActivityAsync(user.Id, "REVOKE_SIGN_OFF", "LabResult", id.ToString(), previous, reason.Trim());
+            TempData["SuccessMessage"] = "Sign-off revoked. The result can be corrected and signed off again.";
+            return RedirectToAction(nameof(ResultDetails), new { id });
+        }
+
+        private IActionResult BackTo(string? returnUrl, int id) =>
+            !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? Redirect(returnUrl) : RedirectToAction(nameof(ResultDetails), new { id });
 
         // ======== AJAX Methods ========
 

@@ -173,8 +173,8 @@
                                 <td>@item.Staff?.FirstName @item.Staff?.LastName (@item.Staff?.EmployeeId)</td>
                                 <td>@item.AttendanceDate.ToString("yyyy-MM-dd")</td>
                                 <td>@item.Status</td>
-                                <td>@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("HH:mm") : "-")</td>
-                                <td>@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("HH:mm") : "-")</td>
+                                <td>@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToString("HH:mm") : "-")</td>
+                                <td>@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToString("HH:mm") : "-")</td>
                                 <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
                             </tr>
                         }

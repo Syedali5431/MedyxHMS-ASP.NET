@@ -48,16 +48,26 @@ function Invoke-Step {
 
 if (-not $SkipBuild) {
     $results.Build.Web = Invoke-Step -Name 'BuildWeb' -Action {
-        dotnet build $webProject -v minimal | Out-String
+        $out = dotnet build $webProject -v minimal | Out-String
+        if ($LASTEXITCODE -ne 0) { throw "Build failed: $webProject`n$out" }
+        $out
     }
     $results.Build.LicenseTool = Invoke-Step -Name 'BuildLicenseTool' -Action {
-        dotnet build $licenseProject -v minimal | Out-String
+        $out = dotnet build $licenseProject -v minimal | Out-String
+        if ($LASTEXITCODE -ne 0) { throw "Build failed: $licenseProject`n$out" }
+        $out
     }
 }
 
 if (-not $SkipTests) {
     $results.Tests.UnitAndIntegration = Invoke-Step -Name 'RunTests' -Action {
-        dotnet test (Join-Path $root 'tests\MedyxHMS.Tests\MedyxHMS.Tests.csproj') -v minimal | Out-String
+        # Every test project under tests\ (BedManagement, Chatbot.Security, MobileApi, ...).
+        $out = ''
+        foreach ($project in Get-ChildItem -Path (Join-Path $root 'tests') -Filter '*.csproj' -Recurse) {
+            $out += dotnet test $project.FullName -v minimal | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "Tests failed: $($project.Name)`n$out" }
+        }
+        $out
     }
 }
 

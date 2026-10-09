@@ -32,7 +32,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Ward> CreateWardAsync(Ward ward)
         {
-            ward.CreatedDate = DateTime.UtcNow;
+            ward.CreatedDate = DateTime.Now;
             ward.OccupiedBeds = 0; // New ward starts with no occupied beds
 
             _context.Wards.Add(ward);

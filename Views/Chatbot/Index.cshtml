@@ -91,7 +91,7 @@
                         {
                             var isUser = string.Equals(message.SenderType, "User", StringComparison.OrdinalIgnoreCase);
                             <div class="mb-3 p-3 rounded @(isUser ? "bg-light" : "bg-primary-subtle")">
-                                <div class="small text-muted mb-1">@message.SenderType | @message.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm:ss") UTC</div>
+                                <div class="small text-muted mb-1">@message.SenderType | @message.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss")</div>
                                 <div>@message.Content</div>
                                 @if (!isUser)
                                 {

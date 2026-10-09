@@ -1,0 +1,106 @@
+@model MedyxHMS.Models.InternalAudit
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = Model.AuditNumber;
+    var capa = ViewBag.Capa as List<MedyxHMS.Models.CapaAction> ?? new List<MedyxHMS.Models.CapaAction>();
+    var staff = ViewBag.Staff as List<StaffOption> ?? new List<StaffOption>();
+}
+
+<div class="container-fluid mt-3" style="max-width:1200px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-clipboard-check text-info me-2"></i>@Model.AuditNumber – @Model.Title</h4>
+            <small class="text-muted">@Model.Scope · @Model.Standard · planned @Model.PlannedDate.ToString("dd-MMM-yyyy") · lead auditor @(string.IsNullOrWhiteSpace(Model.LeadAuditor) ? "–" : Model.LeadAuditor)</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 @(Model.Status == "Completed" ? "bg-success" : Model.Status == "In progress" ? "bg-warning text-dark" : "bg-secondary")">@Model.Status</span>
+            @if (Model.Status == "Planned")
+            {
+                <form asp-action="Start" asp-route-id="@Model.Id" method="post">@Html.AntiForgeryToken()<button type="submit" class="btn btn-sm btn-primary">Start audit</button></form>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Audits</a>
+        </div>
+    </div>
+
+    @if (Model.Status == "Completed")
+    {
+        <div class="alert alert-success small">Completed @Model.CompletedDate?.ToString("dd-MMM-yyyy"): @Model.Summary</div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light fw-semibold">Findings</div>
+        <div class="card-body p-0">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light"><tr><th>Type</th><th>Clause</th><th>Finding</th><th>Status</th><th>Actions</th><th style="min-width:330px"></th></tr></thead>
+                <tbody>
+                    @foreach (var f in Model.Findings.OrderBy(f => f.Id))
+                    {
+                        var actions = capa.Where(c => c.AuditFindingId == f.Id).ToList();
+                        <tr>
+                            <td class="small"><span class="badge @(f.FindingType.StartsWith("Major") ? "bg-danger" : f.FindingType.StartsWith("Minor") ? "bg-warning text-dark" : "bg-info text-dark")">@f.FindingType</span></td>
+                            <td class="small">@f.Clause</td>
+                            <td class="small">@f.Description</td>
+                            <td><span class="badge @(f.Status == "Closed" ? "bg-success" : "bg-secondary")">@f.Status</span></td>
+                            <td class="small">
+                                @foreach (var a in actions) { <div>@a.ActionType – @a.OwnerName (@a.Status)</div> }
+                            </td>
+                            <td>
+                                @if (f.Status != "Closed")
+                                {
+                                    <form asp-controller="Quality" asp-action="AddCapa" method="post" class="d-flex gap-1 flex-wrap">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="findingId" value="@f.Id" />
+                                        <input type="hidden" name="actionType" value="Corrective" />
+                                        <input name="description" class="form-control form-control-sm" placeholder="Corrective action" style="min-width:120px;flex:1" />
+                                        <select name="ownerUserId" class="form-select form-select-sm" style="width:auto;max-width:150px">
+                                            <option value="">Owner…</option>
+                                            @foreach (var s in staff) { <option value="@s.Id">@s.Name</option> }
+                                        </select>
+                                        <input name="dueDate" type="date" class="form-control form-control-sm" style="width:auto" value="@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")" />
+                                        <button type="submit" class="btn btn-sm btn-outline-success">Raise</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Findings.Any())
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-3">No findings recorded.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        @if (Model.Status == "In progress")
+        {
+            <div class="card-footer">
+                <form asp-action="AddFinding" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-3">
+                        <select name="findingType" class="form-select form-select-sm">
+                            @foreach (var t in QualityService.FindingTypes) { <option value="@t">@t</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-2"><input name="clause" class="form-control form-control-sm" placeholder="Clause, e.g. 7.5.3" /></div>
+                    <div class="col-md-6"><input name="description" class="form-control form-control-sm" placeholder="Finding (evidence and requirement)" /></div>
+                    <div class="col-md-1"><button type="submit" class="btn btn-sm btn-primary w-100">Add</button></div>
+                </form>
+            </div>
+        }
+    </div>
+
+    @if (Model.Status == "In progress")
+    {
+        <div class="card shadow-sm border-success">
+            <div class="card-body">
+                <form asp-action="Complete" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end">
+                    @Html.AntiForgeryToken()
+                    <div class="col-md-10">
+                        <label class="form-label small fw-semibold mb-1">Complete audit</label>
+                        <input name="summary" class="form-control form-control-sm" placeholder="Summary and conclusion" />
+                    </div>
+                    <div class="col-md-2"><button type="submit" class="btn btn-sm btn-outline-success w-100">Complete</button></div>
+                </form>
+            </div>
+        </div>
+    }
+</div>

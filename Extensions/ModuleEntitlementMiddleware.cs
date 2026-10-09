@@ -14,6 +14,7 @@ namespace MedyxHMS.Extensions
             ("/Appointment", "Appointment"),
             ("/OPD", "OPD"),
             ("/IPD", "IPD"),
+            ("/Discharge", "IPD"),
             ("/Billing", "Billing"),
             ("/Prescription", "Prescription"),
             ("/Pharmacy", "Prescription"),

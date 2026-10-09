@@ -1,0 +1,68 @@
+@model List<MedyxHMS.Models.PatientDocument>
+@using MedyxHMS.Services.Implementations
+@{
+    ViewData["Title"] = "My Documents";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+}
+
+<div class="medical-records-header mb-4">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h1 class="page-title"><i class="fas fa-folder-open text-primary"></i> My Documents</h1>
+            <p class="text-muted">Reports and documents your hospital shared with you, and documents you uploaded for your care team.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="@Url.Action("Index", "MedicalRecords")" class="btn btn-outline-primary"><i class="fas fa-file-medical"></i> Medical Records</a>
+        </div>
+    </div>
+</div>
+
+
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light fw-semibold">Upload a document</div>
+    <div class="card-body">
+        <form asp-area="PatientPortal" asp-controller="Documents" asp-action="Upload" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+            @Html.AntiForgeryToken()
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="docCategory">Category</label>
+                <select id="docCategory" name="category" class="form-select">
+                    @foreach (var c in PatientDocumentService.PatientCategories) { <option value="@c">@c</option> }
+                </select>
+            </div>
+            <div class="col-md-4"><label class="form-label small mb-0" for="docTitle">Title</label><input id="docTitle" name="title" class="form-control" maxlength="200" required placeholder="e.g. Blood test from City Lab" /></div>
+            <div class="col-md-2"><label class="form-label small mb-0" for="docDate">Date on the document</label><input id="docDate" name="documentDate" type="date" class="form-control" max="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+            <div class="col-md-3"><label class="form-label small mb-0" for="docFile">File (PDF, JPG, PNG, DOCX; max 10 MB)</label><input id="docFile" name="file" type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.docx" required /></div>
+            <div class="col-md-9"><input name="description" class="form-control" maxlength="1000" placeholder="Description (optional)" aria-label="Description" /></div>
+            <div class="col-md-3"><button type="submit" class="btn btn-primary w-100"><i class="fas fa-upload"></i> Upload</button></div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light"><tr><th>Document</th><th>Category</th><th>Date</th><th>Added</th><th></th></tr></thead>
+            <tbody>
+                @foreach (var d in Model)
+                {
+                    <tr>
+                        <td><a href="@Url.Action("Download", "Documents", new { area = "PatientPortal", id = d.Id })" target="_blank" rel="noopener">@d.Title</a>@if (!string.IsNullOrWhiteSpace(d.Description)) { <div class="small text-muted">@d.Description</div> }</td>
+                        <td class="small">@d.Category</td>
+                        <td class="small text-nowrap">@d.DocumentDate?.ToString("MMM dd, yyyy")</td>
+                        <td class="small">@d.UploadedAt.ToString("MMM dd, yyyy")<div class="text-muted">@(d.UploadedByPatient ? "Uploaded by you" : "From your hospital")</div></td>
+                        <td class="text-end">
+                            @if (d.UploadedByPatient)
+                            {
+                                <form asp-area="PatientPortal" asp-controller="Documents" asp-action="Remove" asp-route-id="@d.Id" method="post" onsubmit="return confirm('Remove this document?');">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                </form>
+                            }
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any()) { <tr><td colspan="5" class="text-center text-muted py-4">No documents yet.</td></tr> }
+            </tbody>
+        </table>
+    </div>
+</div>

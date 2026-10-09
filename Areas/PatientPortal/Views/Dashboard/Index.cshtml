@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "Patient Dashboard";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 @model MedyxHMS.ViewModels.PatientPortalDashboardViewModel
@@ -61,7 +61,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="text-muted text-uppercase mb-1">Outstanding Balance</h6>
-                        <h3 class="text-danger">₹@(Model.Dashboard?.TotalOutstandingAmount?.ToString("N2") ?? "0.00")</h3>
+                        <h3 class="text-danger">@(Model.Dashboard?.TotalOutstandingAmount?.ToString("C") ?? "0.00")</h3>
                     </div>
                     <i class="fas fa-money-bill-wave fa-3x text-danger opacity-50"></i>
                 </div>
@@ -203,19 +203,24 @@
                                     <tr>
                                         <td><strong>@bill.BillNumber</strong></td>
                                         <td>@bill.BillDate?.ToString("MMM dd, yyyy")</td>
-                                        <td>₹@bill.TotalAmount?.ToString("N2")</td>
+                                        <td>@bill.TotalAmount?.ToString("C")</td>
                                         <td>
+                                            @* Same badges as the Bills page: bills are Unpaid / Partially Paid / Paid (Pending on older records). *@
                                             @if (bill.Status == "Paid")
                                             {
                                                 <span class="badge bg-success">Paid</span>
                                             }
-                                            else if (bill.Status == "Pending")
+                                            else if (bill.Status == "Cancelled")
                                             {
-                                                <span class="badge bg-warning">Pending</span>
+                                                <span class="badge bg-secondary">Cancelled</span>
                                             }
-                                            else if (bill.Status == "Overdue")
+                                            else if (bill.Status == "Overdue" || (bill.DueDate.HasValue && bill.DueDate.Value.Date < DateTime.Today))
                                             {
                                                 <span class="badge bg-danger">Overdue</span>
+                                            }
+                                            else if (!string.IsNullOrWhiteSpace(bill.Status))
+                                            {
+                                                <span class="badge bg-warning text-dark">@bill.Status</span>
                                             }
                                         </td>
                                         <td class="text-end">

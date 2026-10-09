@@ -33,7 +33,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Bed> CreateBedAsync(Bed bed)
         {
-            bed.CreatedDate = DateTime.UtcNow;
+            bed.CreatedDate = DateTime.Now;
             _context.Beds.Add(bed);
             await _context.SaveChangesAsync();
             return bed;
@@ -127,7 +127,7 @@ namespace MedyxHMS.Services.Implementations
 
             bed.PatientId = patientId;
             bed.Status = "Occupied";
-            bed.LastUpdated = DateTime.UtcNow;
+            bed.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
             return (true, string.Empty);
         }
@@ -144,7 +144,7 @@ namespace MedyxHMS.Services.Implementations
             // On discharge, status moves to Cleaning (not directly Available)
             bed.PatientId = null;
             bed.Status = "Cleaning";
-            bed.LastUpdated = DateTime.UtcNow;
+            bed.LastUpdated = DateTime.Now;
             await _context.SaveChangesAsync();
             return (true, string.Empty);
         }
@@ -159,7 +159,7 @@ namespace MedyxHMS.Services.Implementations
             if (fromBed.Status != "Occupied") return (false, "Source bed is not occupied.");
             if (toBed.Status   != "Available") return (false, "Target bed is not available.");
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             toBed.PatientId   = fromBed.PatientId;
             toBed.Status      = "Occupied";
             toBed.LastUpdated = now;
@@ -167,6 +167,13 @@ namespace MedyxHMS.Services.Implementations
             fromBed.PatientId   = null;
             fromBed.Status      = "Cleaning";
             fromBed.LastUpdated = now;
+
+            // The patient's current admission moves with them.
+            var admission = await _context.IPDAdmissions.FirstOrDefaultAsync(a => a.BedId == fromBedId && a.Status == "Admitted");
+            if (admission != null)
+            {
+                admission.BedId = toBedId;
+            }
 
             await _context.SaveChangesAsync();
             return (true, string.Empty);

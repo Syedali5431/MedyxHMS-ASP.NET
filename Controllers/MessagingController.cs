@@ -1,5 +1,6 @@
 using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,8 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    // Staff only: the patient-portal role must not reach this staff area (it exposes other patients' data).
+    [Authorize(Roles = AppRoles.Staff)]
     public class MessagingController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -19,6 +21,20 @@ namespace MedyxHMS.Controllers
 
         private string CurrentUserId => User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
 
+        /// <summary>Display names ("First Last (username)") for the senders / recipients of the given messages.</summary>
+        private async Task<Dictionary<string, string>> UserNamesAsync(IEnumerable<InternalMessage> messages)
+        {
+            var ids = messages.SelectMany(m => new[] { m.SenderId, m.RecipientId, m.ParentMessage?.SenderId })
+                .Where(id => !string.IsNullOrEmpty(id)).Distinct().ToList();
+            var users = await _context.Users.Where(u => ids.Contains(u.Id))
+                .Select(u => new { u.Id, u.FirstName, u.LastName, u.UserName }).ToListAsync();
+            return users.ToDictionary(u => u.Id, u =>
+            {
+                var name = $"{u.FirstName} {u.LastName}".Trim();
+                return string.IsNullOrEmpty(name) ? u.UserName ?? u.Id : $"{name} ({u.UserName})";
+            });
+        }
+
         // ── Inbox ─────────────────────────────────────────────────
 
         public async Task<IActionResult> Index()
@@ -28,6 +44,7 @@ namespace MedyxHMS.Controllers
                 .Where(m => (m.RecipientId == uid || m.IsBroadcast) && !m.IsDeletedByRecipient)
                 .OrderByDescending(m => m.SentAt)
                 .ToListAsync();
+            ViewBag.UserNames = await UserNamesAsync(messages);
             return View(messages);
         }
 
@@ -40,6 +57,7 @@ namespace MedyxHMS.Controllers
                 .Where(m => m.SenderId == uid && !m.IsDeletedBySender)
                 .OrderByDescending(m => m.SentAt)
                 .ToListAsync();
+            ViewBag.UserNames = await UserNamesAsync(messages);
             return View(messages);
         }
 
@@ -85,7 +103,7 @@ namespace MedyxHMS.Controllers
             }
 
             model.SenderId = CurrentUserId;
-            model.SentAt = DateTime.UtcNow;
+            model.SentAt = DateTime.Now;
             model.IsRead = false;
 
             _context.InternalMessages.Add(model);
@@ -111,10 +129,11 @@ namespace MedyxHMS.Controllers
             if (msg.RecipientId == uid && !msg.IsRead)
             {
                 msg.IsRead = true;
-                msg.ReadAt = DateTime.UtcNow;
+                msg.ReadAt = DateTime.Now;
                 await _context.SaveChangesAsync();
             }
 
+            ViewBag.UserNames = await UserNamesAsync(new[] { msg });
             return View(msg);
         }
 
@@ -149,7 +168,7 @@ namespace MedyxHMS.Controllers
             if (!ModelState.IsValid) return View(model);
 
             model.SenderId = CurrentUserId;
-            model.SentAt = DateTime.UtcNow;
+            model.SentAt = DateTime.Now;
             model.IsBroadcast = true;
             model.RecipientId = string.Empty;
 

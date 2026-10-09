@@ -6,6 +6,7 @@ namespace MedyxHMS.DTOs
     public class AppointmentDto
     {
         public int Id { get; set; }
+        public int? HospitalId { get; set; } // multi-hospital: shown when viewing all hospitals
         public int PatientId { get; set; }
         public int DoctorId { get; set; }
         public string PatientName { get; set; }

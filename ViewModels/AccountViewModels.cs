@@ -23,6 +23,13 @@ namespace MedyxHMS.ViewModels
         /// </summary>
         [Display(Name = "Login as")]
         public string? SelectedRole { get; set; }
+
+        /// <summary>
+        /// Hospital to work in after signing in (staff with more than one hospital): a hospital id, or "all"
+        /// for a SuperAdmin. Checked against the user's hospital access.
+        /// </summary>
+        [Display(Name = "Hospital")]
+        public string? SelectedHospital { get; set; }
     }
 
     public class RegisterViewModel

@@ -95,7 +95,7 @@ namespace MedyxHMS.Controllers
             }).ToList();
 
             var title = "Patient Management Export";
-            var stamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+            var stamp = DateTime.Now.ToString("yyyyMMdd_HHmmss");
 
             if (format == "csv")
             {
@@ -123,6 +123,7 @@ namespace MedyxHMS.Controllers
             }
 
             var patientDto = MapToDto(patient);
+            ViewBag.PatientUserId = patient.UserId; // portal account: profile picture
 
             var appointments = await _context.Appointments
                 .Include(a => a.Doctor)

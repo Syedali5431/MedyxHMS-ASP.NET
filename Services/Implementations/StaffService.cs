@@ -86,7 +86,7 @@ namespace MedyxHMS.Services.Implementations
                     LastName = staff.LastName,
                     PhoneNumber = staff.Phone,
                     IsActive = staff.IsActive,
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 };
 
                 var result = await _userManager.CreateAsync(user, password);
@@ -97,7 +97,7 @@ namespace MedyxHMS.Services.Implementations
 
                 // Set the staff ID to match the user ID
                 staff.Id = user.Id;
-                staff.CreatedDate = DateTime.UtcNow;
+                staff.CreatedDate = DateTime.Now;
                 // The caller (StaffController) builds staff.User as a throwaway placeholder just
                 // to carry UserName/Email/Phone into this method. Left as-is, EF's change tracker
                 // would cascade-track that incomplete object as a second, bogus ApplicationUser
@@ -121,7 +121,7 @@ namespace MedyxHMS.Services.Implementations
                             {
                                 StaffId = user.Id,
                                 RoleId = roleId,
-                                AssignedDate = DateTime.UtcNow,
+                                AssignedDate = DateTime.Now,
                                 AssignedBy = "System" // TODO: Get current user
                             };
                             _context.StaffRoles.Add(staffRole);
@@ -183,16 +183,19 @@ namespace MedyxHMS.Services.Implementations
                 // Store old values for audit
                 var oldValues = $"EmployeeId:{existingStaff.EmployeeId},FirstName:{existingStaff.FirstName},LastName:{existingStaff.LastName}";
 
-                // Update user information
-                existingStaff.User.EmployeeId = staff.EmployeeId;
-                existingStaff.User.FirstName = staff.FirstName;
-                existingStaff.User.LastName = staff.LastName;
-                existingStaff.User.PhoneNumber = staff.Phone;
-                existingStaff.User.IsActive = staff.IsActive;
-                if (!string.IsNullOrWhiteSpace(staff.Email))
+                // Update user information (staff seeded/imported without a login account have no user)
+                if (existingStaff.User != null)
                 {
-                    existingStaff.User.Email = staff.Email;
-                    existingStaff.User.NormalizedEmail = staff.Email.ToUpperInvariant();
+                    existingStaff.User.EmployeeId = staff.EmployeeId;
+                    existingStaff.User.FirstName = staff.FirstName;
+                    existingStaff.User.LastName = staff.LastName;
+                    existingStaff.User.PhoneNumber = staff.Phone;
+                    existingStaff.User.IsActive = staff.IsActive;
+                    if (!string.IsNullOrWhiteSpace(staff.Email))
+                    {
+                        existingStaff.User.Email = staff.Email;
+                        existingStaff.User.NormalizedEmail = staff.Email.ToUpperInvariant();
+                    }
                 }
 
                 // Update staff information
@@ -222,7 +225,7 @@ namespace MedyxHMS.Services.Implementations
                             {
                                 StaffId = staff.Id,
                                 RoleId = roleId,
-                                AssignedDate = DateTime.UtcNow,
+                                AssignedDate = DateTime.Now,
                                 AssignedBy = "System" // TODO: Get current user
                             };
                             _context.StaffRoles.Add(staffRole);
@@ -231,7 +234,8 @@ namespace MedyxHMS.Services.Implementations
                 }
 
                 await _context.SaveChangesAsync();
-                await SyncIdentityRolesAsync(existingStaff.User, roleIds);
+                if (existingStaff.User != null)
+                    await SyncIdentityRolesAsync(existingStaff.User, roleIds);
                 await transaction.CommitAsync();
 
                 // Log activity
@@ -548,7 +552,7 @@ namespace MedyxHMS.Services.Implementations
                     {
                         StaffId = staffId,
                         RoleId = roleId,
-                        AssignedDate = DateTime.UtcNow,
+                        AssignedDate = DateTime.Now,
                         AssignedBy = "System" // TODO: Get current user
                     };
                     _context.StaffRoles.Add(staffRole);
@@ -592,8 +596,8 @@ namespace MedyxHMS.Services.Implementations
             stats["ActiveStaff"] = await _context.Staff.CountAsync(s => s.IsActive);
             stats["InactiveStaff"] = await _context.Staff.CountAsync(s => !s.IsActive);
             stats["NewStaffThisMonth"] = await _context.Staff.CountAsync(s =>
-                s.CreatedDate.Month == DateTime.UtcNow.Month &&
-                s.CreatedDate.Year == DateTime.UtcNow.Year);
+                s.CreatedDate.Month == DateTime.Now.Month &&
+                s.CreatedDate.Year == DateTime.Now.Year);
 
             return stats;
         }

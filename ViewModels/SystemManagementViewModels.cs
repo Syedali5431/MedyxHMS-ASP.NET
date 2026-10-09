@@ -118,6 +118,12 @@ namespace MedyxHMS.ViewModels
         public bool IsActive { get; init; }
         public DateTime? LastLoginDate { get; init; }
         public DateTime CreatedDate { get; init; }
+
+        /// <summary>Hospitals the user works in ("All hospitals" for a SuperAdmin).</summary>
+        public string Hospitals { get; init; } = string.Empty;
+
+        /// <summary>Staff account whose hospitals the current user may change (admins: SuperAdmin only).</summary>
+        public bool CanAssignHospitals { get; init; }
     }
 
     public sealed class UserManagementViewVM

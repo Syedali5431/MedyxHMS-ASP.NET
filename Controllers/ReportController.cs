@@ -3,7 +3,8 @@ using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.RegularExpressions;
+using System.Globalization;
+using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
@@ -20,6 +21,10 @@ namespace MedyxHMS.Controllers
         private readonly IReportTemplateService _reportTemplateService;
         private readonly IReportCatalogVisibilityService _reportCatalogVisibilityService;
         private readonly IExportService _exportService;
+        private readonly IReportEngine _reportEngine;
+        private readonly INetworkPrintService _networkPrint;
+        private readonly IHospitalContext _hospitalContext;
+        private readonly IAuditService _audit;
         private readonly ILogger<ReportController> _logger;
 
         public ReportController(
@@ -27,31 +32,28 @@ namespace MedyxHMS.Controllers
             IReportTemplateService reportTemplateService,
             IReportCatalogVisibilityService reportCatalogVisibilityService,
             IExportService exportService,
+            IReportEngine reportEngine,
+            INetworkPrintService networkPrint,
+            IHospitalContext hospitalContext,
+            IAuditService audit,
             ILogger<ReportController> logger)
         {
             _reportService = reportService;
             _reportTemplateService = reportTemplateService;
             _reportCatalogVisibilityService = reportCatalogVisibilityService;
             _exportService = exportService;
+            _reportEngine = reportEngine;
+            _networkPrint = networkPrint;
+            _hospitalContext = hospitalContext;
+            _audit = audit;
             _logger = logger;
         }
 
-        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> Index(string? reportKey, DateTime? reportDate, DateTime? startDate, DateTime? endDate)
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant,Doctor,Nurse")]
+        public async Task<IActionResult> Index(string? reportKey, DateTime? reportDate, DateTime? startDate, DateTime? endDate, string? month, string? staffId)
         {
             var canManageTemplates = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
-            var isSuperAdmin = User.IsInRole("SuperAdmin");
-            var userRoles = User.Claims
-                .Where(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase))
-                .Select(c => c.Value)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var items = await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(
-                canManageTemplates,
-                isSuperAdmin,
-                userRoles,
-                includeInactiveForSuperAdmin: false);
+            var items = await GetVisibleReportsAsync();
 
             var selected = string.IsNullOrWhiteSpace(reportKey)
                 ? null
@@ -83,291 +85,163 @@ namespace MedyxHMS.Controllers
                     .ToList()
             };
 
-            if (selected != null)
+            // Data reports are built from live data and shown in the detail panel (same figures as the PDF / Excel export).
+            if (selected != null && _reportEngine.GetDefinition(selected.Key) != null)
             {
-                var now = DateTime.UtcNow;
-                var reportDateValue = reportDate?.Date ?? now.Date;
-                var startDateValue = startDate?.Date ?? now.AddMonths(-1).Date;
-                var endDateValue = endDate?.Date ?? now.Date;
-
                 try
                 {
-                    switch (selected.Key)
-                    {
-                        case "R1":
-                            ViewData["R1Model"] = await _reportService.GenerateDailyTransactionReportAsync(reportDateValue);
-                            break;
-                        case "R2":
-                            ViewData["R2Model"] = await _reportService.GenerateAllTransactionReportAsync(startDateValue, endDateValue);
-                            break;
-                        case "R3":
-                            ViewData["R3Model"] = await _reportService.GenerateAppointmentReportAsync(startDateValue, endDateValue);
-                            break;
-                        case "R4":
-                            ViewData["R4Model"] = await _reportService.GenerateOPDReportAsync(startDateValue, endDateValue);
-                            break;
-                        case "R5":
-                            ViewData["R5Model"] = await _reportService.GenerateIPDReportAsync(startDateValue, endDateValue);
-                            break;
-                    }
+                    var document = await _reportEngine.BuildAsync(selected.Key, Parameters(reportDate, startDate, endDate, month, staffId));
+                    ViewData["ReportDocument"] = document;
+                    ViewData["ReportFormAction"] = Url.Action(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error pre-loading report model for key {Key} in workspace", selected.Key);
-                    ViewData["R1Model"] = new DailyTransactionReportViewModel { ReportDate = reportDateValue };
-                    ViewData["R2Model"] = new AllTransactionReportViewModel { StartDate = startDateValue, EndDate = endDateValue };
-                    ViewData["R3Model"] = new AppointmentReportViewModel { StartDate = startDateValue, EndDate = endDateValue };
-                    ViewData["R4Model"] = new OPDReportViewModel { StartDate = startDateValue, EndDate = endDateValue };
-                    ViewData["R5Model"] = new IPDReportViewModel { StartDate = startDateValue, EndDate = endDateValue };
+                    _logger.LogError(ex, "Report {Key} could not be built", selected.Key);
+                    ViewData["ReportError"] = "The report could not be built. Please try again or choose another period.";
                 }
             }
 
             return View(vm);
         }
 
+        // Old links to the converted reports open them in the workspace.
         [HttpGet]
-        public IActionResult DailyTransactionReport(DateTime? reportDate)
-        {
-            return RedirectToAction(nameof(Index), new { reportKey = "R1", reportDate });
-        }
+        public IActionResult DailyTransactionReport(DateTime? reportDate) => RedirectToAction(nameof(Index), new { reportKey = "R1", reportDate });
 
         [HttpGet]
-        public IActionResult AllTransactionReport(DateTime? startDate, DateTime? endDate)
-        {
-            return RedirectToAction(nameof(Index), new { reportKey = "R2", startDate, endDate });
-        }
+        public IActionResult AllTransactionReport(DateTime? startDate, DateTime? endDate) => RedirectToAction(nameof(Index), new { reportKey = "R2", startDate, endDate });
 
         [HttpGet]
-        public IActionResult AppointmentReport(DateTime? startDate, DateTime? endDate)
-        {
-            return RedirectToAction(nameof(Index), new { reportKey = "R3", startDate, endDate });
-        }
+        public IActionResult AppointmentReport(DateTime? startDate, DateTime? endDate) => RedirectToAction(nameof(Index), new { reportKey = "R3", startDate, endDate });
 
         [HttpGet]
-        public IActionResult OPDLegacyReport(DateTime? startDate, DateTime? endDate)
-        {
-            return RedirectToAction(nameof(Index), new { reportKey = "R4", startDate, endDate });
-        }
+        public IActionResult OPDLegacyReport(DateTime? startDate, DateTime? endDate) => RedirectToAction(nameof(Index), new { reportKey = "R4", startDate, endDate });
 
         [HttpGet]
-        public IActionResult IPDLegacyReport(DateTime? startDate, DateTime? endDate)
-        {
-            return RedirectToAction(nameof(Index), new { reportKey = "R5", startDate, endDate });
-        }
+        public IActionResult IPDLegacyReport(DateTime? startDate, DateTime? endDate) => RedirectToAction(nameof(Index), new { reportKey = "R5", startDate, endDate });
 
         [HttpGet]
-        public async Task<IActionResult> ExportLegacyReport(string reportKey, string format = "pdf", DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null, string? fileName = null)
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
+        public IActionResult ExportLegacyReport(string reportKey, string format = "pdf", DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null)
+            => RedirectToAction(nameof(Export), new { reportKey, format, reportDate, startDate, endDate });
+
+        // GET /Report/Export?reportKey=R6&format=pdf|excel&startDate=…&endDate=… – the report as a PDF or Excel file.
+        [HttpGet]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant,Doctor,Nurse")]
+        public async Task<IActionResult> Export(string reportKey, string format = "pdf", DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null, string? month = null, string? staffId = null)
         {
-            var now = DateTime.UtcNow;
-            var normalizedFormat = (format ?? "pdf").Trim().ToLowerInvariant();
-
-            string title;
-            IReadOnlyList<string> headers;
-            IReadOnlyList<IReadOnlyList<string>> rows;
-
-            switch ((reportKey ?? string.Empty).Trim().ToUpperInvariant())
+            if (!await CanSeeReportAsync(reportKey))
             {
-                case "R1":
-                {
-                    var model = await _reportService.GenerateDailyTransactionReportAsync(reportDate?.Date ?? now.Date);
-                    title = "Daily Transaction Report";
-                    headers = new[] { "Transaction ID", "Type", "Amount", "Description", "Reference", "Time", "Processed By", "Status" };
-                    rows = model.TransactionData.Select(tx =>
-                    {
-                        var type = tx.GetType();
-                        return (IReadOnlyList<string>)new[]
-                        {
-                            type.GetProperty("TransactionId")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("TransactionType")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("Amount")?.GetValue(tx)?.ToString() ?? "0",
-                            type.GetProperty("Description")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("ReferenceNumber")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("TransactionDate")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("ProcessedBy")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("Status")?.GetValue(tx)?.ToString() ?? "-"
-                        };
-                    }).ToList();
-                    break;
-                }
-                case "R2":
-                {
-                    var model = await _reportService.GenerateAllTransactionReportAsync(startDate?.Date ?? now.AddMonths(-1).Date, endDate?.Date ?? now.Date);
-                    title = "All Transaction Report";
-                    headers = new[] { "Transaction ID", "Type", "Amount", "Description", "Reference", "Date", "Processed By", "Status" };
-                    rows = model.TransactionData.Select(tx =>
-                    {
-                        var type = tx.GetType();
-                        return (IReadOnlyList<string>)new[]
-                        {
-                            type.GetProperty("TransactionId")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("TransactionType")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("Amount")?.GetValue(tx)?.ToString() ?? "0",
-                            type.GetProperty("Description")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("ReferenceNumber")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("TransactionDate")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("ProcessedBy")?.GetValue(tx)?.ToString() ?? "-",
-                            type.GetProperty("Status")?.GetValue(tx)?.ToString() ?? "-"
-                        };
-                    }).ToList();
-                    break;
-                }
-                case "R3":
-                {
-                    var model = await _reportService.GenerateAppointmentReportAsync(startDate?.Date ?? now.AddMonths(-1).Date, endDate?.Date ?? now.Date);
-                    title = "Appointment Report";
-                    headers = new[] { "ID", "Patient", "Doctor", "Date", "Time", "Type", "Priority", "Status" };
-                    rows = model.AppointmentData.Select(item =>
-                    {
-                        var type = item.GetType();
-                        return (IReadOnlyList<string>)new[]
-                        {
-                            type.GetProperty("AppointmentId")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("PatientName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("DoctorName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("AppointmentDate")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("AppointmentTime")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("AppointmentType")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("Priority")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("Status")?.GetValue(item)?.ToString() ?? "-"
-                        };
-                    }).ToList();
-                    break;
-                }
-                case "R4":
-                {
-                    var model = await _reportService.GenerateOPDReportAsync(startDate?.Date ?? now.AddMonths(-1).Date, endDate?.Date ?? now.Date);
-                    title = "OPD Report";
-                    headers = new[] { "ID", "Patient", "Doctor", "Visit Date", "Diagnosis", "Consultation Fee", "Payment Status", "Created By" };
-                    rows = model.OPDVisitData.Select(item =>
-                    {
-                        var type = item.GetType();
-                        return (IReadOnlyList<string>)new[]
-                        {
-                            type.GetProperty("Id")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("PatientName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("DoctorName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("VisitDate")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("Diagnosis")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("ConsultationFee")?.GetValue(item)?.ToString() ?? "0",
-                            type.GetProperty("PaymentStatus")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("CreatedBy")?.GetValue(item)?.ToString() ?? "-"
-                        };
-                    }).ToList();
-                    break;
-                }
-                case "R5":
-                {
-                    var model = await _reportService.GenerateIPDReportAsync(startDate?.Date ?? now.AddMonths(-1).Date, endDate?.Date ?? now.Date);
-                    title = "IPD Report";
-                    headers = new[] { "ID", "Patient", "Doctor", "Ward", "Bed", "Admission Date", "Discharge Date", "LOS (days)", "Admission Type", "Status" };
-                    rows = model.IPDAdmissionData.Select(item =>
-                    {
-                        var type = item.GetType();
-                        return (IReadOnlyList<string>)new[]
-                        {
-                            type.GetProperty("Id")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("PatientName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("DoctorName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("WardName")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("BedNumber")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("AdmissionDate")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("DischargeDate")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("LengthOfStay")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("AdmissionType")?.GetValue(item)?.ToString() ?? "-",
-                            type.GetProperty("Status")?.GetValue(item)?.ToString() ?? "-"
-                        };
-                    }).ToList();
-                    break;
-                }
-                default:
-                    return NotFound();
+                return NotFound();
             }
 
-            var safeDate = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
-            var safeFileName = BuildSafeExportFileName(fileName, title, safeDate);
-            if (normalizedFormat == "excel" || normalizedFormat == "xlsx")
+            var doc = await _reportEngine.BuildAsync(reportKey, Parameters(reportDate, startDate, endDate, month, staffId));
+            if (doc == null)
             {
-                var bytes = _exportService.BuildExcel(reportKey, headers, rows);
-                return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", $"{safeFileName}.xlsx");
+                return NotFound();
             }
 
-            var pdf = _exportService.BuildPdfTable(title, headers, rows);
-            return File(pdf, "application/pdf", $"{safeFileName}.pdf");
+            var excel = string.Equals(format, "excel", StringComparison.OrdinalIgnoreCase) || string.Equals(format, "xlsx", StringComparison.OrdinalIgnoreCase);
+            await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "EXPORT", "Report", doc.Key, null, $"{doc.Title} ({doc.PeriodText}) as {(excel ? "Excel" : "PDF")}");
+            return excel
+                ? File(_exportService.BuildReportExcel(doc), "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", doc.FileName() + ".xlsx")
+                : File(_exportService.BuildReportPdf(doc), "application/pdf", doc.FileName() + ".pdf");
         }
 
-        private static string BuildSafeExportFileName(string? requestedFileName, string fallbackTitle, string timestamp)
+        // POST /Report/PrintToPrinter – the report sent straight to a network document printer (Settings → Printers).
+        [HttpPost, ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,SuperAdmin,Accountant,Doctor,Nurse")]
+        public async Task<IActionResult> PrintToPrinter(string reportKey, int printerId, string? returnUrl, DateTime? reportDate = null, DateTime? startDate = null, DateTime? endDate = null, string? month = null, string? staffId = null)
         {
-            var candidate = string.IsNullOrWhiteSpace(requestedFileName)
-                ? $"{fallbackTitle}_{timestamp}"
-                : requestedFileName.Trim();
+            var back = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Action(nameof(Index), new { reportKey })!;
+            if (!await CanSeeReportAsync(reportKey))
+            {
+                return NotFound();
+            }
 
-            candidate = Regex.Replace(candidate, @"\.[A-Za-z0-9]{2,5}$", string.Empty);
-            candidate = Regex.Replace(candidate, @"[^A-Za-z0-9\-_ ]", " ");
-            candidate = Regex.Replace(candidate, @"\s+", " ").Trim();
+            var doc = await _reportEngine.BuildAsync(reportKey, Parameters(reportDate, startDate, endDate, month, staffId));
+            var hospitalId = _hospitalContext.ActiveHospitalId ?? _hospitalContext.HospitalIdForNewRecords;
+            var printer = (await _networkPrint.GetPrintersForHospitalAsync(hospitalId, Printer.TypeDocument)).FirstOrDefault(p => p.Id == printerId);
+            if (doc == null || printer == null)
+            {
+                TempData["ErrorMessage"] = "That printer is not available for your hospital.";
+                return LocalRedirect(back);
+            }
 
-            if (string.IsNullOrWhiteSpace(candidate))
-                candidate = $"report_{timestamp}";
-
-            return candidate.Replace(' ', '_');
+            var section = doc.Sections.FirstOrDefault() ?? new ReportSection();
+            var data = _networkPrint.BuildDocument(printer, _exportService.BuildReportPdf(doc), $"{doc.Title} - {doc.PeriodText}",
+                section.Columns.Select(c => c.Header).ToList(),
+                section.Rows.Select(r => (IReadOnlyList<string>)section.Columns.Select((c, i) => doc.Format(i < r.Length ? r[i] : null, c.Kind)).ToList()).ToList());
+            var result = await _networkPrint.SendAsync(printer, data, HttpContext.RequestAborted);
+            await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier), "PRINT", "Report", doc.Key, null, $"{doc.Title} → {printer.Name}: {result.Message}");
+            TempData[result.Success ? "SuccessMessage" : "ErrorMessage"] = result.Success ? $"{doc.Title} sent to {printer.Name}." : result.Message;
+            return LocalRedirect(back);
         }
+
+        // ── Standalone report pages (also listed in the Reports workspace) ──
 
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> DepartmentReport(DateTime? startDate, DateTime? endDate)
-        {
-            var start = startDate?.Date ?? DateTime.UtcNow.AddMonths(-1).Date;
-            var end = endDate?.Date ?? DateTime.UtcNow.Date;
-            var model = await _reportService.GenerateDepartmentReportAsync(null, start, end);
-            ViewData["StartDate"] = start;
-            ViewData["EndDate"] = end;
-            return View(model);
-        }
+        public Task<IActionResult> DepartmentReport(DateTime? startDate, DateTime? endDate) => ReportPageAsync("R41", Parameters(null, startDate, endDate, null, null));
 
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> FinancialReport(DateTime? startDate, DateTime? endDate)
-        {
-            var start = startDate?.Date ?? DateTime.UtcNow.AddMonths(-1).Date;
-            var end = endDate?.Date ?? DateTime.UtcNow.Date;
-            var model = await _reportService.GenerateFinancialReportAsync(start, end);
-            ViewData["StartDate"] = start;
-            ViewData["EndDate"] = end;
-            return View(model);
-        }
+        public Task<IActionResult> FinancialReport(DateTime? startDate, DateTime? endDate) => ReportPageAsync("R42", Parameters(null, startDate, endDate, null, null));
 
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> OccupancyReport(DateTime? date)
-        {
-            var reportDate = date?.Date ?? DateTime.UtcNow.Date;
-            var model = await _reportService.GenerateOccupancyReportAsync(reportDate);
-            var avg = await _reportService.GetAverageOccupancyRateAsync(reportDate.AddDays(-29), reportDate);
-            ViewData["Date"] = reportDate;
-            ViewData["AverageOccupancyRate"] = avg;
-            return View(model);
-        }
+        public Task<IActionResult> OccupancyReport(DateTime? date, DateTime? reportDate) => ReportPageAsync("R43", Parameters(reportDate ?? date, null, null, null, null));
 
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> StaffReport(string? staffId, DateTime? startDate, DateTime? endDate)
-        {
-            var start = startDate?.Date ?? DateTime.UtcNow.AddMonths(-1).Date;
-            var end = endDate?.Date ?? DateTime.UtcNow.Date;
-            var model = await _reportService.GenerateStaffAttendanceReportAsync(staffId ?? string.Empty, start, end);
-            ViewData["StaffId"] = staffId ?? string.Empty;
-            ViewData["StartDate"] = start;
-            ViewData["EndDate"] = end;
-            return View(model);
-        }
+        public Task<IActionResult> StaffReport(string? staffId, DateTime? startDate, DateTime? endDate) => ReportPageAsync("R44", Parameters(null, startDate, endDate, null, staffId));
 
         [HttpGet]
         [Authorize(Roles = "Admin,SuperAdmin,Accountant")]
-        public async Task<IActionResult> PayrollReport(DateTime? month)
+        public Task<IActionResult> PayrollReport(string? month) => ReportPageAsync("R28", Parameters(null, null, null, month, null));
+
+        private async Task<IActionResult> ReportPageAsync(string key, ReportParameters parameters)
         {
-            var m = month?.Date ?? new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1);
-            var model = await _reportService.GeneratePayrollReportAsync(m);
-            ViewData["PayrollMonth"] = m;
-            return View(model);
+            var doc = await _reportEngine.BuildAsync(key, parameters);
+            if (doc == null) return NotFound();
+            ViewData["ReportFormAction"] = Request.Path.Value;
+            return View("ReportPage", doc);
+        }
+
+        private static ReportParameters Parameters(DateTime? reportDate, DateTime? startDate, DateTime? endDate, string? month, string? staffId)
+        {
+            DateTime? monthValue = null;
+            if (!string.IsNullOrWhiteSpace(month)
+                && DateTime.TryParseExact(month.Trim(), new[] { "yyyy-MM", "yyyy-MM-dd", "MM/yyyy" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed))
+            {
+                monthValue = parsed;
+            }
+
+            return new ReportParameters { Date = reportDate, StartDate = startDate, EndDate = endDate, Month = monthValue, StaffId = staffId };
+        }
+
+        private async Task<List<ReportCatalogItem>> GetVisibleReportsAsync()
+        {
+            var canManageTemplates = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            var userRoles = User.Claims
+                .Where(c => c.Type.EndsWith("/role", StringComparison.OrdinalIgnoreCase))
+                .Select(c => c.Value)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return (await _reportCatalogVisibilityService.GetVisibleItemsForUserAsync(
+                canManageTemplates,
+                User.IsInRole("SuperAdmin"),
+                userRoles,
+                includeInactiveForSuperAdmin: false)).ToList();
+        }
+
+        /// <summary>Reports hidden from the user's roles (System Management → Report Management) cannot be exported either.</summary>
+        private async Task<bool> CanSeeReportAsync(string? key)
+        {
+            if (string.IsNullOrWhiteSpace(key) || _reportEngine.GetDefinition(key) == null) return false;
+            var items = await GetVisibleReportsAsync();
+            return items.Any(i => i.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
         }
 
         [HttpGet]
@@ -406,7 +280,7 @@ namespace MedyxHMS.Controllers
                 Name = name.Trim(),
                 ReportType = reportType.Trim(),
                 Description = description?.Trim() ?? string.Empty,
-                CreatedDate = DateTime.UtcNow,
+                CreatedDate = DateTime.Now,
                 CreatedBy = User.Identity?.Name ?? "System",
                 IsActive = true
             };
@@ -473,7 +347,7 @@ namespace MedyxHMS.Controllers
             existing.ReportType = model.ReportType;
             existing.IsActive = model.IsActive;
             existing.IsDefault = model.IsDefault;
-            existing.ModifiedDate = DateTime.UtcNow;
+            existing.ModifiedDate = DateTime.Now;
             existing.ModifiedBy = User.Identity?.Name ?? "System";
 
             await _reportTemplateService.UpdateTemplateAsync(existing);
@@ -513,6 +387,11 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> Preview(int id)
         {
+            if (await _reportTemplateService.GetTemplateByIdAsync(id) == null)
+            {
+                return NotFound();
+            }
+
             var result = await _reportTemplateService.ExecuteSavedReportAsync(id);
             return View(result);
         }
@@ -576,10 +455,20 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> ScheduleReport(ReportSchedule schedule)
         {
-            schedule.CreatedBy = User.Identity?.Name ?? "System";
-            schedule.CreatedDate = DateTime.UtcNow;
-            await _reportService.CreateReportScheduleAsync(schedule);
-            TempData["SuccessMessage"] = "Schedule created successfully.";
+            // CreatedBy is a foreign key to Staff.Id, and a staff record shares its user's Id
+            // (the login name used previously never matched, so every save failed).
+            schedule.CreatedBy = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
+            schedule.CreatedDate = DateTime.Now;
+            try
+            {
+                await _reportService.CreateReportScheduleAsync(schedule);
+                TempData["SuccessMessage"] = "Schedule created successfully.";
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+            {
+                _logger.LogError(ex, "Failed to save report schedule {ReportName}", schedule.ReportName);
+                TempData["ErrorMessage"] = "The schedule could not be saved. Your account must be linked to a staff record.";
+            }
             return RedirectToAction(nameof(ScheduleReport));
         }
 
@@ -603,7 +492,7 @@ namespace MedyxHMS.Controllers
             var existing = await _reportTemplateService.GetTemplatesByTypeAsync("LegacyPHP");
             var existingNames = existing.Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var actor = User?.Identity?.Name ?? "System";
             var added = 0;
 
@@ -644,7 +533,7 @@ namespace MedyxHMS.Controllers
         {
             var existing = await _reportTemplateService.GetTemplatesByTypeAsync("Certificate");
             var existingNames = existing.Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var actor = User?.Identity?.Name ?? "System";
 
             foreach (var tpl in CertificateTemplates)

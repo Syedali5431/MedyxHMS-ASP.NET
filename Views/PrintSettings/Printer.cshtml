@@ -1,0 +1,172 @@
+@model MedyxHMS.Models.Printer
+@using MedyxHMS.Models
+@{
+    var isNew = Model.Id == 0;
+    ViewData["Title"] = isNew ? "Add Printer" : "Edit Printer";
+    var hospitals = ViewBag.Hospitals as List<MedyxHMS.Services.Interfaces.HospitalOption> ?? new();
+    var canChooseAll = ViewBag.CanChooseAllHospitals == true;
+}
+
+<div class="container mt-3" style="max-width:900px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h4 class="mb-0"><i class="fas fa-print text-primary me-2"></i>@ViewData["Title"]</h4>
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Printers</a>
+    </div>
+
+    <form asp-action="Printer" method="post" class="card shadow-sm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label fw-semibold">Printer name *</label>
+                    <input asp-for="Name" class="form-control" maxlength="100" placeholder="e.g. Reception receipt printer" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold d-block">Printer type *</label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" asp-for="PrinterType" value="@Printer.TypeReceipt" id="typeReceipt" />
+                        <label class="btn btn-outline-primary" for="typeReceipt"><i class="fas fa-receipt me-1"></i>Receipt (thermal roll)</label>
+                        <input type="radio" class="btn-check" asp-for="PrinterType" value="@Printer.TypeDocument" id="typeDocument" />
+                        <label class="btn btn-outline-primary" for="typeDocument"><i class="fas fa-file-alt me-1"></i>Document (A4 / A5)</label>
+                    </div>
+                    <span asp-validation-for="PrinterType" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label class="form-label fw-semibold d-block">Connection *</label>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="ConnectionType" value="@Printer.ConnectionIp" id="connIp" />
+                        <label class="form-check-label" for="connIp"><i class="fas fa-ethernet me-1"></i>IP printer (TCP/IP, raw port)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" asp-for="ConnectionType" value="@Printer.ConnectionLan" id="connLan" />
+                        <label class="form-check-label" for="connLan"><i class="fas fa-network-wired me-1"></i>Shared LAN printer (Windows share)</label>
+                    </div>
+                    <span asp-validation-for="ConnectionType" class="text-danger small d-block"></span>
+                </div>
+
+                <div class="col-md-8 conn-ip">
+                    <label asp-for="IpAddress" class="form-label fw-semibold">IP address or host name *</label>
+                    <input asp-for="IpAddress" class="form-control" maxlength="255" placeholder="192.168.1.50" />
+                    <span asp-validation-for="IpAddress" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4 conn-ip">
+                    <label asp-for="Port" class="form-label fw-semibold">Port *</label>
+                    <input asp-for="Port" type="number" min="1" max="65535" class="form-control" />
+                    <span asp-validation-for="Port" class="text-danger small"></span>
+                    <div class="form-text">9100 for almost all printers.</div>
+                </div>
+                <div class="col-12 conn-lan">
+                    <label asp-for="SharePath" class="form-label fw-semibold">Share path *</label>
+                    <input asp-for="SharePath" class="form-control" maxlength="255" placeholder="\\RECEPTION-PC\EPSON-TM-T82" />
+                    <span asp-validation-for="SharePath" class="text-danger small"></span>
+                    <div class="form-text">\\computer-name\share-name of a printer shared in Windows (Printer properties → Sharing).</div>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="PaperSize" class="form-label fw-semibold">Paper</label>
+                    <select asp-for="PaperSize" class="form-select" id="paperSize">
+                        <option value="80mm" data-type="Receipt">80 mm roll</option>
+                        <option value="58mm" data-type="Receipt">58 mm roll</option>
+                        <option value="A4" data-type="Document">A4</option>
+                        <option value="A5" data-type="Document">A5</option>
+                        <option value="Letter" data-type="Document">Letter</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="PrintLanguage" class="form-label fw-semibold">Print language</label>
+                    <select asp-for="PrintLanguage" class="form-select" id="printLanguage">
+                        <option value="@Printer.LanguageEscPos" data-type="Receipt">ESC/POS (thermal printers)</option>
+                        <option value="@Printer.LanguagePdf" data-type="Document">PDF (direct PDF printing)</option>
+                        <option value="@Printer.LanguageText" data-type="Receipt Document">Plain text</option>
+                    </select>
+                    <div class="form-text doc-only">PDF needs a printer that prints PDF files directly (most office laser printers); otherwise use plain text.</div>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Copies" class="form-label fw-semibold">Copies</label>
+                    <input asp-for="Copies" type="number" min="1" max="5" class="form-control" />
+                    <span asp-validation-for="Copies" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="HospitalId" class="form-label fw-semibold">Hospital</label>
+                    <select asp-for="HospitalId" class="form-select">
+                        @if (canChooseAll)
+                        {
+                            <option value="">All hospitals</option>
+                        }
+                        @foreach (var h in hospitals)
+                        {
+                            <option value="@h.Id">@h.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="HospitalId" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6 d-flex flex-column justify-content-end">
+                    <div class="form-check">
+                        <input asp-for="IsDefault" class="form-check-input" type="checkbox" id="isDefault" />
+                        <label class="form-check-label" for="isDefault">Default printer for its type (in this hospital)</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="IsActive" class="form-check-input" type="checkbox" id="isActive" />
+                        <label class="form-check-label" for="isActive">Active</label>
+                    </div>
+                </div>
+
+                <div class="col-md-6 receipt-only">
+                    <div class="form-check">
+                        <input asp-for="CutPaper" class="form-check-input" type="checkbox" id="cutPaper" />
+                        <label class="form-check-label" for="cutPaper">Cut the paper after each receipt</label>
+                    </div>
+                    <div class="form-check">
+                        <input asp-for="OpenCashDrawer" class="form-check-input" type="checkbox" id="openDrawer" />
+                        <label class="form-check-label" for="openDrawer">Open the cash drawer connected to the printer</label>
+                    </div>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label fw-semibold">Notes</label>
+                    <input asp-for="Notes" class="form-control" maxlength="500" placeholder="Location, model…" />
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer bg-white d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save printer</button>
+            <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            function selected(name) { var r = document.querySelector('input[name="' + name + '"]:checked'); return r ? r.value : ''; }
+            function filterOptions(select, type) {
+                var keep = null;
+                Array.prototype.forEach.call(select.options, function (o) {
+                    var ok = (o.dataset.type || '').split(' ').indexOf(type) >= 0;
+                    o.hidden = !ok; o.disabled = !ok;
+                    if (ok && keep === null) keep = o.value;
+                    if (ok && o.selected) keep = o.value;
+                });
+                if (select.selectedOptions.length === 0 || select.selectedOptions[0].disabled) select.value = keep;
+            }
+            function refresh() {
+                var type = selected('PrinterType') || 'Receipt';
+                var lan = selected('ConnectionType') === 'LAN';
+                document.querySelectorAll('.conn-ip').forEach(function (e) { e.classList.toggle('d-none', lan); });
+                document.querySelectorAll('.conn-lan').forEach(function (e) { e.classList.toggle('d-none', !lan); });
+                document.querySelectorAll('.receipt-only').forEach(function (e) { e.classList.toggle('d-none', type !== 'Receipt'); });
+                document.querySelectorAll('.doc-only').forEach(function (e) { e.classList.toggle('d-none', type !== 'Document'); });
+                filterOptions(document.getElementById('paperSize'), type);
+                filterOptions(document.getElementById('printLanguage'), type);
+            }
+            document.querySelectorAll('input[name="PrinterType"], input[name="ConnectionType"]').forEach(function (r) { r.addEventListener('change', refresh); });
+            refresh();
+        })();
+    </script>
+}

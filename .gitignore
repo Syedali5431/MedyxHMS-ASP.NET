@@ -33,3 +33,12 @@ temp_build_output/
 smoke_build.log
 build.log
 build_*.log
+
+# Private uploads (controlled quality documents) - never commit
+App_Data/
+
+# Uploaded files (profile pictures, Download Center) - user data, never commit
+wwwroot/uploads/
+
+# Licence signing private keys - never commit (the public key files are fine)
+*private-key*.json

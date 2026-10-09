@@ -1,5 +1,6 @@
 @model MedyxHMS.Models.InternalMessage
 @{
+    var names = ViewBag.UserNames as Dictionary<string, string> ?? new Dictionary<string, string>();
     ViewData["Title"] = Model.Subject;
 }
 
@@ -15,8 +16,8 @@
         <div class="card-header">
             <h5 class="mb-1">@Model.Subject</h5>
             <small class="text-muted">
-                From <strong>@Model.SenderId</strong> &nbsp;·&nbsp;
-                @Model.SentAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                From <strong>@names.GetValueOrDefault(Model.SenderId, Model.SenderId)</strong> &nbsp;·&nbsp;
+                @Model.SentAt.ToString("MMM dd, yyyy HH:mm")
                 @if (Model.IsBroadcast)
                 {
                     <span class="badge bg-warning text-dark ms-2">Broadcast</span>
@@ -33,8 +34,8 @@
         <div class="card shadow-sm mt-3 border-start border-3 border-secondary">
             <div class="card-header bg-light">
                 <small class="text-muted">
-                    Original message from <strong>@Model.ParentMessage.SenderId</strong>
-                    &nbsp;·&nbsp; @Model.ParentMessage.SentAt.ToLocalTime().ToString("MMM dd, yyyy HH:mm")
+                    Original message from <strong>@names.GetValueOrDefault(Model.ParentMessage.SenderId, Model.ParentMessage.SenderId)</strong>
+                    &nbsp;·&nbsp; @Model.ParentMessage.SentAt.ToString("MMM dd, yyyy HH:mm")
                 </small>
             </div>
             <div class="card-body text-muted">

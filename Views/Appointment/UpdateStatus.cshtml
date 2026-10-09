@@ -1,4 +1,5 @@
 @model MedyxHMS.ViewModels.AppointmentUpdateStatusViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 
 @{
     ViewData["Title"] = "Update Appointment Status";
@@ -213,9 +214,12 @@
                         <a href="@Url.Action("Details", "Appointment", new { id = Model.Appointment.Id })" class="btn btn-outline-info btn-sm">
                             <i class="fas fa-eye"></i> View Details
                         </a>
-                        <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-outline-success btn-sm">
-                            <i class="fas fa-plus"></i> New Appointment
-                        </a>
+                        @if (await Nav.CanAccessAsync("/Appointment/Create"))
+                        {
+                            <a href="@Url.Action("Create", "Appointment", new { patientId = Model.Appointment.PatientId })" class="btn btn-outline-success btn-sm">
+                                <i class="fas fa-plus"></i> New Appointment
+                            </a>
+                        }
                     </div>
                 </div>
             </div>

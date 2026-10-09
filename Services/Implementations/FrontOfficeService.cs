@@ -36,7 +36,7 @@ namespace MedyxHMS.Services.Implementations
 
             visitor.VisitDate = (visitor.VisitDate == default ? DateTime.Today : visitor.VisitDate.Date);
             if (visitor.CheckInTime == default)
-                visitor.CheckInTime = DateTime.UtcNow;
+                visitor.CheckInTime = DateTime.Now;
 
             _context.VisitorLogs.Add(visitor);
             await _context.SaveChangesAsync();
@@ -79,7 +79,7 @@ namespace MedyxHMS.Services.Implementations
             if (complaint == null)
                 throw new ArgumentNullException(nameof(complaint));
 
-            complaint.CreatedDate = DateTime.UtcNow;
+            complaint.CreatedDate = DateTime.Now;
             if (string.IsNullOrWhiteSpace(complaint.Status))
                 complaint.Status = "Open";
 
@@ -97,7 +97,7 @@ namespace MedyxHMS.Services.Implementations
             complaint.Status = status;
             complaint.ResolutionNotes = resolutionNotes;
             if (status == "Resolved" || status == "Closed")
-                complaint.ResolvedDate = DateTime.UtcNow;
+                complaint.ResolvedDate = DateTime.Now;
 
             _context.ComplaintRecords.Update(complaint);
             await _context.SaveChangesAsync();
@@ -132,7 +132,7 @@ namespace MedyxHMS.Services.Implementations
                 throw new InvalidOperationException("Record type is required.");
 
             if (record.RecordDate == default)
-                record.RecordDate = DateTime.UtcNow;
+                record.RecordDate = DateTime.Now;
 
             _context.DispatchReceiveRecords.Add(record);
             await _context.SaveChangesAsync();

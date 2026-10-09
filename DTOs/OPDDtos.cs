@@ -8,6 +8,7 @@ namespace MedyxHMS.DTOs
     public class OPDVisitDto
     {
         public int Id { get; set; }
+        public int? HospitalId { get; set; } // multi-hospital: shown when viewing all hospitals
         public int PatientId { get; set; }
         public string PatientName { get; set; }
         public int DoctorId { get; set; }
@@ -100,6 +101,7 @@ namespace MedyxHMS.DTOs
     public class IPDAdmissionDto
     {
         public int Id { get; set; }
+        public int? HospitalId { get; set; } // multi-hospital: shown when viewing all hospitals
         public int PatientId { get; set; }
         public string PatientName { get; set; }
         public int DoctorId { get; set; }

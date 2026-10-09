@@ -10,7 +10,7 @@ namespace MedyxHMS.Models
         public DateTime? CheckOutTime { get; set; }
         public string Status { get; set; } = "Present"; // Present, Absent, HalfDay, OnLeave
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedDate { get; set; }
 
         public Staff Staff { get; set; } = null!;
@@ -23,7 +23,7 @@ namespace MedyxHMS.Models
         public string Description { get; set; } = string.Empty;
         public int DefaultDaysPerYear { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class LeaveRequest
@@ -39,7 +39,7 @@ namespace MedyxHMS.Models
         public string ApproverId { get; set; } = string.Empty;
         public DateTime? ApprovedDate { get; set; }
         public string ApproverRemarks { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedDate { get; set; }
 
         public Staff Staff { get; set; } = null!;
@@ -55,7 +55,7 @@ namespace MedyxHMS.Models
         public int AllocatedDays { get; set; }
         public int UsedDays { get; set; }
         public int RemainingDays { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedDate { get; set; }
 
         public Staff Staff { get; set; } = null!;
@@ -74,7 +74,7 @@ namespace MedyxHMS.Models
         public string Status { get; set; } = "Pending"; // Pending, Processed, Paid
         public DateTime? PaymentDate { get; set; }
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? UpdatedDate { get; set; }
 
         public Staff Staff { get; set; } = null!;
@@ -88,11 +88,11 @@ namespace MedyxHMS.Models
         public string Purpose { get; set; } = string.Empty;
         public string PersonToMeet { get; set; } = string.Empty;
         public DateTime VisitDate { get; set; } = DateTime.Today;
-        public DateTime CheckInTime { get; set; } = DateTime.UtcNow;
+        public DateTime CheckInTime { get; set; } = DateTime.Now;
         public DateTime? CheckOutTime { get; set; }
         public string Status { get; set; } = "CheckedIn"; // CheckedIn, CheckedOut, Cancelled
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class ComplaintRecord
@@ -104,7 +104,7 @@ namespace MedyxHMS.Models
         public string Description { get; set; } = string.Empty;
         public string Status { get; set; } = "Open"; // Open, InProgress, Resolved, Closed
         public string ResolutionNotes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? ResolvedDate { get; set; }
     }
 
@@ -116,10 +116,10 @@ namespace MedyxHMS.Models
         public string PartyName { get; set; } = string.Empty;
         public string ContactNumber { get; set; } = string.Empty;
         public string ContentSummary { get; set; } = string.Empty;
-        public DateTime RecordDate { get; set; } = DateTime.UtcNow;
+        public DateTime RecordDate { get; set; } = DateTime.Now;
         public string Status { get; set; } = "Logged";
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class CertificateRecord
@@ -129,9 +129,9 @@ namespace MedyxHMS.Models
         public string CertificateType { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
-        public DateTime IssueDate { get; set; } = DateTime.UtcNow;
+        public DateTime IssueDate { get; set; } = DateTime.Now;
         public string GeneratedBy { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public Staff Staff { get; set; } = null!;
     }
@@ -141,11 +141,11 @@ namespace MedyxHMS.Models
         public int Id { get; set; }
         public string StaffId { get; set; } = string.Empty;
         public string CardNumber { get; set; } = string.Empty;
-        public DateTime IssueDate { get; set; } = DateTime.UtcNow;
+        public DateTime IssueDate { get; set; } = DateTime.Now;
         public DateTime? ExpiryDate { get; set; }
         public string Status { get; set; } = "Active"; // Active, Inactive, Replaced
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public Staff Staff { get; set; } = null!;
     }
@@ -158,7 +158,7 @@ namespace MedyxHMS.Models
         public string ActionType { get; set; } = string.Empty; // Login, Logout, AccessDenied, PasswordChange, PermissionChange
         public string Details { get; set; } = string.Empty;
         public string IPAddress { get; set; } = string.Empty;
-        public DateTime LoggedDate { get; set; } = DateTime.UtcNow;
+        public DateTime LoggedDate { get; set; } = DateTime.Now;
         public string Status { get; set; } = "Success"; // Success, Failed
 
         public Staff Staff { get; set; } = null!;
@@ -178,7 +178,7 @@ namespace MedyxHMS.Models
         public string FileFormat { get; set; } = "PDF"; // PDF, Excel, HTML
         public long FileSize { get; set; }
         public string GeneratedBy { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string Status { get; set; } = "Available"; // Available, Archived, Deleted
 
         public Staff StaffGenerated { get; set; } = null!;
@@ -196,7 +196,7 @@ namespace MedyxHMS.Models
         public bool IsActive { get; set; } = true;
         public string EmailRecipients { get; set; } = string.Empty; // Comma-separated emails
         public string CreatedBy { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? LastRunDate { get; set; }
         public DateTime? NextRunDate { get; set; }
 

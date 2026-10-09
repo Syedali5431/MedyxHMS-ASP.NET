@@ -59,7 +59,7 @@
                                 <td>@item.EscalationType</td>
                                 <td>@item.Status</td>
                                 <td>@item.Reason</td>
-                                <td>@item.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm") UTC</td>
+                                <td>@item.CreatedAtUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>
                                     @if (item.Status == "Pending")
                                     {

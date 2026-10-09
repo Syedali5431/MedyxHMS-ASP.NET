@@ -1,0 +1,111 @@
+@model MedyxHMS.ViewModels.HospitalUserAccessViewModel
+@{
+    ViewData["Title"] = "Hospitals - " + Model.FullName;
+    var anyEditable = Model.Hospitals.Any(h => h.CanEdit);
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-hospital-user text-primary me-2"></i>Hospitals: @Model.FullName</h4>
+            <small class="text-muted"><code>@Model.UserName</code> &middot; @(string.IsNullOrEmpty(Model.Roles) ? "No staff role" : Model.Roles)</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="SystemManagement" asp-action="UserManagement" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>User Management</a>
+            <a asp-action="Index" class="btn btn-outline-primary btn-sm"><i class="fas fa-hospital me-1"></i>Hospitals</a>
+        </div>
+    </div>
+
+    @if (Model.IsSuperAdmin)
+    {
+        <div class="alert alert-info small py-2"><i class="fas fa-crown me-1"></i>A SuperAdmin can open every hospital (and "All hospitals"). Ticks here only choose the hospital selected after signing in.</div>
+    }
+    else
+    {
+        <div class="alert alert-light border small py-2">
+            <i class="fas fa-info-circle me-1"></i>The user can sign in to and switch between the ticked hospitals and sees only their data.
+            "Default" is the hospital pre-selected on the sign-in page. With nothing ticked the user works in the group's default hospital.
+            @if (Model.IsAdmin)
+            {
+                <span>An administrator with several hospitals can view and manage each of them.</span>
+            }
+        </div>
+    }
+
+    <form asp-action="UserAccess" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="userId" value="@Model.UserId" />
+        <div class="card shadow-sm" style="max-width:900px">
+            <div class="card-body table-responsive">
+                <table class="table table-hover align-middle mb-0" id="userHospitalTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:90px">Access</th>
+                            <th style="width:90px">Default</th>
+                            <th>Code</th>
+                            <th>Hospital</th>
+                            <th>City</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var h in Model.Hospitals)
+                        {
+                            <tr class="@(h.IsActive ? "" : "table-secondary")">
+                                <td>
+                                    <input type="checkbox" class="form-check-input access-box" name="hospitalIds" value="@h.HospitalId" id="h-@h.HospitalId"
+                                           @(h.HasAccess ? "checked" : "") @(h.CanEdit ? "" : "disabled") aria-label="Access to @h.Name" />
+                                    @if (!h.CanEdit && h.HasAccess)
+                                    {
+                                        @* Not editable here, but kept: send the value so it is not taken away. *@
+                                        <input type="hidden" name="hospitalIds" value="@h.HospitalId" />
+                                    }
+                                </td>
+                                <td>
+                                    <input type="radio" class="form-check-input default-radio" name="defaultHospitalId" value="@h.HospitalId"
+                                           @(h.IsDefault ? "checked" : "") @(h.HasAccess ? "" : "disabled") aria-label="Default hospital @h.Name" />
+                                </td>
+                                <td><code>@h.Code</code></td>
+                                <td>
+                                    <label for="h-@h.HospitalId" class="mb-0">@h.Name</label>
+                                    @if (h.IsGroupDefault) { <span class="badge bg-primary ms-1">Group default</span> }
+                                    @if (!h.CanEdit) { <i class="fas fa-lock text-muted small ms-1" title="You can only change the hospitals assigned to you"></i> }
+                                </td>
+                                <td>@h.City</td>
+                                <td><span class="badge @(h.IsActive ? "bg-success" : "bg-secondary")">@(h.IsActive ? "Active" : "Inactive")</span></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @if (anyEditable)
+        {
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save Hospitals</button>
+                <a asp-controller="SystemManagement" asp-action="UserManagement" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        }
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            document.querySelectorAll('#userHospitalTable tbody tr').forEach(function (row) {
+                var box = row.querySelector('.access-box');
+                var radio = row.querySelector('.default-radio');
+                if (!box || !radio || box.disabled) return;
+                box.addEventListener('change', function () {
+                    radio.disabled = !box.checked;
+                    if (!box.checked && radio.checked) {
+                        radio.checked = false;
+                        var first = document.querySelector('#userHospitalTable .default-radio:not([disabled])');
+                        if (first) first.checked = true;
+                    }
+                    if (box.checked && !document.querySelector('#userHospitalTable .default-radio:checked')) radio.checked = true;
+                });
+            });
+        })();
+    </script>
+}

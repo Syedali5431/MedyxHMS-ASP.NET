@@ -65,7 +65,7 @@ namespace MedyxHMS.Models
         public string Name { get; set; }
         public string Description { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public ICollection<RoleFeature> RoleFeatures { get; set; }
@@ -79,7 +79,7 @@ namespace MedyxHMS.Models
         public string Module { get; set; } // Patient, Appointment, Billing, etc.
         public string Description { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public ICollection<RoleFeature> RoleFeatures { get; set; }
@@ -93,7 +93,7 @@ namespace MedyxHMS.Models
         public bool CanAdd { get; set; } = false;
         public bool CanEdit { get; set; } = false;
         public bool CanDelete { get; set; } = false;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public Role Role { get; set; }
@@ -104,7 +104,7 @@ namespace MedyxHMS.Models
     {
         public string StaffId { get; set; } // ApplicationUser Id
         public int RoleId { get; set; }
-        public DateTime AssignedDate { get; set; } = DateTime.UtcNow;
+        public DateTime AssignedDate { get; set; } = DateTime.Now;
         public string AssignedBy { get; set; }
 
         // Navigation properties
@@ -124,11 +124,16 @@ namespace MedyxHMS.Models
         public decimal Salary { get; set; }
         public string Phone { get; set; }
         public string Address { get; set; }
+        // Mapped to the (NOT NULL) Staff.Email column. Mirrors the login account's e-mail when one is
+        // linked; staff without a login account keep the value stored in the column, so saving them
+        // does not write NULL. (Field name deliberately not "_email" so EF keeps using the property.)
+        private string _storedEmail;
         public string Email
         {
-            get => User?.Email;
+            get => User?.Email ?? _storedEmail;
             set
             {
+                _storedEmail = value;
                 if (User != null)
                 {
                     User.Email = value;
@@ -137,7 +142,7 @@ namespace MedyxHMS.Models
         }
         public string About { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public ApplicationUser User { get; set; }

@@ -86,10 +86,15 @@
                             <td>
                                 <a asp-action="EditNotice" asp-route-id="@n.Id"
                                    class="btn btn-sm btn-outline-primary me-1">Edit</a>
-                                @if (n.IsActive)
+                                @* The public site only shows active notices whose publish time has passed. *@
+                                @if (n.IsActive && (n.PublishedAt == null || n.PublishedAt <= DateTime.Now))
                                 {
                                     <a href="/site/notice/@n.Slug" target="_blank"
                                        class="btn btn-sm btn-outline-success me-1">View</a>
+                                }
+                                else if (n.IsActive)
+                                {
+                                    <span class="badge bg-info text-dark me-1" title="Publishes @n.PublishedAt?.ToString("dd MMM yyyy HH:mm")">Scheduled</span>
                                 }
                                 <form asp-action="DeleteNotice" asp-route-id="@n.Id"
                                       method="post" class="d-inline"

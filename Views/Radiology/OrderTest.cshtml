@@ -49,7 +49,7 @@
                                             data-preptime="@test.PreparationTimeHours" 
                                             data-contrast="@(test.RequiresContrast ? "Yes" : "No")"
                                             data-instructions="@test.SpecialInstructions">
-                                        @test.TestName (Rs. @test.Price)
+                                        @test.TestName (@test.Price.ToString("C"))
                                     </option>
                                 }
                             </select>

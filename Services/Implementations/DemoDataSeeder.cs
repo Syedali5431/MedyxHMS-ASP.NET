@@ -19,11 +19,19 @@ namespace MedyxHMS.Services.Implementations
             _logger = logger;
         }
 
-        public async Task SeedAsync()
+        public async Task SeedAsync(bool includeDemoData = true)
         {
+            // Schema patch is required in every environment; demo rows only when enabled.
+            await PatchSchemaAsync();
+            if (!includeDemoData)
+            {
+                _logger.LogInformation("Demo data seeding disabled (Seeding:DemoData = false).");
+                return;
+            }
+
             _logger.LogInformation("Starting demo data seeding...");
 
-            await PatchSchemaAsync();
+            await RepairDuplicateDemoNumbersAsync();
             await SeedDepartmentsAsync();
             await SeedDoctorsAsync();
             await SeedWardsAndBedsAsync();
@@ -44,6 +52,40 @@ namespace MedyxHMS.Services.Implementations
             await SeedStaffAttendanceAndPayrollAsync();
 
             _logger.LogInformation("Demo data seeding complete.");
+        }
+
+        // ── Data repair ──────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Earlier versions re-seeded demo rows every 30 days with the same hard-coded numbers.
+        /// Keep the oldest row of each duplicate and append "-{Id}" to the later copies.
+        /// Idempotent: does nothing once the numbers are unique.
+        /// </summary>
+        private async Task RepairDuplicateDemoNumbersAsync()
+        {
+            var targets = new[]
+            {
+                ("LabResults", "OrderNumber"),
+                ("RadiologyResults", "OrderNumber"),
+                ("PharmacyBills", "BillNumber"),
+                ("Bills", "BillNumber"),
+            };
+
+            foreach (var (table, column) in targets)
+            {
+                // Table/column names come from the fixed list above (not user input).
+                var sql = $@"
+;WITH d AS (
+    SELECT [Id], [{column}], ROW_NUMBER() OVER (PARTITION BY [{column}] ORDER BY [Id]) AS rn
+    FROM [dbo].[{table}]
+    WHERE [{column}] IS NOT NULL AND [{column}] <> ''
+)
+UPDATE d SET [{column}] = [{column}] + '-' + CAST([Id] AS nvarchar(20)) WHERE rn > 1;";
+                var updated = await _context.Database.ExecuteSqlRawAsync(sql);
+
+                if (updated > 0)
+                    _logger.LogInformation("Renumbered {Count} duplicate {Table}.{Column} values", updated, table, column);
+            }
         }
 
         // ── Schema patches ───────────────────────────────────────────────────────
@@ -72,16 +114,16 @@ END");
 
             var departments = new[]
             {
-                new Department { Name = "General Medicine",    Description = "Primary care and general internal medicine", HeadOfDepartment = "Dr. Ahmad Khan",     IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Cardiology",          Description = "Heart and cardiovascular disorders",          HeadOfDepartment = "Dr. Sarah Williams",  IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Orthopedics",         Description = "Bone and joint disorders",                   HeadOfDepartment = "Dr. Rahul Mehta",     IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Pediatrics",          Description = "Medical care for children",                  HeadOfDepartment = "Dr. Priya Sharma",    IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Gynecology",          Description = "Women's reproductive health",                HeadOfDepartment = "Dr. Amina Hassan",    IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "ENT",                 Description = "Ear, nose and throat conditions",            HeadOfDepartment = "Dr. James Okafor",    IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Radiology",           Description = "Diagnostic imaging services",                HeadOfDepartment = "Dr. Fatima Al-Rashid",IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Pathology",           Description = "Laboratory diagnostics and tests",           HeadOfDepartment = "Dr. Li Wei",          IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Emergency",           Description = "Emergency and trauma care",                  HeadOfDepartment = "Dr. Carlos Reyes",    IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Department { Name = "Surgery",             Description = "Surgical procedures and operations",         HeadOfDepartment = "Dr. Nakamura Kenji",  IsActive = true, CreatedDate = DateTime.UtcNow },
+                new Department { Name = "General Medicine",    Description = "Primary care and general internal medicine", HeadOfDepartment = "Dr. Ahmad Khan",     IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Cardiology",          Description = "Heart and cardiovascular disorders",          HeadOfDepartment = "Dr. Sarah Williams",  IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Orthopedics",         Description = "Bone and joint disorders",                   HeadOfDepartment = "Dr. Rahul Mehta",     IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Pediatrics",          Description = "Medical care for children",                  HeadOfDepartment = "Dr. Priya Sharma",    IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Gynecology",          Description = "Women's reproductive health",                HeadOfDepartment = "Dr. Amina Hassan",    IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "ENT",                 Description = "Ear, nose and throat conditions",            HeadOfDepartment = "Dr. James Okafor",    IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Radiology",           Description = "Diagnostic imaging services",                HeadOfDepartment = "Dr. Fatima Al-Rashid",IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Pathology",           Description = "Laboratory diagnostics and tests",           HeadOfDepartment = "Dr. Li Wei",          IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Emergency",           Description = "Emergency and trauma care",                  HeadOfDepartment = "Dr. Carlos Reyes",    IsActive = true, CreatedDate = DateTime.Now },
+                new Department { Name = "Surgery",             Description = "Surgical procedures and operations",         HeadOfDepartment = "Dr. Nakamura Kenji",  IsActive = true, CreatedDate = DateTime.Now },
             };
 
             await _context.Departments.AddRangeAsync(departments);
@@ -99,14 +141,14 @@ END");
 
             var doctors = new[]
             {
-                new Doctor { EmployeeId="DOC-001", FirstName="Ahmad",   LastName="Khan",       Specialization="General Physician",  LicenseNumber="LIC-GM-001", Phone="9100010001", Email="ahmad.khan@medyx.local",     DepartmentId=depts["General Medicine"], IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-002", FirstName="Sarah",   LastName="Williams",   Specialization="Cardiologist",        LicenseNumber="LIC-CR-001", Phone="9100010002", Email="sarah.williams@medyx.local",   DepartmentId=depts["Cardiology"],       IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-003", FirstName="Rahul",   LastName="Mehta",      Specialization="Orthopedic Surgeon",  LicenseNumber="LIC-OR-001", Phone="9100010003", Email="rahul.mehta@medyx.local",      DepartmentId=depts["Orthopedics"],      IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-004", FirstName="Priya",   LastName="Sharma",     Specialization="Pediatrician",        LicenseNumber="LIC-PD-001", Phone="9100010004", Email="priya.sharma@medyx.local",     DepartmentId=depts["Pediatrics"],       IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-005", FirstName="Amina",   LastName="Hassan",     Specialization="Gynaecologist",       LicenseNumber="LIC-GY-001", Phone="9100010005", Email="amina.hassan@medyx.local",     DepartmentId=depts["Gynecology"],       IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-006", FirstName="James",   LastName="Okafor",     Specialization="ENT Specialist",      LicenseNumber="LIC-EN-001", Phone="9100010006", Email="james.okafor@medyx.local",     DepartmentId=depts["ENT"],              IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-007", FirstName="Carlos",  LastName="Reyes",      Specialization="Emergency Physician", LicenseNumber="LIC-EM-001", Phone="9100010007", Email="carlos.reyes@medyx.local",     DepartmentId=depts["Emergency"],        IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Doctor { EmployeeId="DOC-008", FirstName="Nakamura",LastName="Kenji",      Specialization="General Surgeon",     LicenseNumber="LIC-SG-001", Phone="9100010008", Email="nakamura.kenji@medyx.local",   DepartmentId=depts["Surgery"],          IsActive=true, CreatedDate=DateTime.UtcNow },
+                new Doctor { EmployeeId="DOC-001", FirstName="Ahmad",   LastName="Khan",       Specialization="General Physician",  LicenseNumber="LIC-GM-001", Phone="9100010001", Email="ahmad.khan@medyx.local",     DepartmentId=depts["General Medicine"], IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-002", FirstName="Sarah",   LastName="Williams",   Specialization="Cardiologist",        LicenseNumber="LIC-CR-001", Phone="9100010002", Email="sarah.williams@medyx.local",   DepartmentId=depts["Cardiology"],       IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-003", FirstName="Rahul",   LastName="Mehta",      Specialization="Orthopedic Surgeon",  LicenseNumber="LIC-OR-001", Phone="9100010003", Email="rahul.mehta@medyx.local",      DepartmentId=depts["Orthopedics"],      IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-004", FirstName="Priya",   LastName="Sharma",     Specialization="Pediatrician",        LicenseNumber="LIC-PD-001", Phone="9100010004", Email="priya.sharma@medyx.local",     DepartmentId=depts["Pediatrics"],       IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-005", FirstName="Amina",   LastName="Hassan",     Specialization="Gynaecologist",       LicenseNumber="LIC-GY-001", Phone="9100010005", Email="amina.hassan@medyx.local",     DepartmentId=depts["Gynecology"],       IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-006", FirstName="James",   LastName="Okafor",     Specialization="ENT Specialist",      LicenseNumber="LIC-EN-001", Phone="9100010006", Email="james.okafor@medyx.local",     DepartmentId=depts["ENT"],              IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-007", FirstName="Carlos",  LastName="Reyes",      Specialization="Emergency Physician", LicenseNumber="LIC-EM-001", Phone="9100010007", Email="carlos.reyes@medyx.local",     DepartmentId=depts["Emergency"],        IsActive=true, CreatedDate=DateTime.Now },
+                new Doctor { EmployeeId="DOC-008", FirstName="Nakamura",LastName="Kenji",      Specialization="General Surgeon",     LicenseNumber="LIC-SG-001", Phone="9100010008", Email="nakamura.kenji@medyx.local",   DepartmentId=depts["Surgery"],          IsActive=true, CreatedDate=DateTime.Now },
             };
 
             await _context.Doctors.AddRangeAsync(doctors);
@@ -122,10 +164,10 @@ END");
 
             var wards = new[]
             {
-                new Ward { Name = "General Ward A",  Description = "Standard general admission ward",    TotalBeds = 20, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Ward { Name = "ICU",             Description = "Intensive care unit",                TotalBeds = 8,  OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Ward { Name = "Private Ward",    Description = "Private single-patient rooms",       TotalBeds = 10, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.UtcNow },
-                new Ward { Name = "Pediatric Ward",  Description = "Ward dedicated to paediatric care",  TotalBeds = 12, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.UtcNow },
+                new Ward { Name = "General Ward A",  Description = "Standard general admission ward",    TotalBeds = 20, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.Now },
+                new Ward { Name = "ICU",             Description = "Intensive care unit",                TotalBeds = 8,  OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.Now },
+                new Ward { Name = "Private Ward",    Description = "Private single-patient rooms",       TotalBeds = 10, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.Now },
+                new Ward { Name = "Pediatric Ward",  Description = "Ward dedicated to paediatric care",  TotalBeds = 12, OccupiedBeds = 0, IsActive = true, CreatedDate = DateTime.Now },
             };
 
             await _context.Wards.AddRangeAsync(wards);
@@ -140,19 +182,19 @@ END");
 
             // General Ward — 10 beds
             for (var i = 1; i <= 10; i++)
-                beds.Add(new Bed { WardId = genWard.Id, BedNumber = $"GA-{i:D2}", Block = "A", Floor = "1", RoomNumber = $"1{i:D2}", BedType = "General",  DailyCharges = 500,  Status = "Available", IsActive = true, CreatedDate = DateTime.UtcNow });
+                beds.Add(new Bed { WardId = genWard.Id, BedNumber = $"GA-{i:D2}", Block = "A", Floor = "1", RoomNumber = $"1{i:D2}", BedType = "General",  DailyCharges = 500,  Status = "Available", IsActive = true, CreatedDate = DateTime.Now });
 
             // ICU — 4 beds
             for (var i = 1; i <= 4; i++)
-                beds.Add(new Bed { WardId = icu.Id,     BedNumber = $"ICU-{i:D2}", Block = "B", Floor = "2", RoomNumber = $"2{i:D2}", BedType = "ICU",     DailyCharges = 4000, Status = "Available", IsActive = true, CreatedDate = DateTime.UtcNow });
+                beds.Add(new Bed { WardId = icu.Id,     BedNumber = $"ICU-{i:D2}", Block = "B", Floor = "2", RoomNumber = $"2{i:D2}", BedType = "ICU",     DailyCharges = 4000, Status = "Available", IsActive = true, CreatedDate = DateTime.Now });
 
             // Private Ward — 5 beds
             for (var i = 1; i <= 5; i++)
-                beds.Add(new Bed { WardId = privWard.Id,BedNumber = $"PV-{i:D2}", Block = "C", Floor = "3", RoomNumber = $"3{i:D2}", BedType = "Private",  DailyCharges = 2500, Status = "Available", IsActive = true, CreatedDate = DateTime.UtcNow });
+                beds.Add(new Bed { WardId = privWard.Id,BedNumber = $"PV-{i:D2}", Block = "C", Floor = "3", RoomNumber = $"3{i:D2}", BedType = "Private",  DailyCharges = 2500, Status = "Available", IsActive = true, CreatedDate = DateTime.Now });
 
             // Paediatric Ward — 5 beds
             for (var i = 1; i <= 5; i++)
-                beds.Add(new Bed { WardId = pedWard.Id, BedNumber = $"PD-{i:D2}", Block = "D", Floor = "1", RoomNumber = $"4{i:D2}", BedType = "General",  DailyCharges = 600,  Status = "Available", IsActive = true, CreatedDate = DateTime.UtcNow });
+                beds.Add(new Bed { WardId = pedWard.Id, BedNumber = $"PD-{i:D2}", Block = "D", Floor = "1", RoomNumber = $"4{i:D2}", BedType = "General",  DailyCharges = 600,  Status = "Available", IsActive = true, CreatedDate = DateTime.Now });
 
             await _context.Beds.AddRangeAsync(beds);
             await _context.SaveChangesAsync();
@@ -165,21 +207,21 @@ END");
         {
             if (await _context.Medicines.AnyAsync()) return;
 
-            var expiry = DateTime.UtcNow.AddYears(2);
+            var expiry = DateTime.Now.AddYears(2);
             var medicines = new[]
             {
-                new Medicine { Name="Paracetamol 500mg", GenericName="Paracetamol",   Category="Analgesic",     DosageForm="Tablet",   Strength="500mg",   Manufacturer="Cipla",        UnitPrice=1.5m,   StockQuantity=2000, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-001", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Amoxicillin 500mg", GenericName="Amoxicillin",   Category="Antibiotic",    DosageForm="Capsule",  Strength="500mg",   Manufacturer="Sun Pharma",   UnitPrice=4.0m,   StockQuantity=800,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-002", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Metformin 500mg",   GenericName="Metformin",     Category="Antidiabetic",  DosageForm="Tablet",   Strength="500mg",   Manufacturer="USV",          UnitPrice=2.5m,   StockQuantity=1200, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-003", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Atorvastatin 10mg", GenericName="Atorvastatin",  Category="Antilipemic",   DosageForm="Tablet",   Strength="10mg",    Manufacturer="Ranbaxy",      UnitPrice=8.0m,   StockQuantity=600,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-004", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Omeprazole 20mg",   GenericName="Omeprazole",    Category="PPI",           DosageForm="Capsule",  Strength="20mg",    Manufacturer="Zydus",        UnitPrice=3.0m,   StockQuantity=900,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-005", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Amlodipine 5mg",    GenericName="Amlodipine",    Category="Antihypertensive",DosageForm="Tablet", Strength="5mg",     Manufacturer="Lupin",        UnitPrice=3.5m,   StockQuantity=750,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-006", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Ibuprofen 400mg",   GenericName="Ibuprofen",     Category="NSAID",         DosageForm="Tablet",   Strength="400mg",   Manufacturer="Abbott",       UnitPrice=2.0m,   StockQuantity=1500, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-007", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Azithromycin 250mg",GenericName="Azithromycin",  Category="Antibiotic",    DosageForm="Tablet",   Strength="250mg",   Manufacturer="Cipla",        UnitPrice=12.0m,  StockQuantity=400,  MinStockLevel=30,  ExpiryDate=expiry, BatchNumber="B-2025-008", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Insulin Glargine",  GenericName="Insulin Glargine",Category="Insulin",     DosageForm="Injection",Strength="100U/ml", Manufacturer="Novo Nordisk", UnitPrice=450.0m, StockQuantity=100,  MinStockLevel=10,  ExpiryDate=expiry, BatchNumber="B-2025-009", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Salbutamol Inhaler",GenericName="Salbutamol",    Category="Bronchodilator",DosageForm="Inhaler",  Strength="100mcg",  Manufacturer="GSK",          UnitPrice=85.0m,  StockQuantity=200,  MinStockLevel=20,  ExpiryDate=expiry, BatchNumber="B-2025-010", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Cetirizine 10mg",   GenericName="Cetirizine",    Category="Antihistamine", DosageForm="Tablet",   Strength="10mg",    Manufacturer="Cadila",       UnitPrice=1.8m,   StockQuantity=1000, MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-011", IsActive=true, CreatedDate=DateTime.UtcNow },
-                new Medicine { Name="Clopidogrel 75mg",  GenericName="Clopidogrel",   Category="Antiplatelet",  DosageForm="Tablet",   Strength="75mg",    Manufacturer="Sanofi",       UnitPrice=9.5m,   StockQuantity=500,  MinStockLevel=30,  ExpiryDate=expiry, BatchNumber="B-2025-012", IsActive=true, CreatedDate=DateTime.UtcNow },
+                new Medicine { Name="Paracetamol 500mg", GenericName="Paracetamol",   Category="Analgesic",     DosageForm="Tablet",   Strength="500mg",   Manufacturer="Cipla",        UnitPrice=1.5m,   StockQuantity=2000, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-001", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Amoxicillin 500mg", GenericName="Amoxicillin",   Category="Antibiotic",    DosageForm="Capsule",  Strength="500mg",   Manufacturer="Sun Pharma",   UnitPrice=4.0m,   StockQuantity=800,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-002", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Metformin 500mg",   GenericName="Metformin",     Category="Antidiabetic",  DosageForm="Tablet",   Strength="500mg",   Manufacturer="USV",          UnitPrice=2.5m,   StockQuantity=1200, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-003", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Atorvastatin 10mg", GenericName="Atorvastatin",  Category="Antilipemic",   DosageForm="Tablet",   Strength="10mg",    Manufacturer="Ranbaxy",      UnitPrice=8.0m,   StockQuantity=600,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-004", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Omeprazole 20mg",   GenericName="Omeprazole",    Category="PPI",           DosageForm="Capsule",  Strength="20mg",    Manufacturer="Zydus",        UnitPrice=3.0m,   StockQuantity=900,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-005", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Amlodipine 5mg",    GenericName="Amlodipine",    Category="Antihypertensive",DosageForm="Tablet", Strength="5mg",     Manufacturer="Lupin",        UnitPrice=3.5m,   StockQuantity=750,  MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-006", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Ibuprofen 400mg",   GenericName="Ibuprofen",     Category="NSAID",         DosageForm="Tablet",   Strength="400mg",   Manufacturer="Abbott",       UnitPrice=2.0m,   StockQuantity=1500, MinStockLevel=100, ExpiryDate=expiry, BatchNumber="B-2025-007", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Azithromycin 250mg",GenericName="Azithromycin",  Category="Antibiotic",    DosageForm="Tablet",   Strength="250mg",   Manufacturer="Cipla",        UnitPrice=12.0m,  StockQuantity=400,  MinStockLevel=30,  ExpiryDate=expiry, BatchNumber="B-2025-008", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Insulin Glargine",  GenericName="Insulin Glargine",Category="Insulin",     DosageForm="Injection",Strength="100U/ml", Manufacturer="Novo Nordisk", UnitPrice=450.0m, StockQuantity=100,  MinStockLevel=10,  ExpiryDate=expiry, BatchNumber="B-2025-009", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Salbutamol Inhaler",GenericName="Salbutamol",    Category="Bronchodilator",DosageForm="Inhaler",  Strength="100mcg",  Manufacturer="GSK",          UnitPrice=85.0m,  StockQuantity=200,  MinStockLevel=20,  ExpiryDate=expiry, BatchNumber="B-2025-010", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Cetirizine 10mg",   GenericName="Cetirizine",    Category="Antihistamine", DosageForm="Tablet",   Strength="10mg",    Manufacturer="Cadila",       UnitPrice=1.8m,   StockQuantity=1000, MinStockLevel=50,  ExpiryDate=expiry, BatchNumber="B-2025-011", IsActive=true, CreatedDate=DateTime.Now },
+                new Medicine { Name="Clopidogrel 75mg",  GenericName="Clopidogrel",   Category="Antiplatelet",  DosageForm="Tablet",   Strength="75mg",    Manufacturer="Sanofi",       UnitPrice=9.5m,   StockQuantity=500,  MinStockLevel=30,  ExpiryDate=expiry, BatchNumber="B-2025-012", IsActive=true, CreatedDate=DateTime.Now },
             };
 
             await _context.Medicines.AddRangeAsync(medicines);
@@ -233,21 +275,21 @@ END");
 
             var patients = new[]
             {
-                new Patient { PatientId="P00001", FirstName="Mohamed",  LastName="Al-Farsi",    Email="m.alfarsi@email.com",   Phone="9200001001", DateOfBirth=new DateTime(1985,3,12), Gender="Male",   Address="12 Al-Noor St",   City="Dubai",       State="Dubai",       Country="UAE",   PostalCode="00001", BloodGroup="A+",  EmergencyContactName="Fatima Al-Farsi",   EmergencyContactPhone="9200001002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Engineer",   IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-5)  },
-                new Patient { PatientId="P00002", FirstName="Priya",    LastName="Nair",         Email="priya.nair@email.com",   Phone="9200002001", DateOfBirth=new DateTime(1992,7,24), Gender="Female", Address="45 MG Road",      City="Kochi",       State="Kerala",      Country="India", PostalCode="682001", BloodGroup="B+",  EmergencyContactName="Arun Nair",         EmergencyContactPhone="9200002002", EmergencyContactRelation="Husband",MaritalStatus="Married", Occupation="Teacher",    IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-10) },
-                new Patient { PatientId="P00003", FirstName="John",     LastName="Mensah",       Email="j.mensah@email.com",     Phone="9200003001", DateOfBirth=new DateTime(1978,11,5), Gender="Male",   Address="78 Accra Ave",    City="Accra",       State="Greater Accra",Country="Ghana",PostalCode="GA001",  BloodGroup="O-",  EmergencyContactName="Martha Mensah",     EmergencyContactPhone="9200003002", EmergencyContactRelation="Sister", MaritalStatus="Widowed", Occupation="Farmer",     IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-3)  },
-                new Patient { PatientId="P00004", FirstName="Sofia",    LastName="Rodriguez",    Email="sofia.r@email.com",      Phone="9200004001", DateOfBirth=new DateTime(2005,6,18), Gender="Female", Address="23 Calle Luna",   City="Bogota",      State="Cundinamarca",Country="Colombia",PostalCode="11001", BloodGroup="AB+", EmergencyContactName="Luis Rodriguez",    EmergencyContactPhone="9200004002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Student",    IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-7)  },
-                new Patient { PatientId="P00005", FirstName="David",    LastName="Osei",         Email="david.osei@email.com",   Phone="9200005001", DateOfBirth=new DateTime(1965,1,30), Gender="Male",   Address="14 Ring Road",    City="Kumasi",      State="Ashanti",     Country="Ghana", PostalCode="GA002",  BloodGroup="A-",  EmergencyContactName="Mary Osei",         EmergencyContactPhone="9200005002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Businessman", IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-14) },
-                new Patient { PatientId="P00006", FirstName="Aisha",    LastName="Usman",        Email="aisha.usman@email.com",  Phone="9200006001", DateOfBirth=new DateTime(1988,9,15), Gender="Female", Address="6 Sultan Road",   City="Lagos",       State="Lagos",       Country="Nigeria",PostalCode="NG001", BloodGroup="B-",  EmergencyContactName="Ibrahim Usman",     EmergencyContactPhone="9200006002", EmergencyContactRelation="Brother",MaritalStatus="Married", Occupation="Nurse",      IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-2)  },
-                new Patient { PatientId="P00007", FirstName="Wei",      LastName="Zhang",        Email="wei.zhang@email.com",    Phone="9200007001", DateOfBirth=new DateTime(1970,4,22), Gender="Male",   Address="99 Nanjing Rd",   City="Shanghai",    State="Shanghai",    Country="China", PostalCode="200000", BloodGroup="O+",  EmergencyContactName="Li Zhang",          EmergencyContactPhone="9200007002", EmergencyContactRelation="Son",    MaritalStatus="Married", Occupation="Manager",    IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-20) },
-                new Patient { PatientId="P00008", FirstName="Fatima",   LastName="Al-Rashid",    Email="fatima.ar@email.com",    Phone="9200008001", DateOfBirth=new DateTime(2010,12,3), Gender="Female", Address="31 King Fahd Rd", City="Riyadh",      State="Riyadh",      Country="Saudi Arabia",PostalCode="SA001",BloodGroup="A+", EmergencyContactName="Hassan Al-Rashid",  EmergencyContactPhone="9200008002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Student",    IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-1)  },
-                new Patient { PatientId="P00009", FirstName="Carlos",   LastName="Silva",        Email="carlos.silva@email.com", Phone="9200009001", DateOfBirth=new DateTime(1955,8,11), Gender="Male",   Address="77 Av. Paulista", City="Sao Paulo",   State="Sao Paulo",   Country="Brazil",PostalCode="01310",  BloodGroup="AB-", EmergencyContactName="Ana Silva",         EmergencyContactPhone="9200009002", EmergencyContactRelation="Daughter",MaritalStatus="Divorced",Occupation="Retired",   IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-6)  },
-                new Patient { PatientId="P00010", FirstName="Nkechi",   LastName="Obi",          Email="nkechi.obi@email.com",   Phone="9200010001", DateOfBirth=new DateTime(1998,2,28), Gender="Female", Address="8 Trans-Amadi",   City="Port Harcourt",State="Rivers",     Country="Nigeria",PostalCode="NG002", BloodGroup="B+",  EmergencyContactName="Emeka Obi",         EmergencyContactPhone="9200010002", EmergencyContactRelation="Brother",MaritalStatus="Single",  Occupation="Accountant", IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-4)  },
-                new Patient { PatientId="P00011", FirstName="Haruto",   LastName="Tanaka",       Email="h.tanaka@email.com",     Phone="9200011001", DateOfBirth=new DateTime(1982,5,7),  Gender="Male",   Address="12 Shibuya",      City="Tokyo",       State="Tokyo",       Country="Japan", PostalCode="150001", BloodGroup="A+",  EmergencyContactName="Yuki Tanaka",       EmergencyContactPhone="9200011002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="IT Specialist",IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-8)  },
-                new Patient { PatientId="P00012", FirstName="Grace",    LastName="Otieno",       Email="grace.otieno@email.com", Phone="9200012001", DateOfBirth=new DateTime(1975,10,19),Gender="Female", Address="5 Uhuru Hwy",     City="Nairobi",     State="Nairobi",     Country="Kenya", PostalCode="KE001",  BloodGroup="O+",  EmergencyContactName="Peter Otieno",      EmergencyContactPhone="9200012002", EmergencyContactRelation="Husband",MaritalStatus="Married", Occupation="Lecturer",   IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-12) },
-                new Patient { PatientId="P00013", FirstName="Omar",     LastName="Khalil",       Email="omar.khalil@email.com",  Phone="9200013001", DateOfBirth=new DateTime(1940,6,3),  Gender="Male",   Address="20 Zamalek St",   City="Cairo",       State="Cairo",       Country="Egypt", PostalCode="EG001",  BloodGroup="B+",  EmergencyContactName="Salma Khalil",      EmergencyContactPhone="9200013002", EmergencyContactRelation="Daughter",MaritalStatus="Widowed", Occupation="Retired",    IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-15) },
-                new Patient { PatientId="P00014", FirstName="Ananya",   LastName="Gupta",        Email="ananya.gupta@email.com", Phone="9200014001", DateOfBirth=new DateTime(1995,3,14), Gender="Female", Address="88 Lajpat Nagar", City="Delhi",       State="Delhi",       Country="India", PostalCode="110024", BloodGroup="A-",  EmergencyContactName="Vikram Gupta",      EmergencyContactPhone="9200014002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Software Dev",IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-9)  },
-                new Patient { PatientId="P00015", FirstName="Emmanuel", LastName="Diallo",       Email="e.diallo@email.com",     Phone="9200015001", DateOfBirth=new DateTime(1960,7,25), Gender="Male",   Address="3 Route Nationale",City="Dakar",      State="Dakar",       Country="Senegal",PostalCode="SN001", BloodGroup="AB+", EmergencyContactName="Mariama Diallo",    EmergencyContactPhone="9200015002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Mechanic",   IsActive=true, CreatedDate=DateTime.UtcNow, LastVisitDate=DateTime.UtcNow.AddDays(-18) },
+                new Patient { PatientId="P00001", FirstName="Mohamed",  LastName="Al-Farsi",    Email="m.alfarsi@email.com",   Phone="9200001001", DateOfBirth=new DateTime(1985,3,12), Gender="Male",   Address="12 Al-Noor St",   City="Dubai",       State="Dubai",       Country="UAE",   PostalCode="00001", BloodGroup="A+",  EmergencyContactName="Fatima Al-Farsi",   EmergencyContactPhone="9200001002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Engineer",   IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-5)  },
+                new Patient { PatientId="P00002", FirstName="Priya",    LastName="Nair",         Email="priya.nair@email.com",   Phone="9200002001", DateOfBirth=new DateTime(1992,7,24), Gender="Female", Address="45 MG Road",      City="Kochi",       State="Kerala",      Country="India", PostalCode="682001", BloodGroup="B+",  EmergencyContactName="Arun Nair",         EmergencyContactPhone="9200002002", EmergencyContactRelation="Husband",MaritalStatus="Married", Occupation="Teacher",    IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-10) },
+                new Patient { PatientId="P00003", FirstName="John",     LastName="Mensah",       Email="j.mensah@email.com",     Phone="9200003001", DateOfBirth=new DateTime(1978,11,5), Gender="Male",   Address="78 Accra Ave",    City="Accra",       State="Greater Accra",Country="Ghana",PostalCode="GA001",  BloodGroup="O-",  EmergencyContactName="Martha Mensah",     EmergencyContactPhone="9200003002", EmergencyContactRelation="Sister", MaritalStatus="Widowed", Occupation="Farmer",     IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-3)  },
+                new Patient { PatientId="P00004", FirstName="Sofia",    LastName="Rodriguez",    Email="sofia.r@email.com",      Phone="9200004001", DateOfBirth=new DateTime(2005,6,18), Gender="Female", Address="23 Calle Luna",   City="Bogota",      State="Cundinamarca",Country="Colombia",PostalCode="11001", BloodGroup="AB+", EmergencyContactName="Luis Rodriguez",    EmergencyContactPhone="9200004002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Student",    IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-7)  },
+                new Patient { PatientId="P00005", FirstName="David",    LastName="Osei",         Email="david.osei@email.com",   Phone="9200005001", DateOfBirth=new DateTime(1965,1,30), Gender="Male",   Address="14 Ring Road",    City="Kumasi",      State="Ashanti",     Country="Ghana", PostalCode="GA002",  BloodGroup="A-",  EmergencyContactName="Mary Osei",         EmergencyContactPhone="9200005002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Businessman", IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-14) },
+                new Patient { PatientId="P00006", FirstName="Aisha",    LastName="Usman",        Email="aisha.usman@email.com",  Phone="9200006001", DateOfBirth=new DateTime(1988,9,15), Gender="Female", Address="6 Sultan Road",   City="Lagos",       State="Lagos",       Country="Nigeria",PostalCode="NG001", BloodGroup="B-",  EmergencyContactName="Ibrahim Usman",     EmergencyContactPhone="9200006002", EmergencyContactRelation="Brother",MaritalStatus="Married", Occupation="Nurse",      IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-2)  },
+                new Patient { PatientId="P00007", FirstName="Wei",      LastName="Zhang",        Email="wei.zhang@email.com",    Phone="9200007001", DateOfBirth=new DateTime(1970,4,22), Gender="Male",   Address="99 Nanjing Rd",   City="Shanghai",    State="Shanghai",    Country="China", PostalCode="200000", BloodGroup="O+",  EmergencyContactName="Li Zhang",          EmergencyContactPhone="9200007002", EmergencyContactRelation="Son",    MaritalStatus="Married", Occupation="Manager",    IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-20) },
+                new Patient { PatientId="P00008", FirstName="Fatima",   LastName="Al-Rashid",    Email="fatima.ar@email.com",    Phone="9200008001", DateOfBirth=new DateTime(2010,12,3), Gender="Female", Address="31 King Fahd Rd", City="Riyadh",      State="Riyadh",      Country="Saudi Arabia",PostalCode="SA001",BloodGroup="A+", EmergencyContactName="Hassan Al-Rashid",  EmergencyContactPhone="9200008002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Student",    IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-1)  },
+                new Patient { PatientId="P00009", FirstName="Carlos",   LastName="Silva",        Email="carlos.silva@email.com", Phone="9200009001", DateOfBirth=new DateTime(1955,8,11), Gender="Male",   Address="77 Av. Paulista", City="Sao Paulo",   State="Sao Paulo",   Country="Brazil",PostalCode="01310",  BloodGroup="AB-", EmergencyContactName="Ana Silva",         EmergencyContactPhone="9200009002", EmergencyContactRelation="Daughter",MaritalStatus="Divorced",Occupation="Retired",   IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-6)  },
+                new Patient { PatientId="P00010", FirstName="Nkechi",   LastName="Obi",          Email="nkechi.obi@email.com",   Phone="9200010001", DateOfBirth=new DateTime(1998,2,28), Gender="Female", Address="8 Trans-Amadi",   City="Port Harcourt",State="Rivers",     Country="Nigeria",PostalCode="NG002", BloodGroup="B+",  EmergencyContactName="Emeka Obi",         EmergencyContactPhone="9200010002", EmergencyContactRelation="Brother",MaritalStatus="Single",  Occupation="Accountant", IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-4)  },
+                new Patient { PatientId="P00011", FirstName="Haruto",   LastName="Tanaka",       Email="h.tanaka@email.com",     Phone="9200011001", DateOfBirth=new DateTime(1982,5,7),  Gender="Male",   Address="12 Shibuya",      City="Tokyo",       State="Tokyo",       Country="Japan", PostalCode="150001", BloodGroup="A+",  EmergencyContactName="Yuki Tanaka",       EmergencyContactPhone="9200011002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="IT Specialist",IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-8)  },
+                new Patient { PatientId="P00012", FirstName="Grace",    LastName="Otieno",       Email="grace.otieno@email.com", Phone="9200012001", DateOfBirth=new DateTime(1975,10,19),Gender="Female", Address="5 Uhuru Hwy",     City="Nairobi",     State="Nairobi",     Country="Kenya", PostalCode="KE001",  BloodGroup="O+",  EmergencyContactName="Peter Otieno",      EmergencyContactPhone="9200012002", EmergencyContactRelation="Husband",MaritalStatus="Married", Occupation="Lecturer",   IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-12) },
+                new Patient { PatientId="P00013", FirstName="Omar",     LastName="Khalil",       Email="omar.khalil@email.com",  Phone="9200013001", DateOfBirth=new DateTime(1940,6,3),  Gender="Male",   Address="20 Zamalek St",   City="Cairo",       State="Cairo",       Country="Egypt", PostalCode="EG001",  BloodGroup="B+",  EmergencyContactName="Salma Khalil",      EmergencyContactPhone="9200013002", EmergencyContactRelation="Daughter",MaritalStatus="Widowed", Occupation="Retired",    IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-15) },
+                new Patient { PatientId="P00014", FirstName="Ananya",   LastName="Gupta",        Email="ananya.gupta@email.com", Phone="9200014001", DateOfBirth=new DateTime(1995,3,14), Gender="Female", Address="88 Lajpat Nagar", City="Delhi",       State="Delhi",       Country="India", PostalCode="110024", BloodGroup="A-",  EmergencyContactName="Vikram Gupta",      EmergencyContactPhone="9200014002", EmergencyContactRelation="Father", MaritalStatus="Single",  Occupation="Software Dev",IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-9)  },
+                new Patient { PatientId="P00015", FirstName="Emmanuel", LastName="Diallo",       Email="e.diallo@email.com",     Phone="9200015001", DateOfBirth=new DateTime(1960,7,25), Gender="Male",   Address="3 Route Nationale",City="Dakar",      State="Dakar",       Country="Senegal",PostalCode="SN001", BloodGroup="AB+", EmergencyContactName="Mariama Diallo",    EmergencyContactPhone="9200015002", EmergencyContactRelation="Wife",   MaritalStatus="Married", Occupation="Mechanic",   IsActive=true, CreatedDate=DateTime.Now, LastVisitDate=DateTime.Now.AddDays(-18) },
             };
 
             foreach (var p in patients)
@@ -276,7 +318,7 @@ END");
 
             if (!patients.Any() || !doctors.Any()) return;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var appointments = new List<Appointment>();
 
             var slots = new[]
@@ -372,7 +414,7 @@ END");
             };
 
             var visits = new List<OPDVisit>();
-            var now    = DateTime.UtcNow;
+            var now    = DateTime.Now;
 
             for (var i = 0; i < patients.Count; i++)
             {
@@ -411,7 +453,7 @@ END");
             if (!patients.Any() || !doctors.Any()) return;
 
             var admissionTypes = new[] { "Emergency", "Elective", "Referral" };
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             var admissions = new List<IPDAdmission>();
 
@@ -462,7 +504,7 @@ END");
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(12).ToListAsync();
             if (!patients.Any()) return;
 
-            var now  = DateTime.UtcNow;
+            var now  = DateTime.Now;
             var bills = new List<Bill>();
 
             var serviceItems = new[]
@@ -548,14 +590,14 @@ END");
 
         private async Task SeedLabAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             if (!await _context.LabTests.AnyAsync())
             {
                 await SeedLabTestCatalogAsync(now);
             }
 
-            if (await _context.LabResults.AnyAsync(r => r.OrderDate >= now.AddDays(-30))) return;
+            if (await _context.LabResults.AnyAsync()) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
             var tests = await _context.LabTests.ToListAsync();
@@ -621,14 +663,14 @@ END");
 
         private async Task SeedRadiologyAsync()
         {
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             if (!await _context.RadiologyTests.AnyAsync())
             {
                 await SeedRadiologyTestCatalogAsync(now);
             }
 
-            if (await _context.RadiologyResults.AnyAsync(r => r.OrderDate >= now.AddDays(-30))) return;
+            if (await _context.RadiologyResults.AnyAsync()) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
             var tests = await _context.RadiologyTests.ToListAsync();
@@ -699,13 +741,13 @@ END");
 
         private async Task SeedPharmacyAsync()
         {
-            if (await _context.PharmacyBills.AnyAsync(b => b.BillDate >= DateTime.UtcNow.AddDays(-30))) return;
+            if (await _context.PharmacyBills.AnyAsync()) return;
 
             var patients  = await _context.Patients.OrderBy(p => p.Id).Take(10).ToListAsync();
             var medicines = await _context.Medicines.OrderBy(m => m.Id).ToListAsync();
             if (!patients.Any() || !medicines.Any()) return;
 
-            var now   = DateTime.UtcNow;
+            var now   = DateTime.Now;
             var bills = new List<PharmacyBill>();
 
             for (var i = 0; i < 10; i++)
@@ -763,7 +805,7 @@ END");
         {
             if (await _context.BloodInventories.AnyAsync()) return;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var inventory = new[]
             {
                 new BloodInventory { BloodGroup="A+",  UnitsAvailable=25, UnitsReserved=3, MinimumLevel=5, LastUpdatedDate=now, CreatedDate=now },
@@ -785,28 +827,46 @@ END");
 
         private async Task SeedOperationTheatreAsync()
         {
-            if (await _context.OTSchedules.AnyAsync(o => o.ScheduledDate >= DateTime.UtcNow.AddDays(-30))) return;
+            if (await _context.OTSchedules.AnyAsync()) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Skip(2).Take(6).ToListAsync();
             var doctors  = await _context.Doctors.OrderBy(d => d.Id).ToListAsync();
             if (!patients.Any() || !doctors.Any()) return;
 
-            var now        = DateTime.UtcNow;
+            var now        = DateTime.Now;
             var procedures = new[] { "Appendectomy", "Knee Arthroscopy", "Cataract Surgery", "Cholecystectomy", "Hernia Repair", "Tonsillectomy" };
             var statuses   = new[] { "Completed", "Completed", "Scheduled", "Scheduled", "In Progress", "Completed" };
+
+            // Theatre master: three general theatres (OT-3 open around the clock for emergencies).
+            var theatres = await _context.OperationTheatres.OrderBy(t => t.Code).ToListAsync();
+            if (!theatres.Any())
+            {
+                theatres = new List<OperationTheatre>
+                {
+                    new() { Code = "OT-1", Name = "Main Theatre 1", TheatreType = "General", Location = "Surgical block, level 2" },
+                    new() { Code = "OT-2", Name = "Main Theatre 2", TheatreType = "Orthopaedic", Location = "Surgical block, level 2" },
+                    new() { Code = "OT-3", Name = "Emergency Theatre", TheatreType = "Emergency", Location = "Emergency department", Is24Hours = true },
+                };
+                await _context.OperationTheatres.AddRangeAsync(theatres);
+                await _context.SaveChangesAsync();
+            }
 
             var schedules = new List<OTSchedule>();
             for (var i = 0; i < patients.Count; i++)
             {
                 var daysOffset = i < 3 ? -(i + 1) : (i - 2);
+                var doctor = doctors[i % doctors.Count];
+                var theatre = theatres[i % theatres.Count];
                 schedules.Add(new OTSchedule
                 {
                     PatientId                 = patients[i].Id,
                     ProcedureName              = procedures[i % procedures.Length],
-                    SurgeonName                = $"Dr. {doctors[i % doctors.Count].FirstName} {doctors[i % doctors.Count].LastName}",
+                    SurgeonDoctorId            = doctor.Id,
+                    SurgeonName                = $"Dr. {doctor.FirstName} {doctor.LastName}",
                     ScheduledDate              = now.Date.AddDays(daysOffset).AddHours(9 + i),
                     EstimatedDurationMinutes   = 60 + (i % 4) * 30,
-                    OperationTheatreNumber     = $"OT-{(i % 3) + 1}",
+                    OperationTheatreId         = theatre.Id,
+                    OperationTheatreNumber     = theatre.Code,
                     Status                     = statuses[i % statuses.Length],
                     Notes                      = string.Empty,
                     CreatedDate                = now.AddDays(daysOffset - 1),
@@ -822,12 +882,12 @@ END");
 
         private async Task SeedReferralsAsync()
         {
-            if (await _context.Referrals.AnyAsync(r => r.ReferralDate >= DateTime.UtcNow.AddDays(-30))) return;
+            if (await _context.Referrals.AnyAsync()) return;
 
             var patients = await _context.Patients.OrderBy(p => p.Id).Take(6).ToListAsync();
             if (!patients.Any()) return;
 
-            var now   = DateTime.UtcNow;
+            var now   = DateTime.Now;
             var types = new[] { "External", "Internal", "TPA" };
             var destinations = new[] { "City Cardiac Institute", "Cardiology Department", "MediCare TPA Services", "Regional Oncology Centre", "Orthopedic Specialty Clinic", "Nephrology Department" };
             var reasons = new[] { "Advanced cardiac workup required", "Specialist consultation", "Insurance-approved procedure", "Further oncology evaluation", "Joint replacement assessment", "Dialysis planning" };
@@ -863,7 +923,7 @@ END");
         {
             if (!await _context.BirthRecords.AnyAsync())
             {
-                var now = DateTime.UtcNow;
+                var now = DateTime.Now;
                 var patients = await _context.Patients.Where(p => p.Gender == "Female").OrderBy(p => p.Id).Take(3).ToListAsync();
 
                 var births = new List<BirthRecord>
@@ -880,7 +940,7 @@ END");
 
             if (!await _context.DeathRecords.AnyAsync())
             {
-                var now = DateTime.UtcNow;
+                var now = DateTime.Now;
                 var deaths = new List<DeathRecord>
                 {
                     new() { PatientName="Omar Khalil",  Gender="Male",   DateOfDeath=now.AddDays(-9),  TimeOfDeath="04:10", CauseOfDeath="Cardiac arrest — end-stage heart failure", AttendingDoctorName="Dr. Sarah Williams", NextOfKinName="Salma Khalil",  NextOfKinContact="9200013002", CertificateNumber=$"DC-{now.Year}-0001", CertificateIssued=true, Notes=string.Empty, CreatedDate=now.AddDays(-9) },
@@ -897,9 +957,9 @@ END");
 
         private async Task SeedFrontOfficeAsync()
         {
-            if (await _context.VisitorLogs.AnyAsync(v => v.VisitDate >= DateTime.UtcNow.AddDays(-30))) return;
+            if (await _context.VisitorLogs.AnyAsync()) return;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
             var purposes = new[] { "Patient enquiry", "Bill payment", "Meeting doctor", "Document collection", "Appointment booking", "Delivery" };
             var contacts = new[] { "Dr. Ahmad Khan", "Billing Desk", "Dr. Sarah Williams", "Records Office", "Front Desk", "Pharmacy" };
 
@@ -935,7 +995,7 @@ END");
             var staff = await _context.Staff.OrderBy(s => s.Id).ToListAsync();
             if (!staff.Any()) return;
 
-            var now = DateTime.UtcNow;
+            var now = DateTime.Now;
 
             if (!await _context.StaffAttendances.AnyAsync(a => a.AttendanceDate >= now.Date.AddDays(-30)))
             {

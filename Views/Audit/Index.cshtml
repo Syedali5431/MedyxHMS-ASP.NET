@@ -1,4 +1,5 @@
 @model AuditLogIndexViewModel
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 @{
     ViewData["Title"] = "Audit Logs";
     var entityTypes = ViewData["EntityTypes"] as List<string> ?? new List<string>();
@@ -10,7 +11,7 @@
             <h2>Audit Logs</h2>
             <p class="text-muted mb-0">Track user and entity changes across the system</p>
         </div>
-        <a class="btn btn-sm btn-outline-success me-1" asp-action="Index" asp-route-export="csv"><i class="fas fa-file-csv me-1"></i>CSV</a>
+        <a class="btn btn-sm btn-outline-success me-1" asp-action="Index" asp-route-export="csv" asp-route-startDate="@Context.Request.Query["startDate"]" asp-route-endDate="@Context.Request.Query["endDate"]" asp-route-entityType="@Context.Request.Query["entityType"]"><i class="fas fa-file-csv me-1"></i>CSV</a>
     </div>
 
     <div class="card mb-4">
@@ -56,7 +57,7 @@
             <table class="table table-striped table-bordered align-middle">
                 <thead>
                     <tr>
-                        <th>Time (UTC)</th>
+                        <th>Time</th>
                         <th>User</th>
                         <th>Action</th>
                         <th>Entity</th>
@@ -74,15 +75,15 @@
                                              log.Action.Contains("SUCCESS") || log.Action.Contains("ENABLED") ? "bg-success" :
                                              log.Action.Contains("LOGIN") ? "bg-primary" :
                                              "bg-secondary";
-                            <tr class="@(log.Action.Contains("FAILED") ? "table-danger" : "")">"
+                            <tr class="@(log.Action.Contains("FAILED") ? "table-danger" : "")">
                                 <td>@log.Timestamp.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                                <td>@(string.IsNullOrWhiteSpace(log.UserId) ? "System" : log.UserId)</td>
+                                <td>@(string.IsNullOrWhiteSpace(log.UserId) ? "System" : log.User?.UserName ?? log.UserId)</td>
                                 <td><span class="badge @badgeClass">@log.Action</span></td>
                                 <td>@log.EntityName</td>
                                 <td>@log.EntityId</td>
                                 <td>@log.IpAddress</td>
                                 <td>
-                                    <a asp-action="Details" asp-route-id="@log.Id" class="btn btn-sm btn-outline-primary">View</a>
+                                    @if (await Nav.CanAccessAsync("/Audit/Details")) { <a asp-action="Details" asp-route-id="@log.Id" class="btn btn-sm btn-outline-primary">View</a> }
                                 </td>
                             </tr>
                         }

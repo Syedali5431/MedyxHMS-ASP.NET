@@ -33,13 +33,21 @@ builder.Services.AddControllersWithViews(options =>
     // required, silently blocking submission of forms (e.g. Patient/Create) on fields the UI
     // and DTOs themselves document as optional. Explicit [Required] attributes are unaffected.
     options.SuppressImplicitRequiredAttributeForNonNullableReferenceTypes = true;
+    // Labels/validation messages read "Date of birth", "Doctor" instead of "DateOfBirth", "DoctorId".
+    options.ModelMetadataDetailsProviders.Add(new MedyxHMS.Extensions.HumanizedDisplayNameProvider());
 });
 builder.Services.AddTransient<MedyxHMS.Services.Filters.LicenseExpiryFilter>();
 builder.Services.AddHttpClient();
 
 // Configure Database Context
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+            builder.Configuration.GetConnectionString("DefaultConnection"),
+            // Explicitly keep EF Core's default (single SQL query per LINQ query). Setting it removes the
+            // "no QuerySplittingBehavior configured" warning without changing how any query runs.
+            sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SingleQuery))
+        // Informational only: the connection string enables MARS, which disables savepoints.
+        .ConfigureWarnings(w => w.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.SqlServerEventId.SavepointsDisabledBecauseOfMARS)));
 
 // Configure ASP.NET Core Identity
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -54,6 +62,14 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 })
 .AddEntityFrameworkStores<ApplicationDbContext>()
 .AddDefaultTokenProviders();
+
+// Security hardening: sign-in expires after a period of inactivity (Identity's default was 14 days).
+// The value is replaced at start-up and on save by Security & Backups (Security:SessionTimeoutMinutes).
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+    options.SlidingExpiration = true;
+});
 
 // Configure Authorization Policies
 builder.Services.AddAuthorization(options =>
@@ -82,6 +98,21 @@ builder.Services.AddScoped<IPaymentGatewayService, PaymentGatewayService>();
 builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IAuthorizationService, AuthorizationService>();
+builder.Services.AddScoped<INavAccessService, NavAccessService>();
+// Multi-hospital: the active hospital of the current request (filled by HospitalContextMiddleware).
+builder.Services.AddScoped<IHospitalContext, HospitalContext>();
+// Thermal receipt printing (80 mm / 58 mm): printer settings and receipt headers.
+builder.Services.AddScoped<IReceiptPrintService, ReceiptPrintService>();
+builder.Services.AddScoped<IDischargeService, DischargeService>();
+builder.Services.AddScoped<INetworkPrintService, NetworkPrintService>();
+// Security hardening: policy (two-step login for admins, sign-in timeout, audit retention) and database backups.
+builder.Services.AddScoped<ISecurityPolicyService, SecurityPolicyService>();
+builder.Services.AddScoped<IDatabaseBackupService, DatabaseBackupService>();
+builder.Services.AddHostedService<AuditRetentionHostedService>();
+// Quality management (incidents + CAPA, controlled documents, internal audits, training records).
+builder.Services.AddScoped<QualityService>();
+// Lab traceability (accession numbers, chain of custody, electronic sign-off).
+builder.Services.AddScoped<LabTraceabilityService>();
 builder.Services.AddScoped<IStaffService, StaffService>();
 builder.Services.AddScoped<IPatientPortalService, PatientPortalService>();
 builder.Services.AddScoped<IEmailNotificationProvider, SmtpEmailNotificationProvider>();
@@ -92,6 +123,7 @@ builder.Services.AddScoped<IPublicBookingNotificationService, PublicBookingNotif
 builder.Services.AddScoped<INotificationDeliveryAuditService, NotificationDeliveryAuditService>();
 builder.Services.AddScoped<ISystemNotificationService, SystemNotificationService>();
 builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IReportEngine, ReportEngine>();
 builder.Services.AddScoped<ILicenseService, LicenseService>();
 builder.Services.AddScoped<ILicenseFileService, LicenseFileService>();
 builder.Services.AddScoped<IConcurrentSessionService, ConcurrentSessionService>();
@@ -117,6 +149,8 @@ builder.Services.AddScoped<ICacheService, CacheService>();
 // Clinical Module Services (STEP 3.1)
 builder.Services.AddScoped<IOPDService, OPDService>();
 builder.Services.AddScoped<IIPDService, IPDService>();
+builder.Services.AddScoped<IMedicalRecordService, MedicalRecordService>();
+builder.Services.AddScoped<PatientDocumentService>();
 builder.Services.AddScoped<IWardService, WardService>();
 builder.Services.AddScoped<IBedService, BedService>();
 builder.Services.AddScoped<IPrescriptionService, PrescriptionService>();
@@ -142,6 +176,7 @@ builder.Services.AddScoped<IReportCatalogVisibilityService, ReportCatalogVisibil
 
 builder.Services.AddScoped<DatabaseInitializer>();
 builder.Services.AddScoped<DemoDataSeeder>();
+builder.Services.AddScoped<Year2026SampleDataSeeder>();
 
 // Add HttpContext accessor for audit logging
 builder.Services.AddHttpContextAccessor();
@@ -149,7 +184,8 @@ builder.Services.AddHttpContextAccessor();
 // Configure Session
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    // Longer than the longest sign-in timeout choice (60 min) so session data never expires before the sign-in.
+    options.IdleTimeout = TimeSpan.FromMinutes(65);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
@@ -213,6 +249,9 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 var app = builder.Build();
 
+// The Medyx logo for generated documents (PDF, Excel, receipts).
+MedyxHMS.Services.Implementations.Branding.Initialize(app.Environment.WebRootPath);
+
 // Initialize database
 using (var scope = app.Services.CreateScope())
 {
@@ -220,9 +259,33 @@ using (var scope = app.Services.CreateScope())
     var initializer = services.GetRequiredService<DatabaseInitializer>();
     await initializer.InitializeAsync();
 
-    // Seed demo/dummy data for development and testing
+    // Seed demo/dummy data for development and testing only (Seeding:DemoData).
+    // The seeder's schema patch still runs in every environment.
     var demoSeeder = services.GetRequiredService<DemoDataSeeder>();
-    await demoSeeder.SeedAsync();
+    await demoSeeder.SeedAsync(builder.Configuration.GetValue<bool>("Seeding:DemoData"));
+
+    // Sample records for January–October 2026 in every module (once; Seeding:Year2026SampleData or Seeding:DemoData).
+    if (builder.Configuration.GetValue<bool>("Seeding:Year2026SampleData") || builder.Configuration.GetValue<bool>("Seeding:DemoData"))
+    {
+        await services.GetRequiredService<Year2026SampleDataSeeder>().SeedAsync();
+    }
+
+    // Multi-hospital: records added without a hospital (e.g. by seed scripts) belong to the default hospital.
+    await initializer.BackfillHospitalAssignmentsAsync();
+
+    // Patient records: every OPD visit and IPD admission has its medical record (also for data added by seeds or imports).
+    try
+    {
+        await services.GetRequiredService<IMedicalRecordService>().EnsureRecordsAsync();
+    }
+    catch (Exception ex)
+    {
+        services.GetRequiredService<ILogger<Program>>().LogError(ex, "Could not create missing medical records at start-up");
+    }
+
+    // Security hardening: apply the configured sign-in timeout.
+    var securityPolicy = services.GetRequiredService<ISecurityPolicyService>();
+    securityPolicy.ApplySessionTimeout((await securityPolicy.GetPolicyAsync()).SessionTimeoutMinutes);
 }
 
 // Configure the HTTP request pipeline.
@@ -232,6 +295,13 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
     app.UseHttpsRedirection();
 }
+
+// Friendly pages for empty 4xx/5xx responses (e.g. 404, 429) on browser page requests.
+// API and AJAX/JSON calls are left alone so their callers still get the bare status code.
+app.UseWhen(
+    context => !context.Request.Path.StartsWithSegments("/api")
+               && context.Request.Headers.Accept.ToString().Contains("text/html", StringComparison.OrdinalIgnoreCase),
+    branch => branch.UseStatusCodePagesWithReExecute("/Home/HttpStatus", "?code={0}"));
 
 // Enhanced Security Middleware (STEP 5.5 - Enhanced Security)
 app.UseEnhancedSecurity();
@@ -251,6 +321,12 @@ app.UseSession();
 
 // Authentication must run before license/module checks so policies can inspect user roles/claims.
 app.UseAuthentication();
+// Multi-hospital: select the hospital this staff request works in (used by query filters and the switcher).
+app.UseMiddleware<HospitalContextMiddleware>();
+// Money is shown in the hospital's currency (Print Settings → currency symbol) on every page.
+app.UseMiddleware<HospitalCurrencyMiddleware>();
+// Security hardening: admins must set up two-step login before using the system (Security & Backups policy).
+app.UseMiddleware<AdminMfaEnforcementMiddleware>();
 // License expiration is enforced before per-module entitlement checks.
 app.UseMiddleware<LicenseEnforcementMiddleware>();
 // Entitlement check validates both admin toggles and license module availability.

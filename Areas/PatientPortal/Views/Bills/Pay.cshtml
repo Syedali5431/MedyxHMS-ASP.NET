@@ -1,0 +1,28 @@
+@model PatientPortalPaymentViewModel
+@{
+    ViewData["Title"] = "Pay Bill";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+}
+
+<div class="py-4" style="max-width:640px">
+    <h3 class="mb-4"><i class="fas fa-credit-card me-2"></i>Pay Bill</h3>
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-body">
+            <div class="d-flex justify-content-between mb-2"><span class="text-muted">Bill total</span><strong>@Model.BillAmount.ToString("C")</strong></div>
+            <div class="d-flex justify-content-between"><span class="text-muted">Amount due</span><strong class="text-danger fs-5">@Model.PendingAmount.ToString("C")</strong></div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="fas fa-info-circle me-1"></i>
+        Online payment is not available yet. Please pay the amount due at the hospital billing counter
+        and quote your bill reference. Your bill will show as paid once the payment is recorded.
+    </div>
+
+    <div class="d-flex gap-2">
+        <a asp-action="Details" asp-route-id="@Model.BillId" class="btn btn-outline-primary"><i class="fas fa-eye me-1"></i>View bill</a>
+        <a asp-action="Download" asp-route-id="@Model.BillId" class="btn btn-outline-secondary"><i class="fas fa-download me-1"></i>Download PDF</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">My Bills</a>
+    </div>
+</div>

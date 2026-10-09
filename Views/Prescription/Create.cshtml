@@ -18,15 +18,29 @@
 
                         <div class="mb-3">
                             <label class="form-label">Pharmacy Bill <span class="text-danger">*</span></label>
-                            <select name="Prescription.PharmacyBillId" class="form-select" required>
-                                <option value="">-- Select Pharmacy Bill --</option>
+                            <select name="Prescription.PharmacyBillId" class="form-select" id="pharmacyBillSelect">
+                                <option value="0" selected="@(Model.Prescription.PharmacyBillId <= 0)">+ New pharmacy bill for the patient below</option>
                                 @foreach (var bill in Model.PharmacyBills)
                                 {
-                                    <option value="@bill.Id" selected="@(Model.SelectedPharmacyBillId == bill.Id)">
+                                    <option value="@bill.Id" selected="@(Model.Prescription.PharmacyBillId == bill.Id || Model.SelectedPharmacyBillId == bill.Id)">
                                         @bill.Label
                                     </option>
                                 }
                             </select>
+                            <span asp-validation-for="Prescription.PharmacyBillId" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3" id="patientBox">
+                            <label class="form-label">Patient <span class="text-danger">*</span></label>
+                            <select name="Prescription.PatientId" class="form-select">
+                                <option value="">-- Select Patient --</option>
+                                @foreach (var p in (ViewBag.Patients as List<MedyxHMS.Models.Patient>) ?? new List<MedyxHMS.Models.Patient>())
+                                {
+                                    <option value="@p.Id" selected="@(Model.Prescription.PatientId == p.Id)">@p.FirstName @p.LastName - @p.PatientId</option>
+                                }
+                            </select>
+                            <div class="form-text">A new pharmacy bill is opened for this patient (or today's open bill is used).</div>
+                            <span asp-validation-for="Prescription.PatientId" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
@@ -116,4 +130,9 @@ function calculateTotal() {
     var total = (quantity * unitPrice).toFixed(2);
     document.getElementById('totalPrice').textContent = total;
 }
-</script>
+        (function () {
+            var sel = document.getElementById('pharmacyBillSelect'), box = document.getElementById('patientBox');
+            function sync() { if (sel && box) box.style.display = sel.value === '0' ? '' : 'none'; }
+            if (sel) { sel.addEventListener('change', sync); sync(); }
+        })();
+    </script>

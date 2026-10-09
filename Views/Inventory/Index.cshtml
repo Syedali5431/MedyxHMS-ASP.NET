@@ -1,4 +1,5 @@
 @model IEnumerable<MedyxHMS.Models.InventoryItem>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Inventory";
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
@@ -62,6 +63,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
+                        @if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Code</th>
                         <th>Name</th>
                         <th>Category</th>
@@ -78,6 +80,7 @@
                     {
                         var stockClass = i.CurrentStock <= i.ReorderLevel ? "text-danger fw-bold" : "";
                         <tr>
+                            @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(i.HospitalId)</td> }
                             <td><code>@i.ItemCode</code></td>
                             <td>@i.Name</td>
                             <td><span class="badge bg-light text-dark border">@i.Category</span></td>
@@ -93,7 +96,7 @@
                             <td>@i.UnitCost.ToString("N2")</td>
                             <td>@i.Supplier</td>
                             <td>
-                                <div class="d-flex gap-1">
+                                <div class="d-flex flex-nowrap gap-1 text-nowrap">
                                     <a asp-action="Transactions" asp-route-itemId="@i.Id" class="btn btn-sm btn-outline-info">Txns</a>
                                     <a asp-action="AddTransaction" asp-route-itemId="@i.Id" class="btn btn-sm btn-outline-success">Stock In/Out</a>
                                     @if (isAdmin)

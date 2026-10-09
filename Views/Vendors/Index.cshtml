@@ -1,0 +1,59 @@
+@model List<MedyxHMS.Models.Vendor>
+@using MedyxHMS.Controllers
+@{
+    ViewData["Title"] = "Vendors";
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    string status = ViewBag.Status as string ?? "active";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-truck text-primary me-2"></i>Vendors</h4>
+            <small class="text-muted">Suppliers of medicines, consumables, equipment and services – shared by all hospitals.</small>
+        </div>
+        @if (canManage) { <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Vendor</a> }
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-4"><input name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search name, code, contact, phone, tax no." /></div>
+        <div class="col-sm-3">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">All categories</option>
+                @foreach (var c in VendorsController.Categories) { <option value="@c" selected="@(ViewBag.Category == c)">@c</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="active" selected="@(status == "active")">Active</option>
+                <option value="inactive" selected="@(status == "inactive")">Inactive</option>
+                <option value="all" selected="@(status == "all")">All</option>
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Search</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light"><tr><th>Code</th><th>Vendor</th><th>Category</th><th>Contact</th><th>Phone</th><th>Terms</th><th>Rating</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var v in Model)
+                    {
+                        <tr>
+                            <td><a asp-action="Details" asp-route-id="@v.Id"><code>@v.VendorCode</code></a></td>
+                            <td><a asp-action="Details" asp-route-id="@v.Id">@v.Name</a><div class="small text-muted">@v.City</div></td>
+                            <td class="small">@v.Category</td>
+                            <td class="small">@v.ContactPerson</td>
+                            <td class="small">@v.Phone</td>
+                            <td class="small">@v.PaymentTermsDays days</td>
+                            <td class="small text-warning">@(v.Rating > 0 ? new string('★', v.Rating) + new string('☆', 5 - v.Rating) : "–")</td>
+                            <td><span class="badge @(v.IsActive ? "bg-success" : "bg-secondary")">@(v.IsActive ? "Active" : "Inactive")</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any()) { <tr><td colspan="8" class="text-center text-muted py-4">No vendors found.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

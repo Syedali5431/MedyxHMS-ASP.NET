@@ -10,31 +10,59 @@ namespace MedyxHMS.Services.Implementations
     {
         private readonly ApplicationDbContext _context;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly ILogger<AuditService> _logger;
 
-        public AuditService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor)
+        public AuditService(ApplicationDbContext context, IHttpContextAccessor httpContextAccessor, ILogger<AuditService> logger)
         {
             _context = context;
             _httpContextAccessor = httpContextAccessor;
+            _logger = logger;
         }
 
         public async Task LogActivityAsync(string? userId, string action, string entityName, string entityId, string? oldValues = null, string? newValues = null)
         {
+            var actor = string.IsNullOrWhiteSpace(userId) ? null : userId;
+            if (actor != null && !await _context.Users.AsNoTracking().AnyAsync(u => u.Id == actor))
+            {
+                // Some callers pass the affected record's id (e.g. a staff member without a login): record the
+                // signed-in user instead, or no user, so the entry is kept rather than rejected by the foreign key.
+                var current = _httpContextAccessor.HttpContext?.User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                actor = !string.IsNullOrEmpty(current) && await _context.Users.AsNoTracking().AnyAsync(u => u.Id == current) ? current : null;
+            }
+
             var auditLog = new AuditLog
             {
-                UserId = string.IsNullOrWhiteSpace(userId) ? null : userId,
+                UserId = actor,
                 Action = action,
                 EntityName = entityName,
                 EntityId = string.IsNullOrWhiteSpace(entityId) ? "N/A" : entityId,
                 OldValues = oldValues ?? string.Empty,
                 NewValues = newValues ?? string.Empty,
-                Timestamp = DateTime.UtcNow,
+                Timestamp = DateTime.Now,
                 IpAddress = GetClientIpAddress(),
                 UserAgent = _httpContextAccessor.HttpContext?.Request.Headers["User-Agent"].ToString() ?? string.Empty,
                 SessionId = _httpContextAccessor.HttpContext?.Session.Id ?? string.Empty
             };
 
             _context.AuditLogs.Add(auditLog);
-            await _context.SaveChangesAsync();
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex) when (ex.Entries.Count > 0 && ex.Entries.All(e => e.Entity is AuditLog))
+            {
+                // Only the audit row itself failed (e.g. it references a user id that does not exist).
+                // An audit write must never break the business action that triggered it.
+                _context.Entry(auditLog).State = EntityState.Detached;
+                _logger.LogError(ex, "Audit log write failed for {Action} on {Entity} {EntityId}", action, entityName, entityId);
+            }
+            catch
+            {
+                // Another pending change failed: keep the original behaviour (re-throw) but do not
+                // leave the audit row queued for the next SaveChanges.
+                _context.Entry(auditLog).State = EntityState.Detached;
+                throw;
+            }
         }
 
         public async Task<IEnumerable<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, string? userId = null)

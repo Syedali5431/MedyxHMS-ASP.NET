@@ -14,8 +14,11 @@
             <p class="text-muted">Review the selected bill and payment status.</p>
         </div>
         <div class="col-md-4 text-end">
+            <a asp-action="ThermalReceipt" asp-route-id="@Model.Bill.Id" target="_blank" class="btn btn-outline-secondary me-2" title="Print on the receipt printer (80 mm / 58 mm)">
+                <i class="fas fa-receipt"></i> Thermal Receipt
+            </a>
             <a asp-action="DownloadReceipt" asp-route-id="@Model.Bill.Id" class="btn btn-outline-danger me-2">
-                <i class="fas fa-file-pdf"></i> Download Receipt
+                <i class="fas fa-file-pdf"></i> Download Invoice
             </a>
             @if (Model.Bill.CanPay)
             {
@@ -42,7 +45,7 @@
                     </div>
                     <div class="col-md-4">
                         <h6>Amount Due</h6>
-                        <p class="mb-0">₹@Model.Bill.OutstandingAmount.ToString("N2")</p>
+                        <p class="mb-0">@Model.Bill.OutstandingAmount.ToString("C")</p>
                     </div>
                 </div>
 
@@ -77,23 +80,23 @@
                                 <tr>
                                     <td>@item.Description</td>
                                     <td>@item.Quantity</td>
-                                    <td>₹@item.UnitPrice.ToString("N2")</td>
-                                    <td>₹@item.Amount.ToString("N2")</td>
+                                    <td>@item.UnitPrice.ToString("C")</td>
+                                    <td>@item.Amount.ToString("C")</td>
                                 </tr>
                             }
                         </tbody>
                         <tfoot>
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Total</strong></td>
-                                <td><strong>₹@Model.Bill.TotalAmount.ToString("N2")</strong></td>
+                                <td><strong>@Model.Bill.TotalAmount.ToString("C")</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Paid</strong></td>
-                                <td><strong>₹@Model.Bill.PaidAmount.ToString("N2")</strong></td>
+                                <td><strong>@Model.Bill.PaidAmount.ToString("C")</strong></td>
                             </tr>
                             <tr>
                                 <td colspan="3" class="text-end"><strong>Balance</strong></td>
-                                <td><strong>₹@Model.Bill.OutstandingAmount.ToString("N2")</strong></td>
+                                <td><strong>@Model.Bill.OutstandingAmount.ToString("C")</strong></td>
                             </tr>
                         </tfoot>
                     </table>
@@ -121,10 +124,13 @@
                             <li class="list-group-item">
                                 <div class="d-flex justify-content-between">
                                     <div>
-                                        <strong>₹@payment.Amount.ToString("N2")</strong>
+                                        <strong>@payment.Amount.ToString("C")</strong>
                                         <div class="small text-muted">@payment.PaymentDate.ToString("MMM dd, yyyy")</div>
                                     </div>
-                                    <span class="badge @payment.PaymentMethodBadge">@payment.PaymentMethod</span>
+                                    <span>
+                                        <span class="badge @payment.PaymentMethodBadge">@payment.PaymentMethod</span>
+                                        <a asp-action="ThermalPaymentReceipt" asp-route-id="@payment.Id" target="_blank" class="btn btn-sm btn-link p-0 ms-1" title="Print payment receipt"><i class="fas fa-receipt"></i></a>
+                                    </span>
                                 </div>
                             </li>
                         }

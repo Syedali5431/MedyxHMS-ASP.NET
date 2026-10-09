@@ -1,5 +1,6 @@
 ﻿using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,10 +9,56 @@ namespace MedyxHMS.Data
 {
     public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
+        private readonly IHospitalContext? _hospitalContext;
+
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
         }
+
+        // Used by dependency injection: the hospital context limits hospital-scoped records to the active hospital.
+        // The constructor above (no hospital context, so no filter) stays for tools, tests and start-up code.
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHospitalContext hospitalContext)
+            : base(options)
+        {
+            _hospitalContext = hospitalContext;
+        }
+
+        // Read by the global query filters each time a query runs (EF Core parameterises these per context instance).
+        private bool HospitalFilterEnabled => _hospitalContext?.FilterEnabled == true;
+        private int? HospitalFilterId => _hospitalContext?.ActiveHospitalId;
+
+        // Multi-hospital (branches of one group)
+        public DbSet<Hospital> Hospitals { get; set; }
+        public DbSet<UserHospitalAccess> UserHospitalAccesses { get; set; }
+
+        // Network printers (Settings → Printers)
+        public DbSet<Printer> Printers { get; set; }
+
+        // Security hardening: database backup history
+        public DbSet<DatabaseBackup> DatabaseBackups { get; set; }
+
+        // Quality management (incidents + CAPA, controlled documents, internal audits, training records)
+        public DbSet<QualityIncident> QualityIncidents { get; set; }
+        public DbSet<CapaAction> CapaActions { get; set; }
+        public DbSet<ControlledDocument> ControlledDocuments { get; set; }
+        public DbSet<DocumentVersion> DocumentVersions { get; set; }
+        public DbSet<InternalAudit> InternalAudits { get; set; }
+        public DbSet<AuditFinding> AuditFindings { get; set; }
+        public DbSet<TrainingRecord> TrainingRecords { get; set; }
+
+        // Equipment register (maintenance / calibration)
+        public DbSet<Equipment> Equipment { get; set; }
+        public DbSet<EquipmentServiceRecord> EquipmentServiceRecords { get; set; }
+
+        // Lab traceability (chain of custody)
+        public DbSet<LabSampleEvent> LabSampleEvents { get; set; }
+
+        // Vendors master
+        public DbSet<Vendor> Vendors { get; set; }
+        public DbSet<PurchaseBill> PurchaseBills { get; set; }
+        public DbSet<PurchaseBillItem> PurchaseBillItems { get; set; }
+        public DbSet<VendorPayment> VendorPayments { get; set; }
 
         // Core Hospital Entities
         public DbSet<Patient> Patients { get; set; }
@@ -45,9 +92,13 @@ namespace MedyxHMS.Data
         public DbSet<BloodInventory> BloodInventories { get; set; }
         public DbSet<BloodIssue> BloodIssues { get; set; }
         public DbSet<OTSchedule> OTSchedules { get; set; }
+        public DbSet<OperationTheatre> OperationTheatres { get; set; }
+        public DbSet<OTBlock> OTBlocks { get; set; }
         public DbSet<Referral> Referrals { get; set; }
         public DbSet<MedicalRecord> MedicalRecords { get; set; }
         public DbSet<TestResult> TestResults { get; set; }
+        public DbSet<PatientDocument> PatientDocuments { get; set; }
+        public DbSet<DischargeSummary> DischargeSummaries { get; set; }
         public DbSet<StaffAttendance> StaffAttendances { get; set; }
         public DbSet<LeaveType> LeaveTypes { get; set; }
         public DbSet<LeaveRequest> LeaveRequests { get; set; }
@@ -146,6 +197,30 @@ namespace MedyxHMS.Data
 
             // Configure decimal precision/scale to avoid SQL Server truncation defaults
             ConfigureDecimalPrecision(modelBuilder);
+
+            // Multi-hospital: hospital tables and per-hospital filters
+            ConfigureHospitals(modelBuilder);
+
+            // Quality management
+            ConfigureQuality(modelBuilder);
+
+            // Equipment register
+            ConfigureEquipment(modelBuilder);
+
+            // Lab traceability
+            ConfigureLabTraceability(modelBuilder);
+
+            // Vendors / purchasing
+            ConfigurePurchasing(modelBuilder);
+
+            // Operation theatre master and availability
+            ConfigureOperationTheatres(modelBuilder);
+
+            // Patient records and documents
+            ConfigurePatientRecords(modelBuilder);
+
+            // Discharge reports of in-patient admissions
+            ConfigureDischargeSummaries(modelBuilder);
 
             // Seed initial data
             SeedInitialData(modelBuilder);
@@ -640,12 +715,214 @@ namespace MedyxHMS.Data
             // This ensures we have the foundation for RBAC
         }
 
+        private void ConfigureHospitals(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Hospital>().HasIndex(h => h.Code).IsUnique();
+
+            modelBuilder.Entity<UserHospitalAccess>()
+                .HasOne(a => a.Hospital).WithMany().HasForeignKey(a => a.HospitalId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserHospitalAccess>()
+                .HasOne<ApplicationUser>().WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<UserHospitalAccess>().HasIndex(a => new { a.UserId, a.HospitalId }).IsUnique();
+
+            // Printers of one hospital, or of every hospital (HospitalId null). Not filtered by the active hospital:
+            // the printer pages choose the printers themselves.
+            modelBuilder.Entity<Printer>()
+                .HasOne(p => p.Hospital).WithMany().HasForeignKey(p => p.HospitalId).OnDelete(DeleteBehavior.Restrict);
+
+            // Records that belong to one hospital: shown only for the active hospital (no filter when viewing all
+            // hospitals, in the patient portal, on the public site, at start-up and in background jobs).
+            ApplyHospitalFilter<Appointment>(modelBuilder);
+            ApplyHospitalFilter<OPDVisit>(modelBuilder);
+            ApplyHospitalFilter<IPDAdmission>(modelBuilder);
+            ApplyHospitalFilter<Ward>(modelBuilder);
+            ApplyHospitalFilter<Bill>(modelBuilder);
+            ApplyHospitalFilter<PharmacyBill>(modelBuilder);
+            ApplyHospitalFilter<InventoryItem>(modelBuilder);
+            ApplyHospitalFilter<OTSchedule>(modelBuilder);
+
+            // Child records follow their parent's hospital.
+            modelBuilder.Entity<Bed>().HasQueryFilter(b => !HospitalFilterEnabled || b.Ward.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<BillItem>().HasQueryFilter(i => !HospitalFilterEnabled || i.Bill.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<Payment>().HasQueryFilter(p => !HospitalFilterEnabled || p.Bill.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<Prescription>().HasQueryFilter(p => !HospitalFilterEnabled || p.PharmacyBill.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(t => !HospitalFilterEnabled || t.InventoryItem.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<VisitNoteHistory>().HasQueryFilter(v => !HospitalFilterEnabled || v.OPDVisit.HospitalId == HospitalFilterId);
+        }
+
+        private void ConfigureQuality(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<QualityIncident>().HasIndex(i => i.IncidentNumber).IsUnique();
+            modelBuilder.Entity<QualityIncident>().HasOne(i => i.Patient).WithMany().HasForeignKey(i => i.PatientId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<CapaAction>().HasOne(c => c.Incident).WithMany(i => i.CapaActions).HasForeignKey(c => c.IncidentId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<CapaAction>().HasOne(c => c.AuditFinding).WithMany().HasForeignKey(c => c.AuditFindingId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<ControlledDocument>().HasIndex(d => d.DocumentNumber).IsUnique();
+            modelBuilder.Entity<DocumentVersion>().HasOne(v => v.Document).WithMany(d => d.Versions).HasForeignKey(v => v.DocumentId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<DocumentVersion>().HasIndex(v => new { v.DocumentId, v.VersionNumber }).IsUnique();
+            modelBuilder.Entity<InternalAudit>().HasIndex(a => a.AuditNumber).IsUnique();
+            modelBuilder.Entity<AuditFinding>().HasOne(f => f.Audit).WithMany(a => a.Findings).HasForeignKey(f => f.AuditId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<TrainingRecord>().Property(t => t.StaffId).HasMaxLength(450);
+            modelBuilder.Entity<TrainingRecord>().HasIndex(t => t.StaffId);
+
+            // Incidents, CAPA and audits belong to a hospital; findings follow their audit.
+            ApplyHospitalFilter<QualityIncident>(modelBuilder);
+            ApplyHospitalFilter<CapaAction>(modelBuilder);
+            ApplyHospitalFilter<InternalAudit>(modelBuilder);
+            modelBuilder.Entity<AuditFinding>().HasQueryFilter(f => !HospitalFilterEnabled || f.Audit.HospitalId == HospitalFilterId);
+        }
+
+        private void ConfigureEquipment(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Equipment>().ToTable("Equipment");
+            modelBuilder.Entity<Equipment>().HasIndex(e => e.AssetTag).IsUnique();
+            modelBuilder.Entity<EquipmentServiceRecord>().HasOne(r => r.Equipment).WithMany(e => e.ServiceRecords).HasForeignKey(r => r.EquipmentId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<EquipmentServiceRecord>().Property(r => r.Cost).HasPrecision(18, 2);
+            ApplyHospitalFilter<Equipment>(modelBuilder);
+            modelBuilder.Entity<EquipmentServiceRecord>().HasQueryFilter(r => !HospitalFilterEnabled || r.Equipment.HospitalId == HospitalFilterId);
+        }
+
+        private static void ConfigurePatientRecords(ModelBuilder modelBuilder)
+        {
+            // One medical record per source visit / admission.
+            modelBuilder.Entity<MedicalRecord>().HasIndex(m => new { m.SourceType, m.SourceId }).IsUnique().HasFilter("[SourceId] IS NOT NULL");
+            modelBuilder.Entity<PatientDocument>().HasOne(d => d.Patient).WithMany().HasForeignKey(d => d.PatientId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PatientDocument>().HasIndex(d => new { d.PatientId, d.IsDeleted });
+        }
+
+        private void ConfigureOperationTheatres(ModelBuilder modelBuilder)
+        {
+            // Theatre codes are unique within a hospital.
+            modelBuilder.Entity<OperationTheatre>().HasIndex(t => new { t.HospitalId, t.Code }).IsUnique();
+            modelBuilder.Entity<OTBlock>().HasOne(b => b.Theatre).WithMany(t => t.Blocks).HasForeignKey(b => b.OperationTheatreId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<OTBlock>().HasIndex(b => new { b.OperationTheatreId, b.StartsAt });
+            modelBuilder.Entity<OTSchedule>().HasOne(o => o.Theatre).WithMany().HasForeignKey(o => o.OperationTheatreId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<OTSchedule>().HasOne(o => o.Surgeon).WithMany().HasForeignKey(o => o.SurgeonDoctorId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<OTSchedule>().HasIndex(o => new { o.OperationTheatreId, o.ScheduledDate });
+
+            // Theatres belong to a hospital; block times follow their theatre.
+            ApplyHospitalFilter<OperationTheatre>(modelBuilder);
+            modelBuilder.Entity<OTBlock>().HasQueryFilter(b => !HospitalFilterEnabled || b.Theatre.HospitalId == HospitalFilterId);
+        }
+
+        private void ConfigurePurchasing(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<Vendor>().HasIndex(v => v.VendorCode).IsUnique();
+            modelBuilder.Entity<InventoryItem>().HasOne(i => i.Vendor).WithMany().HasForeignKey(i => i.VendorId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<InventoryTransaction>().Property(t => t.Department).HasMaxLength(100);
+
+            modelBuilder.Entity<PurchaseBill>().HasIndex(b => b.BillNumber).IsUnique();
+            // Duplicate vendor invoices are refused in code (a cancelled entry may be re-entered).
+            modelBuilder.Entity<PurchaseBill>().HasIndex(b => new { b.VendorId, b.VendorInvoiceNumber });
+            modelBuilder.Entity<PurchaseBill>().HasOne(b => b.Vendor).WithMany().HasForeignKey(b => b.VendorId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<PurchaseBillItem>().HasOne(i => i.PurchaseBill).WithMany(b => b.Items).HasForeignKey(i => i.PurchaseBillId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<PurchaseBillItem>().HasOne(i => i.InventoryItem).WithMany().HasForeignKey(i => i.InventoryItemId).OnDelete(DeleteBehavior.ClientSetNull);
+            modelBuilder.Entity<VendorPayment>().HasOne(p => p.PurchaseBill).WithMany(b => b.Payments).HasForeignKey(p => p.PurchaseBillId).OnDelete(DeleteBehavior.Cascade);
+            foreach (var p in new[] { "SubTotal", "TaxAmount", "TotalAmount", "PaidAmount" }) modelBuilder.Entity<PurchaseBill>().Property(p).HasPrecision(18, 2);
+            foreach (var p in new[] { "Quantity", "UnitCost", "TaxPercent", "LineTotal" }) modelBuilder.Entity<PurchaseBillItem>().Property(p).HasPrecision(18, 2);
+            modelBuilder.Entity<VendorPayment>().Property(p => p.Amount).HasPrecision(18, 2);
+
+            // Purchase bills belong to a hospital; their lines and payments follow the bill.
+            ApplyHospitalFilter<PurchaseBill>(modelBuilder);
+            modelBuilder.Entity<PurchaseBillItem>().HasQueryFilter(i => !HospitalFilterEnabled || i.PurchaseBill.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<VendorPayment>().HasQueryFilter(p => !HospitalFilterEnabled || p.PurchaseBill.HospitalId == HospitalFilterId);
+        }
+
+        private static void ConfigureLabTraceability(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<LabResult>().Property(r => r.AccessionNumber).HasMaxLength(30);
+            modelBuilder.Entity<LabResult>().HasIndex(r => r.AccessionNumber).IsUnique().HasFilter("[AccessionNumber] IS NOT NULL");
+            modelBuilder.Entity<LabResult>().Property(r => r.SampleType).HasMaxLength(50);
+            modelBuilder.Entity<LabResult>().Property(r => r.SampleStatus).HasMaxLength(30);
+            modelBuilder.Entity<LabSampleEvent>().Property(e => e.EventType).HasMaxLength(40);
+            modelBuilder.Entity<LabSampleEvent>().HasOne(e => e.LabResult).WithMany(r => r.SampleEvents).HasForeignKey(e => e.LabResultId).OnDelete(DeleteBehavior.Cascade);
+        }
+
+        private void ConfigureDischargeSummaries(ModelBuilder modelBuilder)
+        {
+            // One discharge report per admission; the patient's reports are listed newest first.
+            modelBuilder.Entity<DischargeSummary>().HasIndex(d => d.IPDAdmissionId).IsUnique();
+            modelBuilder.Entity<DischargeSummary>().HasIndex(d => new { d.PatientId, d.DischargeDate });
+            modelBuilder.Entity<DischargeSummary>().HasOne(d => d.Admission).WithMany().HasForeignKey(d => d.IPDAdmissionId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<DischargeSummary>().HasOne(d => d.Patient).WithMany().HasForeignKey(d => d.PatientId).OnDelete(DeleteBehavior.Restrict);
+            ApplyHospitalFilter<DischargeSummary>(modelBuilder);
+        }
+
+        private void ApplyHospitalFilter<T>(ModelBuilder modelBuilder) where T : class, IHospitalScoped
+        {
+            modelBuilder.Entity<T>().HasQueryFilter(e => !HospitalFilterEnabled || e.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<T>().HasIndex(e => e.HospitalId);
+        }
+
+        // New hospital-scoped records get the active hospital (or the default hospital outside a staff request).
+        // An admission takes the hospital of its bed, so the bed and the admission always match.
+        private async Task AssignHospitalAsync(bool async, CancellationToken cancellationToken = default)
+        {
+            // Edit forms do not post HospitalId, so an Update() of a posted entity carries null: keep the stored hospital.
+            foreach (var entry in ChangeTracker.Entries<IHospitalScoped>()
+                         .Where(e => e.State == EntityState.Modified && e.Entity.HospitalId == null))
+            {
+                entry.Property(nameof(IHospitalScoped.HospitalId)).IsModified = false;
+            }
+
+            var added = ChangeTracker.Entries<IHospitalScoped>()
+                .Where(e => e.State == EntityState.Added && e.Entity.HospitalId == null)
+                .Select(e => e.Entity)
+                .ToList();
+            if (added.Count == 0)
+            {
+                return;
+            }
+
+            int? fallback = _hospitalContext?.HospitalIdForNewRecords;
+            var fallbackLoaded = fallback.HasValue;
+            foreach (var entity in added)
+            {
+                if (entity is IPDAdmission admission && admission.BedId.HasValue)
+                {
+                    var bedId = admission.BedId.Value;
+                    var bedQuery = Beds.IgnoreQueryFilters().Where(b => b.Id == bedId).Select(b => b.Ward.HospitalId);
+                    var bedHospital = async ? await bedQuery.FirstOrDefaultAsync(cancellationToken) : bedQuery.FirstOrDefault();
+                    if (bedHospital.HasValue)
+                    {
+                        entity.HospitalId = bedHospital;
+                        continue;
+                    }
+                }
+
+                if (!fallbackLoaded)
+                {
+                    var defaultQuery = Hospitals.Where(h => h.IsActive).OrderByDescending(h => h.IsDefault).ThenBy(h => h.Id).Select(h => (int?)h.Id);
+                    fallback = async ? await defaultQuery.FirstOrDefaultAsync(cancellationToken) : defaultQuery.FirstOrDefault();
+                    fallbackLoaded = true;
+                }
+                entity.HospitalId = fallback;
+            }
+        }
+
         // MVC's default ConvertEmptyStringToNull binds an empty optional form field to null,
         // which format-only attributes like [Phone]/[EmailAddress] correctly skip during
         // validation (they only run on non-null values). But entities default these same
         // optional strings to string.Empty, and their DB columns are NOT NULL by convention,
         // so an explicit null from binding fails at insert/update time. Coalescing null to
         // string.Empty here (once, centrally) fixes that without touching per-field validation.
+        /// <summary>
+        /// Edit forms usually post the whole record without its creation date, so Update() would overwrite it with the
+        /// model default (now). A record's creation date never changes after it was inserted.
+        /// </summary>
+        private void KeepCreationDates()
+        {
+            foreach (var entry in ChangeTracker.Entries().Where(e => e.State == EntityState.Modified))
+            {
+                foreach (var name in new[] { "CreatedDate", "CreatedAt" })
+                {
+                    if (entry.Metadata.FindProperty(name) != null)
+                    {
+                        entry.Property(name).IsModified = false;
+                    }
+                }
+            }
+        }
+
         private void CoalesceNullStringsToEmpty()
         {
             foreach (var entry in ChangeTracker.Entries())
@@ -670,13 +947,17 @@ namespace MedyxHMS.Data
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             CoalesceNullStringsToEmpty();
+            KeepCreationDates();
+            AssignHospitalAsync(async: false).GetAwaiter().GetResult();
             return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
-        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+        public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
         {
             CoalesceNullStringsToEmpty();
-            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
+            KeepCreationDates();
+            await AssignHospitalAsync(async: true, cancellationToken);
+            return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
     }
 }

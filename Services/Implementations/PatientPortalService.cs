@@ -46,7 +46,7 @@ namespace MedyxHMS.Services.Implementations
                         Email = patient.User?.Email,
                         UserName = patient.User?.UserName,
                         PhoneNumber = patient.Phone,
-                        FirstLoginDate = DateTime.UtcNow
+                        FirstLoginDate = DateTime.Now
                     };
 
                     var normalizedUserName = _userManager.NormalizeName(user.UserName);
@@ -64,7 +64,7 @@ namespace MedyxHMS.Services.Implementations
 
                     patient.UserId = user.Id;
                     patient.User = user;
-                    patient.CreatedDate = DateTime.UtcNow;
+                    patient.CreatedDate = DateTime.Now;
                     patient.IsActive = true;
 
                     // Assign Patient role
@@ -205,28 +205,28 @@ namespace MedyxHMS.Services.Implementations
                 { "UpcomingAppointments", upcomingCount },
                 { "PendingBills", pendingBills },
                 { "OutstandingAmount", outstandingAmount },
-                { "DashboardUpdated", DateTime.UtcNow }
+                { "DashboardUpdated", DateTime.Now }
             };
         }
 
         public async Task<int> GetUpcomingAppointmentsCountAsync(string patientId)
         {
             return await _context.Appointments
-                .Where(a => a.PatientId.ToString() == patientId && a.AppointmentDate > DateTime.UtcNow && a.Status != "Cancelled")
+                .Where(a => a.PatientId.ToString() == patientId && a.AppointmentDate > DateTime.Now && a.Status != "Cancelled")
                 .CountAsync();
         }
 
         public async Task<int> GetPendingBillsCountAsync(string patientId)
         {
             return await _context.Bills
-                .Where(b => b.PatientId.ToString() == patientId && (b.Status == "Pending" || b.Status == "Overdue"))
+                .Where(b => b.PatientId.ToString() == patientId && b.Status != "Paid" && b.Status != "Cancelled" && b.TotalAmount > b.PaidAmount)
                 .CountAsync();
         }
 
         public async Task<decimal> GetTotalOutstandingAmountAsync(string patientId)
         {
             return await _context.Bills
-                .Where(b => b.PatientId.ToString() == patientId && (b.Status == "Pending" || b.Status == "Overdue"))
+                .Where(b => b.PatientId.ToString() == patientId && b.Status != "Paid" && b.Status != "Cancelled" && b.TotalAmount > b.PaidAmount)
                 .SumAsync(b => b.TotalAmount - b.PaidAmount);
         }
 
@@ -239,8 +239,8 @@ namespace MedyxHMS.Services.Implementations
 
             query = filter switch
             {
-                "upcoming" => query.Where(a => a.AppointmentDate > DateTime.UtcNow && a.Status != "Cancelled"),
-                "past" => query.Where(a => a.AppointmentDate <= DateTime.UtcNow && a.Status != "Cancelled"),
+                "upcoming" => query.Where(a => a.AppointmentDate > DateTime.Now && a.Status != "Cancelled"),
+                "past" => query.Where(a => a.AppointmentDate <= DateTime.Now && a.Status != "Cancelled"),
                 "cancelled" => query.Where(a => a.Status == "Cancelled"),
                 _ => query
             };
@@ -263,7 +263,7 @@ namespace MedyxHMS.Services.Implementations
                 try
                 {
                     appointment.Status = "Pending";
-                    appointment.CreatedDate = DateTime.UtcNow;
+                    appointment.CreatedDate = DateTime.Now;
 
                     _context.Appointments.Add(appointment);
                     await _context.SaveChangesAsync();
@@ -285,6 +285,22 @@ namespace MedyxHMS.Services.Implementations
                     throw new Exception($"Appointment booking failed: {ex.Message}", ex);
                 }
             }
+        }
+
+        /// <summary>
+        /// True when the doctor already has a (not cancelled) appointment at that date and time in any hospital
+        /// of the group - the same rule the staff appointment screens use.
+        /// </summary>
+        public async Task<bool> IsDoctorSlotTakenAsync(int doctorId, DateTime date, TimeSpan time, int? excludeAppointmentId = null)
+        {
+            var day = date.Date;
+            var nextDay = day.AddDays(1);
+            return await _context.Appointments.IgnoreQueryFilters().AnyAsync(a =>
+                a.DoctorId == doctorId &&
+                a.AppointmentDate >= day && a.AppointmentDate < nextDay &&
+                a.AppointmentTime == time &&
+                a.Status != "Cancelled" &&
+                (!excludeAppointmentId.HasValue || a.Id != excludeAppointmentId.Value));
         }
 
         public async Task<bool> RescheduleAppointmentAsync(string appointmentId, DateTime newDate, TimeSpan newTime)
@@ -374,14 +390,19 @@ namespace MedyxHMS.Services.Implementations
         // Patient Medical Records
         public async Task<IEnumerable<MedicalRecord>> GetPatientMedicalRecordsAsync(string patientId, DateTime? startDate = null, DateTime? endDate = null)
         {
+            if (int.TryParse(patientId, out var id))
+            {
+                await new MedicalRecordService(_context).EnsureRecordsAsync(id);
+            }
+
             var query = _context.MedicalRecords
                 .Where(m => m.PatientId.ToString() == patientId);
 
             if (startDate.HasValue)
-                query = query.Where(m => m.RecordDate >= startDate.Value);
+                query = query.Where(m => m.RecordDate >= startDate.Value.Date);
 
             if (endDate.HasValue)
-                query = query.Where(m => m.RecordDate <= endDate.Value);
+                query = query.Where(m => m.RecordDate < endDate.Value.Date.AddDays(1));
 
             return await query
                 .Include(m => m.Doctor)
@@ -406,7 +427,7 @@ namespace MedyxHMS.Services.Implementations
                 query = query.Where(t => t.TestDate >= startDate.Value);
 
             if (endDate.HasValue)
-                query = query.Where(t => t.TestDate <= endDate.Value);
+                query = query.Where(t => t.TestDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate.Value));
 
             return await query.OrderByDescending(t => t.TestDate).ToListAsync();
         }
@@ -430,11 +451,13 @@ namespace MedyxHMS.Services.Implementations
             var query = _context.Bills
                 .Where(b => b.PatientId.ToString() == patientId);
 
+            // Bills are Unpaid / Partially Paid / Paid; "overdue" means not paid and past the due date.
+            var today = DateTime.Today;
             query = filter switch
             {
-                "pending" => query.Where(b => b.Status == "Pending"),
+                "pending" => query.Where(b => b.Status != "Paid" && b.Status != "Cancelled" && b.DueDate >= today),
                 "paid" => query.Where(b => b.Status == "Paid"),
-                "overdue" => query.Where(b => b.Status == "Overdue"),
+                "overdue" => query.Where(b => b.Status != "Paid" && b.Status != "Cancelled" && b.DueDate < today),
                 _ => query
             };
 
@@ -444,7 +467,9 @@ namespace MedyxHMS.Services.Implementations
         public async Task<Bill?> GetBillDetailsAsync(string billId)
         {
             return await _context.Bills
+                .Include(b => b.Patient)
                 .Include(b => b.Payments)
+                .Include(b => b.BillItems)
                 .FirstOrDefaultAsync(b => b.Id.ToString() == billId);
         }
 

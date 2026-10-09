@@ -1,6 +1,6 @@
 @{
     ViewData["Title"] = "Medical Records";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 @model PatientPortalMedicalRecordsViewModel
@@ -26,6 +26,9 @@
                 </a>
                 <a href="@Url.Action("RadiologyResults", "MedicalRecords")" class="btn btn-outline-primary">
                     <i class="fas fa-x-ray"></i> Radiology
+                </a>
+                <a href="@Url.Action("Index", "DischargeReports", new { area = "PatientPortal" })" class="btn btn-outline-primary">
+                    <i class="fas fa-file-medical-alt"></i> Discharge Reports
                 </a>
             </div>
         </div>

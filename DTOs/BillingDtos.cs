@@ -8,6 +8,7 @@ namespace MedyxHMS.DTOs
     public class BillDto
     {
         public string Id { get; set; }
+        public int? HospitalId { get; set; } // multi-hospital: shown when viewing all hospitals
         public string BillNumber { get; set; }
         public int PatientId { get; set; }
         public string PatientName { get; set; }
@@ -248,7 +249,7 @@ namespace MedyxHMS.DTOs
         public decimal TransactionFee { get; set; }
 
         [StringLength(10, ErrorMessage = "Currency cannot exceed 10 characters")]
-        public string Currency { get; set; } = "USD";
+        public string Currency { get; set; } = "PKR";
 
         public bool IsTestMode { get; set; }
     }

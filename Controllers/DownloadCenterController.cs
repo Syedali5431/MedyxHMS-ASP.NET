@@ -15,12 +15,14 @@ namespace MedyxHMS.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IWebHostEnvironment _env;
         private readonly IAuditService _audit;
+        private readonly IDischargeService _discharge;
 
-        public DownloadCenterController(ApplicationDbContext context, IWebHostEnvironment env, IAuditService audit)
+        public DownloadCenterController(ApplicationDbContext context, IWebHostEnvironment env, IAuditService audit, IDischargeService discharge)
         {
             _context = context;
             _env = env;
             _audit = audit;
+            _discharge = discharge;
         }
 
         // ── List ──────────────────────────────────────────────────
@@ -37,6 +39,14 @@ namespace MedyxHMS.Controllers
                 query = query.Where(f => f.Category == category);
 
             ViewBag.Category = category;
+
+            // Latest discharge reports (Report category) for the roles that may see every patient's report.
+            if ((string.IsNullOrWhiteSpace(category) || category == "Report")
+                && (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor") || User.IsInRole("Nurse")))
+            {
+                ViewBag.DischargeReports = (await _discharge.ListAsync(null, null, null, null, null)).Take(8).ToList();
+            }
+
             var files = await query.OrderByDescending(f => f.UploadedAt).ToListAsync();
             return View(files);
         }
@@ -82,7 +92,7 @@ namespace MedyxHMS.Controllers
             model.FileType = ext.TrimStart('.');
             model.FileSizeBytes = file.Length;
             model.UploadedByUserId = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty;
-            model.UploadedAt = DateTime.UtcNow;
+            model.UploadedAt = DateTime.Now;
 
             _context.DownloadFiles.Add(model);
             await _context.SaveChangesAsync();

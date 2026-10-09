@@ -11,6 +11,14 @@
                     <h5 class="mb-0"><i class="fas fa-shield-alt me-2"></i>Enable Multi-Factor Authentication</h5>
                 </div>
                 <div class="card-body">
+                    @if (ViewBag.Required == true)
+                    {
+                        <div class="alert alert-warning small">
+                            <i class="fas fa-user-shield me-1"></i>
+                            <strong>Two-step login is required for administrator accounts.</strong>
+                            Set it up now to continue. You will need the 6-digit code from your authenticator app each time you sign in.
+                        </div>
+                    }
                     <div asp-validation-summary="All" class="text-danger small mb-2"></div>
                     <div class="alert alert-info small">
                         <i class="fas fa-info-circle me-1"></i>
@@ -31,6 +39,10 @@
                             <i class="fas fa-check me-1"></i> Verify & Enable MFA
                         </button>
                     </form>
+                    <form action="/Account/Logout" method="post" class="mt-2 text-center">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-link btn-sm text-muted">Not now – sign out</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -41,7 +53,7 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script>
         new QRCode(document.getElementById("qrcode"), {
-            text: '@Html.Raw(Model)',
+            text: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model ?? string.Empty)),
             width: 200, height: 200
         });
     </script>

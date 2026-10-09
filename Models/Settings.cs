@@ -10,7 +10,7 @@ namespace MedyxHMS.Models
         public string Category { get; set; } // General, Email, SMS, Payment, etc.
         public string Description { get; set; }
         public bool IsSystem { get; set; } = false; // System settings cannot be deleted
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public DateTime? ModifiedDate { get; set; }
         public string ModifiedBy { get; set; }
     }
@@ -24,7 +24,7 @@ namespace MedyxHMS.Models
         public bool IsActive { get; set; } = true;
         public bool IsDefault { get; set; } = false;
         public int DisplayOrder { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class AuditLog
@@ -43,7 +43,7 @@ namespace MedyxHMS.Models
         }
         public string IpAddress { get; set; }
         public string UserAgent { get; set; }
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; } = DateTime.Now;
         public string SessionId { get; set; }
 
         // Navigation properties

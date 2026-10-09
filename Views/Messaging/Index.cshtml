@@ -1,5 +1,6 @@
 @model IEnumerable<MedyxHMS.Models.InternalMessage>
 @{
+    var names = ViewBag.UserNames as Dictionary<string, string> ?? new Dictionary<string, string>();
     ViewData["Title"] = "Inbox";
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
 }
@@ -60,8 +61,8 @@
                                     @m.Subject
                                 </a>
                             </td>
-                            <td><small>@m.SenderId</small></td>
-                            <td><small>@m.SentAt.ToLocalTime().ToString("MMM dd, HH:mm")</small></td>
+                            <td><small>@names.GetValueOrDefault(m.SenderId, m.SenderId)</small></td>
+                            <td><small>@m.SentAt.ToString("MMM dd, HH:mm")</small></td>
                             <td>
                                 <div class="d-flex gap-1">
                                     <a asp-action="Compose" asp-route-replyToId="@m.Id" class="btn btn-sm btn-outline-secondary">Reply</a>

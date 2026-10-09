@@ -1,17 +1,35 @@
 @model MedyxHMS.Models.LabResult
+@using MedyxHMS.Services.Implementations
 @{
     ViewData["Title"] = "Lab Result Details";
+    var events = ViewBag.Events as List<MedyxHMS.Models.LabSampleEvent> ?? new List<MedyxHMS.Models.LabSampleEvent>();
+    var signed = Model.SignedOffAt.HasValue;
+    var signatureValid = ViewBag.SignatureValid as bool? ?? false;
+    var canSignOff = ViewBag.CanSignOff as bool? ?? false;
+    var returnUrl = Context.Request.Path.Value;
+    var hasBarcode = !string.IsNullOrEmpty(Model.AccessionNumber) && Code128Barcode.CanEncode(Model.AccessionNumber);
 }
 
 <div class="container-fluid mt-4">
     <div class="row mb-4">
-        <div class="col-md-8">
+        <div class="col-md-7">
             <h2><i class="fas fa-flask"></i> Lab Result — Order #@Model.OrderNumber</h2>
+            @if (signed)
+            {
+                <span class="badge bg-success"><i class="fas fa-signature me-1"></i>Signed off – locked</span>
+            }
         </div>
-        <div class="col-md-4 text-end">
-            <a asp-action="EditResult" asp-route-id="@Model.Id" class="btn btn-warning">
-                <i class="fas fa-edit"></i> Edit Result
-            </a>
+        <div class="col-md-5 text-end">
+            @if (hasBarcode)
+            {
+                <a asp-action="PrintLabel" asp-route-id="@Model.Id" target="_blank" class="btn btn-outline-secondary"><i class="fas fa-barcode"></i> Print Label</a>
+            }
+            @if (!signed)
+            {
+                <a asp-action="EditResult" asp-route-id="@Model.Id" class="btn btn-warning">
+                    <i class="fas fa-edit"></i> Edit Result
+                </a>
+            }
             <a asp-action="Results" class="btn btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Results
             </a>
@@ -56,20 +74,66 @@
                         <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Interpretation) ? "-" : Model.Interpretation)</dd>
 
                         <dt class="col-sm-4">Performed By</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.PerformedBy) ? "-" : Model.PerformedBy)</dd>
+                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.PerformedBy) ? "-" : Model.PerformedBy)@if (Model.ResultEnteredAt.HasValue) { <span class="text-muted small"> (result entered @Model.ResultEnteredAt.Value.ToString("dd-MMM-yyyy HH:mm") by @Model.ResultEnteredBy)</span> }</dd>
 
                         <dt class="col-sm-4">Verified By</dt>
-                        <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.VerifiedBy) ? "-" : Model.VerifiedBy)</dd>
+                        <dd class="col-sm-8">@(signed ? Model.SignedOffBy : string.IsNullOrEmpty(Model.VerifiedBy) ? "-" : Model.VerifiedBy + " (not electronically signed)")</dd>
 
                         <dt class="col-sm-4">Notes</dt>
                         <dd class="col-sm-8">@(string.IsNullOrEmpty(Model.Notes) ? "-" : Model.Notes)</dd>
                     </dl>
                 </div>
             </div>
+
+            <div class="card mb-3 @(signed ? (signatureValid ? "border-success" : "border-danger") : "")">
+                <div class="card-header bg-light"><h5 class="mb-0"><i class="fas fa-signature me-1"></i>Authorisation (electronic sign-off)</h5></div>
+                <div class="card-body">
+                    @if (signed)
+                    {
+                        <p class="mb-1">Electronically signed by <strong>@Model.SignedOffBy</strong> on @Model.SignedOffAt!.Value.ToString("dd-MMM-yyyy HH:mm:ss").</p>
+                        @if (signatureValid)
+                        {
+                            <p class="small text-success mb-2"><i class="fas fa-check-circle me-1"></i>Signature valid – the result has not changed since it was signed.</p>
+                        }
+                        else
+                        {
+                            <p class="small text-danger mb-2"><i class="fas fa-exclamation-triangle me-1"></i>Signature does not match – the result was changed after sign-off.</p>
+                        }
+                        <p class="small text-muted mb-2">Signature: <code>@Model.SignatureHash[..16]…</code></p>
+                        @if (canSignOff)
+                        {
+                            <form asp-action="RevokeSignOff" asp-route-id="@Model.Id" method="post" class="row g-2 align-items-end">
+                                @Html.AntiForgeryToken()
+                                <div class="col-md-6"><input name="reason" class="form-control form-control-sm" placeholder="Reason for revoking (e.g. transcription error)" /></div>
+                                <div class="col-md-4"><input name="password" type="password" class="form-control form-control-sm" placeholder="Your password" autocomplete="current-password" /></div>
+                                <div class="col-md-2"><button type="submit" class="btn btn-sm btn-outline-danger w-100">Revoke</button></div>
+                            </form>
+                        }
+                    }
+                    else if (canSignOff)
+                    {
+                        <form asp-action="SignOff" asp-route-id="@Model.Id" method="post">
+                            @Html.AntiForgeryToken()
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" name="confirm" value="true" id="confirmSign" />
+                                <label class="form-check-label small" for="confirmSign">I have reviewed this result and authorise its release. My password counts as my signature.</label>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-6"><input name="password" type="password" class="form-control form-control-sm" placeholder="Your password" autocomplete="current-password" /></div>
+                                <div class="col-md-6"><button type="submit" class="btn btn-sm btn-success w-100"><i class="fas fa-signature me-1"></i>Sign off result</button></div>
+                            </div>
+                        </form>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-0">Not signed off yet. Results are authorised by a user with the Pathologist role.</p>
+                    }
+                </div>
+            </div>
         </div>
 
         <div class="col-md-4">
-            <div class="card">
+            <div class="card mb-3">
                 <div class="card-header bg-light">
                     <h5 class="mb-0">Patient</h5>
                 </div>
@@ -77,6 +141,74 @@
                     <p class="mb-1"><strong>@Model.Patient?.FirstName @Model.Patient?.LastName</strong></p>
                     <p class="mb-1 text-muted">@Model.Patient?.PatientId</p>
                     <p class="mb-0 text-muted">@Model.Patient?.Phone</p>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header bg-light"><h5 class="mb-0"><i class="fas fa-vial me-1"></i>Specimen</h5></div>
+                <div class="card-body small">
+                    @if (hasBarcode)
+                    {
+                        <div class="text-center mb-2">@Html.Raw(Code128Barcode.Svg(Model.AccessionNumber!, 0.3, 12, "mm", showText: true))</div>
+                    }
+                    <dl class="row mb-2">
+                        <dt class="col-5">Accession no.</dt><dd class="col-7">@(Model.AccessionNumber ?? "–")</dd>
+                        <dt class="col-5">Sample type</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.SampleType) ? "–" : Model.SampleType)</dd>
+                        <dt class="col-5">Sample status</dt><dd class="col-7"><span class="badge @(Model.SampleStatus == "Received" ? "bg-success" : Model.SampleStatus == "Rejected" ? "bg-danger" : "bg-secondary")">@Model.SampleStatus</span></dd>
+                        @if (Model.CollectedAt.HasValue) { <dt class="col-5">Collected</dt><dd class="col-7">@Model.CollectedAt.Value.ToString("dd-MMM HH:mm") by @Model.CollectedBy</dd> }
+                        @if (Model.ReceivedAt.HasValue) { <dt class="col-5">Received</dt><dd class="col-7">@Model.ReceivedAt.Value.ToString("dd-MMM HH:mm") by @Model.ReceivedBy</dd> }
+                        @if (!string.IsNullOrEmpty(Model.RejectionReason)) { <dt class="col-5">Rejected</dt><dd class="col-7 text-danger">@Model.RejectionReason</dd> }
+                    </dl>
+                    @if (!signed && Model.Status != "Cancelled")
+                    {
+                        @if (Model.SampleStatus == "Awaiting collection" || Model.SampleStatus == "Rejected")
+                        {
+                            <form asp-action="CollectSample" asp-route-id="@Model.Id" method="post" class="d-flex gap-1 mb-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <select name="sampleType" class="form-select form-select-sm">
+                                    @foreach (var t in LabTraceabilityService.SampleTypes) { <option value="@t" selected="@(Model.SampleType == t)">@t</option> }
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-primary text-nowrap">Mark collected</button>
+                            </form>
+                        }
+                        else if (Model.SampleStatus == "Collected")
+                        {
+                            <form asp-action="ReceiveSample" asp-route-id="@Model.Id" method="post" class="mb-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <button type="submit" class="btn btn-sm btn-primary">Receive in lab</button>
+                            </form>
+                        }
+                        @if ((Model.SampleStatus == "Collected" || Model.SampleStatus == "Received") && string.IsNullOrWhiteSpace(Model.ResultValue))
+                        {
+                            <form asp-action="RejectSample" asp-route-id="@Model.Id" method="post" class="d-flex gap-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <input name="reason" class="form-control form-control-sm" placeholder="Rejection reason" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Reject</button>
+                            </form>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-light"><h5 class="mb-0"><i class="fas fa-route me-1"></i>Chain of custody</h5></div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush small">
+                        @foreach (var e in events)
+                        {
+                            <li class="list-group-item">
+                                <div class="d-flex justify-content-between"><strong>@e.EventType</strong><span class="text-muted">@e.OccurredAt.ToString("dd-MMM HH:mm")</span></div>
+                                <div class="text-muted">@e.UserName@(string.IsNullOrEmpty(e.Details) ? "" : " – " + e.Details)</div>
+                            </li>
+                        }
+                        @if (!events.Any())
+                        {
+                            <li class="list-group-item text-muted">No events recorded (order created before traceability was introduced).</li>
+                        }
+                    </ul>
                 </div>
             </div>
         </div>

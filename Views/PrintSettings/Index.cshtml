@@ -1,0 +1,213 @@
+@model MedyxHMS.ViewModels.ReceiptPrintSettings
+@using MedyxHMS.ViewModels
+@{
+    ViewData["Title"] = "Printers";
+    var printers = ViewBag.Printers as List<MedyxHMS.Models.Printer> ?? new List<MedyxHMS.Models.Printer>();
+    var manageable = ViewBag.ManageablePrinterIds as List<int> ?? new List<int>();
+    var multiHospital = ViewBag.MultiHospital == true;
+}
+
+<div class="container-fluid mt-3" style="max-width:1300px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-print text-primary me-2"></i>Printers</h4>
+            <small class="text-muted">Where receipts (bills, payments, pharmacy bills, appointment and OPD slips) and reports are printed.</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="TestReceipt" target="_blank" class="btn btn-outline-primary btn-sm"><i class="fas fa-receipt me-1"></i>Open test receipt</a>
+            <a asp-action="Printer" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add printer</a>
+        </div>
+    </div>
+
+    <form asp-action="Index" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        @* ── 1. Print mode ── *@
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white fw-semibold"><i class="fas fa-sliders-h me-1 text-primary"></i>How to print</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="print-mode-option border rounded p-3 h-100 d-block @(Model.PrintMode == ReceiptPrintSettings.PrintModeWindows ? "border-primary bg-primary-subtle" : "")" for="modeWindows">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" asp-for="PrintMode" value="@ReceiptPrintSettings.PrintModeWindows" id="modeWindows" />
+                                <span class="form-check-label fw-semibold"><i class="fab fa-windows me-1 text-primary"></i>Use the default printer set in Windows</span>
+                            </div>
+                            <div class="small text-muted ps-4">
+                                Receipts and reports open the print dialog of the browser, which selects the default printer of this computer
+                                (Windows Settings → Bluetooth &amp; devices → Printers &amp; scanners). Any printer installed in Windows can be chosen in the dialog.
+                            </div>
+                        </label>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="print-mode-option border rounded p-3 h-100 d-block @(Model.PrintMode == ReceiptPrintSettings.PrintModeNetwork ? "border-primary bg-primary-subtle" : "")" for="modeNetwork">
+                            <div class="form-check mb-1">
+                                <input class="form-check-input" type="radio" asp-for="PrintMode" value="@ReceiptPrintSettings.PrintModeNetwork" id="modeNetwork" />
+                                <span class="form-check-label fw-semibold"><i class="fas fa-network-wired me-1 text-primary"></i>Use network printers (LAN / IP)</span>
+                            </div>
+                            <div class="small text-muted ps-4">
+                                Receipts and reports are sent straight to a printer from the list below – an IP printer (raw port 9100) or a printer
+                                shared by a Windows computer on the LAN – without a print dialog. The print dialog stays available as a fallback.
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                <span asp-validation-for="PrintMode" class="text-danger small"></span>
+            </div>
+        </div>
+
+        @* ── 2. Printer list ── *@
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <span class="fw-semibold"><i class="fas fa-network-wired me-1 text-primary"></i>Network printers</span>
+                <a asp-action="Printer" class="btn btn-outline-primary btn-sm"><i class="fas fa-plus me-1"></i>Add printer</a>
+            </div>
+            <div class="card-body p-0">
+                @if (!printers.Any())
+                {
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-print fa-2x mb-2 opacity-25 d-block"></i>
+                        No network printers yet. <a asp-action="Printer">Add a printer</a> by its IP address or its Windows share (\\COMPUTER\Printer).
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Type</th>
+                                    <th>Connection</th>
+                                    <th>Paper / language</th>
+                                    @if (multiHospital) { <th>Hospital</th> }
+                                    <th>Status</th>
+                                    <th>Last test</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var p in printers)
+                                {
+                                    var canManage = manageable.Contains(p.Id);
+                                    <tr class="@(p.IsActive ? "" : "table-secondary")">
+                                        <td>
+                                            <div class="fw-semibold">@p.Name</div>
+                                            @if (p.IsDefault) { <span class="badge bg-primary">Default @(p.IsReceiptPrinter ? "receipt" : "document") printer</span> }
+                                            @if (!string.IsNullOrWhiteSpace(p.Notes)) { <div class="small text-muted">@p.Notes</div> }
+                                        </td>
+                                        <td>
+                                            @if (p.IsReceiptPrinter) { <span><i class="fas fa-receipt text-success me-1"></i>Receipt</span> }
+                                            else { <span><i class="fas fa-file-alt text-info me-1"></i>Document</span> }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@(p.ConnectionType == MedyxHMS.Models.Printer.ConnectionLan ? "LAN share" : "IP")</span>
+                                            <code class="ms-1">@p.Address</code>
+                                        </td>
+                                        <td class="small">@p.PaperSize &middot; @p.PrintLanguage @(p.Copies > 1 ? $"· {p.Copies} copies" : "")</td>
+                                        @if (multiHospital) { <td class="small">@(p.Hospital?.Name ?? "All hospitals")</td> }
+                                        <td><span class="badge @(p.IsActive ? "bg-success" : "bg-secondary")">@(p.IsActive ? "Active" : "Inactive")</span></td>
+                                        <td class="small text-muted" style="max-width:260px">
+                                            @if (p.LastTestedDate.HasValue)
+                                            {
+                                                <div>@p.LastTestedDate.Value.ToString("dd-MMM-yyyy hh:mm tt")</div>
+                                                <div class="text-truncate" title="@p.LastTestResult">@p.LastTestResult</div>
+                                            }
+                                            else { <span>Not tested</span> }
+                                        </td>
+                                        <td class="text-end">
+                                            @if (canManage)
+                                            {
+                                                <div class="d-inline-flex flex-wrap gap-1 justify-content-end">
+                                                    <button type="submit" class="btn btn-sm btn-outline-secondary" formaction="@Url.Action("TestConnection", new { id = p.Id })" formnovalidate title="Check that the printer answers on the network (prints nothing)"><i class="fas fa-plug me-1"></i>Test connection</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-success" formaction="@Url.Action("TestPrint", new { id = p.Id })" formnovalidate title="Print a test page"><i class="fas fa-print me-1"></i>Test print</button>
+                                                    <a asp-action="Printer" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary"><i class="fas fa-edit me-1"></i>Edit</a>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" formaction="@Url.Action("DeletePrinter", new { id = p.Id })" formnovalidate onclick="return confirm('Remove the printer @p.Name?');"><i class="fas fa-trash"></i></button>
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <span class="small text-muted"><i class="fas fa-lock me-1"></i>SuperAdmin</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* ── 3. Receipts ── *@
+        <div class="row g-3">
+            <div class="col-lg-7">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header bg-white fw-semibold"><i class="fas fa-receipt me-1 text-primary"></i>Receipts</div>
+                    <div class="card-body">
+                        <div class="alert alert-light border small py-2 mb-3">
+                            <i class="fas fa-ruler-horizontal me-1 text-primary"></i>The paper width (80 mm or 58 mm) is chosen on the receipt itself when you print; the last choice is remembered on that computer. Network receipt printers use the width set on each printer.
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-4">
+                                <label asp-for="CurrencySymbol" class="form-label fw-semibold">Currency symbol</label>
+                                <input asp-for="CurrencySymbol" class="form-control" maxlength="5" />
+                                <span asp-validation-for="CurrencySymbol" class="text-danger small"></span>
+                                <div class="form-text">Used for all amounts in the system (PKR = Pakistani rupee).</div>
+                            </div>
+                            <div class="col-sm-8">
+                                <label asp-for="FooterText" class="form-label fw-semibold">Footer text</label>
+                                <input asp-for="FooterText" class="form-control" maxlength="200" />
+                                <span asp-validation-for="FooterText" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="mb-2 form-check">
+                            <input asp-for="AutoPrint" type="checkbox" class="form-check-input" id="autoPrint" />
+                            <label class="form-check-label" for="autoPrint">Print automatically when a receipt opens (print dialog, or straight to the default network receipt printer)</label>
+                        </div>
+                        <div class="mb-3 form-check">
+                            <input asp-for="ShowHospitalAddress" type="checkbox" class="form-check-input" id="showAddress" />
+                            <label class="form-check-label" for="showAddress">Print the hospital address, phone and registration no.</label>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save settings</button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body small">
+                        <h6 class="fw-semibold"><i class="fas fa-info-circle me-1"></i>Setting up</h6>
+                        <p class="mb-1 fw-semibold">Windows default printer</p>
+                        <ol class="mb-3 ps-3">
+                            <li>Install the printer's Windows driver and make it the default printer (or choose it in the dialog).</li>
+                            <li>For receipts set <strong>Margins</strong> to <em>None</em> and turn off <strong>Headers and footers</strong> once; the browser remembers it.</li>
+                        </ol>
+                        <p class="mb-1 fw-semibold">Network printer (IP)</p>
+                        <ol class="mb-3 ps-3">
+                            <li>Print the printer's network status page to find its IP address (give it a fixed IP in the router).</li>
+                            <li>Add it here with port <code>9100</code>, then use <em>Test connection</em> and <em>Test print</em>.</li>
+                        </ol>
+                        <p class="mb-1 fw-semibold">Shared LAN printer</p>
+                        <ol class="mb-0 ps-3">
+                            <li>On the computer the printer is connected to, share it (Printer properties → Sharing).</li>
+                            <li>Add it here as <code>\\COMPUTER-NAME\ShareName</code>. The server running MedyxHMS must be allowed to print to the share.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('input[name="PrintMode"]').forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                document.querySelectorAll('.print-mode-option').forEach(function (o) { o.classList.remove('border-primary', 'bg-primary-subtle'); });
+                var option = radio.closest('.print-mode-option');
+                if (option) option.classList.add('border-primary', 'bg-primary-subtle');
+            });
+        });
+    </script>
+}

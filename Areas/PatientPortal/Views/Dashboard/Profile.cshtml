@@ -1,0 +1,140 @@
+@model PatientPortalProfileViewModel
+@{
+    ViewData["Title"] = "My Profile";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+    var p = Model.Patient;
+    var u = Model.UpdateProfile;
+    // Prefer posted values (after a validation error), otherwise the saved profile.
+    string V(string posted, string saved) => posted ?? saved ?? string.Empty;
+    var dob = u.DateOfBirth != default ? u.DateOfBirth : p.DateOfBirth;
+    var gender = V(u.Gender, p.Gender);
+    var marital = V(u.MaritalStatus, p.MaritalStatus);
+    var blood = V(u.BloodGroup, p.BloodGroup);
+}
+
+<div class="py-4" style="max-width:960px">
+    <h3 class="mb-4"><i class="fas fa-user me-2"></i>My Profile</h3>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body row">
+            <div class="col-sm-3"><div class="text-muted small">Patient ID</div><div class="fw-semibold">@(string.IsNullOrWhiteSpace(p.PatientId) ? "—" : p.PatientId)</div></div>
+            <div class="col-sm-4"><div class="text-muted small">E-mail</div><div class="fw-semibold">@(string.IsNullOrWhiteSpace(p.Email) ? "—" : p.Email)</div></div>
+            <div class="col-sm-2"><div class="text-muted small">Member since</div><div class="fw-semibold">@(p.CreatedDate == default ? "—" : p.CreatedDate.ToString("MMM yyyy"))</div></div>
+            <div class="col-sm-3"><div class="text-muted small">Last login</div><div class="fw-semibold">@p.FormattedLastLogin</div></div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="portalPhotoCard">
+        <div class="card-body d-flex flex-wrap align-items-center gap-3">
+            @await Component.InvokeAsync("ProfileImage", new { size = 72, linkUrl = (string?)null })
+            <form asp-action="UploadPhoto" method="post" enctype="multipart/form-data" class="d-flex flex-wrap gap-2 align-items-center flex-grow-1">
+                @Html.AntiForgeryToken()
+                <div class="flex-grow-1" style="min-width:220px">
+                    <label class="form-label small mb-0" for="photo">Profile picture (JPG or PNG, at most 2 MB)</label>
+                    <input type="file" class="form-control form-control-sm" id="photo" name="photo" accept=".jpg,.jpeg,.png" required />
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm align-self-end"><i class="fas fa-upload me-1"></i>Upload</button>
+            </form>
+            @if (!string.IsNullOrWhiteSpace(p.ProfileImagePath))
+            {
+                <form asp-action="RemovePhoto" method="post" class="align-self-end">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fas fa-trash me-1"></i>Remove</button>
+                </form>
+            }
+        </div>
+    </div>
+
+    <form asp-action="UpdateProfile" method="post" class="card shadow-sm">
+        @Html.AntiForgeryToken()
+        <div class="card-header bg-light"><h6 class="mb-0">Personal details</h6></div>
+        <div class="card-body">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label" for="FirstName">First name *</label>
+                    <input class="form-control" id="FirstName" name="UpdateProfile.FirstName" value="@V(u.FirstName, p.FirstName)" required maxlength="50" />
+                    <span asp-validation-for="UpdateProfile.FirstName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="LastName">Last name *</label>
+                    <input class="form-control" id="LastName" name="UpdateProfile.LastName" value="@V(u.LastName, p.LastName)" required maxlength="50" />
+                    <span asp-validation-for="UpdateProfile.LastName" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="Phone">Phone *</label>
+                    <input class="form-control" id="Phone" name="UpdateProfile.Phone" value="@V(u.Phone, p.Phone)" required />
+                    <span asp-validation-for="UpdateProfile.Phone" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="DateOfBirth">Date of birth *</label>
+                    <input type="date" class="form-control" id="DateOfBirth" name="UpdateProfile.DateOfBirth" value="@(dob == default ? "" : dob.ToString("yyyy-MM-dd"))" required />
+                    <span asp-validation-for="UpdateProfile.DateOfBirth" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="Gender">Gender *</label>
+                    <select class="form-select" id="Gender" name="UpdateProfile.Gender" required>
+                        <option value="">Select…</option>
+                        @foreach (var g in new[] { "Male", "Female", "Other" })
+                        {
+                            <option value="@g" selected="@(string.Equals(gender, g, StringComparison.OrdinalIgnoreCase))">@g</option>
+                        }
+                    </select>
+                    <span asp-validation-for="UpdateProfile.Gender" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="BloodGroup">Blood group</label>
+                    <select class="form-select" id="BloodGroup" name="UpdateProfile.BloodGroup">
+                        <option value="">—</option>
+                        @foreach (var b in new[] { "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-" })
+                        {
+                            <option value="@b" selected="@(blood == b)">@b</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="MaritalStatus">Marital status</label>
+                    <select class="form-select" id="MaritalStatus" name="UpdateProfile.MaritalStatus">
+                        <option value="">—</option>
+                        @foreach (var m in new[] { "Single", "Married", "Divorced", "Widowed" })
+                        {
+                            <option value="@m" selected="@(string.Equals(marital, m, StringComparison.OrdinalIgnoreCase))">@m</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="Occupation">Occupation</label>
+                    <input class="form-control" id="Occupation" name="UpdateProfile.Occupation" value="@V(u.Occupation, p.Occupation)" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label" for="Address">Address</label>
+                    <textarea class="form-control" id="Address" name="UpdateProfile.Address" rows="2">@V(u.Address, p.Address)</textarea>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="GuardianName">Guardian name</label>
+                    <input class="form-control" id="GuardianName" name="UpdateProfile.GuardianName" value="@V(u.GuardianName, p.GuardianName)" />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="GuardianPhone">Guardian phone</label>
+                    <input class="form-control" id="GuardianPhone" name="UpdateProfile.GuardianPhone" value="@V(u.GuardianPhone, p.GuardianPhone)" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="EmergencyContactName">Emergency contact</label>
+                    <input class="form-control" id="EmergencyContactName" name="UpdateProfile.EmergencyContactName" value="@V(u.EmergencyContactName, p.EmergencyContactName)" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="EmergencyContactPhone">Emergency phone</label>
+                    <input class="form-control" id="EmergencyContactPhone" name="UpdateProfile.EmergencyContactPhone" value="@V(u.EmergencyContactPhone, p.EmergencyContactPhone)" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="EmergencyContactRelation">Relationship</label>
+                    <input class="form-control" id="EmergencyContactRelation" name="UpdateProfile.EmergencyContactRelation" value="@V(u.EmergencyContactRelation, p.EmergencyContactRelation)" />
+                </div>
+            </div>
+        </div>
+        <div class="card-footer d-flex gap-2">
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i>Save changes</button>
+            <a asp-action="ChangePassword" class="btn btn-outline-secondary"><i class="fas fa-key me-1"></i>Change password</a>
+        </div>
+    </form>
+</div>

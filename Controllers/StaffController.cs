@@ -241,6 +241,11 @@ namespace MedyxHMS.Controllers
                 return Forbid();
             }
 
+            if (!await ElevatedRolesChangeAllowedAsync(viewModel.Staff.SelectedRoleIds, null))
+            {
+                ModelState.AddModelError("Staff.SelectedRoleIds", "Only a SuperAdmin can assign the Admin or SuperAdmin role.");
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -276,7 +281,7 @@ namespace MedyxHMS.Controllers
                         LastName = viewModel.Staff.LastName,
                         Department = viewModel.Staff.Department,
                         Designation = viewModel.Staff.Designation,
-                        DateOfJoining = viewModel.Staff.DateOfJoining ?? DateTime.UtcNow,
+                        DateOfJoining = viewModel.Staff.DateOfJoining ?? DateTime.Now,
                         Salary = viewModel.Staff.Salary,
                         Phone = viewModel.Staff.Phone,
                         Address = viewModel.Staff.Address,
@@ -338,7 +343,8 @@ namespace MedyxHMS.Controllers
                     EmployeeId = staff.EmployeeId,
                     FirstName = staff.FirstName,
                     LastName = staff.LastName,
-                    Email = staff.User.Email,
+                    // Login account e-mail, or the e-mail stored on the staff record when there is no account.
+                    Email = staff.Email ?? string.Empty,
                     Phone = staff.Phone,
                     Department = staff.Department,
                     Designation = staff.Designation,
@@ -349,6 +355,7 @@ namespace MedyxHMS.Controllers
                     SelectedRoleIds = staff.StaffRoles.Select(sr => sr.RoleId).ToList()
                 }
             };
+            ViewData["HasLoginAccount"] = staff.User != null;
 
             // Load available roles
             var roles = await _context.Roles.ToListAsync();
@@ -392,6 +399,19 @@ namespace MedyxHMS.Controllers
                 return NotFound();
             }
 
+            // Staff without a login account have nowhere to store an e-mail, so it is optional for them.
+            var hasLoginAccount = await _context.Staff.Where(s => s.Id == id).Select(s => s.User != null).FirstOrDefaultAsync();
+            ViewData["HasLoginAccount"] = hasLoginAccount;
+            if (!hasLoginAccount)
+            {
+                ModelState.Remove("Staff.Email");
+            }
+
+            if (!await ElevatedRolesChangeAllowedAsync(viewModel.Staff.SelectedRoleIds, id))
+            {
+                ModelState.AddModelError("Staff.SelectedRoleIds", "Only a SuperAdmin can grant or remove the Admin or SuperAdmin role.");
+            }
+
             if (ModelState.IsValid)
             {
                 try
@@ -405,11 +425,14 @@ namespace MedyxHMS.Controllers
                     }
 
                     // Check if email is unique (excluding current user)
-                    var existingUser = await _userManager.FindByEmailAsync(viewModel.Staff.Email);
-                    if (existingUser != null && existingUser.Id != id)
+                    if (hasLoginAccount && !string.IsNullOrWhiteSpace(viewModel.Staff.Email))
                     {
-                        ModelState.AddModelError("Staff.Email", "Email already exists");
-                        return View(viewModel);
+                        var existingUser = await _userManager.FindByEmailAsync(viewModel.Staff.Email);
+                        if (existingUser != null && existingUser.Id != id)
+                        {
+                            ModelState.AddModelError("Staff.Email", "Email already exists");
+                            return View(viewModel);
+                        }
                     }
 
                     // Update staff object
@@ -500,7 +523,7 @@ namespace MedyxHMS.Controllers
             viewModel.PatientsManaged = 0; // Would need to implement based on staff role
             viewModel.AppointmentsScheduled = 0;
             viewModel.BillsCreated = 0;
-            viewModel.RecentActivities = await _context.AuditLogs.CountAsync(a => a.UserId == id && a.Timestamp > DateTime.UtcNow.AddDays(-30));
+            viewModel.RecentActivities = await _context.AuditLogs.CountAsync(a => a.UserId == id && a.Timestamp > DateTime.Now.AddDays(-30));
 
             // Get available staff for data transfer
             var allStaff = await _staffService.GetAllStaffAsync();
@@ -512,7 +535,7 @@ namespace MedyxHMS.Controllers
                     EmployeeId = s.EmployeeId,
                     FirstName = s.FirstName,
                     LastName = s.LastName,
-                    Email = s.User.Email
+                    Email = s.User?.Email ?? string.Empty
                 })
                 .ToList();
 
@@ -706,6 +729,32 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        /// <summary>
+        /// Same rule as self-registration: only a SuperAdmin may grant or remove the Admin and
+        /// SuperAdmin roles. Other users may change any other role, but the target's Admin /
+        /// SuperAdmin roles must stay exactly as they are (none for a new staff member).
+        /// </summary>
+        private async Task<bool> ElevatedRolesChangeAllowedAsync(IEnumerable<int>? requestedRoleIds, string? targetStaffId)
+        {
+            if (User.IsInRole("SuperAdmin"))
+                return true;
+
+            var elevatedRoleIds = await _context.Roles
+                .Where(r => r.Name == "Admin" || r.Name == "SuperAdmin")
+                .Select(r => r.Id)
+                .ToListAsync();
+
+            var requested = (requestedRoleIds ?? Enumerable.Empty<int>()).Where(elevatedRoleIds.Contains).ToHashSet();
+            var current = targetStaffId == null
+                ? new HashSet<int>()
+                : (await _context.StaffRoles
+                    .Where(sr => sr.StaffId == targetStaffId && elevatedRoleIds.Contains(sr.RoleId))
+                    .Select(sr => sr.RoleId)
+                    .ToListAsync()).ToHashSet();
+
+            return requested.SetEquals(current);
+        }
+
         private async Task<bool> CanManagePasswordForTargetAsync(string targetUserId)
         {
             var actor = await _userManager.GetUserAsync(User);
@@ -776,7 +825,7 @@ namespace MedyxHMS.Controllers
                 EmployeeId = s.EmployeeId,
                 FirstName = s.FirstName,
                 LastName = s.LastName,
-                Email = s.User.Email,
+                Email = s.User?.Email ?? string.Empty,
                 Department = s.Department,
                 IsActive = s.IsActive,
                 CreatedDate = s.CreatedDate
@@ -784,7 +833,7 @@ namespace MedyxHMS.Controllers
 
             // Get top active users (simplified)
             viewModel.TopActiveUsers = await _context.AuditLogs
-                .Where(a => a.Timestamp > DateTime.UtcNow.AddDays(-7))
+                .Where(a => a.Timestamp > DateTime.Now.AddDays(-7))
                 .GroupBy(a => a.UserId)
                 .OrderByDescending(g => g.Count())
                 .Take(5)

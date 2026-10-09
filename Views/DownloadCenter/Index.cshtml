@@ -34,6 +34,37 @@
         }
     </div>
 
+    @if (ViewBag.DischargeReports is List<MedyxHMS.Models.DischargeSummary> dischargeReports)
+    {
+        <div class="card shadow-sm mb-3" id="dischargeReportsCard">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <span class="fw-semibold"><i class="fas fa-file-medical text-primary me-1"></i>Discharge reports</span>
+                <a asp-controller="Discharge" asp-action="Index" class="btn btn-sm btn-outline-primary">All discharge reports · find a patient</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light"><tr><th>Report no.</th><th>Patient</th><th>Discharged</th><th>Status</th><th class="text-end"></th></tr></thead>
+                    <tbody>
+                        @if (dischargeReports.Count == 0)
+                        {
+                            <tr><td colspan="5" class="text-center text-muted py-3">No discharge reports yet.</td></tr>
+                        }
+                        @foreach (var r in dischargeReports)
+                        {
+                            <tr>
+                                <td><a asp-controller="Discharge" asp-action="Details" asp-route-id="@r.Id">@r.ReportNumber</a></td>
+                                <td>@r.Patient?.FirstName @r.Patient?.LastName <span class="small text-muted">(@r.Patient?.PatientId)</span></td>
+                                <td>@r.DischargeDate.ToString("dd-MMM-yyyy")</td>
+                                <td><span class="badge @(r.IsCompleted ? "text-bg-success" : "text-bg-warning")">@r.Status</span></td>
+                                <td class="text-end"><a asp-controller="Discharge" asp-action="Download" asp-route-id="@r.Id" class="btn btn-sm btn-primary"><i class="fas fa-download me-1"></i>PDF</a></td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+
     <div class="row g-3">
         @foreach (var f in Model)
         {

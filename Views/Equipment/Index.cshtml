@@ -1,0 +1,84 @@
+@model List<MedyxHMS.Models.Equipment>
+@using MedyxHMS.Controllers
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    ViewData["Title"] = "Equipment Register";
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    string filter = ViewBag.Filter as string ?? string.Empty;
+    var today = DateTime.Today;
+    var soon = today.AddDays(EquipmentController.DueSoonDays);
+    string DueClass(DateTime? d) => d == null ? "text-muted" : d < today ? "text-danger fw-semibold" : d <= soon ? "text-warning fw-semibold" : "";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-stethoscope text-primary me-2"></i>Equipment Register</h4>
+            <small class="text-muted">Medical equipment with preventive maintenance and calibration schedules@(HospitalContext.AllHospitals.Count > 1 ? $" – {HospitalContext.ActiveHospitalName}" : string.Empty).</small>
+        </div>
+        @if (isManager) { <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Equipment</a> }
+    </div>
+
+    <div class="row g-3 mb-3">
+        @foreach (var (key, label, value, color) in new[] { ("", "In register", (int)ViewBag.Total, "secondary"), ("overdue", "Overdue maintenance / calibration", (int)ViewBag.Overdue, "danger"), ("due", $"Due within {EquipmentController.DueSoonDays} days", (int)ViewBag.DueSoon, "warning"), ("out", "Out of service / under maintenance", (int)ViewBag.OutOfService, "dark") })
+        {
+            <div class="col-6 col-xl-3">
+                <a asp-action="Index" asp-route-filter="@key" class="text-decoration-none">
+                    <div class="card shadow-sm h-100 @(filter == key ? "border-" + color : "")">
+                        <div class="card-body py-2">
+                            <div class="fs-4 fw-bold text-@color">@value</div>
+                            <div class="small text-muted">@label</div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        }
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <input type="hidden" name="filter" value="@filter" />
+        <div class="col-sm-4"><input name="search" value="@ViewBag.Search" class="form-control form-control-sm" placeholder="Search name, asset tag, serial no., location" /></div>
+        <div class="col-sm-3">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">All categories</option>
+                @foreach (var c in EquipmentController.Categories) { <option value="@c" selected="@(ViewBag.Category == c)">@c</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All statuses</option>
+                @foreach (var s in EquipmentController.Statuses) { <option value="@s" selected="@(ViewBag.Status == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Search</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Asset tag</th><th>Equipment</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }<th>Location</th><th>Risk</th><th>Next maintenance</th><th>Next calibration</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model)
+                    {
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="Details" asp-route-id="@e.Id">@e.AssetTag</a></td>
+                            <td>@e.Name<div class="small text-muted">@e.Category@(string.IsNullOrWhiteSpace(e.Manufacturer) ? "" : " · " + e.Manufacturer + " " + e.Model)</div></td>
+                            @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(e.HospitalId)</td> }
+                            <td class="small">@e.Location</td>
+                            <td><span class="badge @(e.RiskClass == "High" ? "bg-danger" : e.RiskClass == "Medium" ? "bg-warning text-dark" : "bg-secondary")">@e.RiskClass</span></td>
+                            <td class="small text-nowrap @DueClass(e.NextMaintenanceDue)">@(e.NextMaintenanceDue?.ToString("dd-MMM-yyyy") ?? "–")</td>
+                            <td class="small text-nowrap @DueClass(e.NextCalibrationDue)">@(e.NextCalibrationDue?.ToString("dd-MMM-yyyy") ?? "–")</td>
+                            <td><span class="badge @(e.Status == "In service" ? "bg-success" : e.Status == "Condemned" ? "bg-dark" : "bg-danger")">@e.Status</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-4">No equipment found.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

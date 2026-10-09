@@ -56,8 +56,17 @@
                         <input asp-for="UnitCost" type="number" step="0.01" class="form-control" />
                     </div>
                     <div class="col-6">
-                        <label class="form-label fw-semibold">Supplier</label>
-                        <input asp-for="Supplier" class="form-control" />
+                        <label asp-for="VendorId" class="form-label fw-semibold">Vendor</label>
+                        <select asp-for="VendorId" class="form-select">
+                            <option value="">— Not linked —</option>
+                            @foreach (var vendor in (ViewBag.Vendors as IEnumerable<MedyxHMS.Models.Vendor>) ?? Enumerable.Empty<MedyxHMS.Models.Vendor>())
+                            {
+                                <option value="@vendor.Id">@vendor.Name (@vendor.VendorCode)@(vendor.IsActive ? "" : " – inactive")</option>
+                            }
+                        </select>
+                        <span asp-validation-for="VendorId" class="text-danger small"></span>
+                        <div class="form-text">Or type a supplier below if it is not in the vendors list.</div>
+                        <input asp-for="Supplier" class="form-control form-control-sm mt-1" placeholder="Supplier (if no vendor)" />
                     </div>
                 </div>
                 <div class="mb-3">

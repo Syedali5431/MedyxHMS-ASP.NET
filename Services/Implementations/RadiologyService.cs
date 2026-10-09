@@ -34,7 +34,7 @@ namespace MedyxHMS.Services.Implementations
             if (radiologyTest == null)
                 throw new ArgumentNullException(nameof(radiologyTest));
 
-            radiologyTest.CreatedDate = DateTime.UtcNow;
+            radiologyTest.CreatedDate = DateTime.Now;
             _context.RadiologyTests.Add(radiologyTest);
             await _context.SaveChangesAsync();
             return radiologyTest;
@@ -128,10 +128,20 @@ namespace MedyxHMS.Services.Implementations
             if (radiologyResult == null)
                 throw new ArgumentNullException(nameof(radiologyResult));
 
-            if (string.IsNullOrEmpty(radiologyResult.OrderNumber))
-                radiologyResult.OrderNumber = $"RAD-{DateTime.UtcNow:yyyyMMddHHmmss}";
+            if (string.IsNullOrWhiteSpace(radiologyResult.OrderNumber))
+            {
+                // Generated numbers have one-second resolution; add a suffix if that number is already taken.
+                var baseNumber = $"RAD-{DateTime.Now:yyyyMMddHHmmss}";
+                radiologyResult.OrderNumber = baseNumber;
+                for (var n = 2; await _context.RadiologyResults.AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber); n++)
+                    radiologyResult.OrderNumber = $"{baseNumber}-{n}";
+            }
+            else if (await _context.RadiologyResults.AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber))
+            {
+                throw new InvalidOperationException($"Order number '{radiologyResult.OrderNumber}' is already in use. Leave it blank to generate one.");
+            }
 
-            radiologyResult.CreatedDate = DateTime.UtcNow;
+            radiologyResult.CreatedDate = DateTime.Now;
             radiologyResult.Status = "Ordered";
 
             _context.RadiologyResults.Add(radiologyResult);
@@ -213,7 +223,7 @@ namespace MedyxHMS.Services.Implementations
             return await _context.RadiologyResults
                 .Include(r => r.Patient)
                 .Include(r => r.RadiologyTest)
-                .Where(r => r.OrderDate >= startDate && r.OrderDate <= endDate)
+                .Where(r => r.OrderDate >= startDate && r.OrderDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .OrderByDescending(r => r.OrderDate)
                 .ToListAsync();
         }
@@ -236,7 +246,7 @@ namespace MedyxHMS.Services.Implementations
 
             radiologyResult.Status = status;
             if (status == "Completed" && !radiologyResult.ResultDate.HasValue)
-                radiologyResult.ResultDate = DateTime.UtcNow;
+                radiologyResult.ResultDate = DateTime.Now;
 
             _context.RadiologyResults.Update(radiologyResult);
             await _context.SaveChangesAsync();
@@ -256,7 +266,7 @@ namespace MedyxHMS.Services.Implementations
                 .Include(r => r.RadiologyTest)
                 .Where(r => r.Status == "Completed" && 
                        r.ResultDate >= startDate && 
-                       r.ResultDate <= endDate)
+                       r.ResultDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .ToListAsync();
 
             return completedResults.Sum(r => r.RadiologyTest?.Price ?? 0);

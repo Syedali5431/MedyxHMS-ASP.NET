@@ -1,4 +1,4 @@
--- ============================================================
+﻿-- ============================================================
 --  MedyxHMS Supplemental Indexing Script
 --  Target: SQL Server — database [MedyxHMS]
 --
@@ -32,7 +32,13 @@
 --    — or open in SSMS, connect to MedyxHMS, and execute (F5).
 -- ============================================================
 
-USE [MedyxHMS];
+-- Runs in the current database: sqlcmd -S <server> -E -b -d MedyxHMS -i CreateIndexes.sql
+-- (or select the MedyxHMS database in SSMS first). Works for any database name.
+IF DB_NAME() IN (N'master', N'model', N'msdb', N'tempdb')
+BEGIN
+    RAISERROR(N'Run this script in the MedyxHMS database (sqlcmd -d MedyxHMS ...), not in %s.', 16, 1, N'a system database');
+    SET NOEXEC ON;
+END
 GO
 
 -- Required for indexes on computed columns further down (PatientId_Key, BillNumber_Key)
@@ -164,4 +170,8 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'UX_Bills_BillNumber_Key' 
 GO
 
 PRINT 'MedyxHMS supplemental indexes created successfully.';
+GO
+
+-- Ends the stop set above when the script was run in a system database.
+SET NOEXEC OFF;
 GO

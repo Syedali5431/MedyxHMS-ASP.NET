@@ -9,10 +9,13 @@ namespace MedyxHMS.Services.Implementations
     public class OPDService : IOPDService
     {
         private readonly ApplicationDbContext _context;
+        private readonly MedicalRecordService _records;
 
         public OPDService(ApplicationDbContext context)
         {
             _context = context;
+            // Each visit is also the patient's medical record of that consultation.
+            _records = new MedicalRecordService(context);
         }
 
         public async Task<IEnumerable<OPDVisit>> GetAllOPDVisitsAsync()
@@ -35,9 +38,10 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<OPDVisit> CreateOPDVisitAsync(OPDVisit visit)
         {
-            visit.CreatedDate = DateTime.UtcNow;
+            visit.CreatedDate = DateTime.Now;
             _context.OPDVisits.Add(visit);
             await _context.SaveChangesAsync();
+            await _records.SyncOpdVisitAsync(visit.Id);
             return visit;
         }
 
@@ -45,6 +49,7 @@ namespace MedyxHMS.Services.Implementations
         {
             _context.OPDVisits.Update(visit);
             await _context.SaveChangesAsync();
+            await _records.SyncOpdVisitAsync(visit.Id);
             return visit;
         }
 
@@ -55,6 +60,7 @@ namespace MedyxHMS.Services.Implementations
                 return false;
 
             _context.OPDVisits.Remove(visit);
+            await _records.RemoveForSourceAsync(MedicalRecordService.OpdSource, id);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -84,7 +90,7 @@ namespace MedyxHMS.Services.Implementations
             return await _context.OPDVisits
                 .Include(v => v.Patient)
                 .Include(v => v.Doctor)
-                .Where(v => v.VisitDate >= startDate && v.VisitDate <= endDate)
+                .Where(v => v.VisitDate >= startDate && v.VisitDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .OrderByDescending(v => v.VisitDate)
                 .ToListAsync();
         }
@@ -105,7 +111,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<int> GetOPDVisitCountAsync(DateTime startDate, DateTime endDate)
         {
             return await _context.OPDVisits
-                .Where(v => v.VisitDate >= startDate && v.VisitDate <= endDate)
+                .Where(v => v.VisitDate >= startDate && v.VisitDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .CountAsync();
         }
 

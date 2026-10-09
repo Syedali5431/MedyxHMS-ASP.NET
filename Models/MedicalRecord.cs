@@ -35,10 +35,17 @@ namespace MedyxHMS.Models
         [StringLength(100)]
         public string DoctorName { get; set; } = string.Empty;
 
-        public string DoctorId { get; set; } = string.Empty;
+        // Login of the doctor when the doctor has one (OPD/IPD doctors often do not); DoctorName is always filled.
+        public string? DoctorId { get; set; }
 
         [ForeignKey("DoctorId")]
-        public virtual ApplicationUser Doctor { get; set; } = null!;
+        public virtual ApplicationUser? Doctor { get; set; }
+
+        // Where the record comes from (OPDVisit / IPDAdmission and its id); records are kept in step with their source.
+        [StringLength(30)]
+        public string SourceType { get; set; } = string.Empty;
+
+        public int? SourceId { get; set; }
 
         [NotMapped]
         public virtual Staff Staff { get; set; } = null!;

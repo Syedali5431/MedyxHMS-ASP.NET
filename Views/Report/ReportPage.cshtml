@@ -1,0 +1,15 @@
+@model MedyxHMS.ViewModels.ReportDocument
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<div class="container-fluid mt-3 mb-4" style="max-width:1400px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 d-print-none">
+        <div>
+            <h1 class="h4 mb-0"><i class="fas fa-chart-line text-primary me-2"></i>@Model.Title</h1>
+            <small class="text-muted">@Model.Description</small>
+        </div>
+        <a asp-action="Index" asp-route-reportKey="@Model.Key" class="btn btn-outline-secondary btn-sm"><i class="fas fa-th-list me-1"></i>All reports</a>
+    </div>
+    <partial name="_ReportDocument" model="Model" />
+</div>

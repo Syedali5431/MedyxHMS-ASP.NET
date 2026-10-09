@@ -1,5 +1,6 @@
 @model IEnumerable<MedyxHMS.Models.InternalMessage>
 @{
+    var names = ViewBag.UserNames as Dictionary<string, string> ?? new Dictionary<string, string>();
     ViewData["Title"] = "Sent Messages";
 }
 
@@ -39,8 +40,8 @@
                                     <span class="badge bg-warning text-dark ms-1">Broadcast</span>
                                 }
                             </td>
-                            <td><small>@(m.IsBroadcast ? "All Staff" : m.RecipientId)</small></td>
-                            <td><small>@m.SentAt.ToLocalTime().ToString("MMM dd, HH:mm")</small></td>
+                            <td><small>@(m.IsBroadcast ? "All Staff" : names.GetValueOrDefault(m.RecipientId, m.RecipientId))</small></td>
+                            <td><small>@m.SentAt.ToString("MMM dd, HH:mm")</small></td>
                             <td>
                                 @if (m.IsRead)
                                 {

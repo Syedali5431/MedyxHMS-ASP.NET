@@ -1,3 +1,14 @@
-@model string
-<img src="@Model" alt="Profile" class="rounded-circle"
-     style="width: 32px; height: 32px; object-fit: cover;" />
+@model MedyxHMS.Components.ProfileImageModel
+@{
+    var title = string.IsNullOrEmpty(Model.Name) ? "My Profile" : Model.Name + " – My Profile";
+}
+@if (!string.IsNullOrEmpty(Model.LinkUrl))
+{
+    <a href="@Model.LinkUrl" title="@title" class="d-inline-flex">
+        <img src="@Model.ImageUrl" alt="Profile picture" class="rounded-circle border" style="width:@(Model.Size)px;height:@(Model.Size)px;object-fit:cover;" />
+    </a>
+}
+else
+{
+    <img src="@Model.ImageUrl" alt="Profile picture" class="rounded-circle border" style="width:@(Model.Size)px;height:@(Model.Size)px;object-fit:cover;" />
+}

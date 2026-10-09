@@ -64,7 +64,7 @@
                                         <td>@c.Staff?.FirstName @c.Staff?.LastName</td>
                                         <td>@c.CertificateType</td>
                                         <td>@c.Title</td>
-                                        <td>@c.IssueDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                        <td>@c.IssueDate.ToString("yyyy-MM-dd")</td>
                                     </tr>
                                 }
                             }
@@ -91,7 +91,7 @@
                                     <tr>
                                         <td>@c.Staff?.FirstName @c.Staff?.LastName</td>
                                         <td>@c.CardNumber</td>
-                                        <td>@c.IssueDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                                        <td>@c.IssueDate.ToString("yyyy-MM-dd")</td>
                                         <td>@c.Status</td>
                                     </tr>
                                 }

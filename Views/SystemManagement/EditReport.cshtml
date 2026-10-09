@@ -238,6 +238,7 @@
         }
 
         function addField() {
+            collectFieldValues(); // keep what was typed in the existing rows
             fieldCounter++;
             fields.push({ id: fieldCounter, fieldName: '', columnName: '', dataType: 'string', alignment: 'left', isSortable: true, isVisible: true, sortOrder: fields.length + 1 });
             renderFieldTable();
@@ -312,6 +313,8 @@
                     </td>
                 </tr>`).join('');
         }
+
+        document.getElementById('editReportForm')?.addEventListener('submit', function () { serializeFields(); });
 
         function serializeFields() {
             collectFieldValues();

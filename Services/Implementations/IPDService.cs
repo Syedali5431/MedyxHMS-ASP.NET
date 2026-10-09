@@ -11,9 +11,13 @@ namespace MedyxHMS.Services.Implementations
         private readonly ApplicationDbContext _context;
         private const string IpdBillingNotePrefix = "IPD daily charges bill for IPD Admission ID:";
 
+        private readonly MedicalRecordService _records;
+
         public IPDService(ApplicationDbContext context)
         {
             _context = context;
+            // Each admission is also the patient's medical record of that stay.
+            _records = new MedicalRecordService(context);
         }
 
         public async Task<IEnumerable<IPDAdmission>> GetAllIPDAdmissionsAsync()
@@ -40,7 +44,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<IPDAdmission> CreateIPDAdmissionAsync(IPDAdmission admission)
         {
-            admission.CreatedDate = DateTime.UtcNow;
+            admission.CreatedDate = DateTime.Now;
             admission.Status = "Admitted";
 
             // Update bed status if bed is assigned
@@ -56,6 +60,7 @@ namespace MedyxHMS.Services.Implementations
 
             _context.IPDAdmissions.Add(admission);
             await _context.SaveChangesAsync();
+            await _records.SyncIpdAdmissionAsync(admission.Id);
             return admission;
         }
 
@@ -111,6 +116,7 @@ namespace MedyxHMS.Services.Implementations
 
             _context.IPDAdmissions.Update(admission);
             await _context.SaveChangesAsync();
+            await _records.SyncIpdAdmissionAsync(admission.Id);
             return admission;
         }
 
@@ -132,6 +138,7 @@ namespace MedyxHMS.Services.Implementations
             }
 
             _context.IPDAdmissions.Remove(admission);
+            await _records.RemoveForSourceAsync(MedicalRecordService.IpdSource, id);
             await _context.SaveChangesAsync();
             return true;
         }
@@ -210,6 +217,7 @@ namespace MedyxHMS.Services.Implementations
             }
 
             await _context.SaveChangesAsync();
+            await _records.SyncIpdAdmissionAsync(admission.Id);
             return true;
         }
 
@@ -256,7 +264,7 @@ namespace MedyxHMS.Services.Implementations
                             UnitPrice = admission.DailyCharges,
                             TotalPrice = totalCharges,
                             Description = $"Daily charges for {admissionDays} day(s), IPD Admission #{admission.Id}",
-                            CreatedDate = DateTime.UtcNow
+                            CreatedDate = DateTime.Now
                         }
                     }
                 };
@@ -271,7 +279,7 @@ namespace MedyxHMS.Services.Implementations
             existingBill.PendingAmount = Math.Max(0, totalCharges - existingBill.PaidAmount);
             existingBill.Status = existingBill.PendingAmount == 0 ? "Paid" : "Unpaid";
             existingBill.Notes = noteMarker;
-            existingBill.UpdatedDate = DateTime.UtcNow;
+            existingBill.UpdatedDate = DateTime.Now;
 
             var dailyChargesItem = existingBill.BillItems.FirstOrDefault(i => i.ItemName == "IPD Daily Charges");
             if (dailyChargesItem == null)
@@ -284,7 +292,7 @@ namespace MedyxHMS.Services.Implementations
                     UnitPrice = admission.DailyCharges,
                     TotalPrice = totalCharges,
                     Description = $"Daily charges for {admissionDays} day(s), IPD Admission #{admission.Id}",
-                    CreatedDate = DateTime.UtcNow
+                    CreatedDate = DateTime.Now
                 });
             }
             else
@@ -303,7 +311,7 @@ namespace MedyxHMS.Services.Implementations
                 .Include(a => a.Doctor)
                 .Include(a => a.Bed)
                     .ThenInclude(b => b.Ward)
-                .Where(a => a.AdmissionDate >= startDate && a.AdmissionDate <= endDate)
+                .Where(a => a.AdmissionDate >= startDate && a.AdmissionDate <= MedyxHMS.Extensions.DateRange.EndOfDay(endDate))
                 .OrderByDescending(a => a.AdmissionDate)
                 .ToListAsync();
         }
@@ -324,8 +332,9 @@ namespace MedyxHMS.Services.Implementations
 
         private string GenerateBillNumber()
         {
-            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var datePart = DateTime.Now.ToString("yyyyMMdd");
             var lastBill = _context.Bills
+                .IgnoreQueryFilters() // bill numbers are unique across all hospitals of the group
                 .Where(b => b.BillNumber.StartsWith($"BILL{datePart}"))
                 .OrderByDescending(b => b.Id)
                 .FirstOrDefault();

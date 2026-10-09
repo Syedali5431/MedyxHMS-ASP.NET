@@ -459,14 +459,14 @@ namespace MedyxHMS.Services.Implementations
                         Category = "Chatbot",
                         Description = "Chatbot configuration setting",
                         IsSystem = true,
-                        CreatedDate = DateTime.UtcNow,
+                        CreatedDate = DateTime.Now,
                         ModifiedBy = modifiedByUserId
                     });
                 }
                 else
                 {
                     setting.Value = entry.Value;
-                    setting.ModifiedDate = DateTime.UtcNow;
+                    setting.ModifiedDate = DateTime.Now;
                     setting.ModifiedBy = modifiedByUserId;
                 }
             }

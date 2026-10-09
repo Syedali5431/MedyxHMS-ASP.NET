@@ -55,7 +55,7 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label asp-for="Price" class="form-label">Price (Rs.) *</label>
+                                    <label asp-for="Price" class="form-label">Price (@System.Globalization.CultureInfo.CurrentCulture.NumberFormat.CurrencySymbol) *</label>
                                     <input asp-for="Price" type="number" step="0.01" class="form-control" placeholder="0.00">
                                     <span asp-validation-for="Price" class="text-danger"></span>
                                 </div>

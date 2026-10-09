@@ -1,16 +1,15 @@
--- ====================================================================
+﻿-- ====================================================================
 -- STORED PROCEDURES FOR OPTIMIZED REPORT GENERATION
 -- Performance optimized for fast data retrieval with proper indexing
 -- ====================================================================
 
-IF DB_ID(N'MedyxHMS') IS NULL
+-- Runs in the current database: sqlcmd -S <server> -E -b -d MedyxHMS -i StoredProcedures_Reports.sql
+-- (or select the MedyxHMS database in SSMS first). Works for any database name.
+IF DB_NAME() IN (N'master', N'model', N'msdb', N'tempdb')
 BEGIN
-    RAISERROR('Database [MedyxHMS] was not found. Create it first, then rerun this script in SSMS.', 16, 1);
-    RETURN;
+    RAISERROR(N'Run this script in the MedyxHMS database (sqlcmd -d MedyxHMS ...), not in %s.', 16, 1, N'a system database');
+    SET NOEXEC ON;
 END
-GO
-
-USE [MedyxHMS];
 GO
 
 -- ====================
@@ -272,3 +271,7 @@ IF OBJECT_ID(N'dbo.IPDAdmissions', N'U') IS NOT NULL
     AND NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_IPDAdmissions_DateRange' AND object_id = OBJECT_ID(N'dbo.IPDAdmissions'))
     CREATE NONCLUSTERED INDEX IX_IPDAdmissions_DateRange 
     ON IPDAdmissions(AdmissionDate, DischargeDate, BedId);
+
+-- Ends the stop set above when the script was run in a system database.
+SET NOEXEC OFF;
+GO

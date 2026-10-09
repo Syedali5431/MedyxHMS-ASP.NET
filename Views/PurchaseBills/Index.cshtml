@@ -1,0 +1,73 @@
+@model List<MedyxHMS.Models.PurchaseBill>
+@using System.Globalization
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    ViewData["Title"] = "Purchase Bills";
+    var vendors = ViewBag.Vendors as List<MedyxHMS.Models.Vendor> ?? new List<MedyxHMS.Models.Vendor>();
+    string M(decimal v) => v.ToString("N2", CultureInfo.InvariantCulture);
+    var today = DateTime.Today;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-file-invoice-dollar text-primary me-2"></i>Purchase Bills</h4>
+            <small class="text-muted">Vendor invoices: draft → submitted → approved → goods received → paid.</small>
+        </div>
+        <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>New Purchase Bill</a>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <div class="col-sm-4"><a asp-action="Index" asp-route-filter="approval" class="text-decoration-none"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold text-warning">@ViewBag.AwaitingApproval</div><div class="small text-muted">Waiting for approval</div></div></div></a></div>
+        <div class="col-sm-4"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold">@M((decimal)ViewBag.Outstanding)</div><div class="small text-muted">Outstanding to vendors</div></div></div></div>
+        <div class="col-sm-4"><a asp-action="Index" asp-route-filter="overdue" class="text-decoration-none"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold text-danger">@M((decimal)ViewBag.Overdue)</div><div class="small text-muted">Overdue</div></div></div></a></div>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-3">
+            <select name="vendorId" class="form-select form-select-sm">
+                <option value="">All vendors</option>
+                @foreach (var v in vendors) { <option value="@v.Id" selected="@(ViewBag.VendorId == v.Id)">@v.Name</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">All statuses</option>
+                @foreach (var s in new[] { "Draft", "Submitted", "Approved", "Rejected", "Received", "Cancelled" }) { <option value="@s" selected="@(ViewBag.Status == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="payment" class="form-select form-select-sm">
+                <option value="">Any payment status</option>
+                @foreach (var s in new[] { "Unpaid", "Partially paid", "Paid" }) { <option value="@s" selected="@(ViewBag.Payment == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-3"><button type="submit" class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light"><tr><th>Bill no.</th><th>Vendor</th><th>Invoice</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }<th>Due</th><th class="text-end">Total</th><th class="text-end">Paid</th><th>Status</th><th>Payment</th></tr></thead>
+                <tbody>
+                    @foreach (var b in Model)
+                    {
+                        var overdue = (b.Status == "Approved" || b.Status == "Received") && b.PaymentStatus != "Paid" && b.DueDate < today;
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="Details" asp-route-id="@b.Id">@b.BillNumber</a></td>
+                            <td>@b.Vendor?.Name</td>
+                            <td class="small">@b.VendorInvoiceNumber<div class="text-muted">@b.InvoiceDate.ToString("dd-MMM-yyyy")</div></td>
+                            @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(b.HospitalId)</td> }
+                            <td class="small text-nowrap @(overdue ? "text-danger fw-semibold" : "")">@b.DueDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="text-end">@M(b.TotalAmount)</td>
+                            <td class="text-end">@M(b.PaidAmount)</td>
+                            <td><span class="badge @(b.Status == "Received" ? "bg-success" : b.Status == "Approved" ? "bg-primary" : b.Status == "Submitted" ? "bg-warning text-dark" : b.Status == "Rejected" ? "bg-danger" : "bg-secondary")">@b.Status</span></td>
+                            <td><span class="badge @(b.PaymentStatus == "Paid" ? "bg-success" : b.PaymentStatus == "Partially paid" ? "bg-info text-dark" : "bg-light text-dark border")">@b.PaymentStatus</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any()) { <tr><td colspan="9" class="text-center text-muted py-4">No purchase bills.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

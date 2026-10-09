@@ -46,7 +46,7 @@ namespace MedyxHMS.Services.Implementations
                     ? null
                     : Truncate(relatedEntityId.Trim(), 100),
                 IsTest = isTest,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.Now
             };
 
             _db.NotificationDeliveryLogs.Add(entry);

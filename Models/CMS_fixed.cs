@@ -41,7 +41,7 @@ namespace MedyxHMS.Models
 
         public int SortOrder { get; set; } = 0;
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
         [MaxLength(100)]
@@ -106,7 +106,7 @@ namespace MedyxHMS.Models
 
         public DateTime? PublishedAt { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
         [MaxLength(100)]
@@ -186,7 +186,7 @@ namespace MedyxHMS.Models
         [MaxLength(300)]
         public string? AdminNotes { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime? UpdatedAt { get; set; }
 
         [MaxLength(45)]

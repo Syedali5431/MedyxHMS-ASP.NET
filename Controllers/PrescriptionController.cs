@@ -92,6 +92,51 @@ namespace MedyxHMS.Controllers
             return View(viewModel);
         }
 
+        // GET: /Prescription/ThermalPharmacyBill/5 – pharmacy bill (all medicines on it) for receipt printers.
+        [HttpGet]
+        public async Task<IActionResult> ThermalPharmacyBill(int id, int? w, int? prescriptionId, [FromServices] IReceiptPrintService receiptPrint)
+        {
+            var bill = await _context.PharmacyBills
+                .Include(b => b.Patient)
+                .Include(b => b.Prescriptions).ThenInclude(p => p.Medicine)
+                .FirstOrDefaultAsync(b => b.Id == id);
+            if (bill == null)
+            {
+                return NotFound();
+            }
+
+            var vm = await receiptPrint.CreateAsync("Pharmacy Bill", bill.HospitalId, w, User.Identity?.Name);
+            vm.HighlightLabel = "Bill No.";
+            vm.Highlight = string.IsNullOrWhiteSpace(bill.BillNumber) ? $"PH-{bill.Id}" : bill.BillNumber;
+            vm.Lines.Add(new ReceiptLine("Date", bill.BillDate.ToString("dd-MMM-yyyy", System.Globalization.CultureInfo.InvariantCulture)));
+            vm.Lines.Add(new ReceiptLine("Patient", bill.Patient != null ? $"{bill.Patient.FirstName} {bill.Patient.LastName}".Trim() : "Unknown"));
+            if (!string.IsNullOrWhiteSpace(bill.Patient?.PatientId)) vm.Lines.Add(new ReceiptLine("Patient ID", bill.Patient!.PatientId));
+            if (!string.IsNullOrWhiteSpace(bill.PaymentMethod)) vm.Lines.Add(new ReceiptLine("Method", bill.PaymentMethod));
+            vm.Lines.Add(new ReceiptLine("Status", string.IsNullOrWhiteSpace(bill.Status) ? "-" : bill.Status));
+
+            vm.Items = (bill.Prescriptions ?? new List<Prescription>()).OrderBy(p => p.Id).Select(p => new ReceiptItem
+            {
+                Description = string.Join(" - ", new[] { p.Medicine?.Name ?? $"Medicine #{p.MedicineId}", p.Dosage, p.Frequency }.Where(x => !string.IsNullOrWhiteSpace(x))),
+                Quantity = p.Quantity,
+                UnitPrice = p.UnitPrice,
+                Amount = p.TotalPrice > 0 ? p.TotalPrice : p.Quantity * p.UnitPrice
+            }).ToList();
+
+            // A receipt must add up: the total is the sum of the medicines listed. Older bills can carry a stale stored
+            // total (prescriptions added later did not update it), which is pointed out instead of printed as the total.
+            var itemsTotal = vm.Items.Sum(i => i.Amount);
+            var total = vm.Items.Count > 0 ? itemsTotal : bill.TotalAmount;
+            if (vm.Items.Count > 0 && bill.TotalAmount != itemsTotal)
+            {
+                vm.Note = $"Bill total on record: {vm.Settings.FormatMoney(bill.TotalAmount)} - please check the bill.";
+            }
+            vm.Totals.Add(new ReceiptTotal("Total", total, emphasis: true));
+            vm.Totals.Add(new ReceiptTotal("Paid", bill.PaidAmount));
+            vm.Totals.Add(new ReceiptTotal("Balance due", Math.Max(0, total - bill.PaidAmount), emphasis: true));
+            vm.BackUrl = prescriptionId.HasValue ? Url.Action(nameof(Details), new { id = prescriptionId.Value }) : Url.Action(nameof(Index));
+            return View("ThermalReceipt", vm);
+        }
+
         // Get prescription details
         [HttpGet]
         public async Task<IActionResult> Details(int id)
@@ -149,6 +194,7 @@ namespace MedyxHMS.Controllers
                 PharmacyBills = pharmacyBills,
                 SelectedPharmacyBillId = pharmacyBillId
             };
+            ViewBag.Patients = await GetPatientOptionsAsync();
 
             return View(viewModel);
         }
@@ -159,11 +205,25 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff")]
         public async Task<IActionResult> Create(CreatePrescriptionViewModel model)
         {
+            // A prescription goes onto a pharmacy bill: an existing one, or a new bill for the chosen patient.
+            if (model.Prescription.PharmacyBillId <= 0)
+            {
+                if (!(model.Prescription.PatientId > 0) || !await _context.Patients.AnyAsync(p => p.Id == model.Prescription.PatientId))
+                    ModelState.AddModelError("Prescription.PatientId", "Choose the patient for the new pharmacy bill.");
+            }
+            else if (!await _context.PharmacyBills.AnyAsync(b => b.Id == model.Prescription.PharmacyBillId && b.Status != "Cancelled"))
+            {
+                ModelState.AddModelError("Prescription.PharmacyBillId", "Choose an open pharmacy bill.");
+            }
+
             if (ModelState.IsValid)
             {
+                var pharmacyBillId = model.Prescription.PharmacyBillId > 0
+                    ? model.Prescription.PharmacyBillId
+                    : (await GetOrOpenPharmacyBillAsync(model.Prescription.PatientId!.Value)).Id;
                 var prescription = new Prescription
                 {
-                    PharmacyBillId = model.Prescription.PharmacyBillId,
+                    PharmacyBillId = pharmacyBillId,
                     MedicineId = model.Prescription.MedicineId,
                     Dosage = model.Prescription.Dosage,
                     Frequency = model.Prescription.Frequency,
@@ -186,7 +246,8 @@ namespace MedyxHMS.Controllers
                     $"Medicine: {prescription.MedicineId}, Dosage: {prescription.Dosage}, Quantity: {prescription.Quantity}"
                 );
 
-                TempData["Success"] = "Prescription created successfully.";
+                var billNumber = await _context.PharmacyBills.Where(b => b.Id == pharmacyBillId).Select(b => b.BillNumber).FirstOrDefaultAsync();
+                TempData["Success"] = $"Prescription added to pharmacy bill {billNumber}.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -199,9 +260,47 @@ namespace MedyxHMS.Controllers
                 UnitPrice = m.UnitPrice
             }).ToList();
             model.PharmacyBills = await GetPharmacyBillOptionsAsync();
+            ViewBag.Patients = await GetPatientOptionsAsync();
 
             return View(model);
         }
+
+        /// <summary>The patient's open pharmacy bill of today, or a new one (RXBILL-yyyy-nnnn).</summary>
+        private async Task<PharmacyBill> GetOrOpenPharmacyBillAsync(int patientId)
+        {
+            var today = DateTime.Today;
+            var bill = await _context.PharmacyBills
+                .Where(b => b.PatientId == patientId && b.Status == "Pending" && b.BillDate >= today)
+                .OrderByDescending(b => b.Id)
+                .FirstOrDefaultAsync();
+            if (bill != null) return bill;
+
+            var prefix = $"RXBILL-{today.Year}-";
+            var numbers = await _context.PharmacyBills.IgnoreQueryFilters()
+                .Where(b => b.BillNumber.StartsWith(prefix))
+                .Select(b => b.BillNumber)
+                .ToListAsync();
+            var next = numbers.Select(n => int.TryParse(n.Substring(prefix.Length, Math.Min(4, n.Length - prefix.Length)), out var x) ? x : 0)
+                .DefaultIfEmpty(0).Max() + 1;
+            bill = new PharmacyBill
+            {
+                PatientId = patientId,
+                BillNumber = $"{prefix}{next:D4}",
+                BillDate = DateTime.Now,
+                TotalAmount = 0,
+                PaidAmount = 0,
+                Status = "Pending",
+                PaymentMethod = string.Empty,
+                Notes = string.Empty,
+                CreatedBy = User.Identity?.Name ?? string.Empty
+            };
+            _context.PharmacyBills.Add(bill);
+            await _context.SaveChangesAsync();
+            return bill;
+        }
+
+        private async Task<List<Patient>> GetPatientOptionsAsync() =>
+            await _context.Patients.AsNoTracking().Where(p => p.IsActive).OrderBy(p => p.FirstName).ThenBy(p => p.LastName).ToListAsync();
 
         // Delete prescription
         [HttpPost]
@@ -487,7 +586,7 @@ namespace MedyxHMS.Controllers
                     id = m.Id,
                     name = m.Name,
                     expiryDate = m.ExpiryDate.ToString("yyyy-MM-dd"),
-                    daysRemaining = (m.ExpiryDate.Date - DateTime.UtcNow.Date).Days
+                    daysRemaining = (m.ExpiryDate.Date - DateTime.Now.Date).Days
                 }).ToList()
             });
         }

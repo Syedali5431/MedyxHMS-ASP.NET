@@ -283,3 +283,9 @@ footer.bg-light {
         border-bottom: 1px solid var(--pp-border);
     }
 }
+
+/* Signed-in pages on phones and tablets: same desktop layout, no automatic text enlargement. */
+html.desktop-view {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}

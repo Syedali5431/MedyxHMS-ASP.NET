@@ -90,7 +90,9 @@ namespace MedyxHMS.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(new { error = "Invalid consent submission." });
+                // All three consents are needed to use the assistant: show the terms again with a clear message.
+                TempData["ErrorMessage"] = "Please tick all three consents to use the AI Assistant, or choose Reject Consent.";
+                return RedirectToAction(nameof(RequestConsent));
             }
 
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);

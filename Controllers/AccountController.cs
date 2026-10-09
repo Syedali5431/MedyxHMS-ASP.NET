@@ -1,4 +1,5 @@
 ﻿using MedyxHMS.Data;
+using MedyxHMS.Extensions;
 using MedyxHMS.Models;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
@@ -107,7 +108,7 @@ namespace MedyxHMS.Controllers
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 IsActive = false,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now
             };
 
             var createResult = await _userManager.CreateAsync(user, model.Password);
@@ -203,15 +204,13 @@ namespace MedyxHMS.Controllers
                 return Json(new { success = false, message = inactiveMessage });
             }
 
-            // Check password without signing in
-            var passwordValid = await _userManager.CheckPasswordAsync(user, password);
-            if (!passwordValid)
-            {
-                // Attempt bcrypt migration check (same logic as full login)
-                var migrated = await TryMigratePasswordAsync(user, password);
-                if (!migrated)
-                    return Json(new { success = false, message = "Invalid credentials." });
-            }
+            // Check password without signing in. Failed attempts count toward lockout, the same as
+            // the full login, so this anonymous endpoint cannot be used to guess passwords freely.
+            var passwordCheck = await _signInManager.CheckPasswordSignInAsync(user, password, lockoutOnFailure: true);
+            if (passwordCheck.IsLockedOut)
+                return Json(new { success = false, message = "Account locked out due to multiple failed login attempts." });
+            if (!passwordCheck.Succeeded)
+                return Json(new { success = false, message = "Invalid credentials." });
 
             var roles = await _userManager.GetRolesAsync(user);
             if (roles.Count == 0)
@@ -221,7 +220,27 @@ namespace MedyxHMS.Controllers
             if (string.IsNullOrWhiteSpace(displayName))
                 displayName = user.UserName ?? email;
 
-            return Json(new { success = true, roles = roles.OrderBy(r => r).ToList(), displayName });
+            // Hospitals the staff member can work in. With one hospital the page signs in straight away; with
+            // several it asks which hospital to open first.
+            var hospitals = new List<object>();
+            string? selectedHospital = null;
+            if (roles.Any(r => !string.Equals(r, "Patient", StringComparison.OrdinalIgnoreCase)))
+            {
+                var isSuperAdmin = roles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase);
+                var (list, defaultId) = await HospitalContextMiddleware.GetUserHospitalsAsync(_context, user.Id, isSuperAdmin);
+                if (isSuperAdmin && list.Count > 1)
+                {
+                    hospitals.Add(new { value = HospitalContextMiddleware.AllHospitalsValue, name = "All hospitals", city = "Every hospital of the group", isDefault = false });
+                }
+
+                hospitals.AddRange(list.Select(h => (object)new { value = h.Id.ToString(), name = h.Name, city = h.City, isDefault = h.Id == defaultId }));
+                var previous = HospitalContextMiddleware.ReadSelection(Request, user.Id);
+                selectedHospital = previous != null && (list.Any(h => h.Id.ToString() == previous) || (isSuperAdmin && list.Count > 1 && previous == HospitalContextMiddleware.AllHospitalsValue))
+                    ? previous
+                    : defaultId?.ToString();
+            }
+
+            return Json(new { success = true, roles = roles.OrderBy(r => r).ToList(), primaryRole = PickPrimaryRole(roles), displayName, hospitals, selectedHospital });
         }
 
         [HttpPost]
@@ -267,19 +286,14 @@ namespace MedyxHMS.Controllers
                     return View(model);
                 }
 
-                if (!result.Succeeded)
-                {
-                    // Legacy bcrypt migration path: if old hash verification succeeds,
-                    // reset to Identity hash and retry sign-in once.
-                    if (await TryMigratePasswordAsync(user, model.Password))
-                        result = await _signInManager.PasswordSignInAsync(user.UserName, model.Password, model.RememberMe, lockoutOnFailure: true);
-                }
-
                 if (result.Succeeded)
                 {
                     // Force password change if using default password
                     if (model.Password == "Medyx147")
                     {
+                        // PasswordSignInAsync has already issued the sign-in cookie; remove it so the password
+                        // must really be changed before the system can be used.
+                        await _signInManager.SignOutAsync();
                         HttpContext.Session.SetString("ForcePwd_UserId", user.Id);
                         HttpContext.Session.SetString("ForcePwd_ReturnUrl", returnUrl ?? "");
                         return RedirectToAction("ForceChangePassword");
@@ -287,15 +301,23 @@ namespace MedyxHMS.Controllers
 
                     if (user.MFAEnabled)
                     {
+                        // Not signed in until the authenticator code is verified (previously the cookie from
+                        // PasswordSignInAsync stayed valid, so the code page could simply be skipped).
+                        await _signInManager.SignOutAsync();
+                        HttpContext.Session.SetInt32("MFA_Attempts", 0);
                         HttpContext.Session.SetString("MFA_UserId", user.Id);
                         HttpContext.Session.SetString("MFA_RememberMe", model.RememberMe.ToString());
                         HttpContext.Session.SetString("MFA_ReturnUrl", returnUrl ?? "");
+                        HttpContext.Session.SetString("MFA_Role", model.SelectedRole ?? "");
+                        HttpContext.Session.SetString("MFA_Hospital", model.SelectedHospital ?? "");
                         return RedirectToAction("VerifyMFA");
                     }
 
                     await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS", "User", user.Id);
-                    user.LastLoginDate = DateTime.UtcNow;
+                    user.LastLoginDate = DateTime.Now;
                     await _userManager.UpdateAsync(user);
+                    // The admin two-step check caches the MFA status: read it fresh for the new session.
+                    HttpContext.RequestServices.GetRequiredService<ISecurityPolicyService>().ForgetMfaStatus(user.Id);
 
                     // Validate the selected role actually belongs to the user
                     var userRoles = await _userManager.GetRolesAsync(user);
@@ -340,6 +362,9 @@ namespace MedyxHMS.Controllers
                     // Persist the active role for this session so the navigation can use it
                     if (!string.IsNullOrWhiteSpace(model.SelectedRole))
                         HttpContext.Session.SetString("ActiveRole", model.SelectedRole);
+
+                    // Work in the hospital chosen on the sign-in page (its data is shown from the first page on).
+                    await ApplyHospitalChoiceAsync(user, userRoles, model.SelectedHospital);
 
                     // â”€â”€ License expiry gate â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     var snapshot = await _licenseService.GetCurrentSnapshotAsync();
@@ -461,27 +486,6 @@ namespace MedyxHMS.Controllers
             return View();
         }
 
-        private async Task<bool> TryMigratePasswordAsync(ApplicationUser user, string password)
-        {
-            try
-            {
-                var token = await _userManager.GeneratePasswordResetTokenAsync(user);
-                var result = await _userManager.ResetPasswordAsync(user, token, password);
-
-                if (result.Succeeded)
-                {
-                    await _auditService.LogActivityAsync(user.Id, "PASSWORD_MIGRATED", "User", user.Id);
-                    return true;
-                }
-            }
-            catch (Exception ex)
-            {
-                await _auditService.LogActivityAsync(user.Id, "PASSWORD_MIGRATION_FAILED", "User", user.Id, null, $"Error: {ex.Message}");
-            }
-
-            return false;
-        }
-
         private async Task<IActionResult> RedirectToLocalAsync(ApplicationUser user, string? selectedRole, string? returnUrl)
         {
             // Resolve active role first so we can validate the returnUrl against it.
@@ -522,6 +526,48 @@ namespace MedyxHMS.Controllers
         }
 
         /// <summary>
+        /// Remembers the hospital chosen on the sign-in page (only one the user has access to). Without a valid
+        /// choice the user's default hospital is used, so every sign-in starts in a known hospital.
+        /// </summary>
+        private async Task ApplyHospitalChoiceAsync(ApplicationUser user, IList<string> roles, string? choice)
+        {
+            if (!roles.Any(r => !string.Equals(r, "Patient", StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
+            var isSuperAdmin = roles.Contains("SuperAdmin", StringComparer.OrdinalIgnoreCase);
+            var (hospitals, defaultId) = await HospitalContextMiddleware.GetUserHospitalsAsync(_context, user.Id, isSuperAdmin);
+            if (hospitals.Count == 0)
+            {
+                return;
+            }
+
+            string value;
+            if (isSuperAdmin && hospitals.Count > 1 && string.Equals(choice, HospitalContextMiddleware.AllHospitalsValue, StringComparison.OrdinalIgnoreCase))
+            {
+                value = HospitalContextMiddleware.AllHospitalsValue;
+            }
+            else if (int.TryParse(choice, out var id) && hospitals.Any(h => h.Id == id))
+            {
+                value = id.ToString();
+            }
+            else
+            {
+                value = (defaultId ?? hospitals[0].Id).ToString();
+            }
+
+            HospitalContextMiddleware.WriteSelection(HttpContext, user.Id, value);
+            var name = value == HospitalContextMiddleware.AllHospitalsValue ? "All hospitals" : hospitals.First(h => h.Id.ToString() == value).Name;
+            if (hospitals.Count > 1 || value == HospitalContextMiddleware.AllHospitalsValue)
+            {
+                TempData["InfoMessage"] = $"Working in: {name}.";
+            }
+
+            await _auditService.LogActivityAsync(user.Id, "HOSPITAL_SELECTED", "Hospital", value, null, $"Signed in to {name}");
+        }
+
+        /// <summary>
         /// Returns the highest-priority role from a set of assigned roles when no
         /// explicit selection was made by the user.
         /// </summary>
@@ -546,6 +592,68 @@ namespace MedyxHMS.Controllers
             return View(user);
         }
 
+        // POST /Account/UpdateProfile – personal details from My Profile (e-mail, user name and roles stay with the administrators).
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile([Bind(Prefix = "Edit")] MyProfileEditViewModel model)
+        {
+            var userId = _userManager.GetUserId(User);
+            var user = string.IsNullOrEmpty(userId) ? null : await _userManager.FindByIdAsync(userId);
+            if (user == null) return RedirectToAction("Login");
+
+            if (model.DateOfBirth.HasValue && (model.DateOfBirth.Value.Date >= DateTime.Today || model.DateOfBirth.Value.Year < 1900))
+            {
+                ModelState.AddModelError("Edit.DateOfBirth", "Enter a valid date of birth.");
+            }
+            if (!string.IsNullOrWhiteSpace(model.Gender) && !MyProfileEditViewModel.Genders.Contains(model.Gender))
+            {
+                ModelState.AddModelError("Edit.Gender", "Choose a gender from the list.");
+            }
+
+            string? Clean(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
+            var before = $"{user.FirstName} {user.LastName}, {user.PhoneNumber}";
+            user.FirstName = model.FirstName?.Trim() ?? user.FirstName;
+            user.LastName = model.LastName?.Trim() ?? user.LastName;
+            user.PhoneNumber = Clean(model.PhoneNumber);
+            user.Gender = Clean(model.Gender);
+            user.DateOfBirth = model.DateOfBirth?.Date;
+            user.Address = Clean(model.Address);
+            user.City = Clean(model.City);
+            user.EmergencyContactName = Clean(model.EmergencyContactName);
+            user.EmergencyContactPhone = Clean(model.EmergencyContactPhone);
+            user.About = Clean(model.About);
+
+            if (!ModelState.IsValid)
+            {
+                // Show the form again with the entered values and the messages.
+                return View("Profile", user);
+            }
+
+            var result = await _userManager.UpdateAsync(user);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors) ModelState.AddModelError(string.Empty, error.Description);
+                return View("Profile", user);
+            }
+
+            // Keep the staff record (HR) in step with the account.
+            var staff = await _context.Staff.FirstOrDefaultAsync(s => s.Id == user.Id);
+            if (staff != null)
+            {
+                staff.FirstName = user.FirstName;
+                staff.LastName = user.LastName;
+                if (!string.IsNullOrWhiteSpace(user.PhoneNumber)) staff.Phone = user.PhoneNumber;
+                if (!string.IsNullOrWhiteSpace(user.Address)) staff.Address = string.Join(", ", new[] { user.Address, user.City }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                if (user.About != null) staff.About = user.About;
+                await _context.SaveChangesAsync();
+            }
+
+            await _auditService.LogActivityAsync(userId, "PROFILE_UPDATE", "User", userId, before, $"{user.FirstName} {user.LastName}, {user.PhoneNumber}");
+            TempData["SuccessMessage"] = "Your profile has been updated.";
+            return RedirectToAction("Profile");
+        }
+
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
@@ -562,6 +670,11 @@ namespace MedyxHMS.Controllers
                 var user = await _userManager.FindByIdAsync(userId);
                 if (user != null)
                 {
+                    if (fileName == null)
+                    {
+                        TempData["ErrorMessage"] = "Choose a JPG or PNG picture first.";
+                        return RedirectToAction("Profile");
+                    }
                     user.ProfileImage = fileName;
                     await _userManager.UpdateAsync(user);
                 }
@@ -571,7 +684,8 @@ namespace MedyxHMS.Controllers
             }
             catch (InvalidOperationException ex)
             {
-                ModelState.AddModelError("profileImage", ex.Message);
+                // The page is shown again after a redirect: carry the message in TempData.
+                TempData["ErrorMessage"] = ex.Message;
             }
 
             return RedirectToAction("Profile");
@@ -601,11 +715,12 @@ namespace MedyxHMS.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> EnableMFA()
+        public async Task<IActionResult> EnableMFA(bool required = false)
         {
             var userId = _userManager.GetUserId(User);
             var user = await _userManager.FindByIdAsync(userId);
             if (user == null) return RedirectToAction("Login");
+            ViewBag.Required = required;
             if (user.MFAEnabled)
             {
                 TempData["InfoMessage"] = "MFA is already enabled.";
@@ -628,11 +743,13 @@ namespace MedyxHMS.Controllers
             var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
             if (await mfaService.CompleteSetupAsync(userId, code))
             {
+                HttpContext.RequestServices.GetRequiredService<ISecurityPolicyService>().ForgetMfaStatus(userId);
                 TempData["SuccessMessage"] = "MFA has been enabled.";
                 return RedirectToAction("Profile");
             }
             ModelState.AddModelError("code", "Invalid code. Try again.");
             var user = await _userManager.FindByIdAsync(userId);
+            ViewBag.SecretKey = user?.MFATempSecret;
             var qrUri = $"otpauth://totp/MedyxHMS:{user?.Email}?secret={user?.MFATempSecret}&issuer=MedyxHMS";
             return View("EnableMFA", qrUri);
         }
@@ -643,8 +760,16 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> DisableMFA(string password)
         {
             var userId = _userManager.GetUserId(User);
+            var securityPolicy = HttpContext.RequestServices.GetRequiredService<ISecurityPolicyService>();
+            if ((User.IsInRole("SuperAdmin") || User.IsInRole("Admin")) && (await securityPolicy.GetPolicyAsync()).RequireMfaForAdmins)
+            {
+                TempData["ErrorMessage"] = "Two-step login is required for administrators and cannot be switched off.";
+                return RedirectToAction("Profile");
+            }
+
             var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
             var disabled = await mfaService.DisableAsync(userId, password);
+            securityPolicy.ForgetMfaStatus(userId);
             TempData[disabled ? "SuccessMessage" : "ErrorMessage"]
                 = disabled ? "MFA disabled." : "Incorrect password.";
             return RedirectToAction("Profile");
@@ -671,6 +796,25 @@ namespace MedyxHMS.Controllers
             var mfaService = HttpContext.RequestServices.GetRequiredService<IMFAService>();
             if (!await mfaService.ValidateLoginMfaAsync(userId, model.Code))
             {
+                // At most 5 wrong codes per sign-in; each also counts towards the account lock-out.
+                var attempts = (HttpContext.Session.GetInt32("MFA_Attempts") ?? 0) + 1;
+                HttpContext.Session.SetInt32("MFA_Attempts", attempts);
+                var failedUser = await _userManager.FindByIdAsync(userId);
+                if (failedUser != null)
+                {
+                    await _userManager.AccessFailedAsync(failedUser);
+                }
+
+                if (attempts >= 5 || (failedUser != null && await _userManager.IsLockedOutAsync(failedUser)))
+                {
+                    HttpContext.Session.Remove("MFA_UserId");
+                    HttpContext.Session.Remove("MFA_RememberMe");
+                    HttpContext.Session.Remove("MFA_ReturnUrl");
+                    HttpContext.Session.Remove("MFA_Attempts");
+                    TempData["ErrorMessage"] = "Too many incorrect codes. Please sign in again.";
+                    return RedirectToAction("Login");
+                }
+
                 ModelState.AddModelError("Code", "Invalid verification code.");
                 return View(model);
             }
@@ -678,24 +822,34 @@ namespace MedyxHMS.Controllers
             var user = await _userManager.FindByIdAsync(userId);
             var rememberMe = HttpContext.Session.GetString("MFA_RememberMe") == "True";
             var returnUrl = HttpContext.Session.GetString("MFA_ReturnUrl");
+            var chosenRole = HttpContext.Session.GetString("MFA_Role");
+            var chosenHospital = HttpContext.Session.GetString("MFA_Hospital");
             HttpContext.Session.Remove("MFA_UserId");
             HttpContext.Session.Remove("MFA_RememberMe");
             HttpContext.Session.Remove("MFA_ReturnUrl");
+            HttpContext.Session.Remove("MFA_Attempts");
+            HttpContext.Session.Remove("MFA_Role");
+            HttpContext.Session.Remove("MFA_Hospital");
+            await _userManager.ResetAccessFailedCountAsync(user);
 
             await _signInManager.SignInAsync(user, rememberMe);
             await _auditService.LogActivityAsync(user.Id, "LOGIN_SUCCESS_MFA", "User", user.Id);
-            user.LastLoginDate = DateTime.UtcNow;
+            user.LastLoginDate = DateTime.Now;
             await _userManager.UpdateAsync(user);
 
             var userRoles = await _userManager.GetRolesAsync(user);
-            var activeRole = PickPrimaryRole(userRoles);
+            // The role and hospital chosen on the sign-in page apply after the code is verified.
+            var activeRole = !string.IsNullOrWhiteSpace(chosenRole) && userRoles.Contains(chosenRole, StringComparer.OrdinalIgnoreCase)
+                ? userRoles.First(r => string.Equals(r, chosenRole, StringComparison.OrdinalIgnoreCase))
+                : PickPrimaryRole(userRoles);
             var sessionDecision = await _concurrentSessionService.TryRegisterLoginAsync(
                 user.Id, activeRole, HttpContext.Session.Id,
                 HttpContext.Connection.RemoteIpAddress?.ToString(),
                 Request.Headers.UserAgent.ToString());
             if (!sessionDecision.IsAllowed) { await _signInManager.SignOutAsync(); return RedirectToAction("AccessDenied"); }
-            HttpContext.Session.SetString("SelectedRole", activeRole);
-            return RedirectToLocalAsync(user, activeRole, returnUrl).Result;
+            HttpContext.Session.SetString("ActiveRole", activeRole);
+            await ApplyHospitalChoiceAsync(user, userRoles, chosenHospital);
+            return await RedirectToLocalAsync(user, activeRole, returnUrl);
         }
 
         [HttpPost]
@@ -757,8 +911,9 @@ namespace MedyxHMS.Controllers
 
             var userRoles = await _userManager.GetRolesAsync(user);
             var activeRole = PickPrimaryRole(userRoles);
-            HttpContext.Session.SetString("SelectedRole", activeRole);
-            return RedirectToLocalAsync(user, activeRole, returnUrl).Result;
+            HttpContext.Session.SetString("ActiveRole", activeRole);
+            await ApplyHospitalChoiceAsync(user, userRoles, null);
+            return await RedirectToLocalAsync(user, activeRole, returnUrl);
         }
     }
 }

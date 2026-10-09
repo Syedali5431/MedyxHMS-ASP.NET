@@ -7,7 +7,7 @@
 }
 
 <div class="row justify-content-center mt-5">
-    <div class="col-md-5 col-lg-4">
+    <div class="col-md-6 col-lg-5 col-xl-4">
         <div class="card shadow-sm">
             <div class="card-header text-center bg-primary text-white">
                 <h4 class="mb-0"><i class="fas fa-hospital-alt me-2"></i>MedyxHMS Login</h4>
@@ -23,7 +23,7 @@
                     @Html.AntiForgeryToken()
                     <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small" id="serverErrors"></div>
 
-                    @* Step 1: credentials *@
+                    @* Step 1: credentials. An account with one hospital is signed in straight after this step. *@
                     <div id="credentialsStep">
                         <div class="mb-3">
                             <label asp-for="Email" class="form-label fw-semibold"></label>
@@ -45,40 +45,44 @@
                             <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
 
+                        <div class="mb-3 form-check">
+                            <input asp-for="RememberMe" class="form-check-input" id="rememberMe" />
+                            <label asp-for="RememberMe" class="form-check-label" for="rememberMe">Remember me</label>
+                        </div>
+
                         <div id="ajaxError" class="alert alert-danger py-2 small d-none"></div>
 
                         <div class="d-grid mb-3">
                             <button type="button" class="btn btn-primary" id="checkRolesBtn">
-                                <span id="checkBtnText">Continue</span>
+                                <span id="checkBtnText">Sign In</span>
                                 <span id="checkBtnSpinner" class="spinner-border spinner-border-sm ms-1 d-none"></span>
                             </button>
                         </div>
                     </div>
 
-                    @* Step 2: role selection (hidden until credentials are verified) *@
-                    <div id="roleStep" class="d-none">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <label asp-for="SelectedRole" class="form-label fw-semibold mb-0">Login as</label>
-                                <button type="button" class="btn btn-sm btn-link p-0 text-secondary" id="backToCredentials">
-                                    <i class="fas fa-arrow-left me-1"></i>Change account
-                                </button>
-                            </div>
-                            <div id="loggedInAs" class="alert alert-success py-2 small mb-3"></div>
-                            <select asp-for="SelectedRole" class="form-select" id="roleSelect"></select>
-                            <div class="small text-muted mt-1" id="singleRoleNote" style="display:none">
-                                You have only one role assigned; you will be logged in automatically.
-                            </div>
+                    @* Step 2: only for accounts with more than one hospital – choose the hospital to open. *@
+                    <div id="hospitalStep" class="d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div id="loggedInAs" class="small text-success fw-semibold"></div>
+                            <button type="button" class="btn btn-sm btn-link p-0 text-secondary" id="backToCredentials">
+                                <i class="fas fa-arrow-left me-1"></i>Change account
+                            </button>
                         </div>
 
-                        <div class="mb-3 form-check">
-                            <input asp-for="RememberMe" class="form-check-input" />
-                            <label asp-for="RememberMe" class="form-check-label">Remember me</label>
+                        <fieldset class="mb-3">
+                            <legend class="form-label fw-semibold fs-6 mb-2"><i class="fas fa-hospital me-1 text-primary"></i>Choose the hospital you want to work in</legend>
+                            <div class="list-group login-hospital-list" id="hospitalList" role="radiogroup" aria-label="Hospital"></div>
+                            <div class="small text-muted mt-1">You will see and record the data of this hospital. You can switch later from the top bar.</div>
+                        </fieldset>
+
+                        <div class="mb-3 d-none" id="roleBlock">
+                            <label for="roleSelect" class="form-label fw-semibold mb-1">Login as</label>
+                            <select asp-for="SelectedRole" class="form-select" id="roleSelect"></select>
                         </div>
 
                         <div class="d-grid">
-                            <button type="submit" class="btn btn-success">
-                                <i class="fas fa-sign-in-alt me-1"></i>Sign In
+                            <button type="submit" class="btn btn-success" id="hospitalSignIn">
+                                <i class="fas fa-sign-in-alt me-1"></i>Continue
                             </button>
                         </div>
                     </div>
@@ -87,6 +91,8 @@
                     @* Email + password are re-submitted in hidden fields so the POST action receives them. *@
                     <input type="hidden" id="hiddenEmail"    name="Email"    value="" />
                     <input type="hidden" id="hiddenPassword" name="Password" value="" />
+                    @* Used for accounts with one hospital (signed in without the choice step). *@
+                    <input type="hidden" id="singleHospital" value="" />
                 </form>
 
                 <hr />
@@ -101,11 +107,23 @@
     </div>
 </div>
 
+<style>
+    .login-hospital-list { max-height: 320px; overflow-y: auto; }
+    .login-hospital-list .list-group-item { cursor: pointer; display: flex; gap: .75rem; align-items: center; }
+    .login-hospital-list .list-group-item:has(input:checked) { background: #eef4ff; border-color: #9ec5fe; z-index: 1; }
+    .login-hospital-list .hosp-name { font-weight: 600; }
+    .login-hospital-list .hosp-meta { font-size: .8rem; color: #6c757d; }
+</style>
+
 @section Scripts {
 @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 <script>
 (function () {
     'use strict';
+
+    var form = document.getElementById('loginForm');
+    var credentialsStep = document.getElementById('credentialsStep');
+    var hospitalStep = document.getElementById('hospitalStep');
 
     // ── Password visibility toggle ────────────────────────────────────────────
     document.getElementById('togglePwd').addEventListener('click', function () {
@@ -120,7 +138,31 @@
         }
     });
 
-    // ── AJAX role-check ───────────────────────────────────────────────────────
+    // Enter in the credentials step runs the same check as the button, so an account with several
+    // hospitals is always asked which hospital to open.
+    form.addEventListener('submit', function (e) {
+        if (!credentialsStep.classList.contains('d-none')) {
+            e.preventDefault();
+            document.getElementById('checkRolesBtn').click();
+        }
+    });
+
+    function setBusy(busy, text) {
+        document.getElementById('checkBtnSpinner').classList.toggle('d-none', !busy);
+        document.getElementById('checkBtnText').textContent = text;
+        document.getElementById('checkRolesBtn').disabled = busy;
+    }
+
+    function useCredentials(email, password) {
+        // Copy credentials into hidden fields so the full POST re-validates them
+        document.getElementById('hiddenEmail').value    = email;
+        document.getElementById('hiddenPassword').value = password;
+        // Clear visible input names so the browser doesn't submit them twice
+        document.getElementById('emailInput').name    = '';
+        document.getElementById('passwordInput').name = '';
+    }
+
+    // ── Credential check: sign in, or ask for the hospital first ─────────────
     document.getElementById('checkRolesBtn').addEventListener('click', async function () {
         var email    = document.getElementById('emailInput').value.trim();
         var password = document.getElementById('passwordInput').value;
@@ -135,10 +177,8 @@
             return;
         }
 
-        // Show spinner
-        document.getElementById('checkBtnSpinner').classList.remove('d-none');
-        document.getElementById('checkBtnText').textContent = 'Checking…';
-        this.disabled = true;
+        setBusy(true, 'Checking…');
+        var signingIn = false;
 
         try {
             var formData = new FormData();
@@ -146,41 +186,24 @@
             formData.append('password', password);
             formData.append('__RequestVerificationToken', '@antiforgery.RequestToken');
 
-            var resp = await fetch('/Account/ValidateCredentials', {
-                method: 'POST',
-                body:   formData
-            });
+            var resp = await fetch('/Account/ValidateCredentials', { method: 'POST', body: formData });
 
             var data = null;
             var contentType = resp.headers.get('content-type') || '';
-
             if (contentType.indexOf('application/json') >= 0) {
                 data = await resp.json();
             } else {
-                var responseText = await resp.text();
-                data = {
-                    success: false,
-                    message: responseText
-                        ? ('Server returned an unexpected response. Status: ' + resp.status + '.')
-                        : ('Request failed with status ' + resp.status + '.')
-                };
+                await resp.text();
+                data = { success: false, message: 'Server returned an unexpected response. Status: ' + resp.status + '.' };
             }
 
-            if (!resp.ok) {
-                errBox.textContent = (data && data.message)
-                    ? data.message
-                    : ('Request failed with status ' + resp.status + '. Please refresh and try again.');
+            if (!resp.ok || !data.success) {
+                errBox.textContent = (data && data.message) || ('Request failed with status ' + resp.status + '. Please refresh and try again.');
                 errBox.classList.remove('d-none');
                 return;
             }
 
-            if (!data.success) {
-                errBox.textContent = data.message || 'Invalid credentials.';
-                errBox.classList.remove('d-none');
-                return;
-            }
-
-            // ── Populate role selector ────────────────────────────────────────
+            // Role: the user's main role is pre-selected (the choice is offered only on the hospital step).
             var select = document.getElementById('roleSelect');
             select.innerHTML = '';
             data.roles.forEach(function (role) {
@@ -189,58 +212,83 @@
                 opt.textContent = formatRole(role);
                 select.appendChild(opt);
             });
+            if (data.primaryRole) select.value = data.primaryRole;
 
-            document.getElementById('loggedInAs').textContent = 'Signed in as: ' + (data.displayName || email);
+            useCredentials(email, password);
+            var hospitals = data.hospitals || [];
 
-            if (data.roles.length === 1) {
-                document.getElementById('singleRoleNote').style.display = 'block';
+            if (hospitals.length <= 1) {
+                // One hospital (or none, e.g. a patient): sign in straight away.
+                var single = document.getElementById('singleHospital');
+                single.value = hospitals.length === 1 ? hospitals[0].value : '';
+                single.name = hospitals.length === 1 ? 'SelectedHospital' : '';
+                signingIn = true;
+                setBusy(true, 'Signing in…');
+                form.submit();
+                return;
             }
 
-            // Copy credentials into hidden fields so the full POST can re-validate them
-            document.getElementById('hiddenEmail').value    = email;
-            document.getElementById('hiddenPassword').value = password;
+            // Several hospitals: choose which one to open.
+            var list = document.getElementById('hospitalList');
+            list.innerHTML = '';
+            hospitals.forEach(function (h, i) {
+                var item = document.createElement('label');
+                item.className = 'list-group-item list-group-item-action';
+                var radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = 'SelectedHospital';
+                radio.value = h.value;
+                radio.className = 'form-check-input mt-0 flex-shrink-0';
+                radio.required = true;
+                radio.checked = data.selectedHospital ? h.value === data.selectedHospital : i === 0;
+                var text = document.createElement('span');
+                var name = document.createElement('span');
+                name.className = 'hosp-name d-block';
+                name.textContent = h.name;
+                var meta = document.createElement('span');
+                meta.className = 'hosp-meta d-block';
+                meta.textContent = [h.city, h.isDefault ? 'your default hospital' : '', h.value === data.selectedHospital ? 'last used' : '']
+                    .filter(Boolean).join(' · ');
+                text.appendChild(name);
+                text.appendChild(meta);
+                item.appendChild(radio);
+                item.appendChild(text);
+                item.addEventListener('dblclick', function () { radio.checked = true; form.submit(); });
+                list.appendChild(item);
+            });
 
-            // Clear visible inputs so the browser doesn't re-submit them as duplicate fields
-            document.getElementById('emailInput').name    = '';
-            document.getElementById('passwordInput').name = '';
-
-            // Switch to role step
-            document.getElementById('credentialsStep').classList.add('d-none');
-            document.getElementById('roleStep').classList.remove('d-none');
-
+            document.getElementById('roleBlock').classList.toggle('d-none', data.roles.length < 2);
+            document.getElementById('loggedInAs').textContent = 'Signed in as ' + (data.displayName || email);
+            credentialsStep.classList.add('d-none');
+            hospitalStep.classList.remove('d-none');
+            var checked = list.querySelector('input:checked') || list.querySelector('input');
+            if (checked) checked.focus();
         } catch (err) {
             errBox.textContent = 'Cannot reach the server. Please ensure the app is running and try again.';
             errBox.classList.remove('d-none');
         } finally {
-            document.getElementById('checkBtnSpinner').classList.add('d-none');
-            document.getElementById('checkBtnText').textContent = 'Continue';
-            this.disabled = false;
+            if (!signingIn) setBusy(false, 'Sign In');
         }
     });
 
-    // ── Back button ───────────────────────────────────────────────────────────
+    // ── Back to the credentials ──────────────────────────────────────────────
     document.getElementById('backToCredentials').addEventListener('click', function () {
-        document.getElementById('roleStep').classList.add('d-none');
-        document.getElementById('credentialsStep').classList.remove('d-none');
+        hospitalStep.classList.add('d-none');
+        credentialsStep.classList.remove('d-none');
 
         // Restore names so validation works again
         document.getElementById('emailInput').name    = 'Email';
         document.getElementById('passwordInput').name = 'Password';
         document.getElementById('hiddenEmail').value    = '';
         document.getElementById('hiddenPassword').value = '';
+        document.getElementById('hospitalList').innerHTML = '';
+        document.getElementById('passwordInput').focus();
     });
 
     // ── Helpers ───────────────────────────────────────────────────────────────
     function formatRole(role) {
         // Insert spaces before capital letters for readability, e.g. SuperAdmin → Super Admin
         return role.replace(/([A-Z])/g, ' $1').trim();
-    }
-
-    // If the page was reloaded with a server-side error and email is known,
-    // show the credentials step with the stored value
-    var prefilledEmail = document.getElementById('hiddenEmail').value;
-    if (prefilledEmail) {
-        document.getElementById('emailInput').value = prefilledEmail;
     }
 }());
 </script>

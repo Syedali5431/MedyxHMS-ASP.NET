@@ -1,0 +1,44 @@
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@*
+    Multi-hospital switcher (top bar). Shown only when the group has more than one hospital, so a
+    single-hospital installation looks exactly as before.
+*@
+@{
+    // CanViewAllHospitals is only true when the group has more than one hospital (active or not).
+    var canSwitch = HospitalContext.AccessibleHospitals.Count > 1 || HospitalContext.CanViewAllHospitals;
+}
+@if (HospitalContext.IsStaffContext && HospitalContext.AccessibleHospitals.Count > 0 && (canSwitch || HospitalContext.AllHospitals.Count(h => h.IsActive) > 1))
+{
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    <li class="nav-item me-2 d-flex align-items-center">
+        @if (canSwitch)
+        {
+            <form method="post" action="/Hospital/Switch" class="d-flex align-items-center gap-1 mb-0" id="hospitalSwitchForm">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                <label for="hospitalSwitch" class="text-muted small mb-0 d-none d-xl-inline" title="Hospital you are working in"><i class="fas fa-hospital"></i></label>
+                <select id="hospitalSwitch" name="hospital" class="form-select form-select-sm" style="max-width:180px" onchange="this.form.submit()" aria-label="Hospital you are working in">
+                    @if (HospitalContext.CanViewAllHospitals)
+                    {
+                        <option value="all" selected="@(!HospitalContext.ActiveHospitalId.HasValue)">All hospitals</option>
+                    }
+                    @foreach (var h in HospitalContext.AccessibleHospitals)
+                    {
+                        <option value="@h.Id" selected="@(HospitalContext.ActiveHospitalId == h.Id)">@h.Name</option>
+                    }
+                </select>
+                <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">Go</button></noscript>
+            </form>
+        }
+        else
+        {
+            <span class="badge bg-light text-dark border" title="Hospital you are working in"><i class="fas fa-hospital me-1"></i>@HospitalContext.ActiveHospitalName</span>
+        }
+    </li>
+    @if (!HospitalContext.ActiveHospitalId.HasValue)
+    {
+        <li class="nav-item me-2 d-none d-xl-flex align-items-center">
+            <span class="badge bg-warning text-dark" title="New records are saved to this hospital">New records: @HospitalContext.HospitalName(HospitalContext.HospitalIdForNewRecords)</span>
+        </li>
+    }
+}

@@ -205,6 +205,7 @@ namespace MedyxHMS.DTOs
     public class PatientPortalAppointmentDto
     {
         public string Id { get; set; }
+        public int? HospitalId { get; set; } // multi-hospital: branch of the appointment
         public int AppointmentId { get; set; }
         public DateTime? AppointmentDate { get; set; }
         public string FormattedAppointmentDate => AppointmentDate?.ToString("MMM dd, yyyy 'at' hh:mm tt") ?? "N/A";

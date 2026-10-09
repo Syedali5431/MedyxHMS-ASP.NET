@@ -70,7 +70,7 @@ namespace MedyxHMS.Controllers
             if (string.IsNullOrWhiteSpace(model.CertificateNumber))
                 model.CertificateNumber = $"BR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
-            model.CreatedDate = DateTime.UtcNow;
+            model.CreatedDate = DateTime.Now;
             try
             {
                 var db = HttpContext.RequestServices.GetService(typeof(MedyxHMS.Data.ApplicationDbContext)) as MedyxHMS.Data.ApplicationDbContext;
@@ -116,7 +116,7 @@ namespace MedyxHMS.Controllers
             if (string.IsNullOrWhiteSpace(model.CertificateNumber))
                 model.CertificateNumber = $"DR-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString("N")[..6].ToUpper()}";
 
-            model.CreatedDate = DateTime.UtcNow;
+            model.CreatedDate = DateTime.Now;
             try
             {
                 var db = HttpContext.RequestServices.GetService(typeof(MedyxHMS.Data.ApplicationDbContext)) as MedyxHMS.Data.ApplicationDbContext;

@@ -13,7 +13,7 @@ namespace MedyxHMS.Models
         public string Model { get; set; } = string.Empty;
         public string Status { get; set; } = "Available"; // Available, Dispatched, Maintenance
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class AmbulanceDispatch
@@ -25,13 +25,13 @@ namespace MedyxHMS.Models
         public string PickupAddress { get; set; } = string.Empty;
         public string ContactNumber { get; set; } = string.Empty;
         public string Purpose { get; set; } = string.Empty; // Emergency, Transfer, Discharge
-        public DateTime DispatchTime { get; set; } = DateTime.UtcNow;
+        public DateTime DispatchTime { get; set; } = DateTime.Now;
         public DateTime? ReturnTime { get; set; }
         public string Status { get; set; } = "Dispatched"; // Dispatched, Returned, Cancelled
         public decimal? DistanceKm { get; set; }
         public decimal? Charges { get; set; }
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public AmbulanceVehicle AmbulanceVehicle { get; set; } = null!;
         public Patient? Patient { get; set; }
@@ -55,7 +55,7 @@ namespace MedyxHMS.Models
         public string CertificateNumber { get; set; } = string.Empty;
         public bool CertificateIssued { get; set; }
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public Patient? Patient { get; set; }
     }
@@ -75,7 +75,7 @@ namespace MedyxHMS.Models
         public string CertificateNumber { get; set; } = string.Empty;
         public bool CertificateIssued { get; set; }
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public Patient? Patient { get; set; }
     }
@@ -93,7 +93,7 @@ namespace MedyxHMS.Models
         public string TpaNetwork { get; set; } = string.Empty;   // Insurance company name
         public bool IsActive { get; set; } = true;
         public string Notes { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public ICollection<TpaClaim> Claims { get; set; } = new List<TpaClaim>();
     }
@@ -109,10 +109,10 @@ namespace MedyxHMS.Models
         public decimal? ApprovedAmount { get; set; }
         public decimal? SettledAmount { get; set; }
         public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Settled
-        public DateTime ClaimDate { get; set; } = DateTime.UtcNow;
+        public DateTime ClaimDate { get; set; } = DateTime.Now;
         public DateTime? SettlementDate { get; set; }
         public string Remarks { get; set; } = string.Empty;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public TpaProvider TpaProvider { get; set; } = null!;
         public Patient Patient { get; set; } = null!;
@@ -130,7 +130,7 @@ namespace MedyxHMS.Models
         public bool IsRead { get; set; }
         public bool IsBroadcast { get; set; }
         public int? ParentMessageId { get; set; }               // for replies
-        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+        public DateTime SentAt { get; set; } = DateTime.Now;
         public DateTime? ReadAt { get; set; }
         public bool IsDeletedBySender { get; set; }
         public bool IsDeletedByRecipient { get; set; }
@@ -139,9 +139,12 @@ namespace MedyxHMS.Models
     }
 
     // ── M18 · Inventory ──────────────────────────────────────────
-    public class InventoryItem
+    public class InventoryItem : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public string ItemCode { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public string Category { get; set; } = string.Empty;   // Consumable, Equipment, Drug, Linen
@@ -151,9 +154,12 @@ namespace MedyxHMS.Models
         public decimal ReorderLevel { get; set; }
         public decimal UnitCost { get; set; }
         public string Supplier { get; set; } = string.Empty;
+        /// <summary>Vendor from the vendors master (the Supplier text is kept for older items).</summary>
+        public int? VendorId { get; set; }
+        public Vendor? Vendor { get; set; }
         public string StorageLocation { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public ICollection<InventoryTransaction> Transactions { get; set; } = new List<InventoryTransaction>();
     }
@@ -168,7 +174,14 @@ namespace MedyxHMS.Models
         public string ReferenceNumber { get; set; } = string.Empty;
         public string Remarks { get; set; } = string.Empty;
         public string PerformedByUserId { get; set; } = string.Empty;
-        public DateTime TransactionDate { get; set; } = DateTime.UtcNow;
+        public DateTime TransactionDate { get; set; } = DateTime.Now;
+
+        // Consumption (stock issued): who used it and, if charged, the patient bill it was added to.
+        public string Department { get; set; } = string.Empty;
+        public int? PatientId { get; set; }
+        public int? BillId { get; set; }
+        /// <summary>Set when the transaction comes from receiving a purchase bill.</summary>
+        public int? PurchaseBillId { get; set; }
 
         public InventoryItem InventoryItem { get; set; } = null!;
     }
@@ -188,7 +201,7 @@ namespace MedyxHMS.Models
         public string UploadedByUserId { get; set; } = string.Empty;
         public bool IsPublic { get; set; }                     // true = all staff; false = admin+
         public bool IsActive { get; set; } = true;
-        public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public DateTime UploadedAt { get; set; } = DateTime.Now;
     }
 
     // ── M22 · Live Consultation ──────────────────────────────────
@@ -208,7 +221,7 @@ namespace MedyxHMS.Models
         public string Status { get; set; } = "Scheduled";      // Scheduled, InProgress, Completed, Cancelled
         public string Notes { get; set; } = string.Empty;
         public int? BillId { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         public Patient? Patient { get; set; }
         public Bill? Bill { get; set; }

@@ -146,14 +146,14 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label asp-for="Appointment.AppointmentDate" class="form-label"></label>
-                                    <input asp-for="Appointment.AppointmentDate" type="date" class="form-control">
+                                    <input asp-for="Appointment.AppointmentDate" type="date" class="form-control" value="@(Model.Appointment.AppointmentDate == default ? "" : Model.Appointment.AppointmentDate.ToString("yyyy-MM-dd"))">
                                     <span asp-validation-for="Appointment.AppointmentDate" class="text-danger"></span>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label asp-for="Appointment.AppointmentTime" class="form-label"></label>
-                                    <input asp-for="Appointment.AppointmentTime" type="time" class="form-control">
+                                    <input asp-for="Appointment.AppointmentTime" type="time" class="form-control" value="@(Model.Appointment.AppointmentDate == default && Model.Appointment.AppointmentTime == TimeSpan.Zero ? "" : Model.Appointment.AppointmentTime.ToString(@"hh\:mm"))">
                                     <span asp-validation-for="Appointment.AppointmentTime" class="text-danger"></span>
                                 </div>
                             </div>

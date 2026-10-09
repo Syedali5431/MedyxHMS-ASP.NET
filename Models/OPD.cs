@@ -1,9 +1,12 @@
 ﻿// Purpose: Contains application code for OPD and its related runtime behavior.
 namespace MedyxHMS.Models
 {
-    public class OPDVisit
+    public class OPDVisit : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public int PatientId { get; set; }
         public int DoctorId { get; set; }
         public DateTime VisitDate { get; set; }
@@ -14,7 +17,7 @@ namespace MedyxHMS.Models
         public string Notes { get; set; } = string.Empty;
         public decimal ConsultationFee { get; set; }
         public string PaymentStatus { get; set; } = string.Empty; // Paid, Pending, Waived
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = string.Empty;
 
         // Navigation properties
@@ -23,9 +26,12 @@ namespace MedyxHMS.Models
         public ICollection<VisitNoteHistory> NoteHistory { get; set; } = new List<VisitNoteHistory>();
     }
 
-    public class IPDAdmission
+    public class IPDAdmission : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public int PatientId { get; set; }
         public int DoctorId { get; set; }
         public int? BedId { get; set; }
@@ -37,7 +43,7 @@ namespace MedyxHMS.Models
         public string Notes { get; set; } = string.Empty;
         public string Status { get; set; } = string.Empty; // Admitted, Discharged, Transferred
         public decimal DailyCharges { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; } = string.Empty;
 
         // Navigation properties
@@ -46,15 +52,18 @@ namespace MedyxHMS.Models
         public Bed Bed { get; set; } = null!;
     }
 
-    public class Ward
+    public class Ward : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public string Name { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
         public int TotalBeds { get; set; }
         public int OccupiedBeds { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public ICollection<Bed> Beds { get; set; } = new List<Bed>();
@@ -80,7 +89,7 @@ namespace MedyxHMS.Models
         // Assigned patient (nullable — set when Occupied)
         public int? PatientId { get; set; }
         public DateTime? LastUpdated { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public Ward Ward { get; set; } = null!;

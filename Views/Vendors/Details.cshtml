@@ -1,0 +1,113 @@
+@model MedyxHMS.Models.Vendor
+@using MedyxHMS.Controllers
+@using System.Globalization
+@{
+    ViewData["Title"] = Model.Name;
+    var canManage = ViewBag.CanManage as bool? ?? false;
+    var items = ViewBag.Items as List<MedyxHMS.Models.InventoryItem> ?? new List<MedyxHMS.Models.InventoryItem>();
+    var bills = ViewBag.Bills as List<MedyxHMS.Models.PurchaseBill> ?? new List<MedyxHMS.Models.PurchaseBill>();
+    decimal outstanding = ViewBag.Outstanding ?? 0m;
+}
+
+<div class="container-fluid mt-3" style="max-width:1200px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-truck text-primary me-2"></i>@Model.VendorCode – @Model.Name</h4>
+            <small class="text-muted">@Model.Category@(string.IsNullOrWhiteSpace(Model.City) ? "" : " · " + Model.City)</small>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <span class="badge fs-6 @(Model.IsActive ? "bg-success" : "bg-secondary")">@(Model.IsActive ? "Active" : "Inactive")</span>
+            @if (canManage)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-sm">Edit</a>
+                <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-sm @(Model.IsActive ? "btn-outline-danger" : "btn-outline-success")">@(Model.IsActive ? "Deactivate" : "Reactivate")</button>
+                </form>
+            }
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Vendors</a>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Contact &amp; terms</div>
+                <div class="card-body small">
+                    <dl class="row mb-0">
+                        <dt class="col-5">Contact person</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.ContactPerson) ? "–" : Model.ContactPerson)</dd>
+                        <dt class="col-5">Phone</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.Phone) ? "–" : Model.Phone)</dd>
+                        <dt class="col-5">E-mail</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.Email) ? "–" : Model.Email)</dd>
+                        <dt class="col-5">Address</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.Address) ? "–" : Model.Address)</dd>
+                        <dt class="col-5">Tax no.</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.TaxNumber) ? "–" : Model.TaxNumber)</dd>
+                        <dt class="col-5">Licence no.</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.LicenseNumber) ? "–" : Model.LicenseNumber)</dd>
+                        <dt class="col-5">Payment terms</dt><dd class="col-7">@Model.PaymentTermsDays days</dd>
+                        <dt class="col-5">Rating</dt><dd class="col-7 text-warning">@(Model.Rating > 0 ? new string('★', Model.Rating) + new string('☆', 5 - Model.Rating) : "Not rated")</dd>
+                    </dl>
+                    @if (!string.IsNullOrWhiteSpace(Model.Notes)) { <hr /><p class="mb-0" style="white-space:pre-wrap">@Model.Notes</p> }
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Bank details</div>
+                <div class="card-body small">
+                    @if (canManage)
+                    {
+                        <dl class="row mb-0">
+                            <dt class="col-5">Bank</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.BankName) ? "–" : Model.BankName)</dd>
+                            <dt class="col-5">Account name</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.BankAccountName) ? "–" : Model.BankAccountName)</dd>
+                            <dt class="col-5">Account no.</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.BankAccountNumber) ? "–" : Model.BankAccountNumber)</dd>
+                            <dt class="col-5">IFSC / BSB / SWIFT</dt><dd class="col-7">@(string.IsNullOrEmpty(Model.BankRoutingCode) ? "–" : Model.BankRoutingCode)</dd>
+                        </dl>
+                    }
+                    else
+                    {
+                        <p class="mb-0 text-muted">Account no. @(string.IsNullOrEmpty(Model.BankAccountNumber) ? "–" : VendorsController.Mask(Model.BankAccountNumber)) – full bank details are visible to finance staff only.</p>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm mb-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center"><span class="fw-semibold">Purchase bills (outstanding @outstanding.ToString("N2", CultureInfo.InvariantCulture))</span>@if (Model.IsActive) { <a asp-controller="PurchaseBills" asp-action="Create" asp-route-vendorId="@Model.Id" class="btn btn-sm btn-outline-primary">New purchase bill</a> }</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light"><tr><th>Bill</th><th>Invoice</th><th class="text-end">Total</th><th>Status</th><th>Payment</th></tr></thead>
+                        <tbody>
+                            @foreach (var b in bills)
+                            {
+                                <tr>
+                                    <td class="small"><a asp-controller="PurchaseBills" asp-action="Details" asp-route-id="@b.Id">@b.BillNumber</a></td>
+                                    <td class="small">@b.VendorInvoiceNumber · @b.InvoiceDate.ToString("dd-MMM-yyyy")</td>
+                                    <td class="small text-end">@b.TotalAmount.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                    <td class="small">@b.Status</td>
+                                    <td class="small">@b.PaymentStatus</td>
+                                </tr>
+                            }
+                            @if (!bills.Any()) { <tr><td colspan="5" class="text-center text-muted py-3">No purchase bills (in this hospital).</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">Inventory items supplied</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light"><tr><th>Code</th><th>Item</th><th class="text-end">Stock</th><th class="text-end">Unit cost</th></tr></thead>
+                        <tbody>
+                            @foreach (var i in items)
+                            {
+                                <tr>
+                                    <td class="small"><code>@i.ItemCode</code></td>
+                                    <td class="small">@i.Name</td>
+                                    <td class="small text-end">@i.CurrentStock.ToString("0.##", CultureInfo.InvariantCulture) @i.Unit</td>
+                                    <td class="small text-end">@i.UnitCost.ToString("N2", CultureInfo.InvariantCulture)</td>
+                                </tr>
+                            }
+                            @if (!items.Any()) { <tr><td colspan="4" class="text-center text-muted py-3">No inventory items are linked to this vendor (in this hospital).</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

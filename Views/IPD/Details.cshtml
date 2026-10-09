@@ -14,14 +14,16 @@
             @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor"))
             {
                 <a href="@Url.Action("Edit", new { id = Model.Admission.Id })" class="btn btn-warning">Edit</a>
+            }
+            @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor") || User.IsInRole("Nurse"))
+            {
                 @if (Model.Admission.Status == "Admitted")
                 {
-                    <form method="post" action="@Url.Action("Discharge", new { id = Model.Admission.Id })" 
-                          style="display:inline;" onsubmit="return confirm('Discharge this patient?');">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" name="dischargeDate" value="@DateTime.Now.ToString("yyyy-MM-dd")">
-                        <button type="submit" class="btn btn-success">Discharge</button>
-                    </form>
+                    <a href="@Url.Action("Patient", "Discharge", new { admissionId = Model.Admission.Id })" class="btn btn-success"><i class="fas fa-sign-out-alt me-1"></i>Discharge Patient</a>
+                }
+                else if (Model.Admission.Status == "Discharged")
+                {
+                    <a href="@Url.Action("ForAdmission", "Discharge", new { admissionId = Model.Admission.Id })" class="btn btn-outline-primary"><i class="fas fa-file-medical me-1"></i>Discharge report</a>
                 }
             }
         </div>

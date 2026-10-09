@@ -1,7 +1,7 @@
 @model MedyxHMS.ViewModels.PatientPortalRegisterViewModel
 @{
     ViewData["Title"] = "Patient Sign Up";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 <div class="row justify-content-center mt-4">
@@ -55,7 +55,7 @@
                         </div>
                         <div class="col-md-3 mb-3">
                             <label asp-for="Register.DateOfBirth" class="form-label"></label>
-                            <input asp-for="Register.DateOfBirth" type="date" class="form-control" />
+                            <input asp-for="Register.DateOfBirth" type="date" class="form-control" value="@(Model.Register.DateOfBirth == default ? "" : Model.Register.DateOfBirth.ToString("yyyy-MM-dd"))" max="@DateTime.Today.ToString("yyyy-MM-dd")" />
                             <span asp-validation-for="Register.DateOfBirth" class="text-danger small"></span>
                         </div>
                         <div class="col-md-3 mb-3">

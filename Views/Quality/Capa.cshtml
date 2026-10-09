@@ -1,0 +1,30 @@
+@model List<MedyxHMS.Models.CapaAction>
+@{
+    ViewData["Title"] = "Corrective & Preventive Actions";
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    string filter = ViewBag.Filter as string ?? string.Empty;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-tasks text-warning me-2"></i>@(isManager ? "Corrective & Preventive Actions" : "My Actions")</h4>
+            <small class="text-muted">Actions raised from incidents and audit findings. Owners record what was done; a manager verifies effectiveness.</small>
+        </div>
+        @if (isManager) { <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Quality dashboard</a> }
+    </div>
+
+    <ul class="nav nav-pills mb-3 small">
+        @foreach (var (key, label) in new[] { ("", "All"), ("open", "Open"), ("overdue", "Overdue"), ("verify", "Waiting for verification") })
+        {
+            <li class="nav-item"><a class="nav-link @(filter == key ? "active" : "")" asp-action="Capa" asp-route-filter="@key">@label</a></li>
+        }
+    </ul>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            @{ ViewData["IsManager"] = isManager; ViewData["UserId"] = ViewBag.UserId; ViewData["ShowSource"] = true; }
+            <partial name="_CapaTable" model="Model" view-data="ViewData" />
+        </div>
+    </div>
+</div>

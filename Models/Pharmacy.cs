@@ -16,12 +16,15 @@ namespace MedyxHMS.Models
         public DateTime ExpiryDate { get; set; }
         public string BatchNumber { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
-    public class PharmacyBill
+    public class PharmacyBill : IHospitalScoped
     {
         public int Id { get; set; }
+        // Hospital of the group this record belongs to (set automatically from the active hospital).
+        public int? HospitalId { get; set; }
+        public Hospital? Hospital { get; set; }
         public string BillNumber { get; set; }
         public int PatientId { get; set; }
         public DateTime BillDate { get; set; }
@@ -30,7 +33,7 @@ namespace MedyxHMS.Models
         public string Status { get; set; } // Paid, Pending, Cancelled
         public string PaymentMethod { get; set; }
         public string Notes { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
         public string CreatedBy { get; set; }
 
         // Navigation properties
@@ -50,7 +53,7 @@ namespace MedyxHMS.Models
         public decimal UnitPrice { get; set; }
         public decimal TotalPrice { get; set; }
         public string Instructions { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public PharmacyBill PharmacyBill { get; set; }

@@ -1,0 +1,132 @@
+@model MedyxHMS.ViewModels.DischargeReportListViewModel
+@{
+    ViewData["Title"] = "Discharge Reports";
+}
+
+<div class="container-fluid mt-3 mb-4">
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-1"><i class="fas fa-file-medical me-2 text-primary"></i>Discharge Reports</h1>
+            <p class="text-muted mb-0">Discharge reports of all patients. Choose a patient or search by name; open a report to complete, print or download it.</p>
+        </div>
+        <span class="badge text-bg-dark">@Model.Reports.Count report(s)</span>
+    </div>
+
+    <form method="get" class="card shadow-sm mb-3">
+        <div class="card-body row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small mb-0" for="patientId">Patient</label>
+                <select id="patientId" name="patientId" class="form-select" asp-items="Model.PatientOptions">
+                    <option value="">All patients</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="search">Search by name, patient ID or phone</label>
+                <input id="search" name="search" value="@Model.Search" class="form-control" placeholder="e.g. Hira Shahid" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-0" for="from">Discharged from</label>
+                <input id="from" name="from" type="date" value="@Model.From?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small mb-0" for="to">to</label>
+                <input id="to" name="to" type="date" value="@Model.To?.ToString("yyyy-MM-dd")" class="form-control" />
+            </div>
+            <div class="col-md-1">
+                <label class="form-label small mb-0" for="status">Status</label>
+                <select id="status" name="status" class="form-select">
+                    <option value="">All</option>
+                    <option value="Draft" selected="@(Model.Status == "Draft")">Draft</option>
+                    <option value="Completed" selected="@(Model.Status == "Completed")">Completed</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2 justify-content-end">
+                <a asp-action="Index" class="btn btn-outline-secondary btn-sm">Clear</a>
+                <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search me-1"></i>Show reports</button>
+            </div>
+        </div>
+    </form>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white fw-semibold"><i class="fas fa-list me-1 text-primary"></i>Reports</div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="dischargeReports">
+                <thead class="table-light">
+                    <tr>
+                        <th>Report no.</th>
+                        <th>Patient</th>
+                        <th>Admitted</th>
+                        <th>Discharged</th>
+                        <th>Condition</th>
+                        <th>Final diagnosis</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Reports.Count == 0)
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-4">No discharge reports found.</td></tr>
+                    }
+                    @foreach (var r in Model.Reports)
+                    {
+                        <tr>
+                            <td><a asp-action="Details" asp-route-id="@r.Id" class="fw-semibold">@r.ReportNumber</a></td>
+                            <td>@r.Patient?.FirstName @r.Patient?.LastName<div class="small text-muted">@r.Patient?.PatientId</div></td>
+                            <td>@r.AdmissionDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@r.DischargeDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@r.ConditionAtDischarge</td>
+                            <td class="small" style="max-width:260px">@r.FinalDiagnosis</td>
+                            <td>
+                                @if (r.IsCompleted)
+                                {
+                                    <span class="badge text-bg-success">Completed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-warning">Draft</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary" title="View"><i class="fas fa-eye"></i></a>
+                                @if (!r.IsCompleted)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@r.Id" class="btn btn-sm btn-outline-success" title="Complete"><i class="fas fa-pen"></i></a>
+                                }
+                                <a asp-action="Download" asp-route-id="@r.Id" class="btn btn-sm btn-outline-danger" title="Download PDF"><i class="fas fa-file-pdf"></i></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white fw-semibold"><i class="fas fa-procedures me-1 text-primary"></i>Patients currently admitted</div>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead class="table-light">
+                    <tr><th>Patient</th><th>Ward / bed</th><th>Admitted</th><th>Doctor</th><th>Diagnosis</th><th class="text-end"></th></tr>
+                </thead>
+                <tbody>
+                    @if (Model.Admitted.Count == 0)
+                    {
+                        <tr><td colspan="6" class="text-center text-muted py-3">No patients are admitted.</td></tr>
+                    }
+                    @foreach (var a in Model.Admitted)
+                    {
+                        <tr>
+                            <td>@a.Patient?.FirstName @a.Patient?.LastName <span class="small text-muted">(@a.Patient?.PatientId)</span></td>
+                            <td>@(a.Bed == null ? "–" : $"{a.Bed.Ward?.Name} / {a.Bed.BedNumber}")</td>
+                            <td>@a.AdmissionDate.ToString("dd-MMM-yyyy")</td>
+                            <td>@(a.Doctor == null ? "" : $"Dr. {a.Doctor.FirstName} {a.Doctor.LastName}")</td>
+                            <td class="small">@a.Diagnosis</td>
+                            <td class="text-end"><a asp-action="Patient" asp-route-admissionId="@a.Id" class="btn btn-sm btn-success"><i class="fas fa-sign-out-alt me-1"></i>Discharge Patient</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

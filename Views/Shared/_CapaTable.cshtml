@@ -1,0 +1,85 @@
+@model IEnumerable<MedyxHMS.Models.CapaAction>
+@{
+    var isManager = ViewData["IsManager"] as bool? ?? false;
+    var userId = ViewData["UserId"] as string ?? string.Empty;
+    var returnUrl = ViewData["ReturnUrl"] as string ?? (Context.Request.Path + Context.Request.QueryString);
+    var showSource = ViewData["ShowSource"] as bool? ?? false;
+    var today = DateTime.Today;
+    bool CanAct(MedyxHMS.Models.CapaAction c) => ((c.Status == "Open" || c.Status == "In progress") && (isManager || c.OwnerUserId == userId)) || (c.Status == "Completed" && isManager);
+    var showActions = Model.Any(CanAct);
+}
+<div class="table-responsive">
+    <table class="table table-sm align-middle mb-0">
+        <thead class="table-light">
+            <tr>
+                <th>Type</th>
+                @if (showSource) { <th>Source</th> }
+                <th style="min-width:180px">Action</th>
+                <th>Owner</th>
+                <th>Due</th>
+                <th>Status</th>
+                @if (showActions) { <th style="min-width:260px"></th> }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                var overdue = (c.Status == "Open" || c.Status == "In progress") && c.DueDate < today;
+                <tr class="@(overdue ? "table-danger" : "")">
+                    <td><span class="badge @(c.ActionType == "Corrective" ? "bg-primary" : "bg-info text-dark")">@c.ActionType</span></td>
+                    @if (showSource)
+                    {
+                        <td class="small">
+                            @if (c.Incident != null) { <a asp-controller="Quality" asp-action="Incident" asp-route-id="@c.IncidentId">@c.Incident.IncidentNumber</a> }
+                            else if (c.AuditFinding != null && isManager) { <a asp-controller="InternalAudit" asp-action="Details" asp-route-id="@c.AuditFinding.AuditId">Audit finding</a> }
+                            else if (c.AuditFinding != null) { <span title="@c.AuditFinding.Description">Audit finding: @c.AuditFinding.Description</span> }
+                        </td>
+                    }
+                    <td class="small">
+                        @c.Description
+                        @if (!string.IsNullOrWhiteSpace(c.CompletionNotes)) { <div class="text-success"><i class="fas fa-check me-1"></i>@c.CompletionNotes</div> }
+                        @if (!string.IsNullOrWhiteSpace(c.EffectivenessNotes)) { <div class="text-muted">Verified by @c.VerifiedBy: @c.EffectivenessNotes</div> }
+                    </td>
+                    <td class="small">@c.OwnerName</td>
+                    <td class="small text-nowrap">@c.DueDate.ToString("dd-MMM-yyyy")@if (overdue) { <div class="text-danger fw-semibold">Overdue</div> }</td>
+                    <td>
+                        <span class="badge @(c.Status == "Verified" ? "bg-success" : c.Status == "Completed" ? "bg-warning text-dark" : "bg-secondary")">@c.Status</span>
+                    </td>
+                    @if (showActions)
+                    {
+                    <td>
+                        @if ((c.Status == "Open" || c.Status == "In progress") && (isManager || c.OwnerUserId == userId))
+                        {
+                            <form asp-controller="Quality" asp-action="UpdateCapa" method="post" class="d-flex gap-1 flex-wrap">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <input name="notes" class="form-control form-control-sm" placeholder="What was done?" style="min-width:140px;flex:1" />
+                                <select name="status" class="form-select form-select-sm" style="width:auto">
+                                    <option value="In progress">In progress</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                            </form>
+                        }
+                        else if (c.Status == "Completed" && isManager)
+                        {
+                            <form asp-controller="Quality" asp-action="VerifyCapa" method="post" class="d-flex gap-1 flex-wrap">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@c.Id" />
+                                <input type="hidden" name="returnUrl" value="@returnUrl" />
+                                <input name="effectivenessNotes" class="form-control form-control-sm" placeholder="How was effectiveness checked?" style="min-width:160px;flex:1" />
+                                <button type="submit" class="btn btn-sm btn-outline-success">Verify</button>
+                            </form>
+                        }
+                    </td>
+                    }
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="@((showSource ? 6 : 5) + (showActions ? 1 : 0))" class="text-center text-muted py-3">No corrective or preventive actions.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,5 +1,6 @@
 using MedyxHMS.Data;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -8,7 +9,8 @@ using System.Security.Claims;
 
 namespace MedyxHMS.Controllers
 {
-    [Authorize]
+    // Staff only: the patient-portal role must not reach this staff area (it exposes other patients' data).
+    [Authorize(Roles = AppRoles.Staff)]
     public class LiveConsultationController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -67,7 +69,7 @@ namespace MedyxHMS.Controllers
                 return View(model);
             }
 
-            model.CreatedDate = DateTime.UtcNow;
+            model.CreatedDate = DateTime.Now;
             _context.LiveConsultationSessions.Add(model);
             await _context.SaveChangesAsync();
             await _audit.LogActivityAsync(User.FindFirstValue(ClaimTypes.NameIdentifier),

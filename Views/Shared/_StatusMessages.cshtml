@@ -1,0 +1,36 @@
+@model string
+@*
+    Shows TempData success/error/info messages that the current page did not display itself.
+    Model = the already-rendered page body, used to avoid showing a message twice on pages
+    that render their own alerts.
+*@
+@{
+    var body = Model ?? string.Empty;
+    var encoder = System.Text.Encodings.Web.HtmlEncoder.Default;
+    var messages = new List<(string Css, string Icon, string Text)>();
+
+    void Collect(string key, string css, string icon)
+    {
+        if (TempData.Peek(key) is not string text || string.IsNullOrWhiteSpace(text))
+            return;
+
+        _ = TempData[key]; // mark as read so it is not shown again on the next request
+        var alreadyShown = body.Contains(text) || body.Contains(encoder.Encode(text));
+        if (!alreadyShown && !messages.Any(m => m.Text == text))
+            messages.Add((css, icon, text));
+    }
+
+    Collect("SuccessMessage", "success", "fa-check-circle");
+    Collect("Success", "success", "fa-check-circle");
+    Collect("ErrorMessage", "danger", "fa-exclamation-circle");
+    Collect("Error", "danger", "fa-exclamation-circle");
+    Collect("WarningMessage", "warning", "fa-exclamation-triangle");
+    Collect("InfoMessage", "info", "fa-info-circle");
+}
+@foreach (var m in messages)
+{
+    <div class="alert alert-@m.Css alert-dismissible fade show mt-2" role="alert">
+        <i class="fas @m.Icon me-1"></i>@m.Text
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}

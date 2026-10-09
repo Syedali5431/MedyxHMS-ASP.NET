@@ -20,7 +20,7 @@
                             <i class="fas fa-edit"></i> Edit Staff
                         </a>
                     }
-                    @if (User.HasPermission("ManageUsers", "Edit"))
+                    @if (User.HasPermission("ManageUsers", "Edit") && !string.IsNullOrEmpty(Model.Staff.Email) && (User.IsInRole("SuperAdmin") || Model.Staff.Roles?.Contains("SuperAdmin") != true))
                     {
                         <a href="@Url.Action("ChangePassword", "Staff", new { id = Model.Staff.Id })" class="btn btn-warning ml-2">
                             <i class="fas fa-key"></i> Change Password
@@ -274,10 +274,13 @@
                                 </form>
                             }
 
-                            <a href="@Url.Action("ChangePassword", "Staff", new { id = Model.Staff.Id })"
-                               class="btn btn-info btn-block">
-                                <i class="fas fa-key"></i> Change Password
-                            </a>
+                            @if (!string.IsNullOrEmpty(Model.Staff.Email) && (User.IsInRole("SuperAdmin") || Model.Staff.Roles?.Contains("SuperAdmin") != true))
+                            {
+                                <a href="@Url.Action("ChangePassword", "Staff", new { id = Model.Staff.Id })"
+                                   class="btn btn-info btn-block">
+                                    <i class="fas fa-key"></i> Change Password
+                                </a>
+                            }
                         </div>
                     }
 

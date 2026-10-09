@@ -1,9 +1,10 @@
 @{
     ViewData["Title"] = "My Appointments";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 @model PatientPortalAppointmentsViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 
 <div class="appointment-header mb-4">
     <div class="row align-items-center">
@@ -63,6 +64,10 @@
                                 <p class="text-muted mb-2">
                                     <i class="fas fa-stethoscope"></i> @appointment.Department
                                 </p>
+                                @if (HospitalContext.AllHospitals.Count(h => h.IsActive) > 1 && appointment.HospitalId.HasValue)
+                                {
+                                    <p class="text-muted mb-2"><i class="fas fa-hospital"></i> @HospitalContext.HospitalName(appointment.HospitalId)</p>
+                                }
                                 <p class="mb-2">
                                     <strong>Time:</strong> @appointment.AppointmentDate?.ToString("HH:mm")
                                 </p>

@@ -1,69 +1,153 @@
-@model OTSchedule
+@model MedyxHMS.ViewModels.OTBookingInput
 @{
-    ViewData["Title"] = "Book OT";
+    var isEdit = Model.Id > 0;
+    ViewData["Title"] = isEdit ? "Reschedule OT Booking" : "Book OT";
+    var patients = ViewBag.Patients as IEnumerable<Patient> ?? Enumerable.Empty<Patient>();
+    var doctors = ViewBag.Doctors as List<Doctor> ?? new List<Doctor>();
+    var theatres = ViewBag.Theatres as List<MedyxHMS.Models.OperationTheatre> ?? new List<MedyxHMS.Models.OperationTheatre>();
+    var suggestions = ViewBag.Suggestions as List<MedyxHMS.ViewModels.OTFreeWindow>;
+    var suggestionTheatre = ViewBag.SuggestionTheatre as MedyxHMS.Models.OperationTheatre;
+    var nextSlot = ViewBag.NextSlot as (int TheatreId, string TheatreCode, DateTime Start)?;
 }
 
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Book Operation Theatre</h2>
-        <a class="btn btn-secondary" asp-action="Index">Back</a>
+<div class="container mt-3" style="max-width:980px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h4 class="mb-0"><i class="fas fa-procedures text-primary me-2"></i>@ViewData["Title"]</h4>
+        <div class="d-flex gap-2">
+            <a class="btn btn-outline-primary btn-sm" asp-action="Availability" asp-route-date="@Model.ScheduledDate.ToString("yyyy-MM-dd")" asp-route-duration="@Model.EstimatedDurationMinutes"><i class="fas fa-calendar-alt me-1"></i>Availability</a>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="@(isEdit ? "Details" : "Index")" asp-route-id="@(isEdit ? Model.Id : null)">Back</a>
+        </div>
     </div>
 
-    <div class="card">
+    @if (!theatres.Any())
+    {
+        <div class="alert alert-warning">No active theatre has been set up for this hospital yet. An administrator can add theatres under <a asp-action="Theatres">Theatres</a>.</div>
+    }
+
+    <div class="card shadow-sm">
         <div class="card-body">
-            <form method="post" asp-action="Create">
+            <form method="post" asp-action="@(isEdit ? "Edit" : "Create")" asp-route-id="@(isEdit ? Model.Id : null)">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger py-2 small mb-3"></div>
+
+                @if (suggestions != null && suggestionTheatre != null)
+                {
+                    <div class="alert alert-info small py-2">
+                        @if (suggestions.Any())
+                        {
+                            <div class="mb-1">Free in @suggestionTheatre.Code on @Model.ScheduledDate.ToString("dd-MMM-yyyy") for @Model.EstimatedDurationMinutes min:</div>
+                            @foreach (var f in suggestions)
+                            {
+                                <button type="button" class="btn btn-sm btn-outline-primary me-1 mb-1 js-slot" data-start="@f.From.ToString("yyyy-MM-ddTHH:mm")" data-theatre="@suggestionTheatre.Id">@f.From.ToString("HH:mm")–@f.To.ToString("HH:mm")</button>
+                            }
+                        }
+                        else
+                        {
+                            <div>@suggestionTheatre.Code has no free period of @Model.EstimatedDurationMinutes min on @Model.ScheduledDate.ToString("dd-MMM-yyyy").</div>
+                        }
+                        @if (nextSlot.HasValue)
+                        {
+                            <div class="mt-1">Next free slot: <button type="button" class="btn btn-sm btn-link p-0 js-slot" data-start="@nextSlot.Value.Start.ToString("yyyy-MM-ddTHH:mm")" data-theatre="@nextSlot.Value.TheatreId">@nextSlot.Value.TheatreCode on @nextSlot.Value.Start.ToString("dd-MMM-yyyy HH:mm")</button></div>
+                        }
+                    </div>
+                }
 
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Patient</label>
-                        <select asp-for="PatientId" class="form-select" required>
-                            <option value="">Select patient</option>
-                            @foreach (var p in (IEnumerable<Patient>)ViewBag.Patients)
+                        <label asp-for="PatientId" class="form-label fw-semibold">Patient <span class="text-danger">*</span></label>
+                        @if (isEdit)
+                        {
+                            var p = patients.FirstOrDefault(x => x.Id == Model.PatientId);
+                            <input class="form-control" value="@(p != null ? $"{p.FirstName} {p.LastName} - {p.PatientId}" : Model.PatientId.ToString())" disabled />
+                            <input type="hidden" asp-for="PatientId" />
+                        }
+                        else
+                        {
+                            <select asp-for="PatientId" class="form-select" required>
+                                <option value="">Select patient</option>
+                                @foreach (var p in patients)
+                                {
+                                    <option value="@p.Id">@p.FirstName @p.LastName - @p.PatientId</option>
+                                }
+                            </select>
+                        }
+                        <span asp-validation-for="PatientId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="ProcedureName" class="form-label fw-semibold">Procedure <span class="text-danger">*</span></label>
+                        <input asp-for="ProcedureName" class="form-control" required maxlength="200" />
+                        <span asp-validation-for="ProcedureName" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="SurgeonDoctorId" class="form-label fw-semibold">Surgeon <span class="text-danger">*</span></label>
+                        <select asp-for="SurgeonDoctorId" class="form-select" id="surgeonSelect">
+                            <option value="">Visiting surgeon (enter name)</option>
+                            @foreach (var d in doctors)
                             {
-                                <option value="@p.Id">@p.FirstName @p.LastName - @p.PatientId</option>
+                                <option value="@d.Id">Dr. @d.FirstName @d.LastName@(string.IsNullOrWhiteSpace(d.Specialization) ? "" : " – " + d.Specialization)</option>
                             }
                         </select>
+                        <span asp-validation-for="SurgeonDoctorId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6" id="visitingBox">
+                        <label asp-for="SurgeonName" class="form-label fw-semibold"></label>
+                        <input asp-for="SurgeonName" class="form-control" maxlength="100" />
+                        <span asp-validation-for="SurgeonName" class="text-danger small"></span>
                     </div>
                     <div class="col-md-6">
-                        <label asp-for="ProcedureName" class="form-label"></label>
-                        <input asp-for="ProcedureName" class="form-control" required />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="SurgeonName" class="form-label"></label>
-                        <input asp-for="SurgeonName" class="form-control" required />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="OperationTheatreNumber" class="form-label"></label>
-                        <input asp-for="OperationTheatreNumber" class="form-control" placeholder="OT-1" />
-                    </div>
-                    <div class="col-md-3">
-                        <label asp-for="EstimatedDurationMinutes" class="form-label"></label>
-                        <input asp-for="EstimatedDurationMinutes" type="number" min="15" step="15" class="form-control" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="ScheduledDate" class="form-label"></label>
-                        <input asp-for="ScheduledDate" type="datetime-local" class="form-control" value="@Model.ScheduledDate.ToString("yyyy-MM-ddTHH:mm")" />
-                    </div>
-                    <div class="col-md-6">
-                        <label asp-for="Status" class="form-label"></label>
-                        <select asp-for="Status" class="form-select">
-                            <option>Scheduled</option>
-                            <option>Completed</option>
-                            <option>Cancelled</option>
+                        <label asp-for="OperationTheatreId" class="form-label fw-semibold">Theatre <span class="text-danger">*</span></label>
+                        <select asp-for="OperationTheatreId" class="form-select" id="theatreSelect" required>
+                            <option value="">Choose…</option>
+                            @foreach (var t in theatres)
+                            {
+                                <option value="@t.Id">@t.DisplayName (@(t.Is24Hours ? "24 h" : t.OpensAt.ToString("hh\\:mm") + "–" + t.ClosesAt.ToString("hh\\:mm")), turnover @t.TurnoverMinutes min)</option>
+                            }
                         </select>
+                        <span asp-validation-for="OperationTheatreId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="ScheduledDate" class="form-label fw-semibold">Start <span class="text-danger">*</span></label>
+                        <input asp-for="ScheduledDate" type="datetime-local" class="form-control" id="startInput" value="@Model.ScheduledDate.ToString("yyyy-MM-ddTHH:mm")" />
+                        <span asp-validation-for="ScheduledDate" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-3">
+                        <label asp-for="EstimatedDurationMinutes" class="form-label fw-semibold">Duration (min)</label>
+                        <input asp-for="EstimatedDurationMinutes" type="number" min="15" max="720" step="15" class="form-control" />
+                        <span asp-validation-for="EstimatedDurationMinutes" class="text-danger small"></span>
                     </div>
                     <div class="col-12">
-                        <label asp-for="Notes" class="form-label"></label>
+                        <div class="form-check">
+                            <input asp-for="IsEmergency" class="form-check-input" />
+                            <label asp-for="IsEmergency" class="form-check-label"></label>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <label asp-for="Notes" class="form-label fw-semibold"></label>
                         <textarea asp-for="Notes" class="form-control" rows="3"></textarea>
                     </div>
                 </div>
 
-                <div class="mt-3">
-                    <button class="btn btn-primary" type="submit">Create Booking</button>
+                <div class="mt-3 d-flex gap-2 align-items-center">
+                    <button class="btn btn-primary" type="submit">@(isEdit ? "Save changes" : "Create Booking")</button>
+                    @if (!isEdit) { <span class="small text-muted">An OT bill is created for the patient (base charge for the first hour plus a charge per extra minute).</span> }
                 </div>
             </form>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var sel = document.getElementById('surgeonSelect'), box = document.getElementById('visitingBox');
+            function sync() { if (sel && box) box.style.display = sel.value ? 'none' : ''; }
+            sel && sel.addEventListener('change', sync); sync();
+            document.querySelectorAll('.js-slot').forEach(function (b) {
+                b.addEventListener('click', function () {
+                    document.getElementById('startInput').value = b.dataset.start;
+                    document.getElementById('theatreSelect').value = b.dataset.theatre;
+                });
+            });
+        })();
+    </script>
+}

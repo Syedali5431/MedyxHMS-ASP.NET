@@ -79,7 +79,7 @@ namespace MedyxHMS.Services.Implementations
                 NetSalary = netSalary,
                 Status = "Processed",
                 Notes = notes,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.Now
             };
 
             _context.PayrollRecords.Add(payroll);
@@ -102,7 +102,7 @@ namespace MedyxHMS.Services.Implementations
                     ? notes
                     : $"{payroll.Notes}; {notes}";
             }
-            payroll.UpdatedDate = DateTime.UtcNow;
+            payroll.UpdatedDate = DateTime.Now;
 
             _context.PayrollRecords.Update(payroll);
             await _context.SaveChangesAsync();

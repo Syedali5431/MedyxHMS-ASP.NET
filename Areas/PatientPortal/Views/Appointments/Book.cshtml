@@ -1,9 +1,14 @@
 @{
     ViewData["Title"] = "Book Appointment";
-    Layout = "~/Views/PatientPortal/Shared/_Layout.cshtml";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
 }
 
 @model PatientPortalBookAppointmentViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@{
+    // Multi-hospital: patients choose the branch only when the group has more than one active hospital.
+    var bookHospitals = HospitalContext.AllHospitals.Where(h => h.IsActive).ToList();
+}
 
 <div class="book-appointment-header mb-4">
     <div class="row">
@@ -19,6 +24,25 @@
 <div class="row">
     <div class="col-lg-8">
         <form method="post" asp-action="Book">
+            @if (bookHospitals.Count > 1)
+            {
+                <div class="card mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Hospital</h5>
+                    </div>
+                    <div class="card-body">
+                        <label for="HospitalId" class="form-label">Which hospital would you like to visit?</label>
+                        <select class="form-select" id="HospitalId" name="HospitalId" required>
+                            <option value="">-- Choose a hospital --</option>
+                            @foreach (var h in bookHospitals)
+                            {
+                                <option value="@h.Id" selected="@(Model.HospitalId == h.Id)">@h.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="HospitalId" class="text-danger small"></span>
+                    </div>
+                </div>
+            }
             <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">Step 1: Select a Doctor</h5>

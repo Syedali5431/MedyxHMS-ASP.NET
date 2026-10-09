@@ -13,7 +13,7 @@ namespace MedyxHMS.Models
         public string SpecialInstructions { get; set; }
         public bool RequiresContrast { get; set; }
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
     public class RadiologyResult
@@ -31,7 +31,7 @@ namespace MedyxHMS.Models
         public string VerifiedBy { get; set; }
         public string ImagePath { get; set; } // Path to stored images
         public string Notes { get; set; }
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
 
         // Navigation properties
         public Patient Patient { get; set; }

@@ -1,0 +1,83 @@
+@model MedyxHMS.ViewModels.TrainingIndexViewModel
+@{
+    ViewData["Title"] = Model.IsManager ? "Training Records" : "My Training";
+    var today = DateTime.Today;
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-user-graduate text-success me-2"></i>@ViewData["Title"]</h4>
+            <small class="text-muted">Courses and certifications with their validity. Renew before the expiry date.</small>
+        </div>
+        @if (Model.IsManager) { <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Add Training</a> }
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        @if (Model.IsManager)
+        {
+            <div class="col-sm-4">
+                <select name="staffId" class="form-select form-select-sm">
+                    <option value="">All staff</option>
+                    @foreach (var s in Model.Staff) { <option value="@s.Id" selected="@(Model.StaffId == s.Id)">@s.Name</option> }
+                </select>
+            </div>
+        }
+        <div class="col-sm-3">
+            <select name="filter" class="form-select form-select-sm">
+                <option value="">All records</option>
+                <option value="expiring" selected="@(Model.Filter == "expiring")">Expiring within 30 days</option>
+                <option value="expired" selected="@(Model.Filter == "expired")">Expired</option>
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr><th>Staff</th><th>Course / certificate</th><th>Category</th><th>Provider</th><th>Completed</th><th>Valid until</th><th>Result</th>@if (Model.IsManager) { <th></th> }</tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.Records)
+                    {
+                        var expired = t.ExpiryDate.HasValue && t.ExpiryDate.Value < today;
+                        var soon = !expired && t.ExpiryDate.HasValue && t.ExpiryDate.Value <= today.AddDays(30);
+                        <tr>
+                            <td>@t.StaffName<div class="small text-muted">@t.StaffDepartment</div></td>
+                            <td>@t.CourseTitle@if (!string.IsNullOrWhiteSpace(t.CertificateNumber)) { <div class="small text-muted">Cert. @t.CertificateNumber</div> }</td>
+                            <td class="small">@t.Category</td>
+                            <td class="small">@t.Provider</td>
+                            <td class="small text-nowrap">@t.CompletedDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="small text-nowrap">
+                                @if (!t.ExpiryDate.HasValue) { <span class="text-muted">No expiry</span> }
+                                else
+                                {
+                                    @t.ExpiryDate.Value.ToString("dd-MMM-yyyy")
+                                    if (expired) { <span class="badge bg-danger ms-1">Expired</span> }
+                                    else if (soon) { <span class="badge bg-warning text-dark ms-1">Due soon</span> }
+                                }
+                            </td>
+                            <td class="small">@t.Result</td>
+                            @if (Model.IsManager)
+                            {
+                                <td class="text-nowrap">
+                                    <a asp-action="Edit" asp-route-id="@t.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <form asp-action="Delete" asp-route-id="@t.Id" method="post" class="d-inline" onsubmit="return confirm('Delete this training record?');">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                </td>
+                            }
+                        </tr>
+                    }
+                    @if (!Model.Records.Any())
+                    {
+                        <tr><td colspan="@(Model.IsManager ? 8 : 7)" class="text-center text-muted py-4">No training records.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

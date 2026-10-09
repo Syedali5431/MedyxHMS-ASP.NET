@@ -1,5 +1,9 @@
+# Signs in as each test account and opens every staff page of the sidebar (or the patient portal pages).
+# Hospital accounts (SeedDemoData.sql) also check the hospital choice at sign-in: the number of hospitals
+# offered and that the chosen hospital is shown after signing in. Accounts that must use two-step login
+# (superadmin, admin.uat) are reported as such - their pages redirect to the two-step login.
 param(
-    [string]$BaseUrl = "http://localhost:5044",
+    [string]$BaseUrl = "http://localhost:5000",
     [string]$OutputPath
 )
 
@@ -14,7 +18,7 @@ $staffRoutes = (Get-Content "$root\Views\Shared\Components\SidebarNav\Default.cs
     Select-String -Pattern 'href="/[^"#]+' -AllMatches).Matches.Value |
     ForEach-Object { $_.Substring(6) } |
     Sort-Object -Unique
-$staffRoutes += @('/Dashboard', '/BedManagement', '/bed-management', '/api/beds')
+$staffRoutes += @('/Dashboard', '/BedManagement', '/bed-management', '/api/beds', '/Account/Profile', '/Chatbot')
 $staffRoutes = $staffRoutes | Sort-Object -Unique
 
 $patientRoutes = @(
@@ -22,9 +26,12 @@ $patientRoutes = @(
     '/PatientPortal/Appointments/Index',
     '/PatientPortal/Bills/Index',
     '/PatientPortal/MedicalRecords/Index',
+    '/PatientPortal/DischargeReports/Index',
+    '/PatientPortal/Dashboard/Profile',
     '/PatientPortal/Settings/Index'
 )
 
+# Hospitals = number of hospitals offered at sign-in (0 = not checked); Hospital = name or city to choose.
 $users = @(
     @{ Name = 'superadmin'; Email = 'superadmin@hospital.com'; Password = 'SuperAdmin@123!'; Role = 'SuperAdmin'; Routes = $staffRoutes },
     @{ Name = 'admin'; Email = 'admin.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Admin'; Routes = $staffRoutes },
@@ -34,7 +41,12 @@ $users = @(
     @{ Name = 'receptionist'; Email = 'receptionist.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Receptionist'; Routes = $staffRoutes },
     @{ Name = 'multirole-doctor'; Email = 'multirole.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Doctor'; Routes = $staffRoutes },
     @{ Name = 'multirole-nurse'; Email = 'multirole.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Nurse'; Routes = $staffRoutes },
-    @{ Name = 'patient'; Email = 'patient.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Patient'; Routes = $patientRoutes }
+    @{ Name = 'patient'; Email = 'patient.uat@hospital.com'; Password = 'UatRole@123!'; Role = 'Patient'; Routes = $patientRoutes },
+    # Demo hospital accounts (SeedDemoData.sql)
+    @{ Name = 'tester (Islamabad)'; Email = 'tester'; Password = 'Tester@123!'; Role = 'Admin'; Hospitals = 3; Hospital = 'Islamabad'; Routes = $staffRoutes },
+    @{ Name = 'admin.region (Karachi)'; Email = 'admin.region'; Password = 'Hospital@123!'; Role = 'Admin'; Hospitals = 2; Hospital = 'Karachi'; Routes = $staffRoutes },
+    @{ Name = 'nurse.khi'; Email = 'nurse.khi'; Password = 'Hospital@123!'; Role = 'Nurse'; Hospitals = 1; Hospital = 'Karachi'; Routes = $staffRoutes },
+    @{ Name = 'accounts.main'; Email = 'accounts.main'; Password = 'Hospital@123!'; Role = 'Accountant'; Hospitals = 1; Hospital = 'Lahore'; Routes = $staffRoutes }
 )
 
 function Get-Token([string]$html) {
@@ -58,6 +70,7 @@ foreach ($u in $users) {
         Email        = $u.Email
         Role         = $u.Role
         Login        = ''
+        Hospital     = ''
         ValidateRoles = ''
         RouteChecks  = @()
         Summary      = @{}
@@ -82,6 +95,15 @@ foreach ($u in $users) {
         if (-not $validateJson.success) { throw "ValidateCredentials failed: $($validateJson.message)" }
         if (-not ($validateJson.roles -contains $u.Role)) { throw "Role $($u.Role) not offered for user" }
 
+        # Hospital choice: one hospital = signed in directly, several = the user chooses.
+        $chosen = $null
+        $offered = @($validateJson.hospitals | Where-Object { $_.value -ne 'all' })
+        if ($u.Hospitals) {
+            if ($offered.Count -ne $u.Hospitals) { throw "Expected $($u.Hospitals) hospital(s) at sign-in, got $($offered.Count): $(($offered | ForEach-Object { $_.name }) -join ', ')" }
+            $chosen = $offered | Where-Object { $_.name -like "*$($u.Hospital)*" -or $_.city -like "*$($u.Hospital)*" } | Select-Object -First 1
+            if (-not $chosen) { throw "Hospital '$($u.Hospital)' not offered" }
+        }
+
         $loginGet2 = Invoke-WebRequest -Uri "$BaseUrl/Account/Login" -WebSession $sess -UseBasicParsing -TimeoutSec 20
         $token2 = Get-Token $loginGet2.Content
         $loginBody = @{
@@ -91,8 +113,23 @@ foreach ($u in $users) {
             SelectedRole = $u.Role
             __RequestVerificationToken = $token2
         }
+        if ($chosen) { $loginBody.SelectedHospital = $chosen.value }
         $null = Invoke-WebRequest -Uri "$BaseUrl/Account/Login" -Method Post -Body $loginBody -WebSession $sess -UseBasicParsing -TimeoutSec 25 -ContentType 'application/x-www-form-urlencoded'
         $entry.Login = 'OK'
+
+        # Two-step login: without the authenticator code every page redirects to the two-step pages.
+        $probe = $null
+        try { $probe = Invoke-WebRequest -Uri "$BaseUrl/Dashboard" -WebSession $sess -UseBasicParsing -TimeoutSec 20 -MaximumRedirection 0 -ErrorAction SilentlyContinue } catch { }
+        $location = if ($probe) { [string]$probe.Headers['Location'] } else { '' }
+        if ($location -match 'EnableMFA|VerifyMFA') {
+            $entry.Login = 'OK - two-step login required (pages not checked)'
+            $report.Results += $entry
+            continue
+        }
+        if ($chosen) {
+            $dash = Invoke-WebRequest -Uri "$BaseUrl/Dashboard" -WebSession $sess -UseBasicParsing -TimeoutSec 20
+            $entry.Hospital = if ($dash.Content -match [regex]::Escape($chosen.name)) { "OK - working in $($chosen.name)" } else { "FAILED - $($chosen.name) not shown after sign-in" }
+        }
 
         foreach ($r in $u.Routes) {
             $status = 0
@@ -171,6 +208,7 @@ foreach ($r in $report.Results) {
         User  = $r.User
         Role  = $r.Role
         Login = $r.Login
+        Hospital = $r.Hospital
         Total = if ($r.Summary.Total) { $r.Summary.Total } else { 0 }
         Fails = $fails
     }

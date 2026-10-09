@@ -244,7 +244,7 @@ namespace MedyxHMS.Controllers
 
             try
             {
-                model.OrderDate = DateTime.UtcNow;
+                model.OrderDate = DateTime.Now;
                 var newResult = await _radiologyService.CreateRadiologyResultAsync(model);
                 await _auditService.LogActivityAsync(User.FindFirst(ClaimTypes.NameIdentifier)?.Value, "Create", "RadiologyResult", newResult.Id.ToString(), null, $"OrderNumber: {newResult.OrderNumber}");
                 TempData["SuccessMessage"] = $"Radiology test ordered successfully! Order #: {newResult.OrderNumber}";

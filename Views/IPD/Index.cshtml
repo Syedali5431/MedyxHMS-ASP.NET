@@ -1,4 +1,5 @@
 @model IPDAdmissionViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 
 @{
     ViewData["Title"] = "IPD - Inpatient Department";
@@ -89,6 +90,7 @@
             <table class="table table-hover mb-0">
                 <thead class="table-light">
                     <tr>
+                        @if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Admission Date</th>
                         <th>Patient</th>
                         <th>Doctor</th>
@@ -104,6 +106,7 @@
                         @foreach (var admission in Model.Admissions)
                         {
                             <tr>
+                                @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(admission.HospitalId)</td> }
                                 <td>@admission.FormattedAdmissionDate</td>
                                 <td>@admission.PatientName</td>
                                 <td>@admission.DoctorName</td>
@@ -130,16 +133,20 @@
                                         <a href="@Url.Action("Edit", "IPD", new { id = admission.Id })" class="btn btn-sm btn-warning">
                                             <i class="fas fa-edit"></i>
                                         </a>
+                                    }
+                                    @if (User.IsInRole("Admin") || User.IsInRole("SuperAdmin") || User.IsInRole("Doctor") || User.IsInRole("Nurse"))
+                                    {
                                         @if (admission.Status == "Admitted")
                                         {
-                                            <form method="post" action="@Url.Action("Discharge", "IPD", new { id = admission.Id })" 
-                                                  style="display:inline;" onsubmit="return confirm('Discharge this patient?');">
-                                                @Html.AntiForgeryToken()
-                                                <input type="hidden" name="dischargeDate" value="@DateTime.Now.ToString("yyyy-MM-dd")">
-                                                <button type="submit" class="btn btn-sm btn-success">
-                                                    <i class="fas fa-check"></i>
-                                                </button>
-                                            </form>
+                                            <a href="@Url.Action("Patient", "Discharge", new { admissionId = admission.Id })" class="btn btn-sm btn-success" title="Discharge Patient">
+                                                <i class="fas fa-sign-out-alt"></i>
+                                            </a>
+                                        }
+                                        else if (admission.Status == "Discharged")
+                                        {
+                                            <a href="@Url.Action("ForAdmission", "Discharge", new { admissionId = admission.Id })" class="btn btn-sm btn-outline-secondary" title="Discharge report">
+                                                <i class="fas fa-file-medical"></i>
+                                            </a>
                                         }
                                     }
                                 </td>

@@ -39,7 +39,7 @@ namespace MedyxHMS.Services.Implementations
         public async Task<Bill> CreateBillAsync(Bill bill)
         {
             bill.BillNumber = GenerateBillNumber();
-            bill.CreatedDate = DateTime.UtcNow;
+            bill.CreatedDate = DateTime.Now;
             bill.Status = "Unpaid";
             bill.PendingAmount = bill.TotalAmount;
 
@@ -129,7 +129,7 @@ namespace MedyxHMS.Services.Implementations
             try
             {
                 // Add payment
-                payment.PaymentDate = DateTime.UtcNow;
+                payment.PaymentDate = DateTime.Now;
                 payment.Status = "Completed";
                 _context.Payments.Add(payment);
 
@@ -164,8 +164,9 @@ namespace MedyxHMS.Services.Implementations
         private string GenerateBillNumber()
         {
             // Generate bill number: BILL + YYYYMMDD + sequential number
-            var datePart = DateTime.UtcNow.ToString("yyyyMMdd");
+            var datePart = DateTime.Now.ToString("yyyyMMdd");
             var lastBill = _context.Bills
+                .IgnoreQueryFilters() // bill numbers are unique across all hospitals of the group
                 .Where(b => b.BillNumber.StartsWith($"BILL{datePart}"))
                 .OrderByDescending(b => b.Id)
                 .FirstOrDefault();

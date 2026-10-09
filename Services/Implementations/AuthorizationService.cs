@@ -158,7 +158,7 @@ namespace MedyxHMS.Services.Implementations
             {
                 StaffId = userId,
                 RoleId = roleId,
-                AssignedDate = DateTime.UtcNow,
+                AssignedDate = DateTime.Now,
                 AssignedBy = "System"
             };
 

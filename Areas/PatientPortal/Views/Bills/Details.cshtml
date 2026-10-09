@@ -1,0 +1,82 @@
+@model PatientPortalBillDetailsViewModel
+@{
+    ViewData["Title"] = "Bill Details";
+    Layout = "~/Areas/PatientPortal/Views/Shared/_Layout.cshtml";
+    var bill = Model.Bill;
+    var pending = bill.PendingAmount ?? 0;
+}
+
+<div class="py-4" style="max-width:900px">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h3 class="mb-0"><i class="fas fa-file-invoice-dollar me-2"></i>Bill @bill.BillNumber</h3>
+        <div class="d-flex gap-2">
+            <a asp-action="Download" asp-route-id="@bill.Id" class="btn btn-outline-secondary btn-sm"><i class="fas fa-download me-1"></i>Download invoice (PDF)</a>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>My Bills</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Bill date</div><div class="fw-semibold">@bill.FormattedBillDate</div></div></div></div>
+        <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Due date</div><div class="fw-semibold">@bill.FormattedDueDate</div></div></div></div>
+        <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Total</div><div class="fw-semibold">@((bill.TotalAmount ?? 0).ToString("C"))</div></div></div></div>
+        <div class="col-md-3"><div class="card h-100"><div class="card-body"><div class="text-muted small">Outstanding</div><div class="fw-semibold @(pending > 0 ? "text-danger" : "text-success")">@pending.ToString("C")</div></div></div></div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h6 class="mb-0">Items</h6>
+            <span class="badge bg-secondary">@bill.Status</span>
+        </div>
+        <div class="card-body p-0">
+            @if (bill.Items.Any())
+            {
+                <table class="table mb-0">
+                    <thead><tr><th>Description</th><th>Category</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        @foreach (var item in bill.Items)
+                        {
+                            <tr><td>@item.Description</td><td>@item.Category</td><td class="text-end">@item.Amount.ToString("C")</td></tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted p-3 mb-0">No itemised charges are recorded for this bill.</p>
+            }
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light"><h6 class="mb-0">Payments</h6></div>
+        <div class="card-body p-0">
+            @if (bill.Payments.Any())
+            {
+                <table class="table mb-0">
+                    <thead><tr><th>Date</th><th>Method</th><th>Reference</th><th>Status</th><th class="text-end">Amount</th></tr></thead>
+                    <tbody>
+                        @foreach (var payment in bill.Payments)
+                        {
+                            <tr>
+                                <td>@payment.FormattedPaymentDate</td>
+                                <td>@payment.PaymentMethod</td>
+                                <td>@(string.IsNullOrWhiteSpace(payment.TransactionId) ? "—" : payment.TransactionId)</td>
+                                <td>@payment.Status</td>
+                                <td class="text-end">@payment.Amount.ToString("C")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+            else
+            {
+                <p class="text-muted p-3 mb-0">No payments have been recorded yet.</p>
+            }
+        </div>
+    </div>
+
+    @if (bill.Status != "Paid" && bill.Status != "Cancelled" && pending > 0)
+    {
+        <a asp-action="Pay" asp-route-id="@bill.Id" class="btn btn-success"><i class="fas fa-credit-card me-1"></i>Pay this bill</a>
+    }
+</div>

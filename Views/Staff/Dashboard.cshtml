@@ -218,10 +218,7 @@
                         @foreach (var staff in Model.RecentStaff)
                         {
                             <div class="d-flex align-items-center mb-3 pb-3 border-bottom">
-                                <div class="avatar-circle bg-primary text-white mr-3"
-                                     style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-                                    @staff.FirstName.FirstOrDefault()@staff.LastName.FirstOrDefault()
-                                </div>
+                                <div class="me-3">@await Component.InvokeAsync("UserAvatar", new { userId = staff.Id, name = staff.FullName, size = 40 })</div>
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>

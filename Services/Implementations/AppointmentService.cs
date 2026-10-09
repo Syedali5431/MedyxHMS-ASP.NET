@@ -34,7 +34,7 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Appointment> CreateAppointmentAsync(Appointment appointment)
         {
-            appointment.CreatedDate = DateTime.UtcNow;
+            appointment.CreatedDate = DateTime.Now;
             appointment.Status = "Scheduled";
 
             _context.Appointments.Add(appointment);

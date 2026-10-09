@@ -1,33 +1,64 @@
 @model IEnumerable<OTSchedule>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
 @{
     ViewData["Title"] = "Operation Theatre";
+    var theatres = ViewBag.Theatres as List<MedyxHMS.Models.OperationTheatre> ?? new List<MedyxHMS.Models.OperationTheatre>();
+    var statuses = new[] { "Scheduled", "In Progress", "Completed", "Cancelled" };
+    var canOpenBills = await Nav.CanAccessAsync("/Billing/Details/1");
+    var from = ViewBag.From as DateTime?;
+    var to = ViewBag.To as DateTime?;
+    string Badge(string s) => s switch { "Scheduled" => "bg-primary", "In Progress" => "bg-warning text-dark", "Completed" => "bg-success", "Cancelled" => "bg-secondary", _ => "bg-light text-dark border" };
 }
 
-<div class="container-fluid mt-4">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2>Operation Theatre Schedules</h2>
-        <a class="btn btn-primary" asp-action="Create">Book OT</a>
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-procedures text-primary me-2"></i>Operation Theatre Schedule</h4>
+            <small class="text-muted">Bookings are checked against theatre hours, turnover time, block times and the surgeon's and patient's other cases.</small>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a class="btn btn-outline-primary btn-sm" asp-action="Availability"><i class="fas fa-calendar-alt me-1"></i>Availability</a>
+            <a class="btn btn-outline-secondary btn-sm" asp-action="Theatres"><i class="fas fa-door-open me-1"></i>Theatres</a>
+            <a class="btn btn-primary btn-sm" asp-action="Create"><i class="fas fa-plus me-1"></i>Book OT</a>
+        </div>
     </div>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success">@TempData["SuccessMessage"]</div>
-    }
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger">@TempData["ErrorMessage"]</div>
-    }
+    <div class="row g-3 mb-3">
+        <div class="col-sm-4"><a asp-action="Index" asp-route-from="@DateTime.Today.ToString("yyyy-MM-dd")" asp-route-to="@DateTime.Today.ToString("yyyy-MM-dd")" class="text-decoration-none"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold">@ViewBag.TodayCount</div><div class="small text-muted">Cases today</div></div></div></a></div>
+        <div class="col-sm-4"><a asp-action="Index" asp-route-status="In Progress" class="text-decoration-none"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold text-warning">@ViewBag.InProgressCount</div><div class="small text-muted">In progress</div></div></div></a></div>
+        <div class="col-sm-4"><a asp-action="Index" asp-route-status="Scheduled" asp-route-from="@DateTime.Today.ToString("yyyy-MM-dd")" class="text-decoration-none"><div class="card shadow-sm"><div class="card-body py-2"><div class="fs-4 fw-bold text-primary">@ViewBag.UpcomingCount</div><div class="small text-muted">Upcoming</div></div></div></a></div>
+    </div>
 
-    <div class="card">
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-2"><input type="date" name="from" value="@from?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" aria-label="From" /></div>
+        <div class="col-sm-2"><input type="date" name="to" value="@to?.ToString("yyyy-MM-dd")" class="form-control form-control-sm" aria-label="To" /></div>
+        <div class="col-sm-3">
+            <select name="theatreId" class="form-select form-select-sm" aria-label="Theatre">
+                <option value="">All theatres</option>
+                @foreach (var t in theatres) { <option value="@t.Id" selected="@(ViewBag.TheatreId == t.Id)">@t.DisplayName</option> }
+            </select>
+        </div>
+        <div class="col-sm-3">
+            <select name="status" class="form-select form-select-sm" aria-label="Status">
+                <option value="">All statuses</option>
+                @foreach (var s in statuses) { <option value="@s" selected="@(ViewBag.Status == s)">@s</option> }
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Filter</button></div>
+    </form>
+
+    <div class="card shadow-sm mb-4">
         <div class="card-body table-responsive">
-            <table class="table table-striped">
-                <thead>
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
                     <tr>
+                        @if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Date</th>
                         <th>Patient</th>
                         <th>Procedure</th>
                         <th>Surgeon</th>
-                        <th>OT</th>
+                        <th>Theatre</th>
                         <th>Duration</th>
                         <th>Status</th>
                         <th>Bill</th>
@@ -38,28 +69,43 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@item.ScheduledDate.ToString("MMM dd, yyyy HH:mm")</td>
+                            @if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(item.HospitalId)</td> }
+                            <td class="text-nowrap"><a asp-action="Details" asp-route-id="@item.Id">@item.ScheduledDate.ToString("dd-MMM-yyyy HH:mm")</a>@if (item.IsEmergency) { <span class="badge bg-danger ms-1">Emergency</span> }</td>
                             <td>@item.Patient?.FirstName @item.Patient?.LastName</td>
                             <td>@item.ProcedureName</td>
                             <td>@item.SurgeonName</td>
-                            <td>@item.OperationTheatreNumber</td>
-                            <td>@item.EstimatedDurationMinutes min</td>
-                            <td>@item.Status</td>
-                            <td>@(item.BillId.HasValue ? item.BillId.Value.ToString() : "-")</td>
+                            <td>@(item.Theatre?.Code ?? item.OperationTheatreNumber)</td>
+                            <td class="text-nowrap">@item.EstimatedDurationMinutes min</td>
+                            <td><span class="badge @Badge(item.Status)">@item.Status</span></td>
                             <td>
-                                <form method="post" asp-action="UpdateStatus" class="d-flex gap-2">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@item.Id" />
-                                    <select class="form-select form-select-sm" name="status">
-                                        <option selected="@(item.Status == "Scheduled")">Scheduled</option>
-                                        <option selected="@(item.Status == "Completed")">Completed</option>
-                                        <option selected="@(item.Status == "Cancelled")">Cancelled</option>
-                                    </select>
-                                    <button class="btn btn-sm btn-outline-primary" type="submit">Save</button>
-                                </form>
+                                @if (item.BillId.HasValue)
+                                {
+                                    if (canOpenBills) { <a asp-controller="Billing" asp-action="Details" asp-route-id="@item.BillId">@item.BillId</a> } else { @item.BillId }
+                                }
+                                else { <span>-</span> }
+                            </td>
+                            <td class="text-nowrap">
+                                @if (item.Status == "Scheduled" && item.ScheduledDate.Date <= DateTime.Today)
+                                {
+                                    <form method="post" asp-action="UpdateStatus" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="status" value="In Progress" /><input type="hidden" name="returnTo" value="index" />
+                                        <button class="btn btn-sm btn-outline-warning" type="submit">Start</button>
+                                    </form>
+                                }
+                                @if (item.Status == "In Progress")
+                                {
+                                    <form method="post" asp-action="UpdateStatus" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" /><input type="hidden" name="status" value="Completed" /><input type="hidden" name="returnTo" value="index" />
+                                        <button class="btn btn-sm btn-outline-success" type="submit">Complete</button>
+                                    </form>
+                                }
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary">Open</a>
                             </td>
                         </tr>
                     }
+                    @if (!Model.Any()) { <tr><td colspan="10" class="text-center text-muted py-4">No OT bookings.</td></tr> }
                 </tbody>
             </table>
         </div>

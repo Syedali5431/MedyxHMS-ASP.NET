@@ -131,28 +131,30 @@ namespace MedyxHMS.Controllers
             return View(dashboardViewModel);
         }
 
+        // These sub-dashboards never had views of their own; the main dashboard already shows
+        // patient, appointment and billing figures, so send old links/bookmarks there.
         [PermissionAuthorize("ManageUsers")]
         public IActionResult Admin()
         {
-            return View();
+            return RedirectToAction(nameof(Index));
         }
 
         [PermissionAuthorize("ViewPatients")]
         public IActionResult Patient()
         {
-            return View();
+            return RedirectToAction(nameof(Index));
         }
 
         [PermissionAuthorize("ViewAppointments")]
         public IActionResult Appointment()
         {
-            return View();
+            return RedirectToAction(nameof(Index));
         }
 
         [PermissionAuthorize("ViewBills")]
         public IActionResult Billing()
         {
-            return View();
+            return RedirectToAction(nameof(Index));
         }
     }
 
@@ -359,7 +361,9 @@ namespace MedyxHMS.Controllers
                 "OPERATIONTHEATRE" => new List<DashboardModuleNavItem>
                 {
                     new() { Label = "OT Schedule", Description = "Operation theatre schedules.", Controller = "OperationTheatre", Action = "Index" },
-                    new() { Label = "Add OT Case", Description = "Create operation theatre schedule entry.", Controller = "OperationTheatre", Action = "Create" }
+                    new() { Label = "Add OT Case", Description = "Create operation theatre schedule entry.", Controller = "OperationTheatre", Action = "Create" },
+                    new() { Label = "Theatre Availability", Description = "Free and booked theatre time by day.", Controller = "OperationTheatre", Action = "Availability" },
+                    new() { Label = "Theatres", Description = "Theatre master, opening hours and block times.", Controller = "OperationTheatre", Action = "Theatres" }
                 },
                 "FRONTOFFICE" => new List<DashboardModuleNavItem>
                 {

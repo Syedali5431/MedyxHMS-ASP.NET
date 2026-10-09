@@ -60,7 +60,7 @@ namespace MedyxHMS.ViewModels
 
         private static IReadOnlyList<ReportCatalogItem> Build()
         {
-            return new List<ReportCatalogItem>
+            return WithReportAreas(new List<ReportCatalogItem>
             {
                 Feature("R1", "Daily Transaction Report", "ASP.NET Reports - Converted", "Daily transaction report showing payments and refunds for a selected date.", "/Report/DailyTransactionReport"),
                 Feature("R2", "All Transaction Report", "ASP.NET Reports - Converted", "All transactions within a date range with breakdown by type and status.", "/Report/AllTransactionReport"),
@@ -106,13 +106,45 @@ namespace MedyxHMS.ViewModels
                 Feature("R42", "Financial Report", "ASP.NET Reports", "Hospital financial data including income, expense, and payroll summary.", "/Report/FinancialReport"),
                 Feature("R43", "Occupancy Report", "ASP.NET Reports", "Bed occupancy metrics and average occupancy calculations.", "/Report/OccupancyReport"),
                 Feature("R44", "Staff Report", "ASP.NET Reports", "Staff attendance analytics for a selected staff member and date range.", "/Report/StaffReport"),
+                Feature("R50", "Discharge Summary Report", "Clinical", "Discharge reports of patients discharged in the period."),
                 Feature("R45", "Report Builder / Template", "ASP.NET Reports", "Create, design, clone, and manage report templates.", "/Report/Builder", true),
                 Feature("R46", "Report Scheduler", "ASP.NET Reports", "Schedule automated report generation and recurring report jobs.", "/Report/ScheduleReport", true),
                 Feature("R47", "Generated Reports Archive", "ASP.NET Reports", "View and manage previously generated reports.", "/Report/GeneratedReports"),
                 Feature("R48", "Legacy PHP Report Import", "ASP.NET Reports", "Import PHP-era report definitions into editable ASP.NET report templates.", null, true),
                 Feature("R49", "Report Preview", "ASP.NET Reports", "Preview imported or saved report templates before generating/exporting.", null, true)
-            };
+            });
         }
+
+        /// <summary>
+        /// Data reports are grouped by subject (Finance, Clinical, Diagnostics…) and described as in the report
+        /// engine; the audit log is a System report and the builder/scheduler pages are Report tools.
+        /// </summary>
+        private static List<ReportCatalogItem> WithReportAreas(List<ReportCatalogItem> items)
+        {
+            var definitions = MedyxHMS.Services.Implementations.ReportEngine.Catalog.ToDictionary(d => d.Key, StringComparer.OrdinalIgnoreCase);
+            // Static fields are not set yet while All is being built: keep the area order local.
+            string[] areaOrder = { "Finance", "Management", "Clinical", "Diagnostics", "Pharmacy", "Blood Bank", "Inventory", "HR", "Registers", "Services", "System", "Report tools" };
+            return items.Select(item =>
+            {
+                definitions.TryGetValue(item.Key, out var def);
+                var category = def?.Category ?? (item.Key == "R37" ? "System" : "Report tools");
+                return new ReportCatalogItem
+                {
+                    Key = item.Key,
+                    Name = item.Name,
+                    Category = category,
+                    Summary = def?.Description ?? item.Summary,
+                    EmbeddedUrl = item.EmbeddedUrl,
+                    TemplateLookupName = item.TemplateLookupName,
+                    AdminOnly = item.AdminOnly,
+                    IsLegacy = item.IsLegacy
+                };
+            })
+            .OrderBy(item => Array.IndexOf(areaOrder, item.Category) is var i && i >= 0 ? i : areaOrder.Length)
+            .ThenBy(item => int.TryParse(item.Key.TrimStart('R', 'r'), out var n) ? n : 999)
+            .ToList();
+        }
+
 
         private static ReportCatalogItem Legacy(string key, string name, string? templateLookupName = null)
         {

@@ -45,8 +45,8 @@
                         {
                             <tr>
                                 <td>@v.VisitorName</td><td>@v.Phone</td><td>@v.Purpose</td><td>@v.PersonToMeet</td>
-                                <td>@v.CheckInTime.ToLocalTime().ToString("HH:mm")</td>
-                                <td>@(v.CheckOutTime.HasValue ? v.CheckOutTime.Value.ToLocalTime().ToString("HH:mm") : "-")</td>
+                                <td>@v.CheckInTime.ToString("HH:mm")</td>
+                                <td>@(v.CheckOutTime.HasValue ? v.CheckOutTime.Value.ToString("HH:mm") : "-")</td>
                                 <td>@v.Status</td>
                                 <td>
                                     @if (v.Status == "CheckedIn")

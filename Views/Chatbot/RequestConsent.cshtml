@@ -17,6 +17,10 @@
 
                 <!-- Body -->
                 <div class="card-body">
+                    @if (TempData["ErrorMessage"] is string consentError)
+                    {
+                        <div class="alert alert-danger"><i class="fas fa-exclamation-circle me-1"></i>@consentError</div>
+                    }
                     <p class="lead mb-3">
                         @(Model.IsRenewal ? "The consent terms have been updated. Please review and accept to continue." : "Please read and accept our terms to use the MedyxHMS AI Assistant.")
                     </p>
@@ -32,7 +36,7 @@
 
                         <div class="mb-4">
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="aiProcessing" name="ConsentedToAiProcessing" required>
+                                <input class="form-check-input" type="checkbox" id="aiProcessing" name="ConsentedToAiProcessing" value="true" required>
                                 <label class="form-check-label" for="aiProcessing">
                                     <strong>I consent to AI processing</strong><br>
                                     <small class="text-muted">My messages will be processed by OpenAI's GPT model for responses.</small>
@@ -40,7 +44,7 @@
                             </div>
 
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="dataRetention" name="ConsentedToDataRetention" required>
+                                <input class="form-check-input" type="checkbox" id="dataRetention" name="ConsentedToDataRetention" value="true" required>
                                 <label class="form-check-label" for="dataRetention">
                                     <strong>I consent to data retention</strong><br>
                                     <small class="text-muted">Conversation history will be kept for up to 30 days for compliance and improvements.</small>
@@ -48,7 +52,7 @@
                             </div>
 
                             <div class="form-check mb-3">
-                                <input class="form-check-input" type="checkbox" id="thirdParty" name="ConsentedToThirdPartyProcessing" required>
+                                <input class="form-check-input" type="checkbox" id="thirdParty" name="ConsentedToThirdPartyProcessing" value="true" required>
                                 <label class="form-check-label" for="thirdParty">
                                     <strong>I consent to third-party processing</strong><br>
                                     <small class="text-muted">OpenAI will process my data according to their <a href="https://openai.com/privacy" target="_blank" class="text-primary">Privacy Policy</a>. This chatbot uses OpenAI GPT models for response generation.</small>
@@ -72,10 +76,10 @@
                             <a href="@Url.Action("Index", "Home")" class="btn btn-outline-secondary">
                                 Decline & Return Home
                             </a>
-                            <button type="submit" formaction="@Url.Action("RejectConsent", "Chatbot")" class="btn btn-outline-danger me-sm-2">
+                            <button type="submit" id="rejectConsentBtn" formaction="@Url.Action("RejectConsent", "Chatbot")" formnovalidate class="btn btn-outline-danger me-sm-2">
                                 Reject Consent
                             </button>
-                            <button type="submit" class="btn btn-primary">
+                            <button type="submit" id="acceptConsentBtn" class="btn btn-primary">
                                 <i class="bi bi-check-circle"></i>
                                 Accept & Continue
                             </button>
@@ -117,15 +121,11 @@
 
 @section Scripts {
     <script>
-        // Client-side validation
-        document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
-                const allChecked = document.querySelectorAll('input[type="checkbox"]:checked').length === 3;
-                document.querySelector('button[type="submit"]').disabled = !allChecked;
-            });
-        });
-
-        // Initial button state
-        document.querySelector('button[type="submit"]').disabled = true;
+        // "Accept & Continue" is enabled once all three consents are ticked ("Reject" is always available).
+        const acceptBtn = document.getElementById('acceptConsentBtn');
+        const consentBoxes = document.querySelectorAll('form input[type="checkbox"]');
+        const updateAccept = () => { acceptBtn.disabled = [...consentBoxes].some(c => !c.checked); };
+        consentBoxes.forEach(c => c.addEventListener('change', updateAccept));
+        updateAccept();
     </script>
 }

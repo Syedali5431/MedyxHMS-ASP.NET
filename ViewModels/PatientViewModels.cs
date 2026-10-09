@@ -5,6 +5,16 @@ using System.ComponentModel.DataAnnotations;
 // Purpose: Contains application code for PatientViewModels and its related runtime behavior.
 namespace MedyxHMS.ViewModels
 {
+    /// <summary>Countries offered on the patient forms (Pakistan first: the hospitals are in Pakistan).</summary>
+    public static class PatientCountries
+    {
+        public static List<string> All => new List<string>
+        {
+            "Pakistan", "Afghanistan", "Bangladesh", "China", "India", "Iran", "Saudi Arabia", "United Arab Emirates",
+            "United Kingdom", "United States", "Canada", "Australia", "Other"
+        };
+    }
+
     public class PatientIndexViewModel
     {
         public IEnumerable<MedyxHMS.DTOs.PatientDto> Patients { get; set; }
@@ -24,10 +34,7 @@ namespace MedyxHMS.ViewModels
         {
             "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"
         };
-        public List<string> CountryOptions => new List<string>
-        {
-            "United States", "Canada", "United Kingdom", "Australia", "India", "Other"
-        };
+        public List<string> CountryOptions => PatientCountries.All;
     }
 
     public class PatientEditViewModel
@@ -41,10 +48,7 @@ namespace MedyxHMS.ViewModels
         {
             "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"
         };
-        public List<string> CountryOptions => new List<string>
-        {
-            "United States", "Canada", "United Kingdom", "Australia", "India", "Other"
-        };
+        public List<string> CountryOptions => PatientCountries.All;
     }
 
     public class PatientDetailsViewModel

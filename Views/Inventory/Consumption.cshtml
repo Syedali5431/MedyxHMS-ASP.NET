@@ -1,0 +1,76 @@
+@model List<MedyxHMS.Models.InventoryTransaction>
+@using System.Globalization
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
+@{
+    ViewData["Title"] = "Consumption Report";
+    var patients = ViewBag.Patients as Dictionary<int, string> ?? new Dictionary<int, string>();
+    var departments = ViewBag.Departments as List<string> ?? new List<string>();
+    DateTime from = ViewBag.From, to = ViewBag.To;
+    var canOpenBills = await Nav.CanAccessAsync("/Billing/Details/1");
+    string M(decimal v) => v.ToString("N2", CultureInfo.InvariantCulture);
+    var byDept = Model.GroupBy(t => string.IsNullOrEmpty(t.Department) ? "(not recorded)" : t.Department)
+        .Select(g => new { Dept = g.Key, Lines = g.Count(), Value = g.Sum(t => t.Quantity * t.UnitCost) }).OrderByDescending(x => x.Value).ToList();
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-chart-bar text-info me-2"></i>Consumption Report</h4>
+            <small class="text-muted">Stock issued (OUT) from @from.ToString("dd-MMM-yyyy") to @to.ToString("dd-MMM-yyyy"), valued at the item's unit cost.</small>
+        </div>
+        <a asp-action="Consume" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Record Consumption</a>
+    </div>
+
+    <form method="get" class="row g-2 mb-3">
+        <div class="col-sm-3"><input name="from" type="date" value="@from.ToString("yyyy-MM-dd")" class="form-control form-control-sm" /></div>
+        <div class="col-sm-3"><input name="to" type="date" value="@to.ToString("yyyy-MM-dd")" class="form-control form-control-sm" /></div>
+        <div class="col-sm-4">
+            <select name="department" class="form-select form-select-sm">
+                <option value="">All departments</option>
+                @foreach (var d in departments) { <option value="@d" selected="@(ViewBag.Department == d)">@d</option> }
+            </select>
+        </div>
+        <div class="col-sm-2"><button type="submit" class="btn btn-sm btn-primary w-100">Show</button></div>
+    </form>
+
+    <div class="row g-3">
+        <div class="col-xl-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light fw-semibold">By department</div>
+                <div class="card-body p-0">
+                    <table class="table table-sm mb-0">
+                        <tbody>
+                            @foreach (var d in byDept) { <tr><td>@d.Dept</td><td class="text-end small text-muted">@d.Lines issues</td><td class="text-end">@M(d.Value)</td></tr> }
+                            @if (!byDept.Any()) { <tr><td class="text-muted text-center py-2">No consumption in this period.</td></tr> }
+                        </tbody>
+                        @if (byDept.Any()) { <tfoot><tr class="fw-bold"><td>Total</td><td></td><td class="text-end">@M(byDept.Sum(d => d.Value))</td></tr></tfoot> }
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-8">
+            <div class="card shadow-sm">
+                <div class="card-body table-responsive">
+                    <table class="table table-sm table-hover align-middle mb-0">
+                        <thead class="table-light"><tr><th>Date</th><th>Item</th><th class="text-end">Qty</th><th>Department</th><th>Patient</th><th class="text-end">Value</th><th>Charged</th></tr></thead>
+                        <tbody>
+                            @foreach (var t in Model)
+                            {
+                                <tr>
+                                    <td class="small text-nowrap">@t.TransactionDate.ToString("dd-MMM HH:mm")</td>
+                                    <td class="small">@t.InventoryItem?.Name</td>
+                                    <td class="small text-end">@t.Quantity.ToString("0.##", CultureInfo.InvariantCulture) @t.InventoryItem?.Unit</td>
+                                    <td class="small">@t.Department</td>
+                                    <td class="small">@(t.PatientId.HasValue && patients.TryGetValue(t.PatientId.Value, out var pn) ? pn : "")</td>
+                                    <td class="small text-end">@M(t.Quantity * t.UnitCost)</td>
+                                    <td class="small">@if (t.BillId.HasValue && canOpenBills) { <a asp-controller="Billing" asp-action="Details" asp-route-id="@t.BillId">bill</a> } else if (t.BillId.HasValue) { <span>yes</span> }</td>
+                                </tr>
+                            }
+                            @if (!Model.Any()) { <tr><td colspan="7" class="text-center text-muted py-3">No items issued in this period.</td></tr> }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

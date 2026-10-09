@@ -1,0 +1,125 @@
+@model Patient
+@using MedyxHMS.Services.Implementations
+@inject MedyxHMS.Services.Interfaces.INavAccessService Nav
+@{
+    ViewData["Title"] = $"Records – {Model.FirstName} {Model.LastName}";
+    var records = ViewBag.Records as List<MedicalRecord> ?? new List<MedicalRecord>();
+    var documents = ViewBag.Documents as List<PatientDocument> ?? new List<PatientDocument>();
+    var userId = ViewBag.UserId as string ?? string.Empty;
+    var isManager = ViewBag.IsManager as bool? ?? false;
+    var isDoctor = ViewBag.IsDoctor as bool? ?? false;
+    var type = ViewBag.Type as string;
+    var canOpenOpd = await Nav.CanAccessAsync("/OPD/Details/1");
+    var canOpenIpd = await Nav.CanAccessAsync("/IPD/Details/1");
+    var canOpenPatient = await Nav.CanAccessAsync($"/Patient/Details/{Model.Id}");
+}
+
+<div class="container-fluid mt-3" style="max-width:1300px">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-folder-open text-primary me-2"></i>@Model.FirstName @Model.LastName</h4>
+            <small class="text-muted">@Model.PatientId · medical records and documents</small>
+        </div>
+        @if (canOpenPatient) { <a href="/Patient/Details/@Model.Id" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i>Patient details</a> }
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span class="fw-semibold">Medical records (@records.Count)</span>
+            <div class="btn-group btn-group-sm" role="group" aria-label="Record type">
+                <a asp-action="Index" asp-route-id="@Model.Id" class="btn @(string.IsNullOrEmpty(type) ? "btn-primary" : "btn-outline-primary")">All</a>
+                <a asp-action="Index" asp-route-id="@Model.Id" asp-route-type="OPD" class="btn @(type == "OPD" ? "btn-primary" : "btn-outline-primary")">OPD</a>
+                <a asp-action="Index" asp-route-id="@Model.Id" asp-route-type="IPD" class="btn @(type == "IPD" ? "btn-primary" : "btn-outline-primary")">IPD</a>
+            </div>
+        </div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light"><tr><th>Date</th><th>Type</th><th>Summary</th><th>Diagnosis</th><th>Treatment</th><th>Doctor</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var r in records)
+                    {
+                        <tr>
+                            <td class="small text-nowrap">@r.RecordDate.ToString("dd-MMM-yyyy HH:mm")</td>
+                            <td><span class="badge @(r.RecordType == "IPD" ? "bg-info text-dark" : "bg-primary")">@r.RecordType</span></td>
+                            <td class="small">@r.Description</td>
+                            <td class="small">@r.Diagnosis</td>
+                            <td class="small" style="white-space:pre-line">@r.Treatment</td>
+                            <td class="small text-nowrap">@(string.IsNullOrEmpty(r.DoctorName) ? "–" : "Dr. " + r.DoctorName)</td>
+                            <td class="small text-nowrap">
+                                @if (r.SourceId.HasValue && r.SourceType == MedicalRecordService.OpdSource && canOpenOpd) { <a href="/OPD/Details/@r.SourceId">OPD visit</a> }
+                                @if (r.SourceId.HasValue && r.SourceType == MedicalRecordService.IpdSource && canOpenIpd) { <a href="/IPD/Details/@r.SourceId">Admission</a> }
+                            </td>
+                        </tr>
+                    }
+                    @if (!records.Any()) { <tr><td colspan="7" class="text-center text-muted py-3">No medical records yet. Records are created from OPD visits and IPD admissions.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mb-4" id="documents">
+        <div class="card-header bg-light fw-semibold">Documents (@documents.Count)</div>
+        <div class="card-body border-bottom">
+            <form asp-action="Upload" asp-route-id="@Model.Id" method="post" enctype="multipart/form-data" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+                <div class="col-md-3">
+                    <label class="form-label small mb-0" for="docCategory">Category</label>
+                    <select id="docCategory" name="category" class="form-select form-select-sm">
+                        @foreach (var c in PatientDocumentService.StaffCategories) { <option value="@c">@c</option> }
+                    </select>
+                </div>
+                <div class="col-md-4"><label class="form-label small mb-0" for="docTitle">Title</label><input id="docTitle" name="title" class="form-control form-control-sm" maxlength="200" required /></div>
+                <div class="col-md-2"><label class="form-label small mb-0" for="docDate">Document date</label><input id="docDate" name="documentDate" type="date" class="form-control form-control-sm" max="@DateTime.Today.ToString("yyyy-MM-dd")" /></div>
+                <div class="col-md-3"><label class="form-label small mb-0" for="docFile">File (@PatientDocumentService.AllowedList; max 10 MB)</label><input id="docFile" name="file" type="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.docx" required /></div>
+                <div class="col-md-7"><input name="description" class="form-control form-control-sm" maxlength="1000" placeholder="Description (optional)" aria-label="Description" /></div>
+                <div class="col-md-3">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" name="sharedWithPatient" value="true" id="docShared" />
+                        <label class="form-check-label small" for="docShared">Show to the patient in the portal</label>
+                    </div>
+                </div>
+                <div class="col-md-2"><button type="submit" class="btn btn-sm btn-primary w-100"><i class="fas fa-upload me-1"></i>Upload</button></div>
+            </form>
+        </div>
+        <div class="card-body p-0 table-responsive">
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead class="table-light"><tr><th>Document</th><th>Category</th><th>Date</th><th>Added</th><th>Size</th><th>Patient sees it</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var d in documents)
+                    {
+                        var canManage = isManager || d.UploadedByUserId == userId;
+                        var canShare = !d.UploadedByPatient && (isManager || isDoctor || d.UploadedByUserId == userId);
+                        <tr>
+                            <td class="small"><a asp-action="Document" asp-route-documentId="@d.Id" target="_blank" rel="noopener">@d.Title</a>@if (!string.IsNullOrWhiteSpace(d.Description)) { <div class="text-muted">@d.Description</div> }<div class="text-muted">@d.OriginalFileName</div></td>
+                            <td class="small">@d.Category</td>
+                            <td class="small text-nowrap">@d.DocumentDate?.ToString("dd-MMM-yyyy")</td>
+                            <td class="small">@d.UploadedAt.ToString("dd-MMM-yyyy HH:mm")<div class="text-muted">@(d.UploadedByPatient ? "by the patient" : d.UploadedBy)</div></td>
+                            <td class="small text-nowrap">@PatientDocumentService.FormatSize(d.SizeBytes)</td>
+                            <td class="small">
+                                @if (d.UploadedByPatient) { <span class="badge bg-info text-dark">Patient upload</span> }
+                                else if (d.SharedWithPatient) { <span class="badge bg-success">Shared</span> }
+                                else { <span class="badge bg-light text-dark border">Staff only</span> }
+                                @if (canShare)
+                                {
+                                    <form asp-action="Share" asp-route-documentId="@d.Id" method="post" class="d-inline">@Html.AntiForgeryToken()<button type="submit" class="btn btn-link btn-sm p-0 ms-1">@(d.SharedWithPatient ? "Hide" : "Share")</button></form>
+                                }
+                            </td>
+                            <td class="small">
+                                @if (canManage)
+                                {
+                                    <form asp-action="Remove" asp-route-documentId="@d.Id" method="post" class="d-flex gap-1">
+                                        @Html.AntiForgeryToken()
+                                        <input name="reason" class="form-control form-control-sm" placeholder="Reason" aria-label="Reason for removing" style="min-width:110px" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Remove</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!documents.Any()) { <tr><td colspan="7" class="text-center text-muted py-3">No documents yet.</td></tr> }
+                </tbody>
+            </table>
+        </div>
+        @if ((int)ViewBag.RemovedCount > 0) { <div class="card-footer small text-muted">@ViewBag.RemovedCount removed document(s) are kept on file (audit trail) and not shown.</div> }
+    </div>
+</div>

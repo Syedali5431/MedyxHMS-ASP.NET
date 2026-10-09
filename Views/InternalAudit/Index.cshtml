@@ -1,0 +1,46 @@
+@model List<MedyxHMS.Models.InternalAudit>
+@{
+    ViewData["Title"] = "Internal Audits";
+}
+
+<div class="container-fluid mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h4 class="mb-0"><i class="fas fa-clipboard-check text-info me-2"></i>Internal Audits</h4>
+            <small class="text-muted">Audit programme: plan audits, record findings and follow non-conformities through corrective actions.</small>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Quality" asp-action="Index" class="btn btn-outline-secondary btn-sm">Quality dashboard</a>
+            <a asp-action="Create" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i>Plan Audit</a>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light"><tr><th>No.</th><th>Title</th><th>Area</th><th>Standard</th><th>Planned</th><th>Lead auditor</th><th>Findings</th><th>Status</th></tr></thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
+                        var nc = a.Findings.Count(f => f.FindingType.Contains("non-conformity"));
+                        var open = a.Findings.Count(f => f.Status != "Closed");
+                        <tr>
+                            <td class="text-nowrap"><a asp-action="Details" asp-route-id="@a.Id">@a.AuditNumber</a></td>
+                            <td>@a.Title</td>
+                            <td class="small">@a.Scope</td>
+                            <td class="small">@a.Standard</td>
+                            <td class="small text-nowrap">@a.PlannedDate.ToString("dd-MMM-yyyy")</td>
+                            <td class="small">@a.LeadAuditor</td>
+                            <td class="small">@a.Findings.Count total · @nc NC@(open > 0 ? $" · {open} open" : string.Empty)</td>
+                            <td><span class="badge @(a.Status == "Completed" ? "bg-success" : a.Status == "In progress" ? "bg-warning text-dark" : "bg-secondary")">@a.Status</span></td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="8" class="text-center text-muted py-4">No audits planned yet.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

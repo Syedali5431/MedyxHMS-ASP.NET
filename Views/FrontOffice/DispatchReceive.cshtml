@@ -45,7 +45,7 @@
                         @foreach (var r in Model.Records)
                         {
                             <tr>
-                                <td>@r.RecordDate.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@r.RecordDate.ToString("yyyy-MM-dd HH:mm")</td>
                                 <td>@r.RecordType</td>
                                 <td>@r.ReferenceNumber</td>
                                 <td>@r.PartyName</td>
