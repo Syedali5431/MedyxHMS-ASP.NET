@@ -527,7 +527,9 @@ namespace MedyxHMS.Services.Interfaces
     public interface IBloodBankService
     {
         Task<IEnumerable<BloodInventory>> GetBloodInventoryAsync();
-        Task<BloodInventory> UpsertInventoryAsync(string bloodGroup, int unitsAvailable, int minimumLevel);
+        Task<BloodInventory> UpsertInventoryAsync(string bloodGroup, int unitsAvailable, int minimumLevel, int? inventoryId = null);
+        /// <summary>Blood stock of the hospital new issues are recorded for (one row per blood group).</summary>
+        Task<IEnumerable<BloodInventory>> GetStockForIssueAsync();
         Task<IEnumerable<BloodIssue>> GetBloodIssuesAsync();
         Task<BloodIssue> IssueBloodAsync(BloodIssue issue);
         Task<bool> DeleteBloodIssueAsync(int id);

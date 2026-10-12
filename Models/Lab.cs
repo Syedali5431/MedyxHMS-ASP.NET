@@ -29,9 +29,11 @@ namespace MedyxHMS.Models
         public string Details { get; set; } = string.Empty;
     }
 
-    public class LabResult
+    public class LabResult : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int PatientId { get; set; }
         public int LabTestId { get; set; }
         public string OrderNumber { get; set; } = string.Empty;

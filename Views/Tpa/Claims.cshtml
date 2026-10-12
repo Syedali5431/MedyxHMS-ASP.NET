@@ -1,4 +1,5 @@
 @model IEnumerable<MedyxHMS.Models.TpaClaim>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "TPA Claims";
 }
@@ -27,7 +28,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Claim #</th>
+                        <th>Claim #</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>TPA Provider</th>
                         <th>Patient</th>
                         <th>Claim Date</th>
@@ -49,7 +50,7 @@
                             _          => "bg-warning text-dark"
                         };
                         <tr>
-                            <td><code>@c.ClaimNumber</code></td>
+                            <td><code>@c.ClaimNumber</code></td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(c.HospitalId)</td> }
                             <td>@c.TpaProvider?.Name</td>
                             <td>@(c.Patient != null ? $"{c.Patient.FirstName} {c.Patient.LastName}" : c.PatientId.ToString())</td>
                             <td>@c.ClaimDate.ToString("MMM dd, yyyy")</td>

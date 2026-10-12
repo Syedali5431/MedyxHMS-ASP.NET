@@ -1,4 +1,5 @@
 @model IEnumerable<MedyxHMS.Models.LiveConsultationSession>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Live Consultations";
 }
@@ -24,7 +25,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Doctor</th>
+                        <th>Doctor</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Patient</th>
                         <th>Scheduled</th>
                         <th>Duration</th>
@@ -44,7 +45,7 @@
                             _             => "bg-secondary"
                         };
                         <tr>
-                            <td>@s.DoctorName</td>
+                            <td>@s.DoctorName</td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(s.HospitalId)</td> }
                             <td>@(s.Patient != null ? $"{s.Patient.FirstName} {s.Patient.LastName}" : s.PatientName)</td>
                             <td>@s.ScheduledAt.ToString("MMM dd, yyyy HH:mm")</td>
                             <td>@s.DurationMinutes min</td>

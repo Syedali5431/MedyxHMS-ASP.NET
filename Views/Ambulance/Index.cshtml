@@ -1,4 +1,5 @@
 @model IEnumerable<MedyxHMS.Models.AmbulanceVehicle>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Ambulance Management";
     var isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
@@ -47,6 +48,7 @@
                             <h6 class="fw-bold mb-0">@v.VehicleNumber</h6>
                             <span class="badge @statusBadge">@v.Status</span>
                         </div>
+                        @if (HospitalContext.ShowHospitalColumn) { <p class="small mb-1"><i class="fas fa-hospital me-1 text-muted"></i>@HospitalContext.HospitalName(v.HospitalId)</p> }
                         <p class="small mb-1"><i class="fas fa-car-side me-1 text-muted"></i>@v.Model</p>
                         <p class="small mb-1"><i class="fas fa-user me-1 text-muted"></i>@v.DriverName</p>
                         <p class="small mb-0"><i class="fas fa-phone me-1 text-muted"></i>@v.DriverContact</p>

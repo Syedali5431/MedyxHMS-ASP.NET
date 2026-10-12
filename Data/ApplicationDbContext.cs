@@ -740,6 +740,22 @@ namespace MedyxHMS.Data
             ApplyHospitalFilter<PharmacyBill>(modelBuilder);
             ApplyHospitalFilter<InventoryItem>(modelBuilder);
             ApplyHospitalFilter<OTSchedule>(modelBuilder);
+            // Diagnostics, blood bank, ambulance, front office, registers, referrals, claims and online consultations
+            // happen at one hospital of the group as well.
+            ApplyHospitalFilter<LabResult>(modelBuilder);
+            ApplyHospitalFilter<RadiologyResult>(modelBuilder);
+            ApplyHospitalFilter<BloodInventory>(modelBuilder);
+            ApplyHospitalFilter<BloodIssue>(modelBuilder);
+            ApplyHospitalFilter<AmbulanceVehicle>(modelBuilder);
+            ApplyHospitalFilter<AmbulanceDispatch>(modelBuilder);
+            ApplyHospitalFilter<VisitorLog>(modelBuilder);
+            ApplyHospitalFilter<ComplaintRecord>(modelBuilder);
+            ApplyHospitalFilter<DispatchReceiveRecord>(modelBuilder);
+            ApplyHospitalFilter<BirthRecord>(modelBuilder);
+            ApplyHospitalFilter<DeathRecord>(modelBuilder);
+            ApplyHospitalFilter<Referral>(modelBuilder);
+            ApplyHospitalFilter<TpaClaim>(modelBuilder);
+            ApplyHospitalFilter<LiveConsultationSession>(modelBuilder);
 
             // Child records follow their parent's hospital.
             modelBuilder.Entity<Bed>().HasQueryFilter(b => !HospitalFilterEnabled || b.Ward.HospitalId == HospitalFilterId);
@@ -748,6 +764,8 @@ namespace MedyxHMS.Data
             modelBuilder.Entity<Prescription>().HasQueryFilter(p => !HospitalFilterEnabled || p.PharmacyBill.HospitalId == HospitalFilterId);
             modelBuilder.Entity<InventoryTransaction>().HasQueryFilter(t => !HospitalFilterEnabled || t.InventoryItem.HospitalId == HospitalFilterId);
             modelBuilder.Entity<VisitNoteHistory>().HasQueryFilter(v => !HospitalFilterEnabled || v.OPDVisit.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<LabSampleEvent>().HasQueryFilter(e => !HospitalFilterEnabled || e.LabResult.HospitalId == HospitalFilterId);
+            modelBuilder.Entity<LabNoteHistory>().HasQueryFilter(n => !HospitalFilterEnabled || n.LabResult.HospitalId == HospitalFilterId);
         }
 
         private void ConfigureQuality(ModelBuilder modelBuilder)
@@ -853,8 +871,24 @@ namespace MedyxHMS.Data
             modelBuilder.Entity<T>().HasIndex(e => e.HospitalId);
         }
 
+        /// <summary>
+        /// The hospital new records are saved to: the active hospital; when all hospitals are shown, the user's own
+        /// (default) hospital; outside a staff request (start-up, background jobs) the group's default hospital.
+        /// </summary>
+        public async Task<int?> HospitalForNewRecordsAsync(CancellationToken cancellationToken = default)
+        {
+            var id = _hospitalContext?.HospitalIdForNewRecords;
+            if (id.HasValue)
+            {
+                return id;
+            }
+            return await Hospitals.Where(h => h.IsActive).OrderByDescending(h => h.IsDefault).ThenBy(h => h.Id)
+                .Select(h => (int?)h.Id).FirstOrDefaultAsync(cancellationToken);
+        }
+
         // New hospital-scoped records get the active hospital (or the default hospital outside a staff request).
-        // An admission takes the hospital of its bed, so the bed and the admission always match.
+        // An admission takes the hospital of its bed, so the bed and the admission always match; likewise an ambulance
+        // trip takes the hospital of its vehicle and a TPA claim the hospital of the bill it claims.
         private async Task AssignHospitalAsync(bool async, CancellationToken cancellationToken = default)
         {
             // Edit forms do not post HospitalId, so an Update() of a posted entity carries null: keep the stored hospital.
@@ -885,6 +919,30 @@ namespace MedyxHMS.Data
                     if (bedHospital.HasValue)
                     {
                         entity.HospitalId = bedHospital;
+                        continue;
+                    }
+                }
+
+                if (entity is AmbulanceDispatch trip && trip.AmbulanceVehicleId > 0)
+                {
+                    var vehicleId = trip.AmbulanceVehicleId;
+                    var vehicleQuery = AmbulanceVehicles.IgnoreQueryFilters().Where(v => v.Id == vehicleId).Select(v => v.HospitalId);
+                    var vehicleHospital = async ? await vehicleQuery.FirstOrDefaultAsync(cancellationToken) : vehicleQuery.FirstOrDefault();
+                    if (vehicleHospital.HasValue)
+                    {
+                        entity.HospitalId = vehicleHospital;
+                        continue;
+                    }
+                }
+
+                if (entity is TpaClaim claim && claim.BillId.HasValue)
+                {
+                    var billId = claim.BillId.Value;
+                    var billQuery = Bills.IgnoreQueryFilters().Where(b => b.Id == billId).Select(b => b.HospitalId);
+                    var billHospital = async ? await billQuery.FirstOrDefaultAsync(cancellationToken) : billQuery.FirstOrDefault();
+                    if (billHospital.HasValue)
+                    {
+                        entity.HospitalId = billHospital;
                         continue;
                     }
                 }

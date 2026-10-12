@@ -33,6 +33,9 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<bool> SeedAsync()
         {
+            await LoadHospitalsAsync();
+            // Blood stock and ambulances of each hospital (added after the first release).
+            await SeedHospitalResourcesOnceAsync();
             // Insurance claims have their own marker: they need TPA providers, which older databases may not have had.
             await SeedTpaClaimsOnceAsync();
             // Operation bills and the medicines/investigations on admission bills, once (added after the first release).
@@ -123,6 +126,68 @@ namespace MedyxHMS.Services.Implementations
         }
 
         private T Pick<T>(IReadOnlyList<T> list) => list[_rnd.Next(list.Count)];
+
+        // Active hospitals of the group: sample records are spread over them (null = the default hospital).
+        private List<int> _hospitals = new();
+        private int? PickHospital() => _hospitals.Count > 0 ? Pick(_hospitals) : null;
+
+        private async Task LoadHospitalsAsync()
+        {
+            if (_hospitals.Count == 0)
+                _hospitals = await _db.Hospitals.Where(h => h.IsActive).OrderBy(h => h.Id).Select(h => h.Id).ToListAsync();
+        }
+
+        public const string HospitalGroupsMarkerKey = "SampleData:Year2026:HospitalGroups";
+
+        /// <summary>
+        /// Blood stock and ambulances are kept per hospital: each hospital other than the default one gets sample blood
+        /// stock (when it has none) and two ambulances (when it has none) – once.
+        /// </summary>
+        private async Task SeedHospitalResourcesOnceAsync()
+        {
+            if (await _db.Settings.AnyAsync(s => s.Key == HospitalGroupsMarkerKey)) return;
+            await HospitalSetup.EnsureBloodStockAsync(_db);
+            var hospitals = await _db.Hospitals.Where(h => h.IsActive && !h.IsDefault).OrderBy(h => h.Id).ToListAsync();
+            var stock = 0;
+            var vehicles = 0;
+            foreach (var hospital in hospitals)
+            {
+                var rows = await _db.BloodInventories.IgnoreQueryFilters().Where(b => b.HospitalId == hospital.Id).ToListAsync();
+                if (rows.Count > 0 && rows.All(b => b.UnitsAvailable == 0))
+                {
+                    foreach (var row in rows)
+                    {
+                        row.UnitsAvailable = _rnd.Next(4, 26);
+                        row.LastUpdatedDate = DateTime.Now;
+                        stock++;
+                    }
+                }
+
+                if (!await _db.AmbulanceVehicles.IgnoreQueryFilters().AnyAsync(v => v.HospitalId == hospital.Id))
+                {
+                    var code = string.IsNullOrWhiteSpace(hospital.Code) ? $"H{hospital.Id}" : hospital.Code.Trim().ToUpperInvariant();
+                    for (var i = 1; i <= 2; i++)
+                    {
+                        var number = $"{code}-AMB-{100 + i}";
+                        if (await _db.AmbulanceVehicles.IgnoreQueryFilters().AnyAsync(v => v.VehicleNumber == number)) continue;
+                        _db.AmbulanceVehicles.Add(new AmbulanceVehicle
+                        {
+                            HospitalId = hospital.Id, VehicleNumber = number, Model = i == 1 ? "Toyota Hiace ambulance" : "Suzuki Bolan ambulance",
+                            DriverName = i == 1 ? "Muhammad Aslam" : "Nadeem Akhtar", DriverContact = i == 1 ? "+92 300 5550101" : "+92 301 5550102",
+                            Status = "Available", Notes = string.Empty, CreatedDate = DateTime.Now
+                        });
+                        vehicles++;
+                    }
+                }
+            }
+            _db.Settings.Add(new Setting
+            {
+                Key = HospitalGroupsMarkerKey, Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm", Inv), Type = "string", Category = "SampleData",
+                Description = "Sample blood stock and ambulances for each hospital were added on this date.", IsSystem = true, ModifiedBy = By, ModifiedDate = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("2026 sample data: blood stock for {Rows} rows and {Vehicles} ambulances added to the hospitals of the group", stock, vehicles);
+        }
 
         private static readonly string[] FirstNames = { "Ahmed", "Fatima", "Bilal", "Ayesha", "Usman", "Sana", "Hamza", "Zainab", "Imran", "Mariam", "Faisal", "Hira", "Kamran", "Nida", "Tariq", "Sadia" };
         private static readonly string[] LastNames = { "Khan", "Ahmed", "Malik", "Hussain", "Qureshi", "Sheikh", "Butt", "Chaudhry", "Raza", "Siddiqui", "Mirza", "Iqbal" };
@@ -433,6 +498,7 @@ namespace MedyxHMS.Services.Implementations
                     var signedAt = ordered.AddHours(5);
                     var r = new LabResult
                     {
+                        HospitalId = PickHospital(),
                         PatientId = Pick(patients).Id,
                         LabTestId = test.Id,
                         OrderNumber = $"LAB-{ordered:yyyyMMddHHmm}{++seq % 60:D2}",
@@ -492,6 +558,7 @@ namespace MedyxHMS.Services.Implementations
                     var (findings, impression) = Pick(ScanReports);
                     list.Add(new RadiologyResult
                     {
+                        HospitalId = PickHospital(),
                         PatientId = Pick(patients).Id,
                         RadiologyTestId = Pick(tests).Id,
                         OrderNumber = $"RAD-{ordered:yyyyMMddHHmm}{++seq % 60:D2}",
@@ -610,6 +677,7 @@ namespace MedyxHMS.Services.Implementations
                     var at = Day(month, i, 2);
                     _db.Referrals.Add(new Referral
                     {
+                        HospitalId = PickHospital(),
                         PatientId = Pick(patients).Id, ReferralType = "External", ReferredTo = Pick(places), ReferralReason = Pick(reasons),
                         ReferralDate = at, Status = month.Month >= 9 && i == 1 ? "Pending" : "Completed", TpaProvider = string.Empty, TpaPolicyNumber = string.Empty,
                         Notes = string.Empty, CreatedDate = at
@@ -742,6 +810,7 @@ namespace MedyxHMS.Services.Implementations
                     var settled = month.Month <= 7;
                     _db.TpaClaims.Add(new TpaClaim
                     {
+                        HospitalId = PickHospital(),
                         TpaProviderId = Pick(providers).Id, PatientId = Pick(patients).Id, ClaimNumber = $"TPA-2026-{++claimNo:D4}",
                         ClaimedAmount = claimed, ApprovedAmount = settled || i == 0 ? Math.Round(claimed * 0.9m, 0) : null,
                         SettledAmount = settled ? Math.Round(claimed * 0.9m, 0) : null,
@@ -771,6 +840,7 @@ namespace MedyxHMS.Services.Implementations
                     var at = Day(month, i, 3);
                     _db.BloodIssues.Add(new BloodIssue
                     {
+                        HospitalId = PickHospital(),
                         PatientId = Pick(patients).Id, BloodGroup = Pick(groups), UnitsIssued = _rnd.Next(1, 3), IssueDate = at,
                         RequestedBy = "Ward doctor", CrossMatchStatus = "Compatible", Notes = string.Empty, CreatedDate = at
                     });
@@ -821,6 +891,7 @@ namespace MedyxHMS.Services.Implementations
                 var name = babyNames[(month.Month - 1) % babyNames.Length];
                 _db.BirthRecords.Add(new BirthRecord
                 {
+                    HospitalId = PickHospital(),
                     BabyName = name, Gender = (month.Month % 2 == 0) ? "Female" : "Male", DateOfBirth = at.Date, TimeOfBirth = at.ToString("HH:mm", Inv),
                     WeightKg = 2.6m + _rnd.Next(0, 13) / 10m, MotherName = $"{Pick(new[] { "Ayesha", "Sana", "Mariam", "Hira", "Nida" })} {Pick(LastNames)}",
                     FatherName = $"{Pick(new[] { "Ahmed", "Bilal", "Usman", "Imran", "Faisal" })} {Pick(LastNames)}", GuardianContact = Phone(),
@@ -833,6 +904,7 @@ namespace MedyxHMS.Services.Implementations
                     var patient = Pick(patients);
                     _db.DeathRecords.Add(new DeathRecord
                     {
+                        HospitalId = PickHospital(),
                         PatientId = null, PatientName = PersonName(), Gender = _rnd.Next(2) == 0 ? "Male" : "Female", DateOfDeath = at.Date.AddDays(3),
                         TimeOfDeath = "04:30", CauseOfDeath = Pick(new[] { "Cardiac arrest – end-stage heart failure", "Sepsis with multi-organ failure", "Advanced metastatic cancer" }),
                         AttendingDoctorName = $"Dr. {doctor.FirstName} {doctor.LastName}", NextOfKinName = PersonName(), NextOfKinContact = Phone(),
@@ -861,6 +933,7 @@ namespace MedyxHMS.Services.Implementations
                     var at = Day(month, i, 8);
                     _db.VisitorLogs.Add(new VisitorLog
                     {
+                        HospitalId = PickHospital(),
                         VisitorName = PersonName(), Phone = Phone(), Purpose = Pick(purposes), PersonToMeet = Pick(meet), VisitDate = at.Date,
                         CheckInTime = at, CheckOutTime = at.AddMinutes(_rnd.Next(20, 90)), Status = "CheckedOut", Notes = string.Empty, CreatedDate = at
                     });
@@ -873,6 +946,7 @@ namespace MedyxHMS.Services.Implementations
                     var resolved = month.Month < 9 || i == 0;
                     _db.ComplaintRecords.Add(new ComplaintRecord
                     {
+                        HospitalId = PickHospital(),
                         ComplainantName = PersonName(), Phone = Phone(), Subject = subject, Description = text,
                         Status = resolved ? "Resolved" : "Open", ResolutionNotes = resolved ? "Apologised; staff briefed and process improved." : string.Empty,
                         CreatedDate = at, ResolvedDate = resolved ? at.AddDays(3) : null
@@ -885,6 +959,7 @@ namespace MedyxHMS.Services.Implementations
                     var receive = i != 1;
                     _db.DispatchReceiveRecords.Add(new DispatchReceiveRecord
                     {
+                        HospitalId = PickHospital(),
                         RecordType = receive ? "Receive" : "Dispatch", ReferenceNumber = $"{(receive ? "RCV" : "DSP")}-2026-{++refNo:D4}",
                         PartyName = receive ? Pick(new[] { "Jubilee Life Insurance", "State Life Insurance", "Punjab Healthcare Commission", "Getz Pharma" }) : Pick(new[] { "Aga Khan University Hospital", "Shifa International Hospital" }),
                         ContactNumber = Phone(), ContentSummary = receive ? Pick(new[] { "Claim settlement letter", "Inspection notice", "Medicine price list" }) : "Patient referral letter",
@@ -1075,6 +1150,7 @@ namespace MedyxHMS.Services.Implementations
                     var doctor = Pick(doctors);
                     _db.LiveConsultationSessions.Add(new LiveConsultationSession
                     {
+                        HospitalId = PickHospital(),
                         PatientId = patient.Id, DoctorName = $"Dr. {doctor.FirstName} {doctor.LastName}", PatientName = $"{patient.FirstName} {patient.LastName}",
                         ScheduledAt = at, DurationMinutes = 20, Platform = i == 0 ? "Zoom" : "GoogleMeet", MeetingLink = string.Empty, MeetingId = string.Empty, MeetingPassword = string.Empty,
                         Status = "Completed", Notes = "Follow-up consultation", CreatedDate = at.AddDays(-2)

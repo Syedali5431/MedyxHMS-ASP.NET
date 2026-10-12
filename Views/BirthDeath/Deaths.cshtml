@@ -1,4 +1,5 @@
 @model IEnumerable<MedyxHMS.Models.DeathRecord>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Death Records";
 }
@@ -29,7 +30,7 @@
             <table class="table table-hover align-middle">
                 <thead class="table-light">
                     <tr>
-                        <th>Cert #</th>
+                        <th>Cert #</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Patient Name</th>
                         <th>Gender</th>
                         <th>Date of Death</th>
@@ -44,7 +45,7 @@
                     @foreach (var d in Model)
                     {
                         <tr>
-                            <td><code>@d.CertificateNumber</code></td>
+                            <td><code>@d.CertificateNumber</code></td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(d.HospitalId)</td> }
                             <td>@(d.Patient != null ? $"{d.Patient.FirstName} {d.Patient.LastName}" : d.PatientName)</td>
                             <td>@d.Gender</td>
                             <td>@d.DateOfDeath.ToString("MMM dd, yyyy")</td>

@@ -16,9 +16,11 @@ namespace MedyxHMS.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
-    public class RadiologyResult
+    public class RadiologyResult : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int PatientId { get; set; }
         public int RadiologyTestId { get; set; }
         public string OrderNumber { get; set; }

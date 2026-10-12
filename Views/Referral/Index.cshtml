@@ -1,4 +1,5 @@
 @model IEnumerable<Referral>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Referrals & TPA";
 }
@@ -23,7 +24,7 @@
             <table class="table table-striped">
                 <thead>
                     <tr>
-                        <th>Date</th>
+                        <th>Date</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                         <th>Patient</th>
                         <th>Type</th>
                         <th>Referred To</th>
@@ -38,7 +39,7 @@
                     @foreach (var item in Model)
                     {
                         <tr>
-                            <td>@item.ReferralDate.ToString("MMM dd, yyyy")</td>
+                            <td>@item.ReferralDate.ToString("MMM dd, yyyy")</td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(item.HospitalId)</td> }
                             <td>@item.Patient?.FirstName @item.Patient?.LastName</td>
                             <td>@item.ReferralType</td>
                             <td>@item.ReferredTo</td>

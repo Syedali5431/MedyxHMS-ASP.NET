@@ -1,6 +1,6 @@
 ﻿/*
     MedyxHMS – new database, schema only
-    Generated 2026-10-06 from the running system (117 tables, 168 indexes, 132 foreign keys, 4 views/procedures).
+    Generated 2026-10-12 from the running system (117 tables, 182 indexes, 146 foreign keys, 4 views/procedures).
 
     What it does
       - Creates the database [MedyxHMS] if it does not exist, then every table, column, index and foreign key
@@ -172,6 +172,7 @@ BEGIN
         [Charges] decimal(18, 2) NULL,
         [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Notes__61316BF4] DEFAULT (''),
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__Ambulanc__3214EC07B16E6E46] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table AmbulanceDispatches';
@@ -189,6 +190,7 @@ BEGIN
         [Status] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Statu__589C25F3] DEFAULT ('Available'),
         [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Notes__59904A2C] DEFAULT (''),
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__Ambulanc__3214EC07CB71C278] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table AmbulanceVehicles';
@@ -463,6 +465,7 @@ BEGIN
         [CertificateIssued] bit NOT NULL CONSTRAINT [DF__BirthReco__Certi__6F7F8B4B] DEFAULT ((0)),
         [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__BirthReco__Notes__7073AF84] DEFAULT (''),
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__BirthRec__3214EC0783E5B718] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table BirthRecords';
@@ -479,6 +482,7 @@ BEGIN
         [MinimumLevel] int NOT NULL,
         [LastUpdatedDate] datetime2 NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_BloodInventories] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table BloodInventories';
@@ -498,6 +502,7 @@ BEGIN
         [Notes] nvarchar(max) NOT NULL,
         [BillId] int NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_BloodIssues] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table BloodIssues';
@@ -747,6 +752,7 @@ BEGIN
         [ResolutionNotes] nvarchar(max) NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
         [ResolvedDate] datetime2 NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_ComplaintRecords] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table ComplaintRecords';
@@ -809,6 +815,7 @@ BEGIN
         [CertificateIssued] bit NOT NULL CONSTRAINT [DF__DeathReco__Certi__7BE56230] DEFAULT ((0)),
         [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__DeathReco__Notes__7CD98669] DEFAULT (''),
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__DeathRec__3214EC0775D83FE0] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table DeathRecords';
@@ -876,6 +883,7 @@ BEGIN
         [Status] nvarchar(max) NOT NULL,
         [Notes] nvarchar(max) NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_DispatchReceiveRecords] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table DispatchReceiveRecords';
@@ -1254,6 +1262,7 @@ BEGIN
         [SignedOffBy] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffBy] DEFAULT (N''),
         [SignedOffByUserId] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffByUserId] DEFAULT (N''),
         [SignatureHash] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignatureHash] DEFAULT (N''),
+        [HospitalId] int NULL,
         CONSTRAINT [PK_LabResults] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table LabResults';
@@ -1461,6 +1470,7 @@ BEGIN
         [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__LiveConsu__Notes__4830B400] DEFAULT (''),
         [BillId] int NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__LiveCons__3214EC07704DF714] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table LiveConsultationSessions';
@@ -1948,6 +1958,7 @@ BEGIN
         [ImagePath] nvarchar(max) NOT NULL,
         [Notes] nvarchar(max) NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_RadiologyResults] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table RadiologyResults';
@@ -1990,6 +2001,7 @@ BEGIN
         [Notes] nvarchar(max) NOT NULL,
         [BillId] int NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_Referrals] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table Referrals';
@@ -2320,6 +2332,7 @@ BEGIN
         [SettlementDate] datetime2 NULL,
         [Remarks] nvarchar(max) NOT NULL CONSTRAINT [DF__TpaClaims__Remar__0E04126B] DEFAULT (''),
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK__TpaClaim__3214EC07B579B0EE] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table TpaClaims';
@@ -2544,6 +2557,7 @@ BEGIN
         [Status] nvarchar(max) NOT NULL,
         [Notes] nvarchar(max) NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_VisitorLogs] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table VisitorLogs';
@@ -2597,6 +2611,7 @@ EXEC #EnsureColumn N'AmbulanceDispatches', N'DistanceKm', N'ALTER TABLE [dbo].[A
 EXEC #EnsureColumn N'AmbulanceDispatches', N'Charges', N'ALTER TABLE [dbo].[AmbulanceDispatches] ADD [Charges] decimal(18, 2) NULL;';
 EXEC #EnsureColumn N'AmbulanceDispatches', N'Notes', N'ALTER TABLE [dbo].[AmbulanceDispatches] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Notes__61316BF4] DEFAULT ('''');';
 EXEC #EnsureColumn N'AmbulanceDispatches', N'CreatedDate', N'ALTER TABLE [dbo].[AmbulanceDispatches] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_AmbulanceDispatches_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'AmbulanceDispatches', N'HospitalId', N'ALTER TABLE [dbo].[AmbulanceDispatches] ADD [HospitalId] int NULL;';
 GO
 
 -- AmbulanceVehicles
@@ -2608,6 +2623,7 @@ EXEC #EnsureColumn N'AmbulanceVehicles', N'Model', N'ALTER TABLE [dbo].[Ambulanc
 EXEC #EnsureColumn N'AmbulanceVehicles', N'Status', N'ALTER TABLE [dbo].[AmbulanceVehicles] ADD [Status] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Statu__589C25F3] DEFAULT (''Available'');';
 EXEC #EnsureColumn N'AmbulanceVehicles', N'Notes', N'ALTER TABLE [dbo].[AmbulanceVehicles] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__Ambulance__Notes__59904A2C] DEFAULT ('''');';
 EXEC #EnsureColumn N'AmbulanceVehicles', N'CreatedDate', N'ALTER TABLE [dbo].[AmbulanceVehicles] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_AmbulanceVehicles_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'AmbulanceVehicles', N'HospitalId', N'ALTER TABLE [dbo].[AmbulanceVehicles] ADD [HospitalId] int NULL;';
 GO
 
 -- Appointments
@@ -2798,6 +2814,7 @@ EXEC #EnsureColumn N'BirthRecords', N'CertificateNumber', N'ALTER TABLE [dbo].[B
 EXEC #EnsureColumn N'BirthRecords', N'CertificateIssued', N'ALTER TABLE [dbo].[BirthRecords] ADD [CertificateIssued] bit NOT NULL CONSTRAINT [DF__BirthReco__Certi__6F7F8B4B] DEFAULT ((0));';
 EXEC #EnsureColumn N'BirthRecords', N'Notes', N'ALTER TABLE [dbo].[BirthRecords] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__BirthReco__Notes__7073AF84] DEFAULT ('''');';
 EXEC #EnsureColumn N'BirthRecords', N'CreatedDate', N'ALTER TABLE [dbo].[BirthRecords] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_BirthRecords_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'BirthRecords', N'HospitalId', N'ALTER TABLE [dbo].[BirthRecords] ADD [HospitalId] int NULL;';
 GO
 
 -- BloodInventories
@@ -2808,6 +2825,7 @@ EXEC #EnsureColumn N'BloodInventories', N'UnitsReserved', N'ALTER TABLE [dbo].[B
 EXEC #EnsureColumn N'BloodInventories', N'MinimumLevel', N'ALTER TABLE [dbo].[BloodInventories] ADD [MinimumLevel] int NOT NULL CONSTRAINT [DF_BloodInventories_MinimumLevel] DEFAULT (0);';
 EXEC #EnsureColumn N'BloodInventories', N'LastUpdatedDate', N'ALTER TABLE [dbo].[BloodInventories] ADD [LastUpdatedDate] datetime2 NOT NULL CONSTRAINT [DF_BloodInventories_LastUpdatedDate] DEFAULT (''1900-01-01'');';
 EXEC #EnsureColumn N'BloodInventories', N'CreatedDate', N'ALTER TABLE [dbo].[BloodInventories] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_BloodInventories_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'BloodInventories', N'HospitalId', N'ALTER TABLE [dbo].[BloodInventories] ADD [HospitalId] int NULL;';
 GO
 
 -- BloodIssues
@@ -2821,6 +2839,7 @@ EXEC #EnsureColumn N'BloodIssues', N'CrossMatchStatus', N'ALTER TABLE [dbo].[Blo
 EXEC #EnsureColumn N'BloodIssues', N'Notes', N'ALTER TABLE [dbo].[BloodIssues] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF_BloodIssues_Notes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'BloodIssues', N'BillId', N'ALTER TABLE [dbo].[BloodIssues] ADD [BillId] int NULL;';
 EXEC #EnsureColumn N'BloodIssues', N'CreatedDate', N'ALTER TABLE [dbo].[BloodIssues] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_BloodIssues_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'BloodIssues', N'HospitalId', N'ALTER TABLE [dbo].[BloodIssues] ADD [HospitalId] int NULL;';
 GO
 
 -- CapaActions
@@ -2992,6 +3011,7 @@ EXEC #EnsureColumn N'ComplaintRecords', N'Status', N'ALTER TABLE [dbo].[Complain
 EXEC #EnsureColumn N'ComplaintRecords', N'ResolutionNotes', N'ALTER TABLE [dbo].[ComplaintRecords] ADD [ResolutionNotes] nvarchar(max) NOT NULL CONSTRAINT [DF_ComplaintRecords_ResolutionNotes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'ComplaintRecords', N'CreatedDate', N'ALTER TABLE [dbo].[ComplaintRecords] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_ComplaintRecords_CreatedDate] DEFAULT (''1900-01-01'');';
 EXEC #EnsureColumn N'ComplaintRecords', N'ResolvedDate', N'ALTER TABLE [dbo].[ComplaintRecords] ADD [ResolvedDate] datetime2 NULL;';
+EXEC #EnsureColumn N'ComplaintRecords', N'HospitalId', N'ALTER TABLE [dbo].[ComplaintRecords] ADD [HospitalId] int NULL;';
 GO
 
 -- ControlledDocuments
@@ -3036,6 +3056,7 @@ EXEC #EnsureColumn N'DeathRecords', N'CertificateNumber', N'ALTER TABLE [dbo].[D
 EXEC #EnsureColumn N'DeathRecords', N'CertificateIssued', N'ALTER TABLE [dbo].[DeathRecords] ADD [CertificateIssued] bit NOT NULL CONSTRAINT [DF__DeathReco__Certi__7BE56230] DEFAULT ((0));';
 EXEC #EnsureColumn N'DeathRecords', N'Notes', N'ALTER TABLE [dbo].[DeathRecords] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__DeathReco__Notes__7CD98669] DEFAULT ('''');';
 EXEC #EnsureColumn N'DeathRecords', N'CreatedDate', N'ALTER TABLE [dbo].[DeathRecords] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_DeathRecords_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'DeathRecords', N'HospitalId', N'ALTER TABLE [dbo].[DeathRecords] ADD [HospitalId] int NULL;';
 GO
 
 -- Departments
@@ -3085,6 +3106,7 @@ EXEC #EnsureColumn N'DispatchReceiveRecords', N'RecordDate', N'ALTER TABLE [dbo]
 EXEC #EnsureColumn N'DispatchReceiveRecords', N'Status', N'ALTER TABLE [dbo].[DispatchReceiveRecords] ADD [Status] nvarchar(max) NOT NULL CONSTRAINT [DF_DispatchReceiveRecords_Status] DEFAULT (N'''');';
 EXEC #EnsureColumn N'DispatchReceiveRecords', N'Notes', N'ALTER TABLE [dbo].[DispatchReceiveRecords] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF_DispatchReceiveRecords_Notes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'DispatchReceiveRecords', N'CreatedDate', N'ALTER TABLE [dbo].[DispatchReceiveRecords] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_DispatchReceiveRecords_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'DispatchReceiveRecords', N'HospitalId', N'ALTER TABLE [dbo].[DispatchReceiveRecords] ADD [HospitalId] int NULL;';
 GO
 
 -- Doctors
@@ -3361,6 +3383,7 @@ EXEC #EnsureColumn N'LabResults', N'SignedOffAt', N'ALTER TABLE [dbo].[LabResult
 EXEC #EnsureColumn N'LabResults', N'SignedOffBy', N'ALTER TABLE [dbo].[LabResults] ADD [SignedOffBy] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffBy] DEFAULT (N'''');';
 EXEC #EnsureColumn N'LabResults', N'SignedOffByUserId', N'ALTER TABLE [dbo].[LabResults] ADD [SignedOffByUserId] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignedOffByUserId] DEFAULT (N'''');';
 EXEC #EnsureColumn N'LabResults', N'SignatureHash', N'ALTER TABLE [dbo].[LabResults] ADD [SignatureHash] nvarchar(max) NOT NULL CONSTRAINT [DF_LabResults_SignatureHash] DEFAULT (N'''');';
+EXEC #EnsureColumn N'LabResults', N'HospitalId', N'ALTER TABLE [dbo].[LabResults] ADD [HospitalId] int NULL;';
 GO
 
 -- LabSampleEvents
@@ -3508,6 +3531,7 @@ EXEC #EnsureColumn N'LiveConsultationSessions', N'Status', N'ALTER TABLE [dbo].[
 EXEC #EnsureColumn N'LiveConsultationSessions', N'Notes', N'ALTER TABLE [dbo].[LiveConsultationSessions] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF__LiveConsu__Notes__4830B400] DEFAULT ('''');';
 EXEC #EnsureColumn N'LiveConsultationSessions', N'BillId', N'ALTER TABLE [dbo].[LiveConsultationSessions] ADD [BillId] int NULL;';
 EXEC #EnsureColumn N'LiveConsultationSessions', N'CreatedDate', N'ALTER TABLE [dbo].[LiveConsultationSessions] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_LiveConsultationSessions_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'LiveConsultationSessions', N'HospitalId', N'ALTER TABLE [dbo].[LiveConsultationSessions] ADD [HospitalId] int NULL;';
 GO
 
 -- MedicalRecords
@@ -3875,6 +3899,7 @@ EXEC #EnsureColumn N'RadiologyResults', N'VerifiedBy', N'ALTER TABLE [dbo].[Radi
 EXEC #EnsureColumn N'RadiologyResults', N'ImagePath', N'ALTER TABLE [dbo].[RadiologyResults] ADD [ImagePath] nvarchar(max) NOT NULL CONSTRAINT [DF_RadiologyResults_ImagePath] DEFAULT (N'''');';
 EXEC #EnsureColumn N'RadiologyResults', N'Notes', N'ALTER TABLE [dbo].[RadiologyResults] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF_RadiologyResults_Notes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'RadiologyResults', N'CreatedDate', N'ALTER TABLE [dbo].[RadiologyResults] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_RadiologyResults_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'RadiologyResults', N'HospitalId', N'ALTER TABLE [dbo].[RadiologyResults] ADD [HospitalId] int NULL;';
 GO
 
 -- RadiologyTests
@@ -3905,6 +3930,7 @@ EXEC #EnsureColumn N'Referrals', N'ApprovedAmount', N'ALTER TABLE [dbo].[Referra
 EXEC #EnsureColumn N'Referrals', N'Notes', N'ALTER TABLE [dbo].[Referrals] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF_Referrals_Notes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'Referrals', N'BillId', N'ALTER TABLE [dbo].[Referrals] ADD [BillId] int NULL;';
 EXEC #EnsureColumn N'Referrals', N'CreatedDate', N'ALTER TABLE [dbo].[Referrals] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_Referrals_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'Referrals', N'HospitalId', N'ALTER TABLE [dbo].[Referrals] ADD [HospitalId] int NULL;';
 GO
 
 -- ReportCharts
@@ -4133,6 +4159,7 @@ EXEC #EnsureColumn N'TpaClaims', N'ClaimDate', N'ALTER TABLE [dbo].[TpaClaims] A
 EXEC #EnsureColumn N'TpaClaims', N'SettlementDate', N'ALTER TABLE [dbo].[TpaClaims] ADD [SettlementDate] datetime2 NULL;';
 EXEC #EnsureColumn N'TpaClaims', N'Remarks', N'ALTER TABLE [dbo].[TpaClaims] ADD [Remarks] nvarchar(max) NOT NULL CONSTRAINT [DF__TpaClaims__Remar__0E04126B] DEFAULT ('''');';
 EXEC #EnsureColumn N'TpaClaims', N'CreatedDate', N'ALTER TABLE [dbo].[TpaClaims] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_TpaClaims_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'TpaClaims', N'HospitalId', N'ALTER TABLE [dbo].[TpaClaims] ADD [HospitalId] int NULL;';
 GO
 
 -- TpaProviders
@@ -4285,6 +4312,7 @@ EXEC #EnsureColumn N'VisitorLogs', N'CheckOutTime', N'ALTER TABLE [dbo].[Visitor
 EXEC #EnsureColumn N'VisitorLogs', N'Status', N'ALTER TABLE [dbo].[VisitorLogs] ADD [Status] nvarchar(max) NOT NULL CONSTRAINT [DF_VisitorLogs_Status] DEFAULT (N'''');';
 EXEC #EnsureColumn N'VisitorLogs', N'Notes', N'ALTER TABLE [dbo].[VisitorLogs] ADD [Notes] nvarchar(max) NOT NULL CONSTRAINT [DF_VisitorLogs_Notes] DEFAULT (N'''');';
 EXEC #EnsureColumn N'VisitorLogs', N'CreatedDate', N'ALTER TABLE [dbo].[VisitorLogs] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_VisitorLogs_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'VisitorLogs', N'HospitalId', N'ALTER TABLE [dbo].[VisitorLogs] ADD [HospitalId] int NULL;';
 GO
 
 -- Wards
@@ -4311,10 +4339,12 @@ GO
 EXEC #EnsureIndex N'AmbulanceDispatches', N'IX_AmbulanceDispatches_AmbulanceVehicleId', N'AmbulanceVehicleId', N'CREATE INDEX [IX_AmbulanceDispatches_AmbulanceVehicleId] ON [dbo].[AmbulanceDispatches] ([AmbulanceVehicleId]);', 0;
 EXEC #EnsureIndex N'AmbulanceDispatches', N'IX_AmbulanceDispatches_PatientId', N'PatientId', N'CREATE INDEX [IX_AmbulanceDispatches_PatientId] ON [dbo].[AmbulanceDispatches] ([PatientId]);', 0;
 EXEC #EnsureIndex N'AmbulanceDispatches', N'IX_AmbulanceDispatches_DispatchTime', N'DispatchTime', N'CREATE INDEX [IX_AmbulanceDispatches_DispatchTime] ON [dbo].[AmbulanceDispatches] ([DispatchTime]);', 0;
+EXEC #EnsureIndex N'AmbulanceDispatches', N'IX_AmbulanceDispatches_HospitalId', N'HospitalId', N'CREATE INDEX [IX_AmbulanceDispatches_HospitalId] ON [dbo].[AmbulanceDispatches] ([HospitalId]);', 0;
 GO
 
 -- AmbulanceVehicles
 EXEC #EnsureIndex N'AmbulanceVehicles', N'IX_AmbulanceVehicles_VehicleNumber', N'VehicleNumber', N'CREATE UNIQUE INDEX [IX_AmbulanceVehicles_VehicleNumber] ON [dbo].[AmbulanceVehicles] ([VehicleNumber]);', 1;
+EXEC #EnsureIndex N'AmbulanceVehicles', N'IX_AmbulanceVehicles_HospitalId', N'HospitalId', N'CREATE INDEX [IX_AmbulanceVehicles_HospitalId] ON [dbo].[AmbulanceVehicles] ([HospitalId]);', 0;
 GO
 
 -- Appointments
@@ -4378,11 +4408,17 @@ GO
 
 -- BirthRecords
 EXEC #EnsureIndex N'BirthRecords', N'IX_BirthRecords_PatientId', N'PatientId', N'CREATE INDEX [IX_BirthRecords_PatientId] ON [dbo].[BirthRecords] ([PatientId]);', 0;
+EXEC #EnsureIndex N'BirthRecords', N'IX_BirthRecords_HospitalId', N'HospitalId', N'CREATE INDEX [IX_BirthRecords_HospitalId] ON [dbo].[BirthRecords] ([HospitalId]);', 0;
+GO
+
+-- BloodInventories
+EXEC #EnsureIndex N'BloodInventories', N'IX_BloodInventories_HospitalId', N'HospitalId', N'CREATE INDEX [IX_BloodInventories_HospitalId] ON [dbo].[BloodInventories] ([HospitalId]);', 0;
 GO
 
 -- BloodIssues
 EXEC #EnsureIndex N'BloodIssues', N'IX_BloodIssues_BillId', N'BillId', N'CREATE INDEX [IX_BloodIssues_BillId] ON [dbo].[BloodIssues] ([BillId]);', 0;
 EXEC #EnsureIndex N'BloodIssues', N'IX_BloodIssues_PatientId', N'PatientId', N'CREATE INDEX [IX_BloodIssues_PatientId] ON [dbo].[BloodIssues] ([PatientId]);', 0;
+EXEC #EnsureIndex N'BloodIssues', N'IX_BloodIssues_HospitalId', N'HospitalId', N'CREATE INDEX [IX_BloodIssues_HospitalId] ON [dbo].[BloodIssues] ([HospitalId]);', 0;
 GO
 
 -- CapaActions
@@ -4426,18 +4462,27 @@ GO
 EXEC #EnsureIndex N'CmsPages', N'IX_CmsPages_Slug', N'Slug', N'CREATE UNIQUE INDEX [IX_CmsPages_Slug] ON [dbo].[CmsPages] ([Slug]);', 1;
 GO
 
+-- ComplaintRecords
+EXEC #EnsureIndex N'ComplaintRecords', N'IX_ComplaintRecords_HospitalId', N'HospitalId', N'CREATE INDEX [IX_ComplaintRecords_HospitalId] ON [dbo].[ComplaintRecords] ([HospitalId]);', 0;
+GO
+
 -- ControlledDocuments
 EXEC #EnsureIndex N'ControlledDocuments', N'IX_ControlledDocuments_DocumentNumber', N'DocumentNumber', N'CREATE UNIQUE INDEX [IX_ControlledDocuments_DocumentNumber] ON [dbo].[ControlledDocuments] ([DocumentNumber]);', 1;
 GO
 
 -- DeathRecords
 EXEC #EnsureIndex N'DeathRecords', N'IX_DeathRecords_PatientId', N'PatientId', N'CREATE INDEX [IX_DeathRecords_PatientId] ON [dbo].[DeathRecords] ([PatientId]);', 0;
+EXEC #EnsureIndex N'DeathRecords', N'IX_DeathRecords_HospitalId', N'HospitalId', N'CREATE INDEX [IX_DeathRecords_HospitalId] ON [dbo].[DeathRecords] ([HospitalId]);', 0;
 GO
 
 -- DischargeSummaries
 EXEC #EnsureIndex N'DischargeSummaries', N'IX_DischargeSummaries_IPDAdmissionId', N'IPDAdmissionId', N'CREATE UNIQUE INDEX [IX_DischargeSummaries_IPDAdmissionId] ON [dbo].[DischargeSummaries] ([IPDAdmissionId]);', 1;
 EXEC #EnsureIndex N'DischargeSummaries', N'IX_DischargeSummaries_PatientId_DischargeDate', N'PatientId,DischargeDate', N'CREATE INDEX [IX_DischargeSummaries_PatientId_DischargeDate] ON [dbo].[DischargeSummaries] ([PatientId], [DischargeDate]);', 0;
 EXEC #EnsureIndex N'DischargeSummaries', N'IX_DischargeSummaries_HospitalId', N'HospitalId', N'CREATE INDEX [IX_DischargeSummaries_HospitalId] ON [dbo].[DischargeSummaries] ([HospitalId]);', 0;
+GO
+
+-- DispatchReceiveRecords
+EXEC #EnsureIndex N'DispatchReceiveRecords', N'IX_DispatchReceiveRecords_HospitalId', N'HospitalId', N'CREATE INDEX [IX_DispatchReceiveRecords_HospitalId] ON [dbo].[DispatchReceiveRecords] ([HospitalId]);', 0;
 GO
 
 -- Doctors
@@ -4511,6 +4556,7 @@ GO
 EXEC #EnsureIndex N'LabResults', N'IX_LabResults_LabTestId', N'LabTestId', N'CREATE INDEX [IX_LabResults_LabTestId] ON [dbo].[LabResults] ([LabTestId]);', 0;
 EXEC #EnsureIndex N'LabResults', N'IX_LabResults_PatientId', N'PatientId', N'CREATE INDEX [IX_LabResults_PatientId] ON [dbo].[LabResults] ([PatientId]);', 0;
 EXEC #EnsureIndex N'LabResults', N'IX_LabResults_AccessionNumber', N'AccessionNumber', N'CREATE UNIQUE INDEX [IX_LabResults_AccessionNumber] ON [dbo].[LabResults] ([AccessionNumber]) WHERE ([AccessionNumber] IS NOT NULL);', 1, N'([AccessionNumber] IS NOT NULL)';
+EXEC #EnsureIndex N'LabResults', N'IX_LabResults_HospitalId', N'HospitalId', N'CREATE INDEX [IX_LabResults_HospitalId] ON [dbo].[LabResults] ([HospitalId]);', 0;
 GO
 
 -- LabSampleEvents
@@ -4545,6 +4591,7 @@ GO
 EXEC #EnsureIndex N'LiveConsultationSessions', N'IX_LiveConsultationSessions_PatientId', N'PatientId', N'CREATE INDEX [IX_LiveConsultationSessions_PatientId] ON [dbo].[LiveConsultationSessions] ([PatientId]);', 0;
 EXEC #EnsureIndex N'LiveConsultationSessions', N'IX_LiveConsultationSessions_BillId', N'BillId', N'CREATE INDEX [IX_LiveConsultationSessions_BillId] ON [dbo].[LiveConsultationSessions] ([BillId]);', 0;
 EXEC #EnsureIndex N'LiveConsultationSessions', N'IX_LiveConsultationSessions_ScheduledAt', N'ScheduledAt', N'CREATE INDEX [IX_LiveConsultationSessions_ScheduledAt] ON [dbo].[LiveConsultationSessions] ([ScheduledAt]);', 0;
+EXEC #EnsureIndex N'LiveConsultationSessions', N'IX_LiveConsultationSessions_HospitalId', N'HospitalId', N'CREATE INDEX [IX_LiveConsultationSessions_HospitalId] ON [dbo].[LiveConsultationSessions] ([HospitalId]);', 0;
 GO
 
 -- MedicalRecords
@@ -4641,11 +4688,13 @@ GO
 -- RadiologyResults
 EXEC #EnsureIndex N'RadiologyResults', N'IX_RadiologyResults_PatientId', N'PatientId', N'CREATE INDEX [IX_RadiologyResults_PatientId] ON [dbo].[RadiologyResults] ([PatientId]);', 0;
 EXEC #EnsureIndex N'RadiologyResults', N'IX_RadiologyResults_RadiologyTestId', N'RadiologyTestId', N'CREATE INDEX [IX_RadiologyResults_RadiologyTestId] ON [dbo].[RadiologyResults] ([RadiologyTestId]);', 0;
+EXEC #EnsureIndex N'RadiologyResults', N'IX_RadiologyResults_HospitalId', N'HospitalId', N'CREATE INDEX [IX_RadiologyResults_HospitalId] ON [dbo].[RadiologyResults] ([HospitalId]);', 0;
 GO
 
 -- Referrals
 EXEC #EnsureIndex N'Referrals', N'IX_Referrals_BillId', N'BillId', N'CREATE INDEX [IX_Referrals_BillId] ON [dbo].[Referrals] ([BillId]);', 0;
 EXEC #EnsureIndex N'Referrals', N'IX_Referrals_PatientId', N'PatientId', N'CREATE INDEX [IX_Referrals_PatientId] ON [dbo].[Referrals] ([PatientId]);', 0;
+EXEC #EnsureIndex N'Referrals', N'IX_Referrals_HospitalId', N'HospitalId', N'CREATE INDEX [IX_Referrals_HospitalId] ON [dbo].[Referrals] ([HospitalId]);', 0;
 GO
 
 -- ReportCharts
@@ -4709,6 +4758,7 @@ GO
 EXEC #EnsureIndex N'TpaClaims', N'IX_TpaClaims_TpaProviderId', N'TpaProviderId', N'CREATE INDEX [IX_TpaClaims_TpaProviderId] ON [dbo].[TpaClaims] ([TpaProviderId]);', 0;
 EXEC #EnsureIndex N'TpaClaims', N'IX_TpaClaims_PatientId', N'PatientId', N'CREATE INDEX [IX_TpaClaims_PatientId] ON [dbo].[TpaClaims] ([PatientId]);', 0;
 EXEC #EnsureIndex N'TpaClaims', N'IX_TpaClaims_BillId', N'BillId', N'CREATE INDEX [IX_TpaClaims_BillId] ON [dbo].[TpaClaims] ([BillId]);', 0;
+EXEC #EnsureIndex N'TpaClaims', N'IX_TpaClaims_HospitalId', N'HospitalId', N'CREATE INDEX [IX_TpaClaims_HospitalId] ON [dbo].[TpaClaims] ([HospitalId]);', 0;
 GO
 
 -- TrainingRecords
@@ -4751,6 +4801,10 @@ GO
 EXEC #EnsureIndex N'VisitNoteHistories', N'IX_VisitNoteHistories_OPDVisitId_UpdatedAtUtc', N'OPDVisitId,UpdatedAtUtc', N'CREATE INDEX [IX_VisitNoteHistories_OPDVisitId_UpdatedAtUtc] ON [dbo].[VisitNoteHistories] ([OPDVisitId], [UpdatedAtUtc]);', 0;
 GO
 
+-- VisitorLogs
+EXEC #EnsureIndex N'VisitorLogs', N'IX_VisitorLogs_HospitalId', N'HospitalId', N'CREATE INDEX [IX_VisitorLogs_HospitalId] ON [dbo].[VisitorLogs] ([HospitalId]);', 0;
+GO
+
 -- Wards
 EXEC #EnsureIndex N'Wards', N'IX_Wards_HospitalId', N'HospitalId', N'CREATE INDEX [IX_Wards_HospitalId] ON [dbo].[Wards] ([HospitalId]);', 0;
 GO
@@ -4764,8 +4818,13 @@ EXEC #EnsureForeignKey N'AccountApprovalRequests', N'FK_AccountApprovalRequests_
 GO
 
 -- AmbulanceDispatches
+EXEC #EnsureForeignKey N'AmbulanceDispatches', N'FK_AmbulanceDispatches_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'AmbulanceDispatches', N'FK_AmbulanceDispatches_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
 EXEC #EnsureForeignKey N'AmbulanceDispatches', N'FK_AmbulanceDispatches_AmbulanceVehicles_AmbulanceVehicleId', N'AmbulanceVehicleId', N'AmbulanceVehicles', N'Id', N'FOREIGN KEY ([AmbulanceVehicleId]) REFERENCES [dbo].[AmbulanceVehicles] ([Id]) ON DELETE CASCADE';
+GO
+
+-- AmbulanceVehicles
+EXEC #EnsureForeignKey N'AmbulanceVehicles', N'FK_AmbulanceVehicles_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- Appointments
@@ -4818,10 +4877,16 @@ EXEC #EnsureForeignKey N'Bills', N'FK_Bills_Patients_PatientId', N'PatientId', N
 GO
 
 -- BirthRecords
+EXEC #EnsureForeignKey N'BirthRecords', N'FK_BirthRecords_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'BirthRecords', N'FK_BirthRecords_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
 GO
 
+-- BloodInventories
+EXEC #EnsureForeignKey N'BloodInventories', N'FK_BloodInventories_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
+GO
+
 -- BloodIssues
+EXEC #EnsureForeignKey N'BloodIssues', N'FK_BloodIssues_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'BloodIssues', N'FK_BloodIssues_Bills_BillId', N'BillId', N'Bills', N'Id', N'FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills] ([Id])';
 EXEC #EnsureForeignKey N'BloodIssues', N'FK_BloodIssues_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
 GO
@@ -4854,7 +4919,12 @@ GO
 EXEC #EnsureForeignKey N'CmsMenuItems', N'FK_CmsMenuItems_CmsPages_CmsPageId', N'CmsPageId', N'CmsPages', N'Id', N'FOREIGN KEY ([CmsPageId]) REFERENCES [dbo].[CmsPages] ([Id]) ON DELETE SET NULL';
 GO
 
+-- ComplaintRecords
+EXEC #EnsureForeignKey N'ComplaintRecords', N'FK_ComplaintRecords_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
+GO
+
 -- DeathRecords
+EXEC #EnsureForeignKey N'DeathRecords', N'FK_DeathRecords_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'DeathRecords', N'FK_DeathRecords_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
 GO
 
@@ -4862,6 +4932,10 @@ GO
 EXEC #EnsureForeignKey N'DischargeSummaries', N'FK_DischargeSummaries_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'DischargeSummaries', N'FK_DischargeSummaries_IPDAdmissions_IPDAdmissionId', N'IPDAdmissionId', N'IPDAdmissions', N'Id', N'FOREIGN KEY ([IPDAdmissionId]) REFERENCES [dbo].[IPDAdmissions] ([Id])';
 EXEC #EnsureForeignKey N'DischargeSummaries', N'FK_DischargeSummaries_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
+GO
+
+-- DispatchReceiveRecords
+EXEC #EnsureForeignKey N'DispatchReceiveRecords', N'FK_DispatchReceiveRecords_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- Doctors
@@ -4923,6 +4997,7 @@ EXEC #EnsureForeignKey N'LabNoteHistories', N'FK_LabNoteHistories_LabResults_Lab
 GO
 
 -- LabResults
+EXEC #EnsureForeignKey N'LabResults', N'FK_LabResults_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'LabResults', N'FK_LabResults_LabTests_LabTestId', N'LabTestId', N'LabTests', N'Id', N'FOREIGN KEY ([LabTestId]) REFERENCES [dbo].[LabTests] ([Id]) ON DELETE CASCADE';
 EXEC #EnsureForeignKey N'LabResults', N'FK_LabResults_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id]) ON DELETE CASCADE';
 GO
@@ -4953,6 +5028,7 @@ GO
 -- LiveConsultationSessions
 EXEC #EnsureForeignKey N'LiveConsultationSessions', N'FK_LiveConsultationSessions_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
 EXEC #EnsureForeignKey N'LiveConsultationSessions', N'FK_LiveConsultationSessions_Bills_BillId', N'BillId', N'Bills', N'Id', N'FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills] ([Id])';
+EXEC #EnsureForeignKey N'LiveConsultationSessions', N'FK_LiveConsultationSessions_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- MedicalRecords
@@ -5040,11 +5116,13 @@ GO
 -- RadiologyResults
 EXEC #EnsureForeignKey N'RadiologyResults', N'FK_RadiologyResults_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id]) ON DELETE CASCADE';
 EXEC #EnsureForeignKey N'RadiologyResults', N'FK_RadiologyResults_RadiologyTests_RadiologyTestId', N'RadiologyTestId', N'RadiologyTests', N'Id', N'FOREIGN KEY ([RadiologyTestId]) REFERENCES [dbo].[RadiologyTests] ([Id]) ON DELETE CASCADE';
+EXEC #EnsureForeignKey N'RadiologyResults', N'FK_RadiologyResults_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- Referrals
 EXEC #EnsureForeignKey N'Referrals', N'FK_Referrals_Bills_BillId', N'BillId', N'Bills', N'Id', N'FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills] ([Id])';
 EXEC #EnsureForeignKey N'Referrals', N'FK_Referrals_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
+EXEC #EnsureForeignKey N'Referrals', N'FK_Referrals_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- ReportCharts
@@ -5101,6 +5179,7 @@ EXEC #EnsureForeignKey N'TestResults', N'FK_TestResults_AspNetUsers_DoctorId', N
 GO
 
 -- TpaClaims
+EXEC #EnsureForeignKey N'TpaClaims', N'FK_TpaClaims_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 EXEC #EnsureForeignKey N'TpaClaims', N'FK_TpaClaims_Bills_BillId', N'BillId', N'Bills', N'Id', N'FOREIGN KEY ([BillId]) REFERENCES [dbo].[Bills] ([Id])';
 EXEC #EnsureForeignKey N'TpaClaims', N'FK_TpaClaims_TpaProviders_TpaProviderId', N'TpaProviderId', N'TpaProviders', N'Id', N'FOREIGN KEY ([TpaProviderId]) REFERENCES [dbo].[TpaProviders] ([Id]) ON DELETE CASCADE';
 EXEC #EnsureForeignKey N'TpaClaims', N'FK_TpaClaims_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id]) ON DELETE CASCADE';
@@ -5134,6 +5213,10 @@ GO
 
 -- VisitNoteHistories
 EXEC #EnsureForeignKey N'VisitNoteHistories', N'FK_VisitNoteHistories_OPDVisits_OPDVisitId', N'OPDVisitId', N'OPDVisits', N'Id', N'FOREIGN KEY ([OPDVisitId]) REFERENCES [dbo].[OPDVisits] ([Id]) ON DELETE CASCADE';
+GO
+
+-- VisitorLogs
+EXEC #EnsureForeignKey N'VisitorLogs', N'FK_VisitorLogs_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- Wards

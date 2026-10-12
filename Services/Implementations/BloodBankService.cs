@@ -22,16 +22,33 @@ namespace MedyxHMS.Services.Implementations
                 .ToListAsync();
         }
 
-        public async Task<BloodInventory> UpsertInventoryAsync(string bloodGroup, int unitsAvailable, int minimumLevel)
+        public async Task<IEnumerable<BloodInventory>> GetStockForIssueAsync()
+        {
+            var hospitalId = await _context.HospitalForNewRecordsAsync();
+            return await _context.BloodInventories
+                .Where(x => x.HospitalId == hospitalId)
+                .OrderBy(x => x.BloodGroup)
+                .ToListAsync();
+        }
+
+        public async Task<BloodInventory> UpsertInventoryAsync(string bloodGroup, int unitsAvailable, int minimumLevel, int? inventoryId = null)
         {
             if (string.IsNullOrWhiteSpace(bloodGroup))
                 throw new ArgumentException("Blood group is required.", nameof(bloodGroup));
+            if (unitsAvailable < 0 || minimumLevel < 0)
+                throw new ArgumentException("Units and minimum level cannot be negative.");
 
-            var existing = await _context.BloodInventories.FirstOrDefaultAsync(x => x.BloodGroup == bloodGroup);
+            // Each hospital has its own stock: update the row shown on the page, or the group's row of the hospital
+            // new records are saved to.
+            var hospitalId = await _context.HospitalForNewRecordsAsync();
+            var existing = inventoryId.HasValue
+                ? await _context.BloodInventories.FirstOrDefaultAsync(x => x.Id == inventoryId.Value)
+                : await _context.BloodInventories.FirstOrDefaultAsync(x => x.BloodGroup == bloodGroup && x.HospitalId == hospitalId);
             if (existing == null)
             {
                 existing = new BloodInventory
                 {
+                    HospitalId = hospitalId,
                     BloodGroup = bloodGroup,
                     UnitsAvailable = unitsAvailable,
                     MinimumLevel = minimumLevel,
@@ -64,7 +81,9 @@ namespace MedyxHMS.Services.Implementations
             if (issue == null)
                 throw new ArgumentNullException(nameof(issue));
 
-            var inventory = await _context.BloodInventories.FirstOrDefaultAsync(x => x.BloodGroup == issue.BloodGroup);
+            // Units come from the stock of the hospital the issue is recorded for.
+            var hospitalId = await _context.HospitalForNewRecordsAsync();
+            var inventory = await _context.BloodInventories.FirstOrDefaultAsync(x => x.BloodGroup == issue.BloodGroup && x.HospitalId == hospitalId);
             if (inventory == null)
                 throw new InvalidOperationException($"No inventory found for blood group {issue.BloodGroup}.");
 
@@ -89,6 +108,7 @@ namespace MedyxHMS.Services.Implementations
                 PendingAmount = chargeAmount,
                 Status = "Unpaid",
                 BillType = "BloodBank",
+                HospitalId = inventory.HospitalId,
                 Notes = $"Blood issue for group {issue.BloodGroup} ({issue.UnitsIssued} units)."
             };
             _context.Bills.Add(bill);
@@ -107,6 +127,7 @@ namespace MedyxHMS.Services.Implementations
 
             issue.BillId = bill.Id;
             issue.IssueDate = DateTime.Now;
+            issue.HospitalId = inventory.HospitalId;
             _context.BloodIssues.Add(issue);
 
             await _context.SaveChangesAsync();

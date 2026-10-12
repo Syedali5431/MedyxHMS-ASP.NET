@@ -1,4 +1,5 @@
 @model IEnumerable<BloodInventory>
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Blood Bank";
     var issues = ViewBag.Issues as IEnumerable<BloodIssue> ?? Enumerable.Empty<BloodIssue>();
@@ -45,7 +46,7 @@
                 <table class="table table-bordered">
                     <thead>
                         <tr>
-                            <th>Blood Group</th>
+                            <th>Blood Group</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }
                             <th>Units Available</th>
                             <th>Reserved</th>
                             <th>Minimum Level</th>
@@ -57,7 +58,7 @@
                         @foreach (var item in Model)
                         {
                             <tr>
-                                <td>@item.BloodGroup</td>
+                                <td>@item.BloodGroup</td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(item.HospitalId)</td> }
                                 <td class="@(item.UnitsAvailable <= item.MinimumLevel ? "text-danger fw-bold" : "")">@item.UnitsAvailable</td>
                                 <td>@item.UnitsReserved</td>
                                 <td>@item.MinimumLevel</td>

@@ -1,9 +1,11 @@
 ﻿// Purpose: Contains application code for SpecializedServices and its related runtime behavior.
 namespace MedyxHMS.Models
 {
-    public class BloodInventory
+    public class BloodInventory : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string BloodGroup { get; set; }
         public int UnitsAvailable { get; set; }
         public int UnitsReserved { get; set; }
@@ -12,9 +14,11 @@ namespace MedyxHMS.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
-    public class BloodIssue
+    public class BloodIssue : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int PatientId { get; set; }
         public string BloodGroup { get; set; }
         public int UnitsIssued { get; set; }
@@ -65,9 +69,11 @@ namespace MedyxHMS.Models
         public DateTime EndsAt => ScheduledDate.AddMinutes(EstimatedDurationMinutes);
     }
 
-    public class Referral
+    public class Referral : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int PatientId { get; set; }
         public string ReferralType { get; set; } = "External"; // External, Internal, TPA
         public string ReferredTo { get; set; }

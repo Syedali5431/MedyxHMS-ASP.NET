@@ -2029,7 +2029,47 @@ END");
         // Hospital-scoped tables (multi-hospital: branches of one group). Each gets a nullable HospitalId.
         private static readonly string[] HospitalScopedTables =
             { "Appointments", "OPDVisits", "IPDAdmissions", "Wards", "Bills", "PharmacyBills", "InventoryItems", "OTSchedules",
-              "QualityIncidents", "CapaActions", "InternalAudits", "Equipment", "PurchaseBills", "OperationTheatres" };
+              "QualityIncidents", "CapaActions", "InternalAudits", "Equipment", "PurchaseBills", "OperationTheatres",
+              "LabResults", "RadiologyResults", "BloodInventories", "BloodIssues", "AmbulanceVehicles", "AmbulanceDispatches",
+              "VisitorLogs", "ComplaintRecords", "DispatchReceiveRecords", "BirthRecords", "DeathRecords", "Referrals",
+              "TpaClaims", "LiveConsultationSessions" };
+
+        /// <summary>
+        /// Records without a hospital that can be traced to one: the hospital of their bill or ambulance, or of the
+        /// patient's visit / admission at that time (latest one on or before the record's date). Runs before the
+        /// default-hospital backfill, so only what cannot be traced goes to the default hospital.
+        /// </summary>
+        private static readonly string[] DeriveHospitalSql =
+        {
+            // Bill-linked records
+            "UPDATE r SET r.[HospitalId] = b.[HospitalId] FROM [dbo].[BloodIssues] r JOIN [dbo].[Bills] b ON b.[Id] = r.[BillId] WHERE r.[HospitalId] IS NULL AND b.[HospitalId] IS NOT NULL",
+            "UPDATE r SET r.[HospitalId] = b.[HospitalId] FROM [dbo].[Referrals] r JOIN [dbo].[Bills] b ON b.[Id] = r.[BillId] WHERE r.[HospitalId] IS NULL AND b.[HospitalId] IS NOT NULL",
+            "UPDATE r SET r.[HospitalId] = b.[HospitalId] FROM [dbo].[TpaClaims] r JOIN [dbo].[Bills] b ON b.[Id] = r.[BillId] WHERE r.[HospitalId] IS NULL AND b.[HospitalId] IS NOT NULL",
+            "UPDATE r SET r.[HospitalId] = b.[HospitalId] FROM [dbo].[LiveConsultationSessions] r JOIN [dbo].[Bills] b ON b.[Id] = r.[BillId] WHERE r.[HospitalId] IS NULL AND b.[HospitalId] IS NOT NULL",
+            // Ambulance trips follow their vehicle
+            "UPDATE d SET d.[HospitalId] = v.[HospitalId] FROM [dbo].[AmbulanceDispatches] d JOIN [dbo].[AmbulanceVehicles] v ON v.[Id] = d.[AmbulanceVehicleId] WHERE d.[HospitalId] IS NULL AND v.[HospitalId] IS NOT NULL",
+            // Patient records: the patient's latest visit or admission on or before the record's date
+            PatientEncounterSql("LabResults", "OrderDate"),
+            PatientEncounterSql("RadiologyResults", "OrderDate"),
+            PatientEncounterSql("BloodIssues", "IssueDate"),
+            PatientEncounterSql("BirthRecords", "DateOfBirth"),
+            PatientEncounterSql("DeathRecords", "DateOfDeath"),
+            PatientEncounterSql("Referrals", "ReferralDate"),
+        };
+
+        private static string PatientEncounterSql(string table, string dateColumn) => $@"
+UPDATE r SET r.[HospitalId] = e.[HospitalId]
+FROM [dbo].[{table}] r
+CROSS APPLY (
+    SELECT TOP (1) x.[HospitalId] FROM (
+        SELECT a.[HospitalId], a.[AdmissionDate] AS [At] FROM [dbo].[IPDAdmissions] a WHERE a.[PatientId] = r.[PatientId]
+        UNION ALL SELECT o.[HospitalId], o.[VisitDate] FROM [dbo].[OPDVisits] o WHERE o.[PatientId] = r.[PatientId]
+        UNION ALL SELECT p.[HospitalId], p.[AppointmentDate] FROM [dbo].[Appointments] p WHERE p.[PatientId] = r.[PatientId]
+    ) x
+    WHERE x.[HospitalId] IS NOT NULL AND CAST(x.[At] AS date) <= CAST(r.[{dateColumn}] AS date)
+    ORDER BY x.[At] DESC
+) e
+WHERE r.[HospitalId] IS NULL AND r.[PatientId] IS NOT NULL;";
 
         /// <summary>
         /// Multi-hospital schema for existing databases: Hospitals and UserHospitalAccesses tables, a default
@@ -2123,6 +2163,18 @@ END;";
         {
             try
             {
+                foreach (var sql in DeriveHospitalSql)
+                {
+                    try
+                    {
+                        await _context.Database.ExecuteSqlRawAsync(sql);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Could not trace the hospital of existing records");
+                    }
+                }
+
                 foreach (var table in HospitalScopedTables)
                 {
                     var sql = $@"
@@ -2140,6 +2192,16 @@ IF COL_LENGTH(N'dbo.{table}', N'HospitalId') IS NOT NULL
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to assign existing records to the default hospital");
+            }
+
+            // Every hospital has its own blood stock (one row per blood group).
+            try
+            {
+                await HospitalSetup.EnsureBloodStockAsync(_context);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to create the blood stock of each hospital");
             }
         }
 

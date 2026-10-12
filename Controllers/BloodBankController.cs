@@ -36,11 +36,11 @@ namespace MedyxHMS.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateInventory(string bloodGroup, int unitsAvailable, int minimumLevel = 5)
+        public async Task<IActionResult> UpdateInventory(string bloodGroup, int unitsAvailable, int minimumLevel = 5, int? id = null)
         {
             try
             {
-                await _bloodBankService.UpsertInventoryAsync(bloodGroup, unitsAvailable, minimumLevel);
+                await _bloodBankService.UpsertInventoryAsync(bloodGroup, unitsAvailable, minimumLevel, id);
                 TempData["SuccessMessage"] = $"Inventory updated for {bloodGroup}.";
             }
             catch (Exception ex)
@@ -55,7 +55,7 @@ namespace MedyxHMS.Controllers
         public async Task<IActionResult> Issue()
         {
             ViewBag.Patients = await _patientService.GetAllPatientsAsync();
-            ViewBag.Inventory = await _bloodBankService.GetBloodInventoryAsync();
+            ViewBag.Inventory = await _bloodBankService.GetStockForIssueAsync();
             return View(new BloodIssue());
         }
 
@@ -66,7 +66,7 @@ namespace MedyxHMS.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Patients = await _patientService.GetAllPatientsAsync();
-                ViewBag.Inventory = await _bloodBankService.GetBloodInventoryAsync();
+                ViewBag.Inventory = await _bloodBankService.GetStockForIssueAsync();
                 return View(model);
             }
 
@@ -88,7 +88,7 @@ namespace MedyxHMS.Controllers
             {
                 ModelState.AddModelError(string.Empty, ex.Message);
                 ViewBag.Patients = await _patientService.GetAllPatientsAsync();
-                ViewBag.Inventory = await _bloodBankService.GetBloodInventoryAsync();
+                ViewBag.Inventory = await _bloodBankService.GetStockForIssueAsync();
                 return View(model);
             }
         }

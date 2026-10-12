@@ -41,7 +41,12 @@ namespace MedyxHMS.Controllers
         [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "Admin,SuperAdmin")]
         public async Task<IActionResult> Create(AmbulanceVehicle vehicle)
         {
+            // Registration numbers are unique across all hospitals of the group.
+            var number = vehicle.VehicleNumber?.Trim() ?? string.Empty;
+            if (number.Length > 0 && await _context.AmbulanceVehicles.IgnoreQueryFilters().AnyAsync(v => v.VehicleNumber == number))
+                ModelState.AddModelError(nameof(AmbulanceVehicle.VehicleNumber), "This vehicle number is already registered (in this or another hospital of the group).");
             if (!ModelState.IsValid) return View(vehicle);
+            vehicle.VehicleNumber = number;
 
             _context.AmbulanceVehicles.Add(vehicle);
             await _context.SaveChangesAsync();

@@ -70,7 +70,7 @@ body,
 }
 
 a {
-    color: var(--hms-primary);
+    color: var(--hms-primary-text, var(--hms-primary));
 }
 
 ::selection {
@@ -187,20 +187,39 @@ a {
     transform: translateY(0);
 }
 
+/* Filled buttons use the theme's colours with a caption that stays readable (tokens from ThemePalette). */
 .btn-primary {
-    background-color: var(--hms-primary);
-    border-color: var(--hms-primary);
+    --bs-btn-color: var(--hms-on-primary, #fff);
+    --bs-btn-hover-color: var(--hms-on-primary, #fff);
+    --bs-btn-active-color: var(--hms-on-primary, #fff);
+    --bs-btn-disabled-color: var(--hms-on-primary, #fff);
+    background-color: var(--hms-btn-primary-bg, var(--hms-primary));
+    border-color: var(--hms-btn-primary-bg, var(--hms-primary));
+    color: var(--hms-on-primary, #fff);
 }
 
 .btn-primary:hover,
 .btn-primary:focus {
-    background-color: var(--hms-primary-dark);
-    border-color: var(--hms-primary-dark);
+    background-color: var(--hms-btn-primary-hover-bg, var(--hms-primary-dark));
+    border-color: var(--hms-btn-primary-hover-bg, var(--hms-primary-dark));
+    color: var(--hms-on-primary, #fff);
 }
 
 .btn-success {
-    background-color: var(--hms-accent);
-    border-color: var(--hms-accent);
+    --bs-btn-color: var(--hms-on-accent, #fff);
+    --bs-btn-hover-color: var(--hms-on-accent, #fff);
+    --bs-btn-active-color: var(--hms-on-accent, #fff);
+    --bs-btn-disabled-color: var(--hms-on-accent, #fff);
+    background-color: var(--hms-btn-accent-bg, var(--hms-accent));
+    border-color: var(--hms-btn-accent-bg, var(--hms-accent));
+    color: var(--hms-on-accent, #fff);
+}
+
+.btn-success:hover,
+.btn-success:focus {
+    background-color: var(--hms-btn-accent-hover-bg, var(--hms-accent));
+    border-color: var(--hms-btn-accent-hover-bg, var(--hms-accent));
+    color: var(--hms-on-accent, #fff);
 }
 
 .btn-block {
@@ -592,13 +611,9 @@ a {
 .sidebar-brand-text {
     font-weight: 700;
     font-size: 1rem;
-    color: var(--sb-text-hover);
+    color: var(--sb-brand-text, var(--sb-text-hover));
     letter-spacing: -0.01em;
     white-space: nowrap;
-    background: linear-gradient(135deg, #60a5fa, #a78bfa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
     transition: opacity 0.2s ease;
 }
 
@@ -668,7 +683,7 @@ a {
 /* Active state */
 .staff-sidebar-link.active {
     background: var(--sb-active-bg);
-    color: #ffffff;
+    color: var(--sb-active-text, var(--sb-text-hover));
     font-weight: 500;
     box-shadow: var(--sb-glow);
 }
@@ -680,7 +695,7 @@ a {
 }
 .staff-sidebar-link[aria-expanded="true"] {
     background: var(--sb-hover-bg);
-    color: var(--sb-text-hover);
+    color: var(--sb-expanded-text, var(--sb-text-hover));
 }
 
 /* ── Icon ── */
@@ -710,7 +725,7 @@ a {
     display: block;
     padding: 0.32rem 0.7rem;
     margin: 0.08rem 0.5rem 0.08rem 2.2rem;
-    color: #6b7d8e;
+    color: var(--sb-text);
     font-size: 0.79rem;
     text-decoration: none !important;
     border-radius: 6px;
@@ -724,8 +739,8 @@ a {
     background: rgba(255, 255, 255, 0.05);
 }
 .staff-sidebar-sublink.active {
-    color: #ffffff;
-    background: rgba(59, 130, 246, 0.12);
+    color: var(--sb-active-text, var(--sb-text-hover));
+    background: rgba(255, 255, 255, 0.15);
     font-weight: 500;
 }
 
@@ -910,13 +925,13 @@ a {
 }
 
 .table thead th {
-    background-color: #f8fafc;
-    border-bottom: 2px solid #e5e7eb;
+    background-color: var(--hms-surface-muted, #f8fafc);
+    border-bottom: 2px solid var(--hms-border, #e5e7eb);
     font-weight: 600;
     text-transform: uppercase;
     font-size: 0.8rem;
     letter-spacing: 0.05em;
-    color: #64748b;
+    color: var(--hms-text-muted, #5f6b7a);
 }
 
 .table-hover tbody tr:hover {
@@ -973,3 +988,60 @@ html.desktop-view {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
 }
+
+/* ── Readable colours in every theme ──
+   The theme stylesheet (/SystemManagement/ThemeStylesheet) adds tokens computed from the theme's colours
+   (ThemePalette: --hms-text-muted, --hms-primary-text, --hms-on-primary, --hms-success-text…) so that text has a
+   contrast of at least 4.5:1 whatever theme is chosen. Bootstrap's own colours follow them; the fallbacks are the
+   default light look (pages without a theme). */
+:root {
+    --bs-body-color: var(--hms-text);
+    --bs-body-bg: var(--hms-card-bg);
+    --bs-emphasis-color: var(--hms-text);
+    --bs-heading-color: inherit;
+    --bs-secondary-color: var(--hms-text-muted, #5f6b7a);
+    --bs-tertiary-color: var(--hms-text-muted, #5f6b7a);
+    --bs-secondary-bg: var(--hms-surface-muted);
+    --bs-tertiary-bg: var(--hms-surface-muted);
+    --bs-border-color: var(--hms-border);
+}
+
+.text-muted, .text-secondary, .text-body-secondary, .text-body-tertiary, .form-text, .navbar-text, .footer, .blockquote-footer {
+    color: var(--hms-text-muted, #5f6b7a) !important;
+}
+.form-control::placeholder { color: var(--hms-text-muted, #5f6b7a); opacity: 1; }
+.form-control, .form-select { color: var(--hms-input-text, var(--hms-text)); }
+
+.text-primary { color: var(--hms-primary-text, #0a58ca) !important; }
+.text-success { color: var(--hms-success-text, #146c43) !important; }
+.text-danger { color: var(--hms-danger-text, #b02a37) !important; }
+.text-warning { color: var(--hms-warning-text, #805b00) !important; }
+.text-info { color: var(--hms-info-text, #087990) !important; }
+
+/* Outline buttons: caption and border in a readable tone; filled on hover. */
+.btn-outline-primary { --bs-btn-color: var(--hms-primary-text, #0a58ca); --bs-btn-border-color: var(--hms-primary-text, #0a58ca); --bs-btn-hover-bg: var(--hms-btn-primary-bg, #0a58ca); --bs-btn-hover-border-color: var(--hms-btn-primary-bg, #0a58ca); --bs-btn-hover-color: var(--hms-on-primary, #fff); --bs-btn-active-bg: var(--hms-btn-primary-bg, #0a58ca); --bs-btn-active-border-color: var(--hms-btn-primary-bg, #0a58ca); --bs-btn-active-color: var(--hms-on-primary, #fff); }
+.btn-outline-secondary { --bs-btn-color: var(--hms-text-muted, #5f6b7a); --bs-btn-border-color: var(--hms-text-muted, #5f6b7a); --bs-btn-hover-bg: var(--hms-text-muted, #5f6b7a); --bs-btn-hover-border-color: var(--hms-text-muted, #5f6b7a); --bs-btn-hover-color: var(--hms-card-bg, #fff); --bs-btn-active-bg: var(--hms-text-muted, #5f6b7a); --bs-btn-active-color: var(--hms-card-bg, #fff); }
+.btn-outline-success { --bs-btn-color: var(--hms-success-text, #146c43); --bs-btn-border-color: var(--hms-success-text, #146c43); --bs-btn-hover-bg: var(--hms-success-text, #146c43); --bs-btn-hover-border-color: var(--hms-success-text, #146c43); --bs-btn-hover-color: var(--hms-card-bg, #fff); --bs-btn-active-bg: var(--hms-success-text, #146c43); --bs-btn-active-color: var(--hms-card-bg, #fff); }
+.btn-outline-danger { --bs-btn-color: var(--hms-danger-text, #b02a37); --bs-btn-border-color: var(--hms-danger-text, #b02a37); --bs-btn-hover-bg: var(--hms-danger-text, #b02a37); --bs-btn-hover-border-color: var(--hms-danger-text, #b02a37); --bs-btn-hover-color: var(--hms-card-bg, #fff); --bs-btn-active-bg: var(--hms-danger-text, #b02a37); --bs-btn-active-color: var(--hms-card-bg, #fff); }
+.btn-outline-warning { --bs-btn-color: var(--hms-warning-text, #805b00); --bs-btn-border-color: var(--hms-warning-text, #805b00); --bs-btn-hover-bg: var(--hms-warning-text, #805b00); --bs-btn-hover-border-color: var(--hms-warning-text, #805b00); --bs-btn-hover-color: var(--hms-card-bg, #fff); --bs-btn-active-bg: var(--hms-warning-text, #805b00); --bs-btn-active-color: var(--hms-card-bg, #fff); }
+.btn-outline-info { --bs-btn-color: var(--hms-info-text, #087990); --bs-btn-border-color: var(--hms-info-text, #087990); --bs-btn-hover-bg: var(--hms-info-text, #087990); --bs-btn-hover-border-color: var(--hms-info-text, #087990); --bs-btn-hover-color: var(--hms-card-bg, #fff); --bs-btn-active-bg: var(--hms-info-text, #087990); --bs-btn-active-color: var(--hms-card-bg, #fff); }
+
+/* Tabs and pills: readable link colour; the open tab in the page's text colour. */
+.nav-tabs .nav-link, .nav-pills .nav-link:not(.active) { color: var(--hms-primary-text, #0a58ca); }
+.nav-tabs .nav-link.active, .nav-tabs .nav-item.show .nav-link { color: var(--hms-text); }
+
+/* Bright fills (badges, labels) keep a dark caption. */
+.bg-info, .bg-warning, .bg-light { color: #1f2937 !important; }
+
+/* Sidebar labels that use Bootstrap's white text utilities follow the sidebar colours. */
+.staff-sidebar .text-white-50, .staff-sidebar .text-muted { color: var(--sb-text-muted) !important; }
+.staff-sidebar .text-white { color: var(--sb-text-hover) !important; }
+
+/* Muted text on Bootstrap's pale "subtle" panels (light themes; dark themes override this). */
+[class*="-subtle"] .text-muted, [class*="-subtle"] .text-secondary { color: #4b5563 !important; }
+
+/* Public website footer (dark band): secondary links stay light. */
+.site-footer .text-secondary, .site-footer .text-muted { color: #c3cdd9 !important; }
+
+/* Code (item codes, order numbers) inside coloured table rows takes the row's text colour. */
+.table-danger code, .table-warning code, .table-success code, .table-info code, .table-primary code, .table-secondary code { color: inherit; font-weight: 600; }

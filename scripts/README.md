@@ -61,6 +61,20 @@ has more than one.
 (User Management → hospital button, or Hospitals / Branches → Staff Access). An Admin manages only the
 hospitals assigned to them and cannot change the hospitals of other administrators.
 
+**Hospital groups:** every record is saved to the hospital selected in the top bar and is listed only there
+(SuperAdmins also see "All hospitals", with a Hospital column). Per hospital: appointments, OPD visits,
+admissions, wards and beds, discharge reports, bills and payments, pharmacy bills, laboratory and radiology
+orders, blood stock and blood issues, ambulances and trips, front office (visitors, complaints, post),
+birth and death records, referrals, TPA claims, live consultations, operation theatres, inventory and
+purchase bills, quality incidents and audits, and equipment. Shared by the whole group: patients and their
+medical records and documents, doctors, staff and HR (attendance, leave, payroll), catalogues (lab and
+radiology tests, medicines, departments), vendors and TPA providers, controlled documents, messaging, the
+Download Center and the website. SuperAdmins and Admins add hospitals (Hospitals / Branches → Add Hospital);
+an Admin who adds one may work there straight away. A new hospital gets its own blood stock (one row per
+blood group); its wards, beds, theatres, ambulances, printers and staff are set up from the hospital's own
+pages. Existing records from before this change were given the hospital of their bill, ambulance, or the
+patient's visit / admission at that time; the rest belong to the default hospital.
+
 Administrators (`superadmin`, `admin.uat`) must set up two-step login with an authenticator app at the
 first sign-in. `tester` and the demo hospital admins (`admin.main`, `admin.isb`, `admin.khi`,
 `admin.region`) are not asked: they are listed under Security & Backups → **Test accounts without

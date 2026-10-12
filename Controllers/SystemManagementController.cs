@@ -1,4 +1,5 @@
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using MedyxHMS.Data;
@@ -1238,6 +1239,12 @@ namespace MedyxHMS.Controllers
                 cssPath = Path.Combine(_env.WebRootPath, "css", "themes", "sunflower.css");
 
             var cssContent = await System.IO.File.ReadAllTextAsync(cssPath);
+
+            // Readable colours for this theme (text, links, buttons, sidebar), and the dark-page rules for dark themes.
+            var darkRulesPath = Path.Combine(_env.WebRootPath, "css", "themes", "_dark-pages.css");
+            var darkRules = System.IO.File.Exists(darkRulesPath) ? await System.IO.File.ReadAllTextAsync(darkRulesPath) : string.Empty;
+            cssContent += ThemePalette.BuildAdditions(cssContent, darkRules);
+
             Response.Headers["Cache-Control"] = "no-store, no-cache, must-revalidate";
             Response.Headers["Pragma"] = "no-cache";
             return Content(cssContent, "text/css");

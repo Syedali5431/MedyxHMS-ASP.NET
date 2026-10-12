@@ -4,9 +4,11 @@
 namespace MedyxHMS.Models
 {
     // ── M10 · Ambulance ──────────────────────────────────────────
-    public class AmbulanceVehicle
+    public class AmbulanceVehicle : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string VehicleNumber { get; set; } = string.Empty;
         public string DriverName { get; set; } = string.Empty;
         public string DriverContact { get; set; } = string.Empty;
@@ -16,9 +18,11 @@ namespace MedyxHMS.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
-    public class AmbulanceDispatch
+    public class AmbulanceDispatch : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int AmbulanceVehicleId { get; set; }
         public int? PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
@@ -38,9 +42,11 @@ namespace MedyxHMS.Models
     }
 
     // ── M12 · Birth / Death Records ──────────────────────────────
-    public class BirthRecord
+    public class BirthRecord : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string BabyName { get; set; } = string.Empty;
         public string Gender { get; set; } = string.Empty;     // Male, Female, Other
         public DateTime DateOfBirth { get; set; }
@@ -60,9 +66,11 @@ namespace MedyxHMS.Models
         public Patient? Patient { get; set; }
     }
 
-    public class DeathRecord
+    public class DeathRecord : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int? PatientId { get; set; }
         public string PatientName { get; set; } = string.Empty;
         public string Gender { get; set; } = string.Empty;
@@ -98,9 +106,11 @@ namespace MedyxHMS.Models
         public ICollection<TpaClaim> Claims { get; set; } = new List<TpaClaim>();
     }
 
-    public class TpaClaim
+    public class TpaClaim : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int TpaProviderId { get; set; }
         public int PatientId { get; set; }
         public int? BillId { get; set; }
@@ -205,9 +215,11 @@ namespace MedyxHMS.Models
     }
 
     // ── M22 · Live Consultation ──────────────────────────────────
-    public class LiveConsultationSession
+    public class LiveConsultationSession : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public int? PatientId { get; set; }
         public string DoctorUserId { get; set; } = string.Empty;
         public string DoctorName { get; set; } = string.Empty;

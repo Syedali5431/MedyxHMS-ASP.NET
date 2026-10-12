@@ -11,8 +11,9 @@ namespace MedyxHMS.Services.Implementations
 {
     /// <summary>
     /// The hospital's reports, built from live data. Hospital-scoped records (appointments, OPD, IPD, bills,
-    /// pharmacy, inventory, OT…) follow the hospital selected in the top bar; group-wide records (lab, radiology,
-    /// blood bank, HR, registers) cover the whole group. Empty periods show "no records" – never sample data.
+    /// pharmacy, inventory, OT, laboratory, radiology, blood bank, ambulance, registers, referrals, claims…) follow the
+    /// hospital selected in the top bar; group-wide records (HR and payroll) cover the whole group. Empty periods show
+    /// "no records" – never sample data.
     /// </summary>
     public class ReportEngine : IReportEngine
     {
@@ -850,8 +851,13 @@ namespace MedyxHMS.Services.Implementations
 
         private async Task BloodStock(ReportDocument doc)
         {
-            var rows = await _db.BloodInventories.AsNoTracking().OrderBy(b => b.BloodGroup)
-                .Select(b => new { b.BloodGroup, b.UnitsAvailable, b.UnitsReserved, b.MinimumLevel, b.LastUpdatedDate }).ToListAsync();
+            // One row per blood group (with all hospitals shown, the stock of every hospital is added up).
+            var rows = (await _db.BloodInventories.AsNoTracking()
+                .Select(b => new { b.BloodGroup, b.UnitsAvailable, b.UnitsReserved, b.MinimumLevel, b.LastUpdatedDate }).ToListAsync())
+                .GroupBy(b => b.BloodGroup).OrderBy(g => g.Key)
+                .Select(g => new { BloodGroup = g.Key, UnitsAvailable = g.Sum(b => b.UnitsAvailable), UnitsReserved = g.Sum(b => b.UnitsReserved),
+                                   MinimumLevel = g.Sum(b => b.MinimumLevel), LastUpdatedDate = g.Max(b => b.LastUpdatedDate) })
+                .ToList();
             doc.Metrics.Add(new ReportMetric("Units available", rows.Sum(r => r.UnitsAvailable), K.Integer, "success"));
             doc.Metrics.Add(new ReportMetric("Units reserved", rows.Sum(r => r.UnitsReserved), K.Integer, "warning"));
             doc.Metrics.Add(new ReportMetric("Groups below minimum", rows.Count(r => r.UnitsAvailable - r.UnitsReserved < r.MinimumLevel), K.Integer, "danger"));

@@ -283,7 +283,8 @@
 
         .preset-card {
             min-height: 102px;
-            background: #fff;
+            background: var(--hms-card-bg, #fff);
+            color: var(--hms-text, #212529);
             transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
         }
 
@@ -295,8 +296,12 @@
         .preset-card.active {
             border-color: #0d6efd;
             box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
-            background: #f8fbff;
+            background: color-mix(in srgb, var(--hms-primary, #0d6efd) 8%, var(--hms-card-bg, #fff));
         }
+
+        /* The preview shows the public website (light pages, white captions on its primary colour). */
+        #stylePreviewBodyDesktop, #stylePreviewBodyMobile { color: #1f2937; }
+        #previewPrimaryBtnDesktop, #previewPrimaryBtnMobile { color: #fff !important; }
     </style>
     <script>
         (function () {

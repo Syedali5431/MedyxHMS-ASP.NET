@@ -447,7 +447,7 @@
                     {
                     <li class="px-2 pt-2 pb-1">
                         <div class="form-label text-white-50 small mb-1">Reports List</div>
-                        <div class="border border-secondary rounded p-2" style="max-height:320px; overflow-y:auto; background:#1f2732;">
+                        <div class="border border-secondary rounded p-2" style="max-height:320px; overflow-y:auto;">
                             @foreach (var group in Model.ReportCatalog.GroupBy(r => r.Category))
                             {
                                 <div class="text-white-50 small fw-semibold mt-1">@group.Key</div>

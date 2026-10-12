@@ -43,7 +43,9 @@ namespace MedyxHMS.Services.Implementations
         public async Task<string> NextAccessionNumberAsync()
         {
             var prefix = "L" + DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture);
+            // Accession numbers (sample barcodes) are unique across all hospitals of the group.
             var last = await _context.LabResults
+                .IgnoreQueryFilters()
                 .Where(r => r.AccessionNumber != null && r.AccessionNumber.StartsWith(prefix))
                 .OrderByDescending(r => r.AccessionNumber)
                 .Select(r => r.AccessionNumber)

@@ -80,9 +80,11 @@ namespace MedyxHMS.Models
         public Staff Staff { get; set; } = null!;
     }
 
-    public class VisitorLog
+    public class VisitorLog : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string VisitorName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Purpose { get; set; } = string.Empty;
@@ -95,9 +97,11 @@ namespace MedyxHMS.Models
         public DateTime CreatedDate { get; set; } = DateTime.Now;
     }
 
-    public class ComplaintRecord
+    public class ComplaintRecord : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string ComplainantName { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
         public string Subject { get; set; } = string.Empty;
@@ -108,9 +112,11 @@ namespace MedyxHMS.Models
         public DateTime? ResolvedDate { get; set; }
     }
 
-    public class DispatchReceiveRecord
+    public class DispatchReceiveRecord : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital the record belongs to (multi-hospital); filled in automatically from the active hospital.</summary>
+        public int? HospitalId { get; set; }
         public string RecordType { get; set; } = string.Empty; // Dispatch, Receive
         public string ReferenceNumber { get; set; } = string.Empty;
         public string PartyName { get; set; } = string.Empty;

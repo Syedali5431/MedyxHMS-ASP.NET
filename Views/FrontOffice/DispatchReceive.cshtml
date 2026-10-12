@@ -1,4 +1,5 @@
 @model DispatchReceivePageViewModel
+@inject MedyxHMS.Services.Interfaces.IHospitalContext HospitalContext
 @{
     ViewData["Title"] = "Dispatch and Receive";
 }
@@ -38,14 +39,14 @@
     <div class="card">
         <div class="card-body table-responsive">
             <table class="table table-striped table-bordered">
-                <thead><tr><th>Date</th><th>Type</th><th>Reference</th><th>Party</th><th>Contact</th><th>Summary</th></tr></thead>
+                <thead><tr><th>Date</th>@if (HospitalContext.ShowHospitalColumn) { <th>Hospital</th> }<th>Type</th><th>Reference</th><th>Party</th><th>Contact</th><th>Summary</th></tr></thead>
                 <tbody>
                     @if (Model.Records.Any())
                     {
                         @foreach (var r in Model.Records)
                         {
                             <tr>
-                                <td>@r.RecordDate.ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>@r.RecordDate.ToString("yyyy-MM-dd HH:mm")</td>@if (HospitalContext.ShowHospitalColumn) { <td class="small">@HospitalContext.HospitalName(r.HospitalId)</td> }
                                 <td>@r.RecordType</td>
                                 <td>@r.ReferenceNumber</td>
                                 <td>@r.PartyName</td>

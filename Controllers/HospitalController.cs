@@ -2,6 +2,7 @@ using System.Security.Claims;
 using MedyxHMS.Data;
 using MedyxHMS.Extensions;
 using MedyxHMS.Models;
+using MedyxHMS.Services.Implementations;
 using MedyxHMS.Services.Interfaces;
 using MedyxHMS.ViewModels;
 using Microsoft.AspNetCore.Authorization;
@@ -58,7 +59,8 @@ namespace MedyxHMS.Controllers
                 hospitals = hospitals.Where(h => CanManageHospital(h.Id)).ToList();
             }
 
-            ViewBag.CanAddHospitals = IsSuperAdmin;
+            // SuperAdmins and Admins can add hospitals; only a SuperAdmin switches them on/off or changes the default.
+            ViewBag.CanAddHospitals = true;
 
             // Counts across the whole group (filters off) so every hospital shows its own totals.
             var staff = await _context.UserHospitalAccesses.GroupBy(a => a.HospitalId).Select(g => new { g.Key, Count = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.Count);
@@ -81,17 +83,23 @@ namespace MedyxHMS.Controllers
         }
 
         // Adding hospitals to the group is for SuperAdmins.
-        [Authorize(Roles = "SuperAdmin")]
+        [Authorize(Roles = "SuperAdmin,Admin")]
         public IActionResult Create()
         {
-            ViewBag.CanChangeStatus = true;
+            ViewBag.CanChangeStatus = IsSuperAdmin;
             return View(new Hospital { IsActive = true });
         }
 
-        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "SuperAdmin")]
+        [HttpPost, ValidateAntiForgeryToken, Authorize(Roles = "SuperAdmin,Admin")]
         public async Task<IActionResult> Create(Hospital model)
         {
-            ViewBag.CanChangeStatus = true;
+            ViewBag.CanChangeStatus = IsSuperAdmin;
+            if (!IsSuperAdmin)
+            {
+                // An Admin adds an active, non-default hospital; status and default stay with the SuperAdmin.
+                model.IsActive = true;
+                model.IsDefault = false;
+            }
             Normalize(model);
             await ValidateHospitalAsync(model, isNew: true);
             if (!ModelState.IsValid)
@@ -107,10 +115,22 @@ namespace MedyxHMS.Controllers
 
             _context.Hospitals.Add(model);
             await _context.SaveChangesAsync();
-            HospitalContextMiddleware.InvalidateCache(_cache);
+
+            // Records every hospital needs from the start: its own blood stock (one row per blood group).
+            await HospitalSetup.EnsureBloodStockAsync(_context, model.Id);
+
+            // An Admin works in the hospitals assigned to them: the Admin who adds a hospital may work there.
+            if (!IsSuperAdmin && !string.IsNullOrEmpty(CurrentUserId)
+                && !await _context.UserHospitalAccesses.AnyAsync(a => a.UserId == CurrentUserId && a.HospitalId == model.Id))
+            {
+                _context.UserHospitalAccesses.Add(new UserHospitalAccess { UserId = CurrentUserId, HospitalId = model.Id, CreatedDate = DateTime.Now });
+                await _context.SaveChangesAsync();
+            }
+
+            HospitalContextMiddleware.InvalidateCache(_cache, CurrentUserId);
             await _audit.LogActivityAsync(CurrentUserId, "CREATE", "Hospital", model.Id.ToString(), null, $"{model.Code} - {model.Name}");
 
-            TempData["SuccessMessage"] = $"Hospital \"{model.Name}\" added. Use Staff Access to choose who can work there.";
+            TempData["SuccessMessage"] = $"Hospital \"{model.Name}\" added. Choose it in the top bar to work in it – everything you record there (appointments, visits, admissions, wards and beds, bills, pharmacy, laboratory, radiology, blood bank, ambulance, front office, registers…) belongs to this hospital. Use Staff Access to choose who else can work there.";
             return RedirectToAction(nameof(Index));
         }
 

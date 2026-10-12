@@ -133,10 +133,11 @@ namespace MedyxHMS.Services.Implementations
                 // Generated numbers have one-second resolution; add a suffix if that number is already taken.
                 var baseNumber = $"RAD-{DateTime.Now:yyyyMMddHHmmss}";
                 radiologyResult.OrderNumber = baseNumber;
-                for (var n = 2; await _context.RadiologyResults.AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber); n++)
+                // Order numbers are unique across all hospitals of the group.
+                for (var n = 2; await _context.RadiologyResults.IgnoreQueryFilters().AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber); n++)
                     radiologyResult.OrderNumber = $"{baseNumber}-{n}";
             }
-            else if (await _context.RadiologyResults.AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber))
+            else if (await _context.RadiologyResults.IgnoreQueryFilters().AnyAsync(r => r.OrderNumber == radiologyResult.OrderNumber))
             {
                 throw new InvalidOperationException($"Order number '{radiologyResult.OrderNumber}' is already in use. Leave it blank to generate one.");
             }

@@ -134,10 +134,11 @@ namespace MedyxHMS.Services.Implementations
                 // Generated numbers have one-second resolution; add a suffix if that number is already taken.
                 var baseNumber = $"LAB-{DateTime.Now:yyyyMMddHHmmss}";
                 labResult.OrderNumber = baseNumber;
-                for (var n = 2; await _context.LabResults.AnyAsync(r => r.OrderNumber == labResult.OrderNumber); n++)
+                // Order numbers are unique across all hospitals of the group.
+                for (var n = 2; await _context.LabResults.IgnoreQueryFilters().AnyAsync(r => r.OrderNumber == labResult.OrderNumber); n++)
                     labResult.OrderNumber = $"{baseNumber}-{n}";
             }
-            else if (await _context.LabResults.AnyAsync(r => r.OrderNumber == labResult.OrderNumber))
+            else if (await _context.LabResults.IgnoreQueryFilters().AnyAsync(r => r.OrderNumber == labResult.OrderNumber))
             {
                 throw new InvalidOperationException($"Order number '{labResult.OrderNumber}' is already in use. Leave it blank to generate one.");
             }
