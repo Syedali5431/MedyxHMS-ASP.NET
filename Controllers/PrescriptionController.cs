@@ -171,7 +171,7 @@ namespace MedyxHMS.Controllers
         [Authorize(Roles = "Admin,SuperAdmin,Doctor,Staff")]
         public async Task<IActionResult> Create(int? pharmacyBillId)
         {
-            var medicines = await _prescriptionService.GetAllMedicinesAsync();
+            var medicines = await _prescriptionService.GetMedicinesForNewPrescriptionsAsync();
             var pharmacyBills = await GetPharmacyBillOptionsAsync();
 
             var viewModel = new CreatePrescriptionViewModel
@@ -234,7 +234,16 @@ namespace MedyxHMS.Controllers
                     Instructions = model.Prescription.Instructions
                 };
 
-                await _prescriptionService.CreatePrescriptionAsync(prescription);
+                try
+                {
+                    await _prescriptionService.CreatePrescriptionAsync(prescription);
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Not enough stock, or a medicine of another hospital's pharmacy: show the reason on the form.
+                    ModelState.AddModelError("Prescription.Quantity", ex.Message);
+                    return await CreateFormAgainAsync(model);
+                }
 
                 // Log activity
                 await _auditService.LogActivityAsync(
@@ -251,13 +260,22 @@ namespace MedyxHMS.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var medicines = await _prescriptionService.GetAllMedicinesAsync();
+            return await CreateFormAgainAsync(model);
+        }
+
+        /// <summary>The prescription form shown again (validation messages, stock refused).</summary>
+        private async Task<IActionResult> CreateFormAgainAsync(CreatePrescriptionViewModel model)
+        {
+            var medicines = await _prescriptionService.GetMedicinesForNewPrescriptionsAsync();
             model.Medicines = medicines.Select(m => new MedicineDto
             {
                 Id = m.Id,
                 Name = m.Name,
                 GenericName = m.GenericName,
-                UnitPrice = m.UnitPrice
+                DosageForm = m.DosageForm,
+                Strength = m.Strength,
+                UnitPrice = m.UnitPrice,
+                StockQuantity = m.StockQuantity
             }).ToList();
             model.PharmacyBills = await GetPharmacyBillOptionsAsync();
             ViewBag.Patients = await GetPatientOptionsAsync();
@@ -269,8 +287,10 @@ namespace MedyxHMS.Controllers
         private async Task<PharmacyBill> GetOrOpenPharmacyBillAsync(int patientId)
         {
             var today = DateTime.Today;
+            // The open bill of the hospital whose pharmacy dispenses (matters when all hospitals are shown).
+            var hospitalId = await _context.HospitalForNewRecordsAsync();
             var bill = await _context.PharmacyBills
-                .Where(b => b.PatientId == patientId && b.Status == "Pending" && b.BillDate >= today)
+                .Where(b => b.PatientId == patientId && b.Status == "Pending" && b.BillDate >= today && (hospitalId == null || b.HospitalId == hospitalId))
                 .OrderByDescending(b => b.Id)
                 .FirstOrDefaultAsync();
             if (bill != null) return bill;
@@ -367,6 +387,7 @@ namespace MedyxHMS.Controllers
                 Medicines = medicineList.Select(m => new MedicineDto
                 {
                     Id = m.Id,
+                    HospitalId = m.HospitalId,
                     Name = m.Name,
                     GenericName = m.GenericName,
                     Category = m.Category,

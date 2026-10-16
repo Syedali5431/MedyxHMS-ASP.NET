@@ -23,8 +23,8 @@ $DbName = "MedyxHMS_Validate_$(Get-Random)"
 $TempScript = Join-Path $env:TEMP "temp_validate_$DbName.sql"
 $Failures = New-Object System.Collections.Generic.List[string]
 
-# Expected objects (117 tables / 146 foreign keys) and baseline rows of the -Full script.
-$Expected = @{ Tables = 117; ForeignKeys = 146 }
+# Expected objects (117 tables / 147 foreign keys) and baseline rows of the -Full script.
+$Expected = @{ Tables = 117; ForeignKeys = 147 }
 $ExpectedRows = [ordered]@{
     'AspNetRoles' = 12; 'AspNetUsers' = 1; 'Roles' = 12; 'Features' = 28; 'RoleFeatures' = 122;
     'SystemModules' = 30; 'Hospitals' = 1; 'CmsPages' = 3; 'CmsMenuItems' = 7; 'CmsNotices' = 2
@@ -109,9 +109,9 @@ try {
     Write-Host "  Discharge reports table and profile columns: $(if ($newObjects -eq '1') { 'present' } else { 'MISSING' })"
     if ($newObjects -ne '1') { $Failures.Add("DischargeSummaries table or the AspNetUsers profile columns are missing") }
     # Hospital groups (October 2026): laboratory, radiology, blood bank, ambulance, front office, registers, referrals,
-    # TPA claims and live consultations belong to a hospital (HospitalId column with a foreign key to Hospitals).
+    # TPA claims, live consultations and pharmacy stock (Medicines) belong to a hospital (HospitalId + foreign key).
     $grouped = @('LabResults', 'RadiologyResults', 'BloodInventories', 'BloodIssues', 'AmbulanceVehicles', 'AmbulanceDispatches', 'VisitorLogs',
-        'ComplaintRecords', 'DispatchReceiveRecords', 'BirthRecords', 'DeathRecords', 'Referrals', 'TpaClaims', 'LiveConsultationSessions')
+        'ComplaintRecords', 'DispatchReceiveRecords', 'BirthRecords', 'DeathRecords', 'Referrals', 'TpaClaims', 'LiveConsultationSessions', 'Medicines')
     $list = ($grouped | ForEach-Object { "N'$_'" }) -join ','
     $scoped = Get-SqlValue "SELECT COUNT(*) FROM sys.foreign_keys fk JOIN sys.foreign_key_columns c ON c.constraint_object_id = fk.object_id JOIN sys.columns col ON col.object_id = c.parent_object_id AND col.column_id = c.parent_column_id WHERE fk.referenced_object_id = OBJECT_ID(N'dbo.Hospitals') AND col.name = N'HospitalId' AND OBJECT_NAME(fk.parent_object_id) IN ($list)"
     Write-Host "  Hospital-grouped tables (HospitalId + foreign key): $scoped of $($grouped.Count)"

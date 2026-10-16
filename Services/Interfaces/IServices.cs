@@ -445,6 +445,8 @@ namespace MedyxHMS.Services.Interfaces
 
         // Medicine methods
         Task<IEnumerable<Medicine>> GetAllMedicinesAsync();
+        /// <summary>Active medicines of the pharmacy new prescriptions are dispensed from (the active hospital, or the user's own hospital when all hospitals are shown).</summary>
+        Task<IEnumerable<Medicine>> GetMedicinesForNewPrescriptionsAsync();
         Task<Medicine?> GetMedicineByIdAsync(int id);
         Task<Medicine> CreateMedicineAsync(Medicine medicine);
         Task<Medicine> UpdateMedicineAsync(Medicine medicine);

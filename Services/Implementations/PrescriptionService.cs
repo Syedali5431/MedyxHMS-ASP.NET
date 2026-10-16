@@ -33,11 +33,36 @@ namespace MedyxHMS.Services.Implementations
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
+        /// <summary>
+        /// Dispensing takes the quantity from the pharmacy stock of the bill's hospital. Throws InvalidOperationException
+        /// (message for the user) when the medicine belongs to another hospital's pharmacy or the stock is too low.
+        /// </summary>
+        private async Task TakeFromStockAsync(int medicineId, int quantity, int pharmacyBillId)
+        {
+            var medicine = await _context.Medicines.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.Id == medicineId)
+                ?? throw new InvalidOperationException("Choose a medicine.");
+            var billHospital = await _context.PharmacyBills.IgnoreQueryFilters()
+                .Where(b => b.Id == pharmacyBillId).Select(b => b.HospitalId).FirstOrDefaultAsync();
+            if (billHospital.HasValue && medicine.HospitalId.HasValue && medicine.HospitalId != billHospital)
+                throw new InvalidOperationException($"{medicine.Name} is stock of another hospital's pharmacy. Choose the medicine from the pharmacy of the bill's hospital.");
+            if (quantity > medicine.StockQuantity)
+                throw new InvalidOperationException($"Not enough {medicine.Name} in stock: {medicine.StockQuantity} available, {quantity} prescribed.");
+            medicine.StockQuantity -= quantity;
+        }
+
+        private async Task ReturnToStockAsync(int medicineId, int quantity)
+        {
+            var medicine = await _context.Medicines.IgnoreQueryFilters().FirstOrDefaultAsync(m => m.Id == medicineId);
+            if (medicine != null && quantity > 0)
+                medicine.StockQuantity += quantity;
+        }
+
         public async Task<Prescription> CreatePrescriptionAsync(Prescription prescription)
         {
             prescription.CreatedDate = DateTime.Now;
             prescription.TotalPrice = prescription.Quantity * prescription.UnitPrice;
 
+            await TakeFromStockAsync(prescription.MedicineId, prescription.Quantity, prescription.PharmacyBillId);
             _context.Prescriptions.Add(prescription);
             await _context.SaveChangesAsync();
             await RecalculatePharmacyBillAsync(prescription.PharmacyBillId);
@@ -46,8 +71,14 @@ namespace MedyxHMS.Services.Implementations
 
         public async Task<Prescription> UpdatePrescriptionAsync(Prescription prescription)
         {
-            var previousBillId = await _context.Prescriptions.Where(p => p.Id == prescription.Id).Select(p => (int?)p.PharmacyBillId).FirstOrDefaultAsync();
+            var previous = await _context.Prescriptions.AsNoTracking().Where(p => p.Id == prescription.Id)
+                .Select(p => new { p.PharmacyBillId, p.MedicineId, p.Quantity }).FirstOrDefaultAsync();
+            int? previousBillId = previous?.PharmacyBillId;
             prescription.TotalPrice = prescription.Quantity * prescription.UnitPrice;
+            // Stock follows the change: the old quantity goes back, the new quantity is taken.
+            if (previous != null)
+                await ReturnToStockAsync(previous.MedicineId, previous.Quantity);
+            await TakeFromStockAsync(prescription.MedicineId, prescription.Quantity, prescription.PharmacyBillId);
             _context.Prescriptions.Update(prescription);
             await _context.SaveChangesAsync();
             await RecalculatePharmacyBillAsync(prescription.PharmacyBillId);
@@ -63,6 +94,8 @@ namespace MedyxHMS.Services.Implementations
                 return false;
 
             var billId = prescription.PharmacyBillId;
+            // Medicines not given out go back into stock.
+            await ReturnToStockAsync(prescription.MedicineId, prescription.Quantity);
             _context.Prescriptions.Remove(prescription);
             await _context.SaveChangesAsync();
             await RecalculatePharmacyBillAsync(billId);
@@ -108,6 +141,15 @@ namespace MedyxHMS.Services.Implementations
         }
 
         // Medicine methods
+        public async Task<IEnumerable<Medicine>> GetMedicinesForNewPrescriptionsAsync()
+        {
+            var hospitalId = await _context.HospitalForNewRecordsAsync();
+            return await _context.Medicines
+                .Where(m => m.IsActive && (hospitalId == null || m.HospitalId == hospitalId))
+                .OrderBy(m => m.Name)
+                .ToListAsync();
+        }
+
         public async Task<IEnumerable<Medicine>> GetAllMedicinesAsync()
         {
             return await _context.Medicines

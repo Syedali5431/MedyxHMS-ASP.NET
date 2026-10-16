@@ -1,9 +1,11 @@
 ﻿// Purpose: Contains application code for Pharmacy and its related runtime behavior.
 namespace MedyxHMS.Models
 {
-    public class Medicine
+    public class Medicine : IHospitalScoped
     {
         public int Id { get; set; }
+        /// <summary>Hospital whose pharmacy holds this stock (multi-hospital); filled in automatically.</summary>
+        public int? HospitalId { get; set; }
         public string Name { get; set; }
         public string GenericName { get; set; }
         public string Category { get; set; }

@@ -756,6 +756,8 @@ namespace MedyxHMS.Data
             ApplyHospitalFilter<Referral>(modelBuilder);
             ApplyHospitalFilter<TpaClaim>(modelBuilder);
             ApplyHospitalFilter<LiveConsultationSession>(modelBuilder);
+            // Pharmacy stock: each hospital's pharmacy has its own medicines (stock, price, batch, expiry).
+            ApplyHospitalFilter<Medicine>(modelBuilder);
 
             // Child records follow their parent's hospital.
             modelBuilder.Entity<Bed>().HasQueryFilter(b => !HospitalFilterEnabled || b.Ward.HospitalId == HospitalFilterId);

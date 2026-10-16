@@ -36,6 +36,8 @@ namespace MedyxHMS.Services.Implementations
             await LoadHospitalsAsync();
             // Blood stock and ambulances of each hospital (added after the first release).
             await SeedHospitalResourcesOnceAsync();
+            // Pharmacy stock of each hospital (added later).
+            await SeedPharmacyStockOnceAsync();
             // Insurance claims have their own marker: they need TPA providers, which older databases may not have had.
             await SeedTpaClaimsOnceAsync();
             // Operation bills and the medicines/investigations on admission bills, once (added after the first release).
@@ -138,6 +140,36 @@ namespace MedyxHMS.Services.Implementations
         }
 
         public const string HospitalGroupsMarkerKey = "SampleData:Year2026:HospitalGroups";
+        public const string PharmacyStockMarkerKey = "SampleData:Year2026:PharmacyStock";
+
+        /// <summary>
+        /// Pharmacy stock is kept per hospital: each hospital other than the default one gets sample stock for its
+        /// medicines when it has none – once.
+        /// </summary>
+        private async Task SeedPharmacyStockOnceAsync()
+        {
+            if (await _db.Settings.AnyAsync(s => s.Key == PharmacyStockMarkerKey)) return;
+            await HospitalSetup.EnsureMedicinesAsync(_db);
+            var hospitals = await _db.Hospitals.Where(h => h.IsActive && !h.IsDefault).Select(h => h.Id).ToListAsync();
+            var rows = 0;
+            foreach (var hospital in hospitals)
+            {
+                var medicines = await _db.Medicines.IgnoreQueryFilters().Where(m => m.HospitalId == hospital).ToListAsync();
+                if (medicines.Count == 0 || medicines.Any(m => m.StockQuantity > 0)) continue;
+                foreach (var medicine in medicines)
+                {
+                    medicine.StockQuantity = _rnd.Next(80, 401);
+                    rows++;
+                }
+            }
+            _db.Settings.Add(new Setting
+            {
+                Key = PharmacyStockMarkerKey, Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm", Inv), Type = "string", Category = "SampleData",
+                Description = "Sample pharmacy stock for each hospital was added on this date.", IsSystem = true, ModifiedBy = By, ModifiedDate = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("2026 sample data: pharmacy stock for {Rows} medicines of the hospitals of the group", rows);
+        }
 
         /// <summary>
         /// Blood stock and ambulances are kept per hospital: each hospital other than the default one gets sample blood

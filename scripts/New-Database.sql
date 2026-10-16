@@ -1,6 +1,7 @@
 ﻿/*
     MedyxHMS – new database with baseline data
-    Generated 2026-10-12 from the running system (117 tables, 182 indexes, 146 foreign keys, 4 views/procedures).
+    Generated 2026-10-12 from the running system (117 tables, 183 indexes, 147 foreign keys, 4 views/procedures).
+    Updated 2026-10-17: Medicines.HospitalId – pharmacy stock per hospital.
 
     What it does
       - Creates the database [MedyxHMS] if it does not exist, then every table, column, index and foreign key
@@ -1523,6 +1524,7 @@ BEGIN
         [BatchNumber] nvarchar(max) NOT NULL,
         [IsActive] bit NOT NULL,
         [CreatedDate] datetime2 NOT NULL,
+        [HospitalId] int NULL,
         CONSTRAINT [PK_Medicines] PRIMARY KEY CLUSTERED ([Id])
     );
     PRINT N'Created table Medicines';
@@ -3572,6 +3574,7 @@ EXEC #EnsureColumn N'Medicines', N'ExpiryDate', N'ALTER TABLE [dbo].[Medicines] 
 EXEC #EnsureColumn N'Medicines', N'BatchNumber', N'ALTER TABLE [dbo].[Medicines] ADD [BatchNumber] nvarchar(max) NOT NULL CONSTRAINT [DF_Medicines_BatchNumber] DEFAULT (N'''');';
 EXEC #EnsureColumn N'Medicines', N'IsActive', N'ALTER TABLE [dbo].[Medicines] ADD [IsActive] bit NOT NULL CONSTRAINT [DF_Medicines_IsActive] DEFAULT (0);';
 EXEC #EnsureColumn N'Medicines', N'CreatedDate', N'ALTER TABLE [dbo].[Medicines] ADD [CreatedDate] datetime2 NOT NULL CONSTRAINT [DF_Medicines_CreatedDate] DEFAULT (''1900-01-01'');';
+EXEC #EnsureColumn N'Medicines', N'HospitalId', N'ALTER TABLE [dbo].[Medicines] ADD [HospitalId] int NULL;';
 GO
 
 -- NotificationDeliveryLogs
@@ -4602,6 +4605,7 @@ GO
 EXEC #EnsureIndex N'MedicalRecords', N'IX_MedicalRecords_DoctorId', N'DoctorId', N'CREATE INDEX [IX_MedicalRecords_DoctorId] ON [dbo].[MedicalRecords] ([DoctorId]);', 0;
 EXEC #EnsureIndex N'MedicalRecords', N'IX_MedicalRecords_PatientId', N'PatientId', N'CREATE INDEX [IX_MedicalRecords_PatientId] ON [dbo].[MedicalRecords] ([PatientId]);', 0;
 EXEC #EnsureIndex N'MedicalRecords', N'IX_MedicalRecords_SourceType_SourceId', N'SourceType,SourceId', N'CREATE UNIQUE INDEX [IX_MedicalRecords_SourceType_SourceId] ON [dbo].[MedicalRecords] ([SourceType], [SourceId]) WHERE ([SourceId] IS NOT NULL);', 1, N'([SourceId] IS NOT NULL)';
+EXEC #EnsureIndex N'Medicines', N'IX_Medicines_HospitalId', N'HospitalId', N'CREATE INDEX [IX_Medicines_HospitalId] ON [dbo].[Medicines] ([HospitalId]);', 0;
 GO
 
 -- NotificationDeliveryLogs
@@ -5038,6 +5042,7 @@ GO
 -- MedicalRecords
 EXEC #EnsureForeignKey N'MedicalRecords', N'FK_MedicalRecords_AspNetUsers_DoctorId', N'DoctorId', N'AspNetUsers', N'Id', N'FOREIGN KEY ([DoctorId]) REFERENCES [dbo].[AspNetUsers] ([Id])';
 EXEC #EnsureForeignKey N'MedicalRecords', N'FK_MedicalRecords_Patients_PatientId', N'PatientId', N'Patients', N'Id', N'FOREIGN KEY ([PatientId]) REFERENCES [dbo].[Patients] ([Id])';
+EXEC #EnsureForeignKey N'Medicines', N'FK_Medicines_Hospitals_HospitalId', N'HospitalId', N'Hospitals', N'Id', N'FOREIGN KEY ([HospitalId]) REFERENCES [dbo].[Hospitals] ([Id])';
 GO
 
 -- OPDVisits

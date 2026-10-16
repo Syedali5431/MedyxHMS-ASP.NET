@@ -2032,7 +2032,7 @@ END");
               "QualityIncidents", "CapaActions", "InternalAudits", "Equipment", "PurchaseBills", "OperationTheatres",
               "LabResults", "RadiologyResults", "BloodInventories", "BloodIssues", "AmbulanceVehicles", "AmbulanceDispatches",
               "VisitorLogs", "ComplaintRecords", "DispatchReceiveRecords", "BirthRecords", "DeathRecords", "Referrals",
-              "TpaClaims", "LiveConsultationSessions" };
+              "TpaClaims", "LiveConsultationSessions", "Medicines" };
 
         /// <summary>
         /// Records without a hospital that can be traced to one: the hospital of their bill or ambulance, or of the
@@ -2202,6 +2202,20 @@ IF COL_LENGTH(N'dbo.{table}', N'HospitalId') IS NOT NULL
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to create the blood stock of each hospital");
+            }
+
+            // Every hospital has its own pharmacy stock; prescriptions use the medicines of their bill's hospital.
+            try
+            {
+                var changed = await HospitalSetup.EnsureMedicinesAsync(_context);
+                if (changed > 0)
+                {
+                    _logger.LogInformation("Pharmacy stock per hospital: {Count} medicine records added or prescriptions moved to their hospital's medicines", changed);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to set up the pharmacy stock of each hospital");
             }
         }
 

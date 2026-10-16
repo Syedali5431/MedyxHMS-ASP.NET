@@ -118,6 +118,8 @@ namespace MedyxHMS.Controllers
 
             // Records every hospital needs from the start: its own blood stock (one row per blood group).
             await HospitalSetup.EnsureBloodStockAsync(_context, model.Id);
+            // …and its pharmacy's medicine list (the group's medicines, no stock yet).
+            await HospitalSetup.EnsureMedicinesAsync(_context, model.Id);
 
             // An Admin works in the hospitals assigned to them: the Admin who adds a hospital may work there.
             if (!IsSuperAdmin && !string.IsNullOrEmpty(CurrentUserId)

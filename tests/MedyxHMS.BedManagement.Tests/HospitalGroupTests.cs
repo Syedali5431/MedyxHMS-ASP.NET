@@ -145,4 +145,103 @@ public class HospitalGroupTests
         Assert.Equal(10, (await check.BloodInventories.SingleAsync(b => b.HospitalId == 1 && b.BloodGroup == "A+")).UnitsAvailable);
         Assert.Equal(2, (await check.Bills.SingleAsync()).HospitalId);
     }
+
+    private static Medicine NewMedicine(int hospitalId, string name, int stock) => new()
+    {
+        HospitalId = hospitalId, Name = name, GenericName = name, Category = "Analgesic", DosageForm = "Tablet", Strength = "500mg",
+        Manufacturer = "", UnitPrice = 5m, StockQuantity = stock, MinStockLevel = 10, ExpiryDate = DateTime.Today.AddYears(1), BatchNumber = "B1", IsActive = true
+    };
+
+    private static PharmacyBill NewPharmacyBill(int id, int hospitalId) => new()
+    {
+        Id = id, HospitalId = hospitalId, PatientId = 1, BillNumber = $"RX-{id}", BillDate = DateTime.Now, Status = "Pending", PaymentMethod = "", Notes = "", CreatedBy = ""
+    };
+
+    private static Prescription NewPrescription(int billId, int medicineId, int quantity) => new()
+    {
+        PharmacyBillId = billId, MedicineId = medicineId, Dosage = "1 tablet", Frequency = "Daily", Duration = 5, Quantity = quantity, UnitPrice = 5m, Instructions = ""
+    };
+
+    [Fact]
+    public async Task EveryHospital_HasItsOwnMedicines_AndPrescriptionsUseThem()
+    {
+        var options = NewDatabase();
+        await SeedHospitalsAsync(options);
+        await using (var raw = new ApplicationDbContext(options))
+        {
+            raw.Medicines.Add(NewMedicine(1, "Paracetamol", 100));
+            raw.PharmacyBills.Add(NewPharmacyBill(20, 2));
+            await raw.SaveChangesAsync();
+            // An Islamabad prescription that still points at the Main Hospital medicine (data from before the change).
+            raw.Prescriptions.Add(NewPrescription(20, (await raw.Medicines.SingleAsync()).Id, 4));
+            await raw.SaveChangesAsync();
+
+            Assert.True(await HospitalSetup.EnsureMedicinesAsync(raw) > 0);
+            Assert.Equal(0, await HospitalSetup.EnsureMedicinesAsync(raw));
+        }
+
+        await using var check = new ApplicationDbContext(options);
+        var isbMedicine = await check.Medicines.SingleAsync(m => m.HospitalId == 2);
+        Assert.Equal("Paracetamol", isbMedicine.Name);
+        Assert.Equal(0, isbMedicine.StockQuantity);                       // another hospital's stock is not copied
+        Assert.Equal(100, (await check.Medicines.SingleAsync(m => m.HospitalId == 1)).StockQuantity);
+        Assert.Equal(isbMedicine.Id, (await check.Prescriptions.SingleAsync()).MedicineId);
+
+        await using var main = InHospital(options, 1);
+        Assert.Single(await main.Medicines.ToListAsync());                 // each hospital lists only its own medicines
+    }
+
+    [Fact]
+    public async Task Dispensing_TakesFromStock_RefusesTooMuch_AndDeletingReturnsIt()
+    {
+        var options = NewDatabase();
+        await SeedHospitalsAsync(options);
+        int medicineId;
+        await using (var raw = new ApplicationDbContext(options))
+        {
+            raw.Medicines.Add(NewMedicine(2, "Amoxicillin", 10));
+            raw.Medicines.Add(NewMedicine(1, "Amoxicillin", 50));
+            raw.PharmacyBills.Add(NewPharmacyBill(30, 2));
+            await raw.SaveChangesAsync();
+            medicineId = (await raw.Medicines.SingleAsync(m => m.HospitalId == 2)).Id;
+        }
+
+        int prescriptionId;
+        await using (var isb = InHospital(options, 2))
+        {
+            var service = new PrescriptionService(isb);
+            prescriptionId = (await service.CreatePrescriptionAsync(NewPrescription(30, medicineId, 6))).Id;
+            var tooMuch = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreatePrescriptionAsync(NewPrescription(30, medicineId, 5)));
+            Assert.Contains("Not enough", tooMuch.Message);
+            var mainMedicine = await isb.Medicines.IgnoreQueryFilters().SingleAsync(m => m.HospitalId == 1);
+            var otherHospital = await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreatePrescriptionAsync(NewPrescription(30, mainMedicine.Id, 1)));
+            Assert.Contains("another hospital", otherHospital.Message);
+        }
+
+        await using (var check = new ApplicationDbContext(options))
+            Assert.Equal(4, (await check.Medicines.SingleAsync(m => m.Id == medicineId)).StockQuantity);
+
+        await using (var isb = InHospital(options, 2))
+            Assert.True(await new PrescriptionService(isb).DeletePrescriptionAsync(prescriptionId));
+
+        await using (var check = new ApplicationDbContext(options))
+        {
+            Assert.Equal(10, (await check.Medicines.SingleAsync(m => m.Id == medicineId)).StockQuantity);
+            Assert.Equal(50, (await check.Medicines.SingleAsync(m => m.HospitalId == 1)).StockQuantity);
+        }
+    }
+
+    [Fact]
+    public async Task NewHospital_GetsTheMedicineListWithoutStock()
+    {
+        var options = NewDatabase();
+        await SeedHospitalsAsync(options);
+        await using var db = new ApplicationDbContext(options);
+        db.Medicines.Add(NewMedicine(1, "Cetirizine", 70));
+        db.Medicines.Add(NewMedicine(1, "Omeprazole", 40));
+        await db.SaveChangesAsync();
+
+        Assert.Equal(2, await HospitalSetup.EnsureMedicinesAsync(db, 2));
+        Assert.All(await db.Medicines.Where(m => m.HospitalId == 2).ToListAsync(), m => Assert.Equal(0, m.StockQuantity));
+    }
 }

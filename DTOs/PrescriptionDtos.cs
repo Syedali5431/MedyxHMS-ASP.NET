@@ -82,6 +82,8 @@ namespace MedyxHMS.DTOs
     public class MedicineDto
     {
         public int Id { get; set; }
+        /// <summary>Hospital whose pharmacy holds the stock (shown when all hospitals are listed).</summary>
+        public int? HospitalId { get; set; }
         public string Name { get; set; }
         public string GenericName { get; set; }
         public string Category { get; set; }
